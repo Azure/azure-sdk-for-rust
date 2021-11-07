@@ -2,10 +2,29 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Get_TenantOptedIn(#[from] get::tenant_opted_in::Error),
+    #[error(transparent)]
+    Post_EnableLockbox(#[from] post::enable_lockbox::Error),
+    #[error(transparent)]
+    Post_DisableLockbox(#[from] post::disable_lockbox::Error),
+    #[error(transparent)]
+    Requests_Get(#[from] requests::get::Error),
+    #[error(transparent)]
+    Requests_UpdateStatus(#[from] requests::update_status::Error),
+    #[error(transparent)]
+    Requests_List(#[from] requests::list::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.CustomerLockbox/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +45,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +61,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,11 +85,11 @@ pub mod operations {
     }
 }
 pub mod get {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn tenant_opted_in(
         operation_config: &crate::OperationConfig,
         tenant_id: &str,
-    ) -> std::result::Result<TenantOptInResponse, tenant_opted_in::Error> {
+    ) -> std::result::Result<models::TenantOptInResponse, tenant_opted_in::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CustomerLockbox/tenantOptedIn/{}",
@@ -98,13 +117,13 @@ pub mod get {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TenantOptInResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TenantOptInResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| tenant_opted_in::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| tenant_opted_in::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(tenant_opted_in::Error::DefaultResponse {
                     status_code,
@@ -114,7 +133,7 @@ pub mod get {
         }
     }
     pub mod tenant_opted_in {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -138,7 +157,7 @@ pub mod get {
     }
 }
 pub mod post {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn enable_lockbox(operation_config: &crate::OperationConfig) -> std::result::Result<(), enable_lockbox::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.CustomerLockbox/enableLockbox", operation_config.base_path(),);
@@ -165,7 +184,7 @@ pub mod post {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| enable_lockbox::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(enable_lockbox::Error::DefaultResponse {
                     status_code,
@@ -175,7 +194,7 @@ pub mod post {
         }
     }
     pub mod enable_lockbox {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -226,7 +245,7 @@ pub mod post {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| disable_lockbox::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable_lockbox::Error::DefaultResponse {
                     status_code,
@@ -236,7 +255,7 @@ pub mod post {
         }
     }
     pub mod disable_lockbox {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -260,12 +279,12 @@ pub mod post {
     }
 }
 pub mod requests {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         request_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LockboxRequestResponse, get::Error> {
+    ) -> std::result::Result<models::LockboxRequestResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.CustomerLockbox/requests/{}",
@@ -291,13 +310,13 @@ pub mod requests {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LockboxRequestResponse =
+                let rsp_value: models::LockboxRequestResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -307,7 +326,7 @@ pub mod requests {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -331,10 +350,10 @@ pub mod requests {
     }
     pub async fn update_status(
         operation_config: &crate::OperationConfig,
-        approval: &Approval,
+        approval: &models::Approval,
         subscription_id: &str,
         request_id: &str,
-    ) -> std::result::Result<Approval, update_status::Error> {
+    ) -> std::result::Result<models::Approval, update_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.CustomerLockbox/requests/{}/updateApproval",
@@ -364,13 +383,13 @@ pub mod requests {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Approval =
+                let rsp_value: models::Approval =
                     serde_json::from_slice(rsp_body).map_err(|source| update_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_status::Error::DefaultResponse {
                     status_code,
@@ -380,7 +399,7 @@ pub mod requests {
         }
     }
     pub mod update_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -406,7 +425,7 @@ pub mod requests {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<RequestListResult, list::Error> {
+    ) -> std::result::Result<models::RequestListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.CustomerLockbox/requests",
@@ -433,13 +452,13 @@ pub mod requests {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RequestListResult =
+                let rsp_value: models::RequestListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -449,7 +468,7 @@ pub mod requests {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

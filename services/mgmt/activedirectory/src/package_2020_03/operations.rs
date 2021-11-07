@@ -2,15 +2,44 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    PrivateLinkForAzureAd_Get(#[from] private_link_for_azure_ad::get::Error),
+    #[error(transparent)]
+    PrivateLinkForAzureAd_Create(#[from] private_link_for_azure_ad::create::Error),
+    #[error(transparent)]
+    PrivateLinkForAzureAd_Update(#[from] private_link_for_azure_ad::update::Error),
+    #[error(transparent)]
+    PrivateLinkForAzureAd_Delete(#[from] private_link_for_azure_ad::delete::Error),
+    #[error(transparent)]
+    PrivateLinkForAzureAd_ListBySubscription(#[from] private_link_for_azure_ad::list_by_subscription::Error),
+    #[error(transparent)]
+    PrivateLinkForAzureAd_List(#[from] private_link_for_azure_ad::list::Error),
+    #[error(transparent)]
+    PrivateLinkResources_ListByPrivateLinkPolicy(#[from] private_link_resources::list_by_private_link_policy::Error),
+    #[error(transparent)]
+    PrivateLinkResources_Get(#[from] private_link_resources::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_ListByPolicyName(#[from] private_endpoint_connections::list_by_policy_name::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Get(#[from] private_endpoint_connections::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Create(#[from] private_endpoint_connections::create::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Delete(#[from] private_endpoint_connections::delete::Error),
+}
 pub mod private_link_for_azure_ad {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         policy_name: &str,
-    ) -> std::result::Result<PrivateLinkPolicy, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}",
@@ -37,13 +66,13 @@ pub mod private_link_for_azure_ad {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkPolicy =
+                let rsp_value: models::PrivateLinkPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +82,7 @@ pub mod private_link_for_azure_ad {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,7 +109,7 @@ pub mod private_link_for_azure_ad {
         subscription_id: &str,
         resource_group_name: &str,
         policy_name: &str,
-        private_link_policy: &PrivateLinkPolicy,
+        private_link_policy: &models::PrivateLinkPolicy,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -109,19 +138,19 @@ pub mod private_link_for_azure_ad {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkPolicy =
+                let rsp_value: models::PrivateLinkPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkPolicy =
+                let rsp_value: models::PrivateLinkPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -131,11 +160,11 @@ pub mod private_link_for_azure_ad {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkPolicy),
-            Created201(PrivateLinkPolicy),
+            Ok200(models::PrivateLinkPolicy),
+            Created201(models::PrivateLinkPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -163,8 +192,8 @@ pub mod private_link_for_azure_ad {
         subscription_id: &str,
         resource_group_name: &str,
         policy_name: &str,
-        private_link_policy: Option<&PrivateLinkPolicyUpdateParameter>,
-    ) -> std::result::Result<PrivateLinkPolicy, update::Error> {
+        private_link_policy: Option<&models::PrivateLinkPolicyUpdateParameter>,
+    ) -> std::result::Result<models::PrivateLinkPolicy, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}",
@@ -196,13 +225,13 @@ pub mod private_link_for_azure_ad {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkPolicy =
+                let rsp_value: models::PrivateLinkPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -212,7 +241,7 @@ pub mod private_link_for_azure_ad {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -268,7 +297,7 @@ pub mod private_link_for_azure_ad {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -278,7 +307,7 @@ pub mod private_link_for_azure_ad {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -308,7 +337,7 @@ pub mod private_link_for_azure_ad {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkPolicyListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::PrivateLinkPolicyListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/microsoft.aadiam/privateLinkForAzureAd",
@@ -336,13 +365,13 @@ pub mod private_link_for_azure_ad {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -352,7 +381,7 @@ pub mod private_link_for_azure_ad {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -378,7 +407,7 @@ pub mod private_link_for_azure_ad {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<PrivateLinkPolicyListResult, list::Error> {
+    ) -> std::result::Result<models::PrivateLinkPolicyListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd",
@@ -404,13 +433,13 @@ pub mod private_link_for_azure_ad {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkPolicyListResult =
+                let rsp_value: models::PrivateLinkPolicyListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -420,7 +449,7 @@ pub mod private_link_for_azure_ad {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -444,13 +473,13 @@ pub mod private_link_for_azure_ad {
     }
 }
 pub mod private_link_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_private_link_policy(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         policy_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_private_link_policy::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_private_link_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}/privateLinkResources",
@@ -482,7 +511,7 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_private_link_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -496,7 +525,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_private_link_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -521,7 +550,7 @@ pub mod private_link_resources {
         resource_group_name: &str,
         policy_name: &str,
         group_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}/privateLinkResources/{}",
@@ -549,7 +578,7 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -563,7 +592,7 @@ pub mod private_link_resources {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -584,13 +613,13 @@ pub mod private_link_resources {
     }
 }
 pub mod private_endpoint_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_policy_name(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_policy_name::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_policy_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}/privateEndpointConnections",
@@ -620,13 +649,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_policy_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_policy_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_policy_name::Error::DefaultResponse {
                     status_code,
@@ -636,7 +665,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list_by_policy_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -664,7 +693,7 @@ pub mod private_endpoint_connections {
         policy_name: &str,
         private_endpoint_connection_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}/privateEndpointConnections/{}",
@@ -692,13 +721,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -708,7 +737,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -736,8 +765,8 @@ pub mod private_endpoint_connections {
         resource_group_name: &str,
         policy_name: &str,
         private_endpoint_connection_name: &str,
-        parameters: &PrivateEndpointConnection,
-    ) -> std::result::Result<PrivateEndpointConnection, create::Error> {
+        parameters: &models::PrivateEndpointConnection,
+    ) -> std::result::Result<models::PrivateEndpointConnection, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}/privateEndpointConnections/{}",
@@ -766,13 +795,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -782,7 +811,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -841,7 +870,7 @@ pub mod private_endpoint_connections {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -851,7 +880,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

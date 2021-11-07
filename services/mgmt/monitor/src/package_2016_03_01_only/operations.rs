@@ -2,16 +2,49 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    AlertRuleIncidents_Get(#[from] alert_rule_incidents::get::Error),
+    #[error(transparent)]
+    AlertRuleIncidents_ListByAlertRule(#[from] alert_rule_incidents::list_by_alert_rule::Error),
+    #[error(transparent)]
+    AlertRules_Get(#[from] alert_rules::get::Error),
+    #[error(transparent)]
+    AlertRules_CreateOrUpdate(#[from] alert_rules::create_or_update::Error),
+    #[error(transparent)]
+    AlertRules_Update(#[from] alert_rules::update::Error),
+    #[error(transparent)]
+    AlertRules_Delete(#[from] alert_rules::delete::Error),
+    #[error(transparent)]
+    AlertRules_ListByResourceGroup(#[from] alert_rules::list_by_resource_group::Error),
+    #[error(transparent)]
+    AlertRules_ListBySubscription(#[from] alert_rules::list_by_subscription::Error),
+    #[error(transparent)]
+    LogProfiles_Get(#[from] log_profiles::get::Error),
+    #[error(transparent)]
+    LogProfiles_CreateOrUpdate(#[from] log_profiles::create_or_update::Error),
+    #[error(transparent)]
+    LogProfiles_Update(#[from] log_profiles::update::Error),
+    #[error(transparent)]
+    LogProfiles_Delete(#[from] log_profiles::delete::Error),
+    #[error(transparent)]
+    LogProfiles_List(#[from] log_profiles::list::Error),
+    #[error(transparent)]
+    MetricDefinitions_List(#[from] metric_definitions::list::Error),
+}
 pub mod alert_rule_incidents {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         rule_name: &str,
         incident_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Incident, get::Error> {
+    ) -> std::result::Result<models::Incident, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules/{}/incidents/{}",
@@ -39,13 +72,13 @@ pub mod alert_rule_incidents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Incident =
+                let rsp_value: models::Incident =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -55,7 +88,7 @@ pub mod alert_rule_incidents {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -82,7 +115,7 @@ pub mod alert_rule_incidents {
         resource_group_name: &str,
         rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<IncidentListResult, list_by_alert_rule::Error> {
+    ) -> std::result::Result<models::IncidentListResult, list_by_alert_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules/{}/incidents",
@@ -112,7 +145,7 @@ pub mod alert_rule_incidents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IncidentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_alert_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -126,7 +159,7 @@ pub mod alert_rule_incidents {
         }
     }
     pub mod list_by_alert_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -147,13 +180,13 @@ pub mod alert_rule_incidents {
     }
 }
 pub mod alert_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AlertRuleResource, get::Error> {
+    ) -> std::result::Result<models::AlertRuleResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
@@ -180,13 +213,13 @@ pub mod alert_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertRuleResource =
+                let rsp_value: models::AlertRuleResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -196,7 +229,7 @@ pub mod alert_rules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -222,7 +255,7 @@ pub mod alert_rules {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         rule_name: &str,
-        parameters: &AlertRuleResource,
+        parameters: &models::AlertRuleResource,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -255,19 +288,19 @@ pub mod alert_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AlertRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AlertRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -277,11 +310,11 @@ pub mod alert_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AlertRuleResource),
-            Created201(AlertRuleResource),
+            Ok200(models::AlertRuleResource),
+            Created201(models::AlertRuleResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -309,7 +342,7 @@ pub mod alert_rules {
         subscription_id: &str,
         resource_group_name: &str,
         rule_name: &str,
-        alert_rules_resource: &AlertRuleResourcePatch,
+        alert_rules_resource: &models::AlertRuleResourcePatch,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -338,19 +371,19 @@ pub mod alert_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertRuleResource =
+                let rsp_value: models::AlertRuleResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertRuleResource =
+                let rsp_value: models::AlertRuleResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -360,11 +393,11 @@ pub mod alert_rules {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AlertRuleResource),
-            Created201(AlertRuleResource),
+            Ok200(models::AlertRuleResource),
+            Created201(models::AlertRuleResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -421,7 +454,7 @@ pub mod alert_rules {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -431,7 +464,7 @@ pub mod alert_rules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -462,7 +495,7 @@ pub mod alert_rules {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AlertRuleResourceCollection, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AlertRuleResourceCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules",
@@ -493,13 +526,13 @@ pub mod alert_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertRuleResourceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AlertRuleResourceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -509,7 +542,7 @@ pub mod alert_rules {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -534,7 +567,7 @@ pub mod alert_rules {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AlertRuleResourceCollection, list_by_subscription::Error> {
+    ) -> std::result::Result<models::AlertRuleResourceCollection, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Insights/alertrules",
@@ -562,13 +595,13 @@ pub mod alert_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertRuleResourceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AlertRuleResourceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -578,7 +611,7 @@ pub mod alert_rules {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -602,12 +635,12 @@ pub mod alert_rules {
     }
 }
 pub mod log_profiles {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         log_profile_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LogProfileResource, get::Error> {
+    ) -> std::result::Result<models::LogProfileResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
@@ -633,13 +666,13 @@ pub mod log_profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogProfileResource =
+                let rsp_value: models::LogProfileResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -649,7 +682,7 @@ pub mod log_profiles {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -674,9 +707,9 @@ pub mod log_profiles {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         log_profile_name: &str,
-        parameters: &LogProfileResource,
+        parameters: &models::LogProfileResource,
         subscription_id: &str,
-    ) -> std::result::Result<LogProfileResource, create_or_update::Error> {
+    ) -> std::result::Result<models::LogProfileResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
@@ -706,7 +739,7 @@ pub mod log_profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogProfileResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LogProfileResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -720,7 +753,7 @@ pub mod log_profiles {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -743,8 +776,8 @@ pub mod log_profiles {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         log_profile_name: &str,
-        log_profiles_resource: &LogProfileResourcePatch,
-    ) -> std::result::Result<LogProfileResource, update::Error> {
+        log_profiles_resource: &models::LogProfileResourcePatch,
+    ) -> std::result::Result<models::LogProfileResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
@@ -771,13 +804,13 @@ pub mod log_profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogProfileResource =
+                let rsp_value: models::LogProfileResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -787,7 +820,7 @@ pub mod log_profiles {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -848,7 +881,7 @@ pub mod log_profiles {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -870,7 +903,7 @@ pub mod log_profiles {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<LogProfileCollection, list::Error> {
+    ) -> std::result::Result<models::LogProfileCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles",
@@ -895,7 +928,7 @@ pub mod log_profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogProfileCollection =
+                let rsp_value: models::LogProfileCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -909,7 +942,7 @@ pub mod log_profiles {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -930,12 +963,12 @@ pub mod log_profiles {
     }
 }
 pub mod metric_definitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<MetricDefinitionCollection, list::Error> {
+    ) -> std::result::Result<models::MetricDefinitionCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/microsoft.insights/metricDefinitions",
@@ -963,13 +996,13 @@ pub mod metric_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricDefinitionCollection =
+                let rsp_value: models::MetricDefinitionCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -979,7 +1012,7 @@ pub mod metric_definitions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -6,12 +6,12 @@
 #[cfg(feature = "package-0.1-preview-ledger")]
 pub mod package_0_1_preview_ledger;
 #[cfg(all(feature = "package-0.1-preview-ledger", not(feature = "no-default-version")))]
-pub use package_0_1_preview_ledger::{models, operations};
+pub use package_0_1_preview_ledger::{models, operations, operations::Error};
 #[cfg(feature = "package-0.1-preview-identity")]
 pub mod package_0_1_preview_identity;
 use azure_core::setters;
 #[cfg(all(feature = "package-0.1-preview-identity", not(feature = "no-default-version")))]
-pub use package_0_1_preview_identity::{models, operations};
+pub use package_0_1_preview_identity::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

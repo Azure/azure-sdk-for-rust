@@ -2,14 +2,41 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Pipeline_List(#[from] pipeline::list::Error),
+    #[error(transparent)]
+    Pipeline_Get(#[from] pipeline::get::Error),
+    #[error(transparent)]
+    Recurrence_List(#[from] recurrence::list::Error),
+    #[error(transparent)]
+    Recurrence_Get(#[from] recurrence::get::Error),
+    #[error(transparent)]
+    Job_GetStatistics(#[from] job::get_statistics::Error),
+    #[error(transparent)]
+    Job_GetDebugDataPath(#[from] job::get_debug_data_path::Error),
+    #[error(transparent)]
+    Job_Build(#[from] job::build::Error),
+    #[error(transparent)]
+    Job_Cancel(#[from] job::cancel::Error),
+    #[error(transparent)]
+    Job_Get(#[from] job::get::Error),
+    #[error(transparent)]
+    Job_Create(#[from] job::create::Error),
+    #[error(transparent)]
+    Job_List(#[from] job::list::Error),
+}
 pub mod pipeline {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         start_date_time: Option<&str>,
         end_date_time: Option<&str>,
-    ) -> std::result::Result<JobPipelineInformationListResult, list::Error> {
+    ) -> std::result::Result<models::JobPipelineInformationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/pipelines", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -36,7 +63,7 @@ pub mod pipeline {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobPipelineInformationListResult =
+                let rsp_value: models::JobPipelineInformationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -50,7 +77,7 @@ pub mod pipeline {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -74,7 +101,7 @@ pub mod pipeline {
         pipeline_identity: &str,
         start_date_time: Option<&str>,
         end_date_time: Option<&str>,
-    ) -> std::result::Result<JobPipelineInformation, get::Error> {
+    ) -> std::result::Result<models::JobPipelineInformation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/pipelines/{}", operation_config.base_path(), pipeline_identity);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -101,7 +128,7 @@ pub mod pipeline {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobPipelineInformation =
+                let rsp_value: models::JobPipelineInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -115,7 +142,7 @@ pub mod pipeline {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -136,12 +163,12 @@ pub mod pipeline {
     }
 }
 pub mod recurrence {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         start_date_time: Option<&str>,
         end_date_time: Option<&str>,
-    ) -> std::result::Result<JobRecurrenceInformationListResult, list::Error> {
+    ) -> std::result::Result<models::JobRecurrenceInformationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/recurrences", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -168,7 +195,7 @@ pub mod recurrence {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobRecurrenceInformationListResult =
+                let rsp_value: models::JobRecurrenceInformationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -182,7 +209,7 @@ pub mod recurrence {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -206,7 +233,7 @@ pub mod recurrence {
         recurrence_identity: &str,
         start_date_time: Option<&str>,
         end_date_time: Option<&str>,
-    ) -> std::result::Result<JobRecurrenceInformation, get::Error> {
+    ) -> std::result::Result<models::JobRecurrenceInformation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/recurrences/{}", operation_config.base_path(), recurrence_identity);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -233,7 +260,7 @@ pub mod recurrence {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobRecurrenceInformation =
+                let rsp_value: models::JobRecurrenceInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -247,7 +274,7 @@ pub mod recurrence {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -268,11 +295,11 @@ pub mod recurrence {
     }
 }
 pub mod job {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_statistics(
         operation_config: &crate::OperationConfig,
         job_identity: &str,
-    ) -> std::result::Result<JobStatistics, get_statistics::Error> {
+    ) -> std::result::Result<models::JobStatistics, get_statistics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/Jobs/{}/GetStatistics", operation_config.base_path(), job_identity);
         let mut url = url::Url::parse(url_str).map_err(get_statistics::Error::ParseUrlError)?;
@@ -296,7 +323,7 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobStatistics =
+                let rsp_value: models::JobStatistics =
                     serde_json::from_slice(rsp_body).map_err(|source| get_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -310,7 +337,7 @@ pub mod job {
         }
     }
     pub mod get_statistics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -332,7 +359,7 @@ pub mod job {
     pub async fn get_debug_data_path(
         operation_config: &crate::OperationConfig,
         job_identity: &str,
-    ) -> std::result::Result<JobDataPath, get_debug_data_path::Error> {
+    ) -> std::result::Result<models::JobDataPath, get_debug_data_path::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/Jobs/{}/GetDebugDataPath", operation_config.base_path(), job_identity);
         let mut url = url::Url::parse(url_str).map_err(get_debug_data_path::Error::ParseUrlError)?;
@@ -356,7 +383,7 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDataPath = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobDataPath = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_debug_data_path::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -370,7 +397,7 @@ pub mod job {
         }
     }
     pub mod get_debug_data_path {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -391,8 +418,8 @@ pub mod job {
     }
     pub async fn build(
         operation_config: &crate::OperationConfig,
-        parameters: &BuildJobParameters,
-    ) -> std::result::Result<JobInformation, build::Error> {
+        parameters: &models::BuildJobParameters,
+    ) -> std::result::Result<models::JobInformation, build::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/BuildJob", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(build::Error::ParseUrlError)?;
@@ -414,7 +441,7 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobInformation =
+                let rsp_value: models::JobInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| build::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -428,7 +455,7 @@ pub mod job {
         }
     }
     pub mod build {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -478,7 +505,7 @@ pub mod job {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -497,7 +524,10 @@ pub mod job {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, job_identity: &str) -> std::result::Result<JobInformation, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        job_identity: &str,
+    ) -> std::result::Result<models::JobInformation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/Jobs/{}", operation_config.base_path(), job_identity);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -518,7 +548,7 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobInformation =
+                let rsp_value: models::JobInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -532,7 +562,7 @@ pub mod job {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -554,8 +584,8 @@ pub mod job {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         job_identity: &str,
-        parameters: &CreateJobParameters,
-    ) -> std::result::Result<JobInformation, create::Error> {
+        parameters: &models::CreateJobParameters,
+    ) -> std::result::Result<models::JobInformation, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/Jobs/{}", operation_config.base_path(), job_identity);
         let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
@@ -577,7 +607,7 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobInformation =
+                let rsp_value: models::JobInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -591,7 +621,7 @@ pub mod job {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -618,7 +648,7 @@ pub mod job {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<JobInfoListResult, list::Error> {
+    ) -> std::result::Result<models::JobInfoListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/Jobs", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -657,7 +687,7 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobInfoListResult =
+                let rsp_value: models::JobInfoListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -671,7 +701,7 @@ pub mod job {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

@@ -2,10 +2,115 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Factories_List(#[from] factories::list::Error),
+    #[error(transparent)]
+    Factories_ConfigureFactoryRepo(#[from] factories::configure_factory_repo::Error),
+    #[error(transparent)]
+    Factories_ListByResourceGroup(#[from] factories::list_by_resource_group::Error),
+    #[error(transparent)]
+    Factories_Get(#[from] factories::get::Error),
+    #[error(transparent)]
+    Factories_CreateOrUpdate(#[from] factories::create_or_update::Error),
+    #[error(transparent)]
+    Factories_Update(#[from] factories::update::Error),
+    #[error(transparent)]
+    Factories_Delete(#[from] factories::delete::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_ListByFactory(#[from] integration_runtimes::list_by_factory::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_Get(#[from] integration_runtimes::get::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_CreateOrUpdate(#[from] integration_runtimes::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_Update(#[from] integration_runtimes::update::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_Delete(#[from] integration_runtimes::delete::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_GetStatus(#[from] integration_runtimes::get_status::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_GetConnectionInfo(#[from] integration_runtimes::get_connection_info::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_RegenerateAuthKey(#[from] integration_runtimes::regenerate_auth_key::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_ListAuthKeys(#[from] integration_runtimes::list_auth_keys::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_Start(#[from] integration_runtimes::start::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_Stop(#[from] integration_runtimes::stop::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_RemoveNode(#[from] integration_runtimes::remove_node::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_SyncCredentials(#[from] integration_runtimes::sync_credentials::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_GetMonitoringData(#[from] integration_runtimes::get_monitoring_data::Error),
+    #[error(transparent)]
+    IntegrationRuntimes_Upgrade(#[from] integration_runtimes::upgrade::Error),
+    #[error(transparent)]
+    IntegrationRuntimeNodes_Update(#[from] integration_runtime_nodes::update::Error),
+    #[error(transparent)]
+    IntegrationRuntimeNodes_Delete(#[from] integration_runtime_nodes::delete::Error),
+    #[error(transparent)]
+    IntegrationRuntimeNodes_GetIpAddress(#[from] integration_runtime_nodes::get_ip_address::Error),
+    #[error(transparent)]
+    LinkedServices_ListByFactory(#[from] linked_services::list_by_factory::Error),
+    #[error(transparent)]
+    LinkedServices_Get(#[from] linked_services::get::Error),
+    #[error(transparent)]
+    LinkedServices_CreateOrUpdate(#[from] linked_services::create_or_update::Error),
+    #[error(transparent)]
+    LinkedServices_Delete(#[from] linked_services::delete::Error),
+    #[error(transparent)]
+    Datasets_ListByFactory(#[from] datasets::list_by_factory::Error),
+    #[error(transparent)]
+    Datasets_Get(#[from] datasets::get::Error),
+    #[error(transparent)]
+    Datasets_CreateOrUpdate(#[from] datasets::create_or_update::Error),
+    #[error(transparent)]
+    Datasets_Delete(#[from] datasets::delete::Error),
+    #[error(transparent)]
+    Pipelines_ListByFactory(#[from] pipelines::list_by_factory::Error),
+    #[error(transparent)]
+    Pipelines_Get(#[from] pipelines::get::Error),
+    #[error(transparent)]
+    Pipelines_CreateOrUpdate(#[from] pipelines::create_or_update::Error),
+    #[error(transparent)]
+    Pipelines_Delete(#[from] pipelines::delete::Error),
+    #[error(transparent)]
+    Pipelines_CreateRun(#[from] pipelines::create_run::Error),
+    #[error(transparent)]
+    PipelineRuns_QueryByFactory(#[from] pipeline_runs::query_by_factory::Error),
+    #[error(transparent)]
+    PipelineRuns_Get(#[from] pipeline_runs::get::Error),
+    #[error(transparent)]
+    ActivityRuns_ListByPipelineRun(#[from] activity_runs::list_by_pipeline_run::Error),
+    #[error(transparent)]
+    Factories_CancelPipelineRun(#[from] factories::cancel_pipeline_run::Error),
+    #[error(transparent)]
+    Triggers_ListByFactory(#[from] triggers::list_by_factory::Error),
+    #[error(transparent)]
+    Triggers_Get(#[from] triggers::get::Error),
+    #[error(transparent)]
+    Triggers_CreateOrUpdate(#[from] triggers::create_or_update::Error),
+    #[error(transparent)]
+    Triggers_Delete(#[from] triggers::delete::Error),
+    #[error(transparent)]
+    Triggers_Start(#[from] triggers::start::Error),
+    #[error(transparent)]
+    Triggers_Stop(#[from] triggers::stop::Error),
+    #[error(transparent)]
+    Triggers_ListRuns(#[from] triggers::list_runs::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResponse, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataFactory/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +131,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResponse =
+                let rsp_value: models::OperationListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +147,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,11 +171,11 @@ pub mod operations {
     }
 }
 pub mod factories {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<FactoryListResponse, list::Error> {
+    ) -> std::result::Result<models::FactoryListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataFactory/factories",
@@ -95,13 +200,13 @@ pub mod factories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FactoryListResponse =
+                let rsp_value: models::FactoryListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -111,7 +216,7 @@ pub mod factories {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -137,8 +242,8 @@ pub mod factories {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location_id: &str,
-        factory_repo_update: &FactoryRepoUpdate,
-    ) -> std::result::Result<Factory, configure_factory_repo::Error> {
+        factory_repo_update: &models::FactoryRepoUpdate,
+    ) -> std::result::Result<models::Factory, configure_factory_repo::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataFactory/locations/{}/configureFactoryRepo",
@@ -170,13 +275,13 @@ pub mod factories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Factory = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Factory = serde_json::from_slice(rsp_body)
                     .map_err(|source| configure_factory_repo::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| configure_factory_repo::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(configure_factory_repo::Error::DefaultResponse {
                     status_code,
@@ -186,7 +291,7 @@ pub mod factories {
         }
     }
     pub mod configure_factory_repo {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -212,7 +317,7 @@ pub mod factories {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<FactoryListResponse, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::FactoryListResponse, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories",
@@ -243,13 +348,13 @@ pub mod factories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FactoryListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FactoryListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -259,7 +364,7 @@ pub mod factories {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -286,7 +391,7 @@ pub mod factories {
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-    ) -> std::result::Result<Factory, get::Error> {
+    ) -> std::result::Result<models::Factory, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
@@ -313,13 +418,13 @@ pub mod factories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Factory =
+                let rsp_value: models::Factory =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -329,7 +434,7 @@ pub mod factories {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -356,8 +461,8 @@ pub mod factories {
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-        factory: &Factory,
-    ) -> std::result::Result<Factory, create_or_update::Error> {
+        factory: &models::Factory,
+    ) -> std::result::Result<models::Factory, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
@@ -388,13 +493,13 @@ pub mod factories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Factory = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Factory = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -404,7 +509,7 @@ pub mod factories {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -431,8 +536,8 @@ pub mod factories {
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-        factory_update_parameters: &FactoryUpdateParameters,
-    ) -> std::result::Result<Factory, update::Error> {
+        factory_update_parameters: &models::FactoryUpdateParameters,
+    ) -> std::result::Result<models::Factory, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}",
@@ -460,13 +565,13 @@ pub mod factories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Factory =
+                let rsp_value: models::Factory =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -476,7 +581,7 @@ pub mod factories {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -532,7 +637,7 @@ pub mod factories {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -542,7 +647,7 @@ pub mod factories {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -608,7 +713,7 @@ pub mod factories {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_pipeline_run::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel_pipeline_run::Error::DefaultResponse {
                     status_code,
@@ -618,7 +723,7 @@ pub mod factories {
         }
     }
     pub mod cancel_pipeline_run {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -642,13 +747,13 @@ pub mod factories {
     }
 }
 pub mod integration_runtimes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-    ) -> std::result::Result<IntegrationRuntimeListResponse, list_by_factory::Error> {
+    ) -> std::result::Result<models::IntegrationRuntimeListResponse, list_by_factory::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes",
@@ -678,13 +783,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationRuntimeListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_factory::Error::DefaultResponse {
                     status_code,
@@ -694,7 +799,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod list_by_factory {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -722,7 +827,7 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
         integration_runtime_name: &str,
-    ) -> std::result::Result<IntegrationRuntimeResource, get::Error> {
+    ) -> std::result::Result<models::IntegrationRuntimeResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
@@ -750,13 +855,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeResource =
+                let rsp_value: models::IntegrationRuntimeResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -766,7 +871,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -795,8 +900,8 @@ pub mod integration_runtimes {
         factory_name: &str,
         integration_runtime_name: &str,
         if_match: Option<&str>,
-        integration_runtime: &IntegrationRuntimeResource,
-    ) -> std::result::Result<IntegrationRuntimeResource, create_or_update::Error> {
+        integration_runtime: &models::IntegrationRuntimeResource,
+    ) -> std::result::Result<models::IntegrationRuntimeResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
@@ -831,13 +936,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationRuntimeResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -847,7 +952,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -875,8 +980,8 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
         integration_runtime_name: &str,
-        update_integration_runtime_request: &UpdateIntegrationRuntimeRequest,
-    ) -> std::result::Result<IntegrationRuntimeStatusResponse, update::Error> {
+        update_integration_runtime_request: &models::UpdateIntegrationRuntimeRequest,
+    ) -> std::result::Result<models::IntegrationRuntimeStatusResponse, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}",
@@ -905,13 +1010,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeStatusResponse =
+                let rsp_value: models::IntegrationRuntimeStatusResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -921,7 +1026,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -979,7 +1084,7 @@ pub mod integration_runtimes {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -989,7 +1094,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1022,7 +1127,7 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
         integration_runtime_name: &str,
-    ) -> std::result::Result<IntegrationRuntimeStatusResponse, get_status::Error> {
+    ) -> std::result::Result<models::IntegrationRuntimeStatusResponse, get_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/getStatus",
@@ -1054,13 +1159,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeStatusResponse =
+                let rsp_value: models::IntegrationRuntimeStatusResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_status::Error::DefaultResponse {
                     status_code,
@@ -1070,7 +1175,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod get_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1098,7 +1203,7 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
         integration_runtime_name: &str,
-    ) -> std::result::Result<IntegrationRuntimeConnectionInfo, get_connection_info::Error> {
+    ) -> std::result::Result<models::IntegrationRuntimeConnectionInfo, get_connection_info::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/getConnectionInfo",
@@ -1130,13 +1235,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeConnectionInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationRuntimeConnectionInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_connection_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_connection_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_connection_info::Error::DefaultResponse {
                     status_code,
@@ -1146,7 +1251,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod get_connection_info {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1174,8 +1279,8 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
         integration_runtime_name: &str,
-        regenerate_key_parameters: &IntegrationRuntimeRegenerateKeyParameters,
-    ) -> std::result::Result<IntegrationRuntimeAuthKeys, regenerate_auth_key::Error> {
+        regenerate_key_parameters: &models::IntegrationRuntimeRegenerateKeyParameters,
+    ) -> std::result::Result<models::IntegrationRuntimeAuthKeys, regenerate_auth_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/regenerateAuthKey",
@@ -1207,13 +1312,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeAuthKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationRuntimeAuthKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_auth_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_auth_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_auth_key::Error::DefaultResponse {
                     status_code,
@@ -1223,7 +1328,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod regenerate_auth_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1251,7 +1356,7 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
         integration_runtime_name: &str,
-    ) -> std::result::Result<IntegrationRuntimeAuthKeys, list_auth_keys::Error> {
+    ) -> std::result::Result<models::IntegrationRuntimeAuthKeys, list_auth_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/listAuthKeys",
@@ -1283,13 +1388,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeAuthKeys =
+                let rsp_value: models::IntegrationRuntimeAuthKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_auth_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_auth_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_auth_keys::Error::DefaultResponse {
                     status_code,
@@ -1299,7 +1404,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod list_auth_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1356,14 +1461,14 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeStatusResponse =
+                let rsp_value: models::IntegrationRuntimeStatusResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(start::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start::Error::DefaultResponse {
                     status_code,
@@ -1373,10 +1478,10 @@ pub mod integration_runtimes {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IntegrationRuntimeStatusResponse),
+            Ok200(models::IntegrationRuntimeStatusResponse),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1437,7 +1542,7 @@ pub mod integration_runtimes {
             http::StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop::Error::DefaultResponse {
                     status_code,
@@ -1447,7 +1552,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod stop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1480,7 +1585,7 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
         integration_runtime_name: &str,
-        remove_node_parameters: &IntegrationRuntimeRemoveNodeRequest,
+        remove_node_parameters: &models::IntegrationRuntimeRemoveNodeRequest,
     ) -> std::result::Result<remove_node::Response, remove_node::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1515,7 +1620,7 @@ pub mod integration_runtimes {
             http::StatusCode::NO_CONTENT => Ok(remove_node::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| remove_node::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(remove_node::Error::DefaultResponse {
                     status_code,
@@ -1525,7 +1630,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod remove_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1591,7 +1696,7 @@ pub mod integration_runtimes {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| sync_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(sync_credentials::Error::DefaultResponse {
                     status_code,
@@ -1601,7 +1706,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod sync_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1629,7 +1734,7 @@ pub mod integration_runtimes {
         resource_group_name: &str,
         factory_name: &str,
         integration_runtime_name: &str,
-    ) -> std::result::Result<IntegrationRuntimeMonitoringData, get_monitoring_data::Error> {
+    ) -> std::result::Result<models::IntegrationRuntimeMonitoringData, get_monitoring_data::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/monitoringData",
@@ -1661,13 +1766,13 @@ pub mod integration_runtimes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeMonitoringData = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationRuntimeMonitoringData = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_monitoring_data::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_monitoring_data::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_monitoring_data::Error::DefaultResponse {
                     status_code,
@@ -1677,7 +1782,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod get_monitoring_data {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1738,7 +1843,7 @@ pub mod integration_runtimes {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| upgrade::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(upgrade::Error::DefaultResponse {
                     status_code,
@@ -1748,7 +1853,7 @@ pub mod integration_runtimes {
         }
     }
     pub mod upgrade {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1772,7 +1877,7 @@ pub mod integration_runtimes {
     }
 }
 pub mod integration_runtime_nodes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1780,8 +1885,8 @@ pub mod integration_runtime_nodes {
         factory_name: &str,
         integration_runtime_name: &str,
         node_name: &str,
-        update_integration_runtime_node_request: &UpdateIntegrationRuntimeNodeRequest,
-    ) -> std::result::Result<SelfHostedIntegrationRuntimeNode, update::Error> {
+        update_integration_runtime_node_request: &models::UpdateIntegrationRuntimeNodeRequest,
+    ) -> std::result::Result<models::SelfHostedIntegrationRuntimeNode, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}",
@@ -1811,13 +1916,13 @@ pub mod integration_runtime_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SelfHostedIntegrationRuntimeNode =
+                let rsp_value: models::SelfHostedIntegrationRuntimeNode =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1827,7 +1932,7 @@ pub mod integration_runtime_nodes {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1887,7 +1992,7 @@ pub mod integration_runtime_nodes {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1897,7 +2002,7 @@ pub mod integration_runtime_nodes {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1931,7 +2036,7 @@ pub mod integration_runtime_nodes {
         factory_name: &str,
         integration_runtime_name: &str,
         node_name: &str,
-    ) -> std::result::Result<IntegrationRuntimeNodeIpAddress, get_ip_address::Error> {
+    ) -> std::result::Result<models::IntegrationRuntimeNodeIpAddress, get_ip_address::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/integrationRuntimes/{}/nodes/{}/ipAddress",
@@ -1964,13 +2069,13 @@ pub mod integration_runtime_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationRuntimeNodeIpAddress =
+                let rsp_value: models::IntegrationRuntimeNodeIpAddress =
                     serde_json::from_slice(rsp_body).map_err(|source| get_ip_address::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_ip_address::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_ip_address::Error::DefaultResponse {
                     status_code,
@@ -1980,7 +2085,7 @@ pub mod integration_runtime_nodes {
         }
     }
     pub mod get_ip_address {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2004,13 +2109,13 @@ pub mod integration_runtime_nodes {
     }
 }
 pub mod linked_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-    ) -> std::result::Result<LinkedServiceListResponse, list_by_factory::Error> {
+    ) -> std::result::Result<models::LinkedServiceListResponse, list_by_factory::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices",
@@ -2040,13 +2145,13 @@ pub mod linked_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LinkedServiceListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LinkedServiceListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_factory::Error::DefaultResponse {
                     status_code,
@@ -2056,7 +2161,7 @@ pub mod linked_services {
         }
     }
     pub mod list_by_factory {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2084,7 +2189,7 @@ pub mod linked_services {
         resource_group_name: &str,
         factory_name: &str,
         linked_service_name: &str,
-    ) -> std::result::Result<LinkedServiceResource, get::Error> {
+    ) -> std::result::Result<models::LinkedServiceResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices/{}",
@@ -2112,13 +2217,13 @@ pub mod linked_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LinkedServiceResource =
+                let rsp_value: models::LinkedServiceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2128,7 +2233,7 @@ pub mod linked_services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2157,8 +2262,8 @@ pub mod linked_services {
         factory_name: &str,
         linked_service_name: &str,
         if_match: Option<&str>,
-        linked_service: &LinkedServiceResource,
-    ) -> std::result::Result<LinkedServiceResource, create_or_update::Error> {
+        linked_service: &models::LinkedServiceResource,
+    ) -> std::result::Result<models::LinkedServiceResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/linkedservices/{}",
@@ -2193,13 +2298,13 @@ pub mod linked_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LinkedServiceResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LinkedServiceResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2209,7 +2314,7 @@ pub mod linked_services {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2267,7 +2372,7 @@ pub mod linked_services {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2277,7 +2382,7 @@ pub mod linked_services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2306,13 +2411,13 @@ pub mod linked_services {
     }
 }
 pub mod datasets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-    ) -> std::result::Result<DatasetListResponse, list_by_factory::Error> {
+    ) -> std::result::Result<models::DatasetListResponse, list_by_factory::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets",
@@ -2342,13 +2447,13 @@ pub mod datasets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatasetListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatasetListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_factory::Error::DefaultResponse {
                     status_code,
@@ -2358,7 +2463,7 @@ pub mod datasets {
         }
     }
     pub mod list_by_factory {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2386,7 +2491,7 @@ pub mod datasets {
         resource_group_name: &str,
         factory_name: &str,
         dataset_name: &str,
-    ) -> std::result::Result<DatasetResource, get::Error> {
+    ) -> std::result::Result<models::DatasetResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets/{}",
@@ -2414,13 +2519,13 @@ pub mod datasets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatasetResource =
+                let rsp_value: models::DatasetResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2430,7 +2535,7 @@ pub mod datasets {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2459,8 +2564,8 @@ pub mod datasets {
         factory_name: &str,
         dataset_name: &str,
         if_match: Option<&str>,
-        dataset: &DatasetResource,
-    ) -> std::result::Result<DatasetResource, create_or_update::Error> {
+        dataset: &models::DatasetResource,
+    ) -> std::result::Result<models::DatasetResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/datasets/{}",
@@ -2495,13 +2600,13 @@ pub mod datasets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatasetResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatasetResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2511,7 +2616,7 @@ pub mod datasets {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2569,7 +2674,7 @@ pub mod datasets {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2579,7 +2684,7 @@ pub mod datasets {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2608,13 +2713,13 @@ pub mod datasets {
     }
 }
 pub mod pipelines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-    ) -> std::result::Result<PipelineListResponse, list_by_factory::Error> {
+    ) -> std::result::Result<models::PipelineListResponse, list_by_factory::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines",
@@ -2644,13 +2749,13 @@ pub mod pipelines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PipelineListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PipelineListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_factory::Error::DefaultResponse {
                     status_code,
@@ -2660,7 +2765,7 @@ pub mod pipelines {
         }
     }
     pub mod list_by_factory {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2688,7 +2793,7 @@ pub mod pipelines {
         resource_group_name: &str,
         factory_name: &str,
         pipeline_name: &str,
-    ) -> std::result::Result<PipelineResource, get::Error> {
+    ) -> std::result::Result<models::PipelineResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}",
@@ -2716,13 +2821,13 @@ pub mod pipelines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PipelineResource =
+                let rsp_value: models::PipelineResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2732,7 +2837,7 @@ pub mod pipelines {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2761,8 +2866,8 @@ pub mod pipelines {
         factory_name: &str,
         pipeline_name: &str,
         if_match: Option<&str>,
-        pipeline: &PipelineResource,
-    ) -> std::result::Result<PipelineResource, create_or_update::Error> {
+        pipeline: &models::PipelineResource,
+    ) -> std::result::Result<models::PipelineResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}",
@@ -2797,13 +2902,13 @@ pub mod pipelines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PipelineResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PipelineResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2813,7 +2918,7 @@ pub mod pipelines {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2871,7 +2976,7 @@ pub mod pipelines {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2881,7 +2986,7 @@ pub mod pipelines {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2914,8 +3019,8 @@ pub mod pipelines {
         resource_group_name: &str,
         factory_name: &str,
         pipeline_name: &str,
-        parameters: Option<&ParameterValueSpecification>,
-    ) -> std::result::Result<CreateRunResponse, create_run::Error> {
+        parameters: Option<&models::ParameterValueSpecification>,
+    ) -> std::result::Result<models::CreateRunResponse, create_run::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelines/{}/createRun",
@@ -2951,13 +3056,13 @@ pub mod pipelines {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CreateRunResponse =
+                let rsp_value: models::CreateRunResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create_run::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create_run::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_run::Error::DefaultResponse {
                     status_code,
@@ -2967,7 +3072,7 @@ pub mod pipelines {
         }
     }
     pub mod create_run {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2991,14 +3096,14 @@ pub mod pipelines {
     }
 }
 pub mod pipeline_runs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn query_by_factory(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-        filter_parameters: &PipelineRunFilterParameters,
-    ) -> std::result::Result<PipelineRunQueryResponse, query_by_factory::Error> {
+        filter_parameters: &models::PipelineRunFilterParameters,
+    ) -> std::result::Result<models::PipelineRunQueryResponse, query_by_factory::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns",
@@ -3029,13 +3134,13 @@ pub mod pipeline_runs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PipelineRunQueryResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PipelineRunQueryResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| query_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| query_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(query_by_factory::Error::DefaultResponse {
                     status_code,
@@ -3045,7 +3150,7 @@ pub mod pipeline_runs {
         }
     }
     pub mod query_by_factory {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3073,7 +3178,7 @@ pub mod pipeline_runs {
         resource_group_name: &str,
         factory_name: &str,
         run_id: &str,
-    ) -> std::result::Result<PipelineRun, get::Error> {
+    ) -> std::result::Result<models::PipelineRun, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns/{}",
@@ -3101,13 +3206,13 @@ pub mod pipeline_runs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PipelineRun =
+                let rsp_value: models::PipelineRun =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3117,7 +3222,7 @@ pub mod pipeline_runs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3141,7 +3246,7 @@ pub mod pipeline_runs {
     }
 }
 pub mod activity_runs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_pipeline_run(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3153,7 +3258,7 @@ pub mod activity_runs {
         status: Option<&str>,
         activity_name: Option<&str>,
         linked_service_name: Option<&str>,
-    ) -> std::result::Result<ActivityRunsListResponse, list_by_pipeline_run::Error> {
+    ) -> std::result::Result<models::ActivityRunsListResponse, list_by_pipeline_run::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/pipelineruns/{}/activityruns",
@@ -3195,13 +3300,13 @@ pub mod activity_runs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ActivityRunsListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ActivityRunsListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_pipeline_run::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_pipeline_run::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_pipeline_run::Error::DefaultResponse {
                     status_code,
@@ -3211,7 +3316,7 @@ pub mod activity_runs {
         }
     }
     pub mod list_by_pipeline_run {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3235,13 +3340,13 @@ pub mod activity_runs {
     }
 }
 pub mod triggers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_factory(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         factory_name: &str,
-    ) -> std::result::Result<TriggerListResponse, list_by_factory::Error> {
+    ) -> std::result::Result<models::TriggerListResponse, list_by_factory::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers",
@@ -3271,13 +3376,13 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggerListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggerListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_factory::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_factory::Error::DefaultResponse {
                     status_code,
@@ -3287,7 +3392,7 @@ pub mod triggers {
         }
     }
     pub mod list_by_factory {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3315,7 +3420,7 @@ pub mod triggers {
         resource_group_name: &str,
         factory_name: &str,
         trigger_name: &str,
-    ) -> std::result::Result<TriggerResource, get::Error> {
+    ) -> std::result::Result<models::TriggerResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}",
@@ -3343,13 +3448,13 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggerResource =
+                let rsp_value: models::TriggerResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3359,7 +3464,7 @@ pub mod triggers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3388,8 +3493,8 @@ pub mod triggers {
         factory_name: &str,
         trigger_name: &str,
         if_match: Option<&str>,
-        trigger: &TriggerResource,
-    ) -> std::result::Result<TriggerResource, create_or_update::Error> {
+        trigger: &models::TriggerResource,
+    ) -> std::result::Result<models::TriggerResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}",
@@ -3424,13 +3529,13 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggerResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggerResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -3440,7 +3545,7 @@ pub mod triggers {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3498,7 +3603,7 @@ pub mod triggers {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3508,7 +3613,7 @@ pub mod triggers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3571,7 +3676,7 @@ pub mod triggers {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start::Error::DefaultResponse {
                     status_code,
@@ -3581,7 +3686,7 @@ pub mod triggers {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3639,7 +3744,7 @@ pub mod triggers {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop::Error::DefaultResponse {
                     status_code,
@@ -3649,7 +3754,7 @@ pub mod triggers {
         }
     }
     pub mod stop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3679,7 +3784,7 @@ pub mod triggers {
         trigger_name: &str,
         start_time: &str,
         end_time: &str,
-    ) -> std::result::Result<TriggerRunListResponse, list_runs::Error> {
+    ) -> std::result::Result<models::TriggerRunListResponse, list_runs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/triggers/{}/triggerruns",
@@ -3712,13 +3817,13 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggerRunListResponse =
+                let rsp_value: models::TriggerRunListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_runs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_runs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_runs::Error::DefaultResponse {
                     status_code,
@@ -3728,7 +3833,7 @@ pub mod triggers {
         }
     }
     pub mod list_runs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

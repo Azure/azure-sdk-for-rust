@@ -2,13 +2,52 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    PrivateLinkScopes_List(#[from] private_link_scopes::list::Error),
+    #[error(transparent)]
+    PrivateLinkScopes_ListByResourceGroup(#[from] private_link_scopes::list_by_resource_group::Error),
+    #[error(transparent)]
+    PrivateLinkScopes_Get(#[from] private_link_scopes::get::Error),
+    #[error(transparent)]
+    PrivateLinkScopes_CreateOrUpdate(#[from] private_link_scopes::create_or_update::Error),
+    #[error(transparent)]
+    PrivateLinkScopes_UpdateTags(#[from] private_link_scopes::update_tags::Error),
+    #[error(transparent)]
+    PrivateLinkScopes_Delete(#[from] private_link_scopes::delete::Error),
+    #[error(transparent)]
+    PrivateLinkScopeOperationStatus_Get(#[from] private_link_scope_operation_status::get::Error),
+    #[error(transparent)]
+    PrivateLinkResources_ListByPrivateLinkScope(#[from] private_link_resources::list_by_private_link_scope::Error),
+    #[error(transparent)]
+    PrivateLinkResources_Get(#[from] private_link_resources::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Get(#[from] private_endpoint_connections::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_CreateOrUpdate(#[from] private_endpoint_connections::create_or_update::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Delete(#[from] private_endpoint_connections::delete::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_ListByPrivateLinkScope(#[from] private_endpoint_connections::list_by_private_link_scope::Error),
+    #[error(transparent)]
+    PrivateLinkScopedResources_Get(#[from] private_link_scoped_resources::get::Error),
+    #[error(transparent)]
+    PrivateLinkScopedResources_CreateOrUpdate(#[from] private_link_scoped_resources::create_or_update::Error),
+    #[error(transparent)]
+    PrivateLinkScopedResources_Delete(#[from] private_link_scoped_resources::delete::Error),
+    #[error(transparent)]
+    PrivateLinkScopedResources_ListByPrivateLinkScope(#[from] private_link_scoped_resources::list_by_private_link_scope::Error),
+}
 pub mod private_link_scopes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AzureMonitorPrivateLinkScopeListResult, list::Error> {
+    ) -> std::result::Result<models::AzureMonitorPrivateLinkScopeListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/microsoft.insights/privateLinkScopes",
@@ -33,7 +72,7 @@ pub mod private_link_scopes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureMonitorPrivateLinkScopeListResult =
+                let rsp_value: models::AzureMonitorPrivateLinkScopeListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -47,7 +86,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -70,7 +109,7 @@ pub mod private_link_scopes {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AzureMonitorPrivateLinkScopeListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AzureMonitorPrivateLinkScopeListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/privateLinkScopes",
@@ -101,7 +140,7 @@ pub mod private_link_scopes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureMonitorPrivateLinkScopeListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AzureMonitorPrivateLinkScopeListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -115,7 +154,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -139,7 +178,7 @@ pub mod private_link_scopes {
         resource_group_name: &str,
         subscription_id: &str,
         scope_name: &str,
-    ) -> std::result::Result<AzureMonitorPrivateLinkScope, get::Error> {
+    ) -> std::result::Result<models::AzureMonitorPrivateLinkScope, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/privateLinkScopes/{}",
@@ -166,7 +205,7 @@ pub mod private_link_scopes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureMonitorPrivateLinkScope =
+                let rsp_value: models::AzureMonitorPrivateLinkScope =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -180,7 +219,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -204,7 +243,7 @@ pub mod private_link_scopes {
         resource_group_name: &str,
         subscription_id: &str,
         scope_name: &str,
-        azure_monitor_private_link_scope_payload: &AzureMonitorPrivateLinkScope,
+        azure_monitor_private_link_scope_payload: &models::AzureMonitorPrivateLinkScope,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -236,13 +275,13 @@ pub mod private_link_scopes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureMonitorPrivateLinkScope = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AzureMonitorPrivateLinkScope = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureMonitorPrivateLinkScope = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AzureMonitorPrivateLinkScope = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -256,11 +295,11 @@ pub mod private_link_scopes {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AzureMonitorPrivateLinkScope),
-            Created201(AzureMonitorPrivateLinkScope),
+            Ok200(models::AzureMonitorPrivateLinkScope),
+            Created201(models::AzureMonitorPrivateLinkScope),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -285,8 +324,8 @@ pub mod private_link_scopes {
         resource_group_name: &str,
         subscription_id: &str,
         scope_name: &str,
-        private_link_scope_tags: &TagsResource,
-    ) -> std::result::Result<AzureMonitorPrivateLinkScope, update_tags::Error> {
+        private_link_scope_tags: &models::TagsResource,
+    ) -> std::result::Result<models::AzureMonitorPrivateLinkScope, update_tags::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/privateLinkScopes/{}",
@@ -317,7 +356,7 @@ pub mod private_link_scopes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureMonitorPrivateLinkScope =
+                let rsp_value: models::AzureMonitorPrivateLinkScope =
                     serde_json::from_slice(rsp_body).map_err(|source| update_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -331,7 +370,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod update_tags {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -393,7 +432,7 @@ pub mod private_link_scopes {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -420,13 +459,13 @@ pub mod private_link_scopes {
     }
 }
 pub mod private_link_scope_operation_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         async_operation_id: &str,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<OperationStatus, get::Error> {
+    ) -> std::result::Result<models::OperationStatus, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/privateLinkScopeOperationStatuses/{}",
@@ -453,7 +492,7 @@ pub mod private_link_scope_operation_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -467,7 +506,7 @@ pub mod private_link_scope_operation_status {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -488,13 +527,13 @@ pub mod private_link_scope_operation_status {
     }
 }
 pub mod private_link_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_private_link_scope(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         scope_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_private_link_scope::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_private_link_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/privateLinkScopes/{}/privateLinkResources",
@@ -526,7 +565,7 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_private_link_scope::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -540,7 +579,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_private_link_scope {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -565,7 +604,7 @@ pub mod private_link_resources {
         resource_group_name: &str,
         scope_name: &str,
         group_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/privateLinkScopes/{}/privateLinkResources/{}",
@@ -593,7 +632,7 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -607,7 +646,7 @@ pub mod private_link_resources {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -628,14 +667,14 @@ pub mod private_link_resources {
     }
 }
 pub mod private_endpoint_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         scope_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/privateLinkScopes/{}/privateEndpointConnections/{}",
@@ -663,7 +702,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -677,7 +716,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -702,7 +741,7 @@ pub mod private_endpoint_connections {
         resource_group_name: &str,
         scope_name: &str,
         private_endpoint_connection_name: &str,
-        parameters: &PrivateEndpointConnection,
+        parameters: &models::PrivateEndpointConnection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -735,7 +774,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -750,10 +789,10 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -819,7 +858,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -849,7 +888,7 @@ pub mod private_endpoint_connections {
         subscription_id: &str,
         resource_group_name: &str,
         scope_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_private_link_scope::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_private_link_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/privateLinkScopes/{}/privateEndpointConnections",
@@ -881,7 +920,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_private_link_scope::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -895,7 +934,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list_by_private_link_scope {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -916,14 +955,14 @@ pub mod private_endpoint_connections {
     }
 }
 pub mod private_link_scoped_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         scope_name: &str,
         name: &str,
-    ) -> std::result::Result<ScopedResource, get::Error> {
+    ) -> std::result::Result<models::ScopedResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/privateLinkScopes/{}/scopedResources/{}",
@@ -951,7 +990,7 @@ pub mod private_link_scoped_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScopedResource =
+                let rsp_value: models::ScopedResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -965,7 +1004,7 @@ pub mod private_link_scoped_resources {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -990,7 +1029,7 @@ pub mod private_link_scoped_resources {
         resource_group_name: &str,
         scope_name: &str,
         name: &str,
-        parameters: &ScopedResource,
+        parameters: &models::ScopedResource,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1023,13 +1062,13 @@ pub mod private_link_scoped_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScopedResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ScopedResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScopedResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ScopedResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -1044,11 +1083,11 @@ pub mod private_link_scoped_resources {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ScopedResource),
-            Created201(ScopedResource),
+            Ok200(models::ScopedResource),
+            Created201(models::ScopedResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1114,7 +1153,7 @@ pub mod private_link_scoped_resources {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1144,7 +1183,7 @@ pub mod private_link_scoped_resources {
         subscription_id: &str,
         resource_group_name: &str,
         scope_name: &str,
-    ) -> std::result::Result<ScopedResourceListResult, list_by_private_link_scope::Error> {
+    ) -> std::result::Result<models::ScopedResourceListResult, list_by_private_link_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/privateLinkScopes/{}/scopedResources",
@@ -1176,7 +1215,7 @@ pub mod private_link_scoped_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScopedResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ScopedResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_private_link_scope::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1190,7 +1229,7 @@ pub mod private_link_scoped_resources {
         }
     }
     pub mod list_by_private_link_scope {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

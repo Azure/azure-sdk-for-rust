@@ -6,40 +6,40 @@
 #[cfg(feature = "package-preview-7.3-preview")]
 pub mod package_preview_7_3_preview;
 #[cfg(all(feature = "package-preview-7.3-preview", not(feature = "no-default-version")))]
-pub use package_preview_7_3_preview::{models, operations};
+pub use package_preview_7_3_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-7.2")]
 pub mod package_7_2;
 #[cfg(all(feature = "package-7.2", not(feature = "no-default-version")))]
-pub use package_7_2::{models, operations};
+pub use package_7_2::{models, operations, operations::Error};
 #[cfg(feature = "package-7.2-preview")]
 pub mod package_7_2_preview;
 #[cfg(all(feature = "package-7.2-preview", not(feature = "no-default-version")))]
-pub use package_7_2_preview::{models, operations};
+pub use package_7_2_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-7.1")]
 pub mod package_7_1;
 #[cfg(all(feature = "package-7.1", not(feature = "no-default-version")))]
-pub use package_7_1::{models, operations};
+pub use package_7_1::{models, operations, operations::Error};
 #[cfg(feature = "package-7.1-preview")]
 pub mod package_7_1_preview;
 #[cfg(all(feature = "package-7.1-preview", not(feature = "no-default-version")))]
-pub use package_7_1_preview::{models, operations};
+pub use package_7_1_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-7.0")]
 pub mod package_7_0;
 #[cfg(all(feature = "package-7.0", not(feature = "no-default-version")))]
-pub use package_7_0::{models, operations};
+pub use package_7_0::{models, operations, operations::Error};
 #[cfg(feature = "package-7.0-preview")]
 pub mod package_7_0_preview;
 #[cfg(all(feature = "package-7.0-preview", not(feature = "no-default-version")))]
-pub use package_7_0_preview::{models, operations};
+pub use package_7_0_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2016-10")]
 pub mod package_2016_10;
 #[cfg(all(feature = "package-2016-10", not(feature = "no-default-version")))]
-pub use package_2016_10::{models, operations};
+pub use package_2016_10::{models, operations, operations::Error};
 #[cfg(feature = "package-2015-06")]
 pub mod package_2015_06;
 use azure_core::setters;
 #[cfg(all(feature = "package-2015-06", not(feature = "no-default-version")))]
-pub use package_2015_06::{models, operations};
+pub use package_2015_06::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

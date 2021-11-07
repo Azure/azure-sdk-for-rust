@@ -6,20 +6,20 @@
 #[cfg(feature = "package-2021-11-01")]
 pub mod package_2021_11_01;
 #[cfg(all(feature = "package-2021-11-01", not(feature = "no-default-version")))]
-pub use package_2021_11_01::{models, operations};
+pub use package_2021_11_01::{models, operations, operations::Error};
 #[cfg(feature = "package-2021-08-01")]
 pub mod package_2021_08_01;
 #[cfg(all(feature = "package-2021-08-01", not(feature = "no-default-version")))]
-pub use package_2021_08_01::{models, operations};
+pub use package_2021_08_01::{models, operations, operations::Error};
 #[cfg(feature = "package-preview-2021-07-01")]
 pub mod package_preview_2021_07_01;
 #[cfg(all(feature = "package-preview-2021-07-01", not(feature = "no-default-version")))]
-pub use package_preview_2021_07_01::{models, operations};
+pub use package_preview_2021_07_01::{models, operations, operations::Error};
 #[cfg(feature = "package-preview-2021-06-01")]
 pub mod package_preview_2021_06_01;
 use azure_core::setters;
 #[cfg(all(feature = "package-preview-2021-06-01", not(feature = "no-default-version")))]
-pub use package_preview_2021_06_01::{models, operations};
+pub use package_preview_2021_06_01::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

@@ -2,13 +2,48 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    JobCollections_ListBySubscription(#[from] job_collections::list_by_subscription::Error),
+    #[error(transparent)]
+    JobCollections_ListByResourceGroup(#[from] job_collections::list_by_resource_group::Error),
+    #[error(transparent)]
+    JobCollections_Get(#[from] job_collections::get::Error),
+    #[error(transparent)]
+    JobCollections_CreateOrUpdate(#[from] job_collections::create_or_update::Error),
+    #[error(transparent)]
+    JobCollections_Patch(#[from] job_collections::patch::Error),
+    #[error(transparent)]
+    JobCollections_Delete(#[from] job_collections::delete::Error),
+    #[error(transparent)]
+    JobCollections_Enable(#[from] job_collections::enable::Error),
+    #[error(transparent)]
+    JobCollections_Disable(#[from] job_collections::disable::Error),
+    #[error(transparent)]
+    Jobs_Get(#[from] jobs::get::Error),
+    #[error(transparent)]
+    Jobs_CreateOrUpdate(#[from] jobs::create_or_update::Error),
+    #[error(transparent)]
+    Jobs_Patch(#[from] jobs::patch::Error),
+    #[error(transparent)]
+    Jobs_Delete(#[from] jobs::delete::Error),
+    #[error(transparent)]
+    Jobs_Run(#[from] jobs::run::Error),
+    #[error(transparent)]
+    Jobs_List(#[from] jobs::list::Error),
+    #[error(transparent)]
+    Jobs_ListJobHistory(#[from] jobs::list_job_history::Error),
+}
 pub mod job_collections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<JobCollectionListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::JobCollectionListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Scheduler/jobCollections",
@@ -36,7 +71,7 @@ pub mod job_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCollectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobCollectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -50,7 +85,7 @@ pub mod job_collections {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -73,7 +108,7 @@ pub mod job_collections {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<JobCollectionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::JobCollectionListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Scheduler/jobCollections",
@@ -104,7 +139,7 @@ pub mod job_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCollectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobCollectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -118,7 +153,7 @@ pub mod job_collections {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -142,7 +177,7 @@ pub mod job_collections {
         subscription_id: &str,
         resource_group_name: &str,
         job_collection_name: &str,
-    ) -> std::result::Result<JobCollectionDefinition, get::Error> {
+    ) -> std::result::Result<models::JobCollectionDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Scheduler/jobCollections/{}",
@@ -169,7 +204,7 @@ pub mod job_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCollectionDefinition =
+                let rsp_value: models::JobCollectionDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -183,7 +218,7 @@ pub mod job_collections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -207,7 +242,7 @@ pub mod job_collections {
         subscription_id: &str,
         resource_group_name: &str,
         job_collection_name: &str,
-        job_collection: &JobCollectionDefinition,
+        job_collection: &models::JobCollectionDefinition,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -239,13 +274,13 @@ pub mod job_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCollectionDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobCollectionDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCollectionDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobCollectionDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -259,11 +294,11 @@ pub mod job_collections {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobCollectionDefinition),
-            Created201(JobCollectionDefinition),
+            Ok200(models::JobCollectionDefinition),
+            Created201(models::JobCollectionDefinition),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -288,8 +323,8 @@ pub mod job_collections {
         subscription_id: &str,
         resource_group_name: &str,
         job_collection_name: &str,
-        job_collection: &JobCollectionDefinition,
-    ) -> std::result::Result<JobCollectionDefinition, patch::Error> {
+        job_collection: &models::JobCollectionDefinition,
+    ) -> std::result::Result<models::JobCollectionDefinition, patch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Scheduler/jobCollections/{}",
@@ -317,7 +352,7 @@ pub mod job_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCollectionDefinition =
+                let rsp_value: models::JobCollectionDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -331,7 +366,7 @@ pub mod job_collections {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -391,7 +426,7 @@ pub mod job_collections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -452,7 +487,7 @@ pub mod job_collections {
         }
     }
     pub mod enable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -516,7 +551,7 @@ pub mod job_collections {
         }
     }
     pub mod disable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -537,14 +572,14 @@ pub mod job_collections {
     }
 }
 pub mod jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         job_collection_name: &str,
         job_name: &str,
-    ) -> std::result::Result<JobDefinition, get::Error> {
+    ) -> std::result::Result<models::JobDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Scheduler/jobCollections/{}/jobs/{}",
@@ -572,7 +607,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDefinition =
+                let rsp_value: models::JobDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -586,7 +621,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -611,7 +646,7 @@ pub mod jobs {
         resource_group_name: &str,
         job_collection_name: &str,
         job_name: &str,
-        job: &JobDefinition,
+        job: &models::JobDefinition,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -644,13 +679,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -664,11 +699,11 @@ pub mod jobs {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobDefinition),
-            Created201(JobDefinition),
+            Ok200(models::JobDefinition),
+            Created201(models::JobDefinition),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -694,8 +729,8 @@ pub mod jobs {
         resource_group_name: &str,
         job_collection_name: &str,
         job_name: &str,
-        job: &JobDefinition,
-    ) -> std::result::Result<JobDefinition, patch::Error> {
+        job: &models::JobDefinition,
+    ) -> std::result::Result<models::JobDefinition, patch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Scheduler/jobCollections/{}/jobs/{}",
@@ -724,7 +759,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDefinition =
+                let rsp_value: models::JobDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -738,7 +773,7 @@ pub mod jobs {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -800,7 +835,7 @@ pub mod jobs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -863,7 +898,7 @@ pub mod jobs {
         }
     }
     pub mod run {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -890,7 +925,7 @@ pub mod jobs {
         top: Option<i64>,
         skip: Option<i64>,
         filter: Option<&str>,
-    ) -> std::result::Result<JobListResult, list::Error> {
+    ) -> std::result::Result<models::JobListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Scheduler/jobCollections/{}/jobs",
@@ -926,7 +961,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobListResult =
+                let rsp_value: models::JobListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -940,7 +975,7 @@ pub mod jobs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -968,7 +1003,7 @@ pub mod jobs {
         top: Option<i64>,
         skip: Option<i64>,
         filter: Option<&str>,
-    ) -> std::result::Result<JobHistoryListResult, list_job_history::Error> {
+    ) -> std::result::Result<models::JobHistoryListResult, list_job_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Scheduler/jobCollections/{}/jobs/{}/history",
@@ -1008,7 +1043,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobHistoryListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobHistoryListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_job_history::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1022,7 +1057,7 @@ pub mod jobs {
         }
     }
     pub mod list_job_history {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

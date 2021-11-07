@@ -2,9 +2,20 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    SoftwareInventories_ListByExtendedResource(#[from] software_inventories::list_by_extended_resource::Error),
+    #[error(transparent)]
+    SoftwareInventories_ListBySubscription(#[from] software_inventories::list_by_subscription::Error),
+    #[error(transparent)]
+    SoftwareInventories_Get(#[from] software_inventories::get::Error),
+}
 pub mod software_inventories {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_extended_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -12,7 +23,7 @@ pub mod software_inventories {
         resource_namespace: &str,
         resource_type: &str,
         resource_name: &str,
-    ) -> std::result::Result<SoftwaresList, list_by_extended_resource::Error> {
+    ) -> std::result::Result<models::SoftwaresList, list_by_extended_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/softwareInventories",
@@ -46,13 +57,13 @@ pub mod software_inventories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SoftwaresList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SoftwaresList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_extended_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_extended_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_extended_resource::Error::DefaultResponse {
                     status_code,
@@ -62,7 +73,7 @@ pub mod software_inventories {
         }
     }
     pub mod list_by_extended_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -87,7 +98,7 @@ pub mod software_inventories {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<SoftwaresList, list_by_subscription::Error> {
+    ) -> std::result::Result<models::SoftwaresList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Security/softwareInventories",
@@ -115,13 +126,13 @@ pub mod software_inventories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SoftwaresList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SoftwaresList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -131,7 +142,7 @@ pub mod software_inventories {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -161,7 +172,7 @@ pub mod software_inventories {
         resource_type: &str,
         resource_name: &str,
         software_name: &str,
-    ) -> std::result::Result<Software, get::Error> {
+    ) -> std::result::Result<models::Software, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Security/softwareInventories/{}",
@@ -191,13 +202,13 @@ pub mod software_inventories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Software =
+                let rsp_value: models::Software =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -207,7 +218,7 @@ pub mod software_inventories {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

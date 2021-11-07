@@ -2,14 +2,57 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Blueprints_Get(#[from] blueprints::get::Error),
+    #[error(transparent)]
+    Blueprints_CreateOrUpdate(#[from] blueprints::create_or_update::Error),
+    #[error(transparent)]
+    Blueprints_Delete(#[from] blueprints::delete::Error),
+    #[error(transparent)]
+    Blueprints_List(#[from] blueprints::list::Error),
+    #[error(transparent)]
+    Artifacts_Get(#[from] artifacts::get::Error),
+    #[error(transparent)]
+    Artifacts_CreateOrUpdate(#[from] artifacts::create_or_update::Error),
+    #[error(transparent)]
+    Artifacts_Delete(#[from] artifacts::delete::Error),
+    #[error(transparent)]
+    Artifacts_List(#[from] artifacts::list::Error),
+    #[error(transparent)]
+    PublishedBlueprints_Get(#[from] published_blueprints::get::Error),
+    #[error(transparent)]
+    PublishedBlueprints_Create(#[from] published_blueprints::create::Error),
+    #[error(transparent)]
+    PublishedBlueprints_Delete(#[from] published_blueprints::delete::Error),
+    #[error(transparent)]
+    PublishedBlueprints_List(#[from] published_blueprints::list::Error),
+    #[error(transparent)]
+    PublishedArtifacts_Get(#[from] published_artifacts::get::Error),
+    #[error(transparent)]
+    PublishedArtifacts_List(#[from] published_artifacts::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Assignments_Get(#[from] assignments::get::Error),
+    #[error(transparent)]
+    Assignments_CreateOrUpdate(#[from] assignments::create_or_update::Error),
+    #[error(transparent)]
+    Assignments_Delete(#[from] assignments::delete::Error),
+    #[error(transparent)]
+    Assignments_List(#[from] assignments::list::Error),
+}
 pub mod blueprints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         management_group_name: &str,
         blueprint_name: &str,
-    ) -> std::result::Result<Blueprint, get::Error> {
+    ) -> std::result::Result<models::Blueprint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}",
@@ -35,7 +78,7 @@ pub mod blueprints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Blueprint =
+                let rsp_value: models::Blueprint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -49,7 +92,7 @@ pub mod blueprints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -72,8 +115,8 @@ pub mod blueprints {
         operation_config: &crate::OperationConfig,
         management_group_name: &str,
         blueprint_name: &str,
-        blueprint: &Blueprint,
-    ) -> std::result::Result<Blueprint, create_or_update::Error> {
+        blueprint: &models::Blueprint,
+    ) -> std::result::Result<models::Blueprint, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}",
@@ -103,7 +146,7 @@ pub mod blueprints {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Blueprint = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Blueprint = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -117,7 +160,7 @@ pub mod blueprints {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -166,7 +209,7 @@ pub mod blueprints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Blueprint =
+                let rsp_value: models::Blueprint =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -181,10 +224,10 @@ pub mod blueprints {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Blueprint),
+            Ok200(models::Blueprint),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -208,7 +251,7 @@ pub mod blueprints {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         management_group_name: &str,
-    ) -> std::result::Result<BlueprintList, list::Error> {
+    ) -> std::result::Result<models::BlueprintList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints",
@@ -233,7 +276,7 @@ pub mod blueprints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlueprintList =
+                let rsp_value: models::BlueprintList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -247,7 +290,7 @@ pub mod blueprints {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -268,13 +311,13 @@ pub mod blueprints {
     }
 }
 pub mod artifacts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         management_group_name: &str,
         blueprint_name: &str,
         artifact_name: &str,
-    ) -> std::result::Result<Artifact, get::Error> {
+    ) -> std::result::Result<models::Artifact, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
@@ -301,7 +344,7 @@ pub mod artifacts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Artifact =
+                let rsp_value: models::Artifact =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -315,7 +358,7 @@ pub mod artifacts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -339,8 +382,8 @@ pub mod artifacts {
         management_group_name: &str,
         blueprint_name: &str,
         artifact_name: &str,
-        artifact: &Artifact,
-    ) -> std::result::Result<Artifact, create_or_update::Error> {
+        artifact: &models::Artifact,
+    ) -> std::result::Result<models::Artifact, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
@@ -371,7 +414,7 @@ pub mod artifacts {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Artifact = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Artifact = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -385,7 +428,7 @@ pub mod artifacts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -436,7 +479,7 @@ pub mod artifacts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Artifact =
+                let rsp_value: models::Artifact =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -451,10 +494,10 @@ pub mod artifacts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Artifact),
+            Ok200(models::Artifact),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -479,7 +522,7 @@ pub mod artifacts {
         operation_config: &crate::OperationConfig,
         management_group_name: &str,
         blueprint_name: &str,
-    ) -> std::result::Result<ArtifactList, list::Error> {
+    ) -> std::result::Result<models::ArtifactList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts",
@@ -505,7 +548,7 @@ pub mod artifacts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ArtifactList =
+                let rsp_value: models::ArtifactList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -519,7 +562,7 @@ pub mod artifacts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -540,13 +583,13 @@ pub mod artifacts {
     }
 }
 pub mod published_blueprints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         management_group_name: &str,
         blueprint_name: &str,
         version_id: &str,
-    ) -> std::result::Result<PublishedBlueprint, get::Error> {
+    ) -> std::result::Result<models::PublishedBlueprint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
@@ -573,7 +616,7 @@ pub mod published_blueprints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublishedBlueprint =
+                let rsp_value: models::PublishedBlueprint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -587,7 +630,7 @@ pub mod published_blueprints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -611,7 +654,7 @@ pub mod published_blueprints {
         management_group_name: &str,
         blueprint_name: &str,
         version_id: &str,
-    ) -> std::result::Result<PublishedBlueprint, create::Error> {
+    ) -> std::result::Result<models::PublishedBlueprint, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
@@ -638,7 +681,7 @@ pub mod published_blueprints {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublishedBlueprint =
+                let rsp_value: models::PublishedBlueprint =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -652,7 +695,7 @@ pub mod published_blueprints {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -703,7 +746,7 @@ pub mod published_blueprints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublishedBlueprint =
+                let rsp_value: models::PublishedBlueprint =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -718,10 +761,10 @@ pub mod published_blueprints {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PublishedBlueprint),
+            Ok200(models::PublishedBlueprint),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -746,7 +789,7 @@ pub mod published_blueprints {
         operation_config: &crate::OperationConfig,
         management_group_name: &str,
         blueprint_name: &str,
-    ) -> std::result::Result<PublishedBlueprintList, list::Error> {
+    ) -> std::result::Result<models::PublishedBlueprintList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions",
@@ -772,7 +815,7 @@ pub mod published_blueprints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublishedBlueprintList =
+                let rsp_value: models::PublishedBlueprintList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -786,7 +829,7 @@ pub mod published_blueprints {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -807,14 +850,14 @@ pub mod published_blueprints {
     }
 }
 pub mod published_artifacts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         management_group_name: &str,
         blueprint_name: &str,
         version_id: &str,
         artifact_name: &str,
-    ) -> std::result::Result<Artifact, get::Error> {
+    ) -> std::result::Result<models::Artifact, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts/{}",
@@ -842,7 +885,7 @@ pub mod published_artifacts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Artifact =
+                let rsp_value: models::Artifact =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -856,7 +899,7 @@ pub mod published_artifacts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -880,7 +923,7 @@ pub mod published_artifacts {
         management_group_name: &str,
         blueprint_name: &str,
         version_id: &str,
-    ) -> std::result::Result<ArtifactList, list::Error> {
+    ) -> std::result::Result<models::ArtifactList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts",
@@ -907,7 +950,7 @@ pub mod published_artifacts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ArtifactList =
+                let rsp_value: models::ArtifactList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -921,7 +964,7 @@ pub mod published_artifacts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -942,8 +985,10 @@ pub mod published_artifacts {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ResourceProviderOperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::ResourceProviderOperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Blueprint/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -964,7 +1009,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceProviderOperationList =
+                let rsp_value: models::ResourceProviderOperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -978,7 +1023,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -999,12 +1044,12 @@ pub mod operations {
     }
 }
 pub mod assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         assignment_name: &str,
-    ) -> std::result::Result<Assignment, get::Error> {
+    ) -> std::result::Result<models::Assignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
@@ -1030,7 +1075,7 @@ pub mod assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Assignment =
+                let rsp_value: models::Assignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1044,7 +1089,7 @@ pub mod assignments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1067,8 +1112,8 @@ pub mod assignments {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         assignment_name: &str,
-        assignment: &Assignment,
-    ) -> std::result::Result<Assignment, create_or_update::Error> {
+        assignment: &models::Assignment,
+    ) -> std::result::Result<models::Assignment, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
@@ -1098,7 +1143,7 @@ pub mod assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Assignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Assignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1112,7 +1157,7 @@ pub mod assignments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1161,7 +1206,7 @@ pub mod assignments {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Assignment =
+                let rsp_value: models::Assignment =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Accepted202(rsp_value))
             }
@@ -1176,10 +1221,10 @@ pub mod assignments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Accepted202(Assignment),
+            Accepted202(models::Assignment),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1203,7 +1248,7 @@ pub mod assignments {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AssignmentList, list::Error> {
+    ) -> std::result::Result<models::AssignmentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blueprint/blueprintAssignments",
@@ -1228,7 +1273,7 @@ pub mod assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AssignmentList =
+                let rsp_value: models::AssignmentList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1242,7 +1287,7 @@ pub mod assignments {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

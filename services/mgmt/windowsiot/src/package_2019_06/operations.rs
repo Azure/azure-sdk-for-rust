@@ -2,10 +2,31 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Services_Get(#[from] services::get::Error),
+    #[error(transparent)]
+    Services_CreateOrUpdate(#[from] services::create_or_update::Error),
+    #[error(transparent)]
+    Services_Update(#[from] services::update::Error),
+    #[error(transparent)]
+    Services_Delete(#[from] services::delete::Error),
+    #[error(transparent)]
+    Services_ListByResourceGroup(#[from] services::list_by_resource_group::Error),
+    #[error(transparent)]
+    Services_List(#[from] services::list::Error),
+    #[error(transparent)]
+    Services_CheckDeviceServiceNameAvailability(#[from] services::check_device_service_name_availability::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.WindowsIoT/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +47,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +63,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,13 +87,13 @@ pub mod operations {
     }
 }
 pub mod services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         device_name: &str,
-    ) -> std::result::Result<DeviceService, get::Error> {
+    ) -> std::result::Result<models::DeviceService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.WindowsIoT/deviceServices/{}",
@@ -99,13 +120,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceService =
+                let rsp_value: models::DeviceService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -115,7 +136,7 @@ pub mod services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -142,7 +163,7 @@ pub mod services {
         subscription_id: &str,
         resource_group_name: &str,
         device_name: &str,
-        device_service: &DeviceService,
+        device_service: &models::DeviceService,
         if_match: Option<&str>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -178,19 +199,19 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -200,11 +221,11 @@ pub mod services {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DeviceService),
-            Created201(DeviceService),
+            Ok200(models::DeviceService),
+            Created201(models::DeviceService),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -232,9 +253,9 @@ pub mod services {
         subscription_id: &str,
         resource_group_name: &str,
         device_name: &str,
-        device_service: &DeviceService,
+        device_service: &models::DeviceService,
         if_match: Option<&str>,
-    ) -> std::result::Result<DeviceService, update::Error> {
+    ) -> std::result::Result<models::DeviceService, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.WindowsIoT/deviceServices/{}",
@@ -265,13 +286,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceService =
+                let rsp_value: models::DeviceService =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -281,7 +302,7 @@ pub mod services {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -335,19 +356,19 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceService =
+                let rsp_value: models::DeviceService =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceService =
+                let rsp_value: models::DeviceService =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::NoContent204(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -357,11 +378,11 @@ pub mod services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DeviceService),
-            NoContent204(DeviceService),
+            Ok200(models::DeviceService),
+            NoContent204(models::DeviceService),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -388,7 +409,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DeviceServiceDescriptionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DeviceServiceDescriptionListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.WindowsIoT/deviceServices",
@@ -419,13 +440,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceServiceDescriptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceServiceDescriptionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -435,7 +456,7 @@ pub mod services {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -460,7 +481,7 @@ pub mod services {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DeviceServiceDescriptionListResult, list::Error> {
+    ) -> std::result::Result<models::DeviceServiceDescriptionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.WindowsIoT/deviceServices",
@@ -485,13 +506,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceServiceDescriptionListResult =
+                let rsp_value: models::DeviceServiceDescriptionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -501,7 +522,7 @@ pub mod services {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -526,8 +547,8 @@ pub mod services {
     pub async fn check_device_service_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        device_service_check_name_availability_parameters: &DeviceServiceCheckNameAvailabilityParameters,
-    ) -> std::result::Result<DeviceServiceNameAvailabilityInfo, check_device_service_name_availability::Error> {
+        device_service_check_name_availability_parameters: &models::DeviceServiceCheckNameAvailabilityParameters,
+    ) -> std::result::Result<models::DeviceServiceNameAvailabilityInfo, check_device_service_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.WindowsIoT/checkDeviceServiceNameAvailability",
@@ -559,13 +580,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceServiceNameAvailabilityInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceServiceNameAvailabilityInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_device_service_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_device_service_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_device_service_name_availability::Error::DefaultResponse {
                     status_code,
@@ -575,7 +596,7 @@ pub mod services {
         }
     }
     pub mod check_device_service_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,10 +2,22 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ComplianceResults_List(#[from] compliance_results::list::Error),
+    #[error(transparent)]
+    ComplianceResults_Get(#[from] compliance_results::get::Error),
+}
 pub mod compliance_results {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<ComplianceResultList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        scope: &str,
+    ) -> std::result::Result<models::ComplianceResultList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/complianceResults",
@@ -30,13 +42,13 @@ pub mod compliance_results {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComplianceResultList =
+                let rsp_value: models::ComplianceResultList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -46,7 +58,7 @@ pub mod compliance_results {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -72,7 +84,7 @@ pub mod compliance_results {
         operation_config: &crate::OperationConfig,
         resource_id: &str,
         compliance_result_name: &str,
-    ) -> std::result::Result<ComplianceResult, get::Error> {
+    ) -> std::result::Result<models::ComplianceResult, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/complianceResults/{}",
@@ -98,13 +110,13 @@ pub mod compliance_results {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComplianceResult =
+                let rsp_value: models::ComplianceResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -114,7 +126,7 @@ pub mod compliance_results {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

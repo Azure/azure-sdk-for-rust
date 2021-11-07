@@ -2,10 +2,61 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Redis_Get(#[from] redis::get::Error),
+    #[error(transparent)]
+    Redis_Create(#[from] redis::create::Error),
+    #[error(transparent)]
+    Redis_Update(#[from] redis::update::Error),
+    #[error(transparent)]
+    Redis_Delete(#[from] redis::delete::Error),
+    #[error(transparent)]
+    Redis_ListByResourceGroup(#[from] redis::list_by_resource_group::Error),
+    #[error(transparent)]
+    Redis_List(#[from] redis::list::Error),
+    #[error(transparent)]
+    Redis_ListKeys(#[from] redis::list_keys::Error),
+    #[error(transparent)]
+    Redis_RegenerateKey(#[from] redis::regenerate_key::Error),
+    #[error(transparent)]
+    Redis_ForceReboot(#[from] redis::force_reboot::Error),
+    #[error(transparent)]
+    Redis_ImportData(#[from] redis::import_data::Error),
+    #[error(transparent)]
+    Redis_ExportData(#[from] redis::export_data::Error),
+    #[error(transparent)]
+    FirewallRules_ListByRedisResource(#[from] firewall_rules::list_by_redis_resource::Error),
+    #[error(transparent)]
+    FirewallRules_Get(#[from] firewall_rules::get::Error),
+    #[error(transparent)]
+    FirewallRules_CreateOrUpdate(#[from] firewall_rules::create_or_update::Error),
+    #[error(transparent)]
+    FirewallRules_Delete(#[from] firewall_rules::delete::Error),
+    #[error(transparent)]
+    PatchSchedules_Get(#[from] patch_schedules::get::Error),
+    #[error(transparent)]
+    PatchSchedules_CreateOrUpdate(#[from] patch_schedules::create_or_update::Error),
+    #[error(transparent)]
+    PatchSchedules_Delete(#[from] patch_schedules::delete::Error),
+    #[error(transparent)]
+    RedisLinkedServer_Get(#[from] redis_linked_server::get::Error),
+    #[error(transparent)]
+    RedisLinkedServer_Create(#[from] redis_linked_server::create::Error),
+    #[error(transparent)]
+    RedisLinkedServer_Delete(#[from] redis_linked_server::delete::Error),
+    #[error(transparent)]
+    RedisLinkedServer_List(#[from] redis_linked_server::list::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Cache/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +77,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +91,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,13 +112,13 @@ pub mod operations {
     }
 }
 pub mod redis {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisResource, get::Error> {
+    ) -> std::result::Result<models::RedisResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}",
@@ -94,7 +145,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisResource =
+                let rsp_value: models::RedisResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -108,7 +159,7 @@ pub mod redis {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -131,7 +182,7 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &RedisCreateParameters,
+        parameters: &models::RedisCreateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -161,13 +212,13 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisResource =
+                let rsp_value: models::RedisResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisResource =
+                let rsp_value: models::RedisResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
@@ -181,11 +232,11 @@ pub mod redis {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(RedisResource),
-            Ok200(RedisResource),
+            Created201(models::RedisResource),
+            Ok200(models::RedisResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -209,9 +260,9 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &RedisUpdateParameters,
+        parameters: &models::RedisUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<RedisResource, update::Error> {
+    ) -> std::result::Result<models::RedisResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}",
@@ -239,7 +290,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisResource =
+                let rsp_value: models::RedisResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -253,7 +304,7 @@ pub mod redis {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -314,7 +365,7 @@ pub mod redis {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -342,7 +393,7 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::RedisListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/",
@@ -373,7 +424,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -387,7 +438,7 @@ pub mod redis {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -409,7 +460,7 @@ pub mod redis {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<RedisListResult, list::Error> {
+    ) -> std::result::Result<models::RedisListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Cache/Redis/",
@@ -434,7 +485,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisListResult =
+                let rsp_value: models::RedisListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -448,7 +499,7 @@ pub mod redis {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -472,7 +523,7 @@ pub mod redis {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisAccessKeys, list_keys::Error> {
+    ) -> std::result::Result<models::RedisAccessKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/listKeys",
@@ -503,7 +554,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisAccessKeys =
+                let rsp_value: models::RedisAccessKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -517,7 +568,7 @@ pub mod redis {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -540,9 +591,9 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &RedisRegenerateKeyParameters,
+        parameters: &models::RedisRegenerateKeyParameters,
         subscription_id: &str,
-    ) -> std::result::Result<RedisAccessKeys, regenerate_key::Error> {
+    ) -> std::result::Result<models::RedisAccessKeys, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/regenerateKey",
@@ -573,7 +624,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisAccessKeys =
+                let rsp_value: models::RedisAccessKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -587,7 +638,7 @@ pub mod redis {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -610,9 +661,9 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &RedisRebootParameters,
+        parameters: &models::RedisRebootParameters,
         subscription_id: &str,
-    ) -> std::result::Result<RedisForceRebootResponse, force_reboot::Error> {
+    ) -> std::result::Result<models::RedisForceRebootResponse, force_reboot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/forceReboot",
@@ -643,7 +694,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisForceRebootResponse =
+                let rsp_value: models::RedisForceRebootResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| force_reboot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -657,7 +708,7 @@ pub mod redis {
         }
     }
     pub mod force_reboot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -680,7 +731,7 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &ImportRdbParameters,
+        parameters: &models::ImportRdbParameters,
         subscription_id: &str,
     ) -> std::result::Result<import_data::Response, import_data::Error> {
         let http_client = operation_config.http_client();
@@ -724,7 +775,7 @@ pub mod redis {
         }
     }
     pub mod import_data {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -753,7 +804,7 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &ExportRdbParameters,
+        parameters: &models::ExportRdbParameters,
         subscription_id: &str,
     ) -> std::result::Result<export_data::Response, export_data::Error> {
         let http_client = operation_config.http_client();
@@ -797,7 +848,7 @@ pub mod redis {
         }
     }
     pub mod export_data {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -824,13 +875,13 @@ pub mod redis {
     }
 }
 pub mod firewall_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_redis_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cache_name: &str,
-    ) -> std::result::Result<RedisFirewallRuleListResult, list_by_redis_resource::Error> {
+    ) -> std::result::Result<models::RedisFirewallRuleListResult, list_by_redis_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/firewallRules",
@@ -862,7 +913,7 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisFirewallRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisFirewallRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_redis_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -876,7 +927,7 @@ pub mod firewall_rules {
         }
     }
     pub mod list_by_redis_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -901,7 +952,7 @@ pub mod firewall_rules {
         cache_name: &str,
         rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisFirewallRule, get::Error> {
+    ) -> std::result::Result<models::RedisFirewallRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/firewallRules/{}",
@@ -929,7 +980,7 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisFirewallRule =
+                let rsp_value: models::RedisFirewallRule =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -943,7 +994,7 @@ pub mod firewall_rules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -967,7 +1018,7 @@ pub mod firewall_rules {
         resource_group_name: &str,
         cache_name: &str,
         rule_name: &str,
-        parameters: &RedisFirewallRule,
+        parameters: &models::RedisFirewallRule,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1001,13 +1052,13 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisFirewallRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisFirewallRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisFirewallRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisFirewallRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -1021,11 +1072,11 @@ pub mod firewall_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(RedisFirewallRule),
-            Created201(RedisFirewallRule),
+            Ok200(models::RedisFirewallRule),
+            Created201(models::RedisFirewallRule),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1089,7 +1140,7 @@ pub mod firewall_rules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1115,13 +1166,13 @@ pub mod firewall_rules {
     }
 }
 pub mod patch_schedules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisPatchSchedule, get::Error> {
+    ) -> std::result::Result<models::RedisPatchSchedule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/patchSchedules/default",
@@ -1148,7 +1199,7 @@ pub mod patch_schedules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisPatchSchedule =
+                let rsp_value: models::RedisPatchSchedule =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1162,7 +1213,7 @@ pub mod patch_schedules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1185,7 +1236,7 @@ pub mod patch_schedules {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &RedisPatchSchedule,
+        parameters: &models::RedisPatchSchedule,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1218,13 +1269,13 @@ pub mod patch_schedules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisPatchSchedule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisPatchSchedule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisPatchSchedule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisPatchSchedule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -1238,11 +1289,11 @@ pub mod patch_schedules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(RedisPatchSchedule),
-            Created201(RedisPatchSchedule),
+            Ok200(models::RedisPatchSchedule),
+            Created201(models::RedisPatchSchedule),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1304,7 +1355,7 @@ pub mod patch_schedules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1330,14 +1381,14 @@ pub mod patch_schedules {
     }
 }
 pub mod redis_linked_server {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
         linked_server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisLinkedServerWithProperties, get::Error> {
+    ) -> std::result::Result<models::RedisLinkedServerWithProperties, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/linkedServers/{}",
@@ -1365,7 +1416,7 @@ pub mod redis_linked_server {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisLinkedServerWithProperties =
+                let rsp_value: models::RedisLinkedServerWithProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1379,7 +1430,7 @@ pub mod redis_linked_server {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1403,7 +1454,7 @@ pub mod redis_linked_server {
         resource_group_name: &str,
         name: &str,
         linked_server_name: &str,
-        parameters: &RedisLinkedServerCreateParameters,
+        parameters: &models::RedisLinkedServerCreateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -1434,13 +1485,13 @@ pub mod redis_linked_server {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisLinkedServerWithProperties =
+                let rsp_value: models::RedisLinkedServerWithProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisLinkedServerWithProperties =
+                let rsp_value: models::RedisLinkedServerWithProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
@@ -1454,11 +1505,11 @@ pub mod redis_linked_server {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(RedisLinkedServerWithProperties),
-            Created201(RedisLinkedServerWithProperties),
+            Ok200(models::RedisLinkedServerWithProperties),
+            Created201(models::RedisLinkedServerWithProperties),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1521,7 +1572,7 @@ pub mod redis_linked_server {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1545,7 +1596,7 @@ pub mod redis_linked_server {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisLinkedServerWithPropertiesList, list::Error> {
+    ) -> std::result::Result<models::RedisLinkedServerWithPropertiesList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/linkedServers",
@@ -1572,7 +1623,7 @@ pub mod redis_linked_server {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisLinkedServerWithPropertiesList =
+                let rsp_value: models::RedisLinkedServerWithPropertiesList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1586,7 +1637,7 @@ pub mod redis_linked_server {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

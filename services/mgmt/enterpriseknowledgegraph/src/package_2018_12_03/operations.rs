@@ -2,15 +2,34 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    EnterpriseKnowledgeGraph_Get(#[from] enterprise_knowledge_graph::get::Error),
+    #[error(transparent)]
+    EnterpriseKnowledgeGraph_Create(#[from] enterprise_knowledge_graph::create::Error),
+    #[error(transparent)]
+    EnterpriseKnowledgeGraph_Update(#[from] enterprise_knowledge_graph::update::Error),
+    #[error(transparent)]
+    EnterpriseKnowledgeGraph_Delete(#[from] enterprise_knowledge_graph::delete::Error),
+    #[error(transparent)]
+    EnterpriseKnowledgeGraph_ListByResourceGroup(#[from] enterprise_knowledge_graph::list_by_resource_group::Error),
+    #[error(transparent)]
+    EnterpriseKnowledgeGraph_List(#[from] enterprise_knowledge_graph::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod enterprise_knowledge_graph {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<EnterpriseKnowledgeGraph, get::Error> {
+    ) -> std::result::Result<models::EnterpriseKnowledgeGraph, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EnterpriseKnowledgeGraph/services/{}",
@@ -37,13 +56,13 @@ pub mod enterprise_knowledge_graph {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnterpriseKnowledgeGraph =
+                let rsp_value: models::EnterpriseKnowledgeGraph =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +72,7 @@ pub mod enterprise_knowledge_graph {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -79,7 +98,7 @@ pub mod enterprise_knowledge_graph {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &EnterpriseKnowledgeGraph,
+        parameters: &models::EnterpriseKnowledgeGraph,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -109,19 +128,19 @@ pub mod enterprise_knowledge_graph {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnterpriseKnowledgeGraph =
+                let rsp_value: models::EnterpriseKnowledgeGraph =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnterpriseKnowledgeGraph =
+                let rsp_value: models::EnterpriseKnowledgeGraph =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -131,11 +150,11 @@ pub mod enterprise_knowledge_graph {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(EnterpriseKnowledgeGraph),
-            Created201(EnterpriseKnowledgeGraph),
+            Ok200(models::EnterpriseKnowledgeGraph),
+            Created201(models::EnterpriseKnowledgeGraph),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -162,7 +181,7 @@ pub mod enterprise_knowledge_graph {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &EnterpriseKnowledgeGraph,
+        parameters: &models::EnterpriseKnowledgeGraph,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -192,19 +211,19 @@ pub mod enterprise_knowledge_graph {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnterpriseKnowledgeGraph =
+                let rsp_value: models::EnterpriseKnowledgeGraph =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnterpriseKnowledgeGraph =
+                let rsp_value: models::EnterpriseKnowledgeGraph =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -214,11 +233,11 @@ pub mod enterprise_knowledge_graph {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(EnterpriseKnowledgeGraph),
-            Created201(EnterpriseKnowledgeGraph),
+            Ok200(models::EnterpriseKnowledgeGraph),
+            Created201(models::EnterpriseKnowledgeGraph),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -275,7 +294,7 @@ pub mod enterprise_knowledge_graph {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -285,7 +304,7 @@ pub mod enterprise_knowledge_graph {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -316,7 +335,7 @@ pub mod enterprise_knowledge_graph {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<EnterpriseKnowledgeGraphResponseList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::EnterpriseKnowledgeGraphResponseList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EnterpriseKnowledgeGraph/services",
@@ -347,13 +366,13 @@ pub mod enterprise_knowledge_graph {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnterpriseKnowledgeGraphResponseList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EnterpriseKnowledgeGraphResponseList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -363,7 +382,7 @@ pub mod enterprise_knowledge_graph {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -388,7 +407,7 @@ pub mod enterprise_knowledge_graph {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<EnterpriseKnowledgeGraphResponseList, list::Error> {
+    ) -> std::result::Result<models::EnterpriseKnowledgeGraphResponseList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EnterpriseKnowledgeGraph/services",
@@ -413,13 +432,13 @@ pub mod enterprise_knowledge_graph {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnterpriseKnowledgeGraphResponseList =
+                let rsp_value: models::EnterpriseKnowledgeGraphResponseList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -429,7 +448,7 @@ pub mod enterprise_knowledge_graph {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -453,8 +472,8 @@ pub mod enterprise_knowledge_graph {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationEntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.EnterpriseKnowledgeGraph/operations",
@@ -478,7 +497,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationEntityListResult =
+                let rsp_value: models::OperationEntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -492,7 +511,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

@@ -2,13 +2,20 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    RoleAssignmentMetrics_GetMetricsForSubscription(#[from] role_assignment_metrics::get_metrics_for_subscription::Error),
+}
 pub mod role_assignment_metrics {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_metrics_for_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<RoleAssignmentMetricsResult, get_metrics_for_subscription::Error> {
+    ) -> std::result::Result<models::RoleAssignmentMetricsResult, get_metrics_for_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/roleAssignmentsUsageMetrics",
@@ -38,13 +45,13 @@ pub mod role_assignment_metrics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RoleAssignmentMetricsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RoleAssignmentMetricsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_metrics_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_metrics_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metrics_for_subscription::Error::DefaultResponse {
                     status_code,
@@ -54,7 +61,7 @@ pub mod role_assignment_metrics {
         }
     }
     pub mod get_metrics_for_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

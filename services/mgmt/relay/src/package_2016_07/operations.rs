@@ -2,10 +2,95 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Namespaces_CheckNameAvailability(#[from] namespaces::check_name_availability::Error),
+    #[error(transparent)]
+    Namespaces_List(#[from] namespaces::list::Error),
+    #[error(transparent)]
+    Namespaces_ListByResourceGroup(#[from] namespaces::list_by_resource_group::Error),
+    #[error(transparent)]
+    Namespaces_Get(#[from] namespaces::get::Error),
+    #[error(transparent)]
+    Namespaces_CreateOrUpdate(#[from] namespaces::create_or_update::Error),
+    #[error(transparent)]
+    Namespaces_Update(#[from] namespaces::update::Error),
+    #[error(transparent)]
+    Namespaces_Delete(#[from] namespaces::delete::Error),
+    #[error(transparent)]
+    Namespaces_ListAuthorizationRules(#[from] namespaces::list_authorization_rules::Error),
+    #[error(transparent)]
+    Namespaces_ListPostAuthorizationRules(#[from] namespaces::list_post_authorization_rules::Error),
+    #[error(transparent)]
+    Namespaces_GetAuthorizationRule(#[from] namespaces::get_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_PostAuthorizationRule(#[from] namespaces::post_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_CreateOrUpdateAuthorizationRule(#[from] namespaces::create_or_update_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_DeleteAuthorizationRule(#[from] namespaces::delete_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_ListKeys(#[from] namespaces::list_keys::Error),
+    #[error(transparent)]
+    Namespaces_RegenerateKeys(#[from] namespaces::regenerate_keys::Error),
+    #[error(transparent)]
+    HybridConnections_ListByNamespace(#[from] hybrid_connections::list_by_namespace::Error),
+    #[error(transparent)]
+    HybridConnections_Get(#[from] hybrid_connections::get::Error),
+    #[error(transparent)]
+    HybridConnections_CreateOrUpdate(#[from] hybrid_connections::create_or_update::Error),
+    #[error(transparent)]
+    HybridConnections_Delete(#[from] hybrid_connections::delete::Error),
+    #[error(transparent)]
+    HybridConnections_ListAuthorizationRules(#[from] hybrid_connections::list_authorization_rules::Error),
+    #[error(transparent)]
+    HybridConnections_ListPostAuthorizationRules(#[from] hybrid_connections::list_post_authorization_rules::Error),
+    #[error(transparent)]
+    HybridConnections_GetAuthorizationRule(#[from] hybrid_connections::get_authorization_rule::Error),
+    #[error(transparent)]
+    HybridConnections_PostAuthorizationRule(#[from] hybrid_connections::post_authorization_rule::Error),
+    #[error(transparent)]
+    HybridConnections_CreateOrUpdateAuthorizationRule(#[from] hybrid_connections::create_or_update_authorization_rule::Error),
+    #[error(transparent)]
+    HybridConnections_DeleteAuthorizationRule(#[from] hybrid_connections::delete_authorization_rule::Error),
+    #[error(transparent)]
+    HybridConnections_ListKeys(#[from] hybrid_connections::list_keys::Error),
+    #[error(transparent)]
+    HybridConnections_RegenerateKeys(#[from] hybrid_connections::regenerate_keys::Error),
+    #[error(transparent)]
+    WcfRelays_ListByNamespace(#[from] wcf_relays::list_by_namespace::Error),
+    #[error(transparent)]
+    WcfRelays_Get(#[from] wcf_relays::get::Error),
+    #[error(transparent)]
+    WcfRelays_CreateOrUpdate(#[from] wcf_relays::create_or_update::Error),
+    #[error(transparent)]
+    WcfRelays_Delete(#[from] wcf_relays::delete::Error),
+    #[error(transparent)]
+    WcfRelays_ListAuthorizationRules(#[from] wcf_relays::list_authorization_rules::Error),
+    #[error(transparent)]
+    WcfRelays_ListPostAuthorizationRules(#[from] wcf_relays::list_post_authorization_rules::Error),
+    #[error(transparent)]
+    WcfRelays_GetAuthorizationRule(#[from] wcf_relays::get_authorization_rule::Error),
+    #[error(transparent)]
+    WcfRelays_PostAuthorizationRule(#[from] wcf_relays::post_authorization_rule::Error),
+    #[error(transparent)]
+    WcfRelays_CreateOrUpdateAuthorizationRule(#[from] wcf_relays::create_or_update_authorization_rule::Error),
+    #[error(transparent)]
+    WcfRelays_DeleteAuthorizationRule(#[from] wcf_relays::delete_authorization_rule::Error),
+    #[error(transparent)]
+    WcfRelays_ListKeys(#[from] wcf_relays::list_keys::Error),
+    #[error(transparent)]
+    WcfRelays_RegenerateKeys(#[from] wcf_relays::regenerate_keys::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Relay/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +111,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +127,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,12 +151,12 @@ pub mod operations {
     }
 }
 pub mod namespaces {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        parameters: &CheckNameAvailability,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+        parameters: &models::CheckNameAvailability,
+    ) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Relay/CheckNameAvailability",
@@ -102,7 +187,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -116,7 +201,7 @@ pub mod namespaces {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -138,7 +223,7 @@ pub mod namespaces {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<RelayNamespaceListResult, list::Error> {
+    ) -> std::result::Result<models::RelayNamespaceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Relay/Namespaces",
@@ -163,13 +248,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayNamespaceListResult =
+                let rsp_value: models::RelayNamespaceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -179,7 +264,7 @@ pub mod namespaces {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -205,7 +290,7 @@ pub mod namespaces {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RelayNamespaceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::RelayNamespaceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/Namespaces",
@@ -236,13 +321,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayNamespaceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayNamespaceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -252,7 +337,7 @@ pub mod namespaces {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -279,7 +364,7 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RelayNamespace, get::Error> {
+    ) -> std::result::Result<models::RelayNamespace, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}",
@@ -306,13 +391,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayNamespace =
+                let rsp_value: models::RelayNamespace =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -322,7 +407,7 @@ pub mod namespaces {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -348,7 +433,7 @@ pub mod namespaces {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
-        parameters: &RelayNamespace,
+        parameters: &models::RelayNamespace,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -381,14 +466,14 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayNamespace = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayNamespace = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -398,10 +483,10 @@ pub mod namespaces {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(RelayNamespace),
+            Ok200(models::RelayNamespace),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -429,9 +514,9 @@ pub mod namespaces {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
-        parameters: &RelayNamespaceUpdateParameter,
+        parameters: &models::RelayNamespaceUpdateParameter,
         subscription_id: &str,
-    ) -> std::result::Result<RelayNamespace, update::Error> {
+    ) -> std::result::Result<models::RelayNamespace, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}",
@@ -459,7 +544,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayNamespace =
+                let rsp_value: models::RelayNamespace =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -473,7 +558,7 @@ pub mod namespaces {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -527,7 +612,7 @@ pub mod namespaces {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -537,7 +622,7 @@ pub mod namespaces {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -570,7 +655,7 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleListResult, list_authorization_rules::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleListResult, list_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/AuthorizationRules",
@@ -602,13 +687,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_authorization_rules::Error::DefaultResponse {
                     status_code,
@@ -618,7 +703,7 @@ pub mod namespaces {
         }
     }
     pub mod list_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -645,7 +730,7 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleListResult, list_post_authorization_rules::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleListResult, list_post_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/AuthorizationRules",
@@ -678,13 +763,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_post_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_post_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_post_authorization_rules::Error::DefaultResponse {
                     status_code,
@@ -694,7 +779,7 @@ pub mod namespaces {
         }
     }
     pub mod list_post_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -722,7 +807,7 @@ pub mod namespaces {
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, get_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, get_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/AuthorizationRules/{}",
@@ -755,13 +840,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -771,7 +856,7 @@ pub mod namespaces {
         }
     }
     pub mod get_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -799,7 +884,7 @@ pub mod namespaces {
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, post_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, post_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/AuthorizationRules/{}",
@@ -833,13 +918,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -849,7 +934,7 @@ pub mod namespaces {
         }
     }
     pub mod post_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -876,9 +961,9 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
-        parameters: &AuthorizationRule,
+        parameters: &models::AuthorizationRule,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, create_or_update_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, create_or_update_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/AuthorizationRules/{}",
@@ -912,13 +997,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -928,7 +1013,7 @@ pub mod namespaces {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -991,7 +1076,7 @@ pub mod namespaces {
             http::StatusCode::NO_CONTENT => Ok(delete_authorization_rule::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -1001,7 +1086,7 @@ pub mod namespaces {
         }
     }
     pub mod delete_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1034,7 +1119,7 @@ pub mod namespaces {
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleKeys, list_keys::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/AuthorizationRules/{}/listKeys",
@@ -1066,13 +1151,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleKeys =
+                let rsp_value: models::AuthorizationRuleKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_keys::Error::DefaultResponse {
                     status_code,
@@ -1082,7 +1167,7 @@ pub mod namespaces {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1109,9 +1194,9 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
-        parameters: &RegenerateKeysParameters,
+        parameters: &models::RegenerateKeysParameters,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleKeys, regenerate_keys::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleKeys, regenerate_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/AuthorizationRules/{}/regenerateKeys",
@@ -1143,13 +1228,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_keys::Error::DefaultResponse {
                     status_code,
@@ -1159,7 +1244,7 @@ pub mod namespaces {
         }
     }
     pub mod regenerate_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1183,13 +1268,13 @@ pub mod namespaces {
     }
 }
 pub mod hybrid_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_namespace(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnectionListResult, list_by_namespace::Error> {
+    ) -> std::result::Result<models::HybridConnectionListResult, list_by_namespace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections",
@@ -1219,13 +1304,13 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_namespace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_namespace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_namespace::Error::DefaultResponse {
                     status_code,
@@ -1235,7 +1320,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod list_by_namespace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1263,7 +1348,7 @@ pub mod hybrid_connections {
         namespace_name: &str,
         hybrid_connection_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, get::Error> {
+    ) -> std::result::Result<models::HybridConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}",
@@ -1291,13 +1376,13 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection =
+                let rsp_value: models::HybridConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1307,7 +1392,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1334,9 +1419,9 @@ pub mod hybrid_connections {
         resource_group_name: &str,
         namespace_name: &str,
         hybrid_connection_name: &str,
-        parameters: &HybridConnection,
+        parameters: &models::HybridConnection,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, create_or_update::Error> {
+    ) -> std::result::Result<models::HybridConnection, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}",
@@ -1368,13 +1453,13 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1384,7 +1469,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1442,7 +1527,7 @@ pub mod hybrid_connections {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1452,7 +1537,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1485,7 +1570,7 @@ pub mod hybrid_connections {
         namespace_name: &str,
         hybrid_connection_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleListResult, list_authorization_rules::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleListResult, list_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}/authorizationRules",
@@ -1518,7 +1603,7 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1532,7 +1617,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod list_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1557,7 +1642,7 @@ pub mod hybrid_connections {
         namespace_name: &str,
         hybrid_connection_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleListResult, list_post_authorization_rules::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleListResult, list_post_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}/authorizationRules",
@@ -1591,7 +1676,7 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_post_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1605,7 +1690,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod list_post_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1631,7 +1716,7 @@ pub mod hybrid_connections {
         hybrid_connection_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, get_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, get_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}/authorizationRules/{}",
@@ -1665,13 +1750,13 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -1681,7 +1766,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod get_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1710,7 +1795,7 @@ pub mod hybrid_connections {
         hybrid_connection_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, post_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, post_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}/authorizationRules/{}",
@@ -1745,13 +1830,13 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -1761,7 +1846,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod post_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1789,9 +1874,9 @@ pub mod hybrid_connections {
         namespace_name: &str,
         hybrid_connection_name: &str,
         authorization_rule_name: &str,
-        parameters: &AuthorizationRule,
+        parameters: &models::AuthorizationRule,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, create_or_update_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, create_or_update_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}/authorizationRules/{}",
@@ -1826,13 +1911,13 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -1842,7 +1927,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1907,7 +1992,7 @@ pub mod hybrid_connections {
             http::StatusCode::NO_CONTENT => Ok(delete_authorization_rule::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -1917,7 +2002,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod delete_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1951,7 +2036,7 @@ pub mod hybrid_connections {
         hybrid_connection_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleKeys, list_keys::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}/authorizationRules/{}/ListKeys" , operation_config . base_path () , subscription_id , resource_group_name , namespace_name , hybrid_connection_name , authorization_rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_keys::Error::ParseUrlError)?;
@@ -1976,13 +2061,13 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleKeys =
+                let rsp_value: models::AuthorizationRuleKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_keys::Error::DefaultResponse {
                     status_code,
@@ -1992,7 +2077,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2020,9 +2105,9 @@ pub mod hybrid_connections {
         namespace_name: &str,
         hybrid_connection_name: &str,
         authorization_rule_name: &str,
-        parameters: &RegenerateKeysParameters,
+        parameters: &models::RegenerateKeysParameters,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleKeys, regenerate_keys::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleKeys, regenerate_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/HybridConnections/{}/authorizationRules/{}/regenerateKeys" , operation_config . base_path () , subscription_id , resource_group_name , namespace_name , hybrid_connection_name , authorization_rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(regenerate_keys::Error::ParseUrlError)?;
@@ -2047,13 +2132,13 @@ pub mod hybrid_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_keys::Error::DefaultResponse {
                     status_code,
@@ -2063,7 +2148,7 @@ pub mod hybrid_connections {
         }
     }
     pub mod regenerate_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2087,13 +2172,13 @@ pub mod hybrid_connections {
     }
 }
 pub mod wcf_relays {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_namespace(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WcfRelaysListResult, list_by_namespace::Error> {
+    ) -> std::result::Result<models::WcfRelaysListResult, list_by_namespace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays",
@@ -2123,13 +2208,13 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WcfRelaysListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WcfRelaysListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_namespace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_namespace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_namespace::Error::DefaultResponse {
                     status_code,
@@ -2139,7 +2224,7 @@ pub mod wcf_relays {
         }
     }
     pub mod list_by_namespace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2195,14 +2280,14 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WcfRelay =
+                let rsp_value: models::WcfRelay =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(get::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2212,10 +2297,10 @@ pub mod wcf_relays {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(WcfRelay),
+            Ok200(models::WcfRelay),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2244,9 +2329,9 @@ pub mod wcf_relays {
         resource_group_name: &str,
         namespace_name: &str,
         relay_name: &str,
-        parameters: &WcfRelay,
+        parameters: &models::WcfRelay,
         subscription_id: &str,
-    ) -> std::result::Result<WcfRelay, create_or_update::Error> {
+    ) -> std::result::Result<models::WcfRelay, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays/{}",
@@ -2278,13 +2363,13 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WcfRelay = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WcfRelay = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2294,7 +2379,7 @@ pub mod wcf_relays {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2352,7 +2437,7 @@ pub mod wcf_relays {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2362,7 +2447,7 @@ pub mod wcf_relays {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2395,7 +2480,7 @@ pub mod wcf_relays {
         namespace_name: &str,
         relay_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleListResult, list_authorization_rules::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleListResult, list_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays/{}/authorizationRules",
@@ -2428,7 +2513,7 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2442,7 +2527,7 @@ pub mod wcf_relays {
         }
     }
     pub mod list_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2467,7 +2552,7 @@ pub mod wcf_relays {
         namespace_name: &str,
         relay_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleListResult, list_post_authorization_rules::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleListResult, list_post_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays/{}/authorizationRules",
@@ -2501,7 +2586,7 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_post_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2515,7 +2600,7 @@ pub mod wcf_relays {
         }
     }
     pub mod list_post_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2541,7 +2626,7 @@ pub mod wcf_relays {
         relay_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, get_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, get_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays/{}/authorizationRules/{}",
@@ -2575,13 +2660,13 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -2591,7 +2676,7 @@ pub mod wcf_relays {
         }
     }
     pub mod get_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2620,7 +2705,7 @@ pub mod wcf_relays {
         relay_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, post_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, post_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays/{}/authorizationRules/{}",
@@ -2655,13 +2740,13 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -2671,7 +2756,7 @@ pub mod wcf_relays {
         }
     }
     pub mod post_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2699,9 +2784,9 @@ pub mod wcf_relays {
         namespace_name: &str,
         relay_name: &str,
         authorization_rule_name: &str,
-        parameters: &AuthorizationRule,
+        parameters: &models::AuthorizationRule,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRule, create_or_update_authorization_rule::Error> {
+    ) -> std::result::Result<models::AuthorizationRule, create_or_update_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays/{}/authorizationRules/{}",
@@ -2736,13 +2821,13 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -2752,7 +2837,7 @@ pub mod wcf_relays {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2817,7 +2902,7 @@ pub mod wcf_relays {
             http::StatusCode::NO_CONTENT => Ok(delete_authorization_rule::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_authorization_rule::Error::DefaultResponse {
                     status_code,
@@ -2827,7 +2912,7 @@ pub mod wcf_relays {
         }
     }
     pub mod delete_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2861,7 +2946,7 @@ pub mod wcf_relays {
         relay_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleKeys, list_keys::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays/{}/authorizationRules/{}/ListKeys",
@@ -2894,13 +2979,13 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleKeys =
+                let rsp_value: models::AuthorizationRuleKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_keys::Error::DefaultResponse {
                     status_code,
@@ -2910,7 +2995,7 @@ pub mod wcf_relays {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2938,9 +3023,9 @@ pub mod wcf_relays {
         namespace_name: &str,
         relay_name: &str,
         authorization_rule_name: &str,
-        parameters: &RegenerateKeysParameters,
+        parameters: &models::RegenerateKeysParameters,
         subscription_id: &str,
-    ) -> std::result::Result<AuthorizationRuleKeys, regenerate_keys::Error> {
+    ) -> std::result::Result<models::AuthorizationRuleKeys, regenerate_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Relay/namespaces/{}/WcfRelays/{}/authorizationRules/{}/regenerateKeys" , operation_config . base_path () , subscription_id , resource_group_name , namespace_name , relay_name , authorization_rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(regenerate_keys::Error::ParseUrlError)?;
@@ -2965,13 +3050,13 @@ pub mod wcf_relays {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AuthorizationRuleKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AuthorizationRuleKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_keys::Error::DefaultResponse {
                     status_code,
@@ -2981,7 +3066,7 @@ pub mod wcf_relays {
         }
     }
     pub mod regenerate_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

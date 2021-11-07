@@ -2,15 +2,62 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    BlockchainMembers_Get(#[from] blockchain_members::get::Error),
+    #[error(transparent)]
+    BlockchainMembers_Create(#[from] blockchain_members::create::Error),
+    #[error(transparent)]
+    BlockchainMembers_Update(#[from] blockchain_members::update::Error),
+    #[error(transparent)]
+    BlockchainMembers_Delete(#[from] blockchain_members::delete::Error),
+    #[error(transparent)]
+    BlockchainMembers_List(#[from] blockchain_members::list::Error),
+    #[error(transparent)]
+    BlockchainMembers_ListAll(#[from] blockchain_members::list_all::Error),
+    #[error(transparent)]
+    BlockchainMembers_ListConsortiumMembers(#[from] blockchain_members::list_consortium_members::Error),
+    #[error(transparent)]
+    BlockchainMembers_ListApiKeys(#[from] blockchain_members::list_api_keys::Error),
+    #[error(transparent)]
+    BlockchainMembers_ListRegenerateApiKeys(#[from] blockchain_members::list_regenerate_api_keys::Error),
+    #[error(transparent)]
+    BlockchainMemberOperationResults_Get(#[from] blockchain_member_operation_results::get::Error),
+    #[error(transparent)]
+    Locations_CheckNameAvailability(#[from] locations::check_name_availability::Error),
+    #[error(transparent)]
+    Locations_ListConsortiums(#[from] locations::list_consortiums::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Skus_List(#[from] skus::list::Error),
+    #[error(transparent)]
+    TransactionNodes_Get(#[from] transaction_nodes::get::Error),
+    #[error(transparent)]
+    TransactionNodes_Create(#[from] transaction_nodes::create::Error),
+    #[error(transparent)]
+    TransactionNodes_Update(#[from] transaction_nodes::update::Error),
+    #[error(transparent)]
+    TransactionNodes_Delete(#[from] transaction_nodes::delete::Error),
+    #[error(transparent)]
+    TransactionNodes_List(#[from] transaction_nodes::list::Error),
+    #[error(transparent)]
+    TransactionNodes_ListApiKeys(#[from] transaction_nodes::list_api_keys::Error),
+    #[error(transparent)]
+    TransactionNodes_ListRegenerateApiKeys(#[from] transaction_nodes::list_regenerate_api_keys::Error),
+}
 pub mod blockchain_members {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<BlockchainMember, get::Error> {
+    ) -> std::result::Result<models::BlockchainMember, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}",
@@ -37,7 +84,7 @@ pub mod blockchain_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlockchainMember =
+                let rsp_value: models::BlockchainMember =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -51,7 +98,7 @@ pub mod blockchain_members {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -73,7 +120,7 @@ pub mod blockchain_members {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
-        blockchain_member: Option<&BlockchainMember>,
+        blockchain_member: Option<&models::BlockchainMember>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create::Response, create::Error> {
@@ -108,13 +155,13 @@ pub mod blockchain_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlockchainMember =
+                let rsp_value: models::BlockchainMember =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlockchainMember =
+                let rsp_value: models::BlockchainMember =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
@@ -128,11 +175,11 @@ pub mod blockchain_members {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BlockchainMember),
-            Created201(BlockchainMember),
+            Ok200(models::BlockchainMember),
+            Created201(models::BlockchainMember),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -155,10 +202,10 @@ pub mod blockchain_members {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
-        blockchain_member: Option<&BlockchainMemberUpdate>,
+        blockchain_member: Option<&models::BlockchainMemberUpdate>,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<BlockchainMember, update::Error> {
+    ) -> std::result::Result<models::BlockchainMember, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}",
@@ -190,7 +237,7 @@ pub mod blockchain_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlockchainMember =
+                let rsp_value: models::BlockchainMember =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -204,7 +251,7 @@ pub mod blockchain_members {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -265,7 +312,7 @@ pub mod blockchain_members {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -293,7 +340,7 @@ pub mod blockchain_members {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<BlockchainMemberCollection, list::Error> {
+    ) -> std::result::Result<models::BlockchainMemberCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers",
@@ -319,7 +366,7 @@ pub mod blockchain_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlockchainMemberCollection =
+                let rsp_value: models::BlockchainMemberCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -333,7 +380,7 @@ pub mod blockchain_members {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -355,7 +402,7 @@ pub mod blockchain_members {
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<BlockchainMemberCollection, list_all::Error> {
+    ) -> std::result::Result<models::BlockchainMemberCollection, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/blockchainMembers",
@@ -383,7 +430,7 @@ pub mod blockchain_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlockchainMemberCollection =
+                let rsp_value: models::BlockchainMemberCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -397,7 +444,7 @@ pub mod blockchain_members {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -421,7 +468,7 @@ pub mod blockchain_members {
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ConsortiumMemberCollection, list_consortium_members::Error> {
+    ) -> std::result::Result<models::ConsortiumMemberCollection, list_consortium_members::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/consortiumMembers",
@@ -453,7 +500,7 @@ pub mod blockchain_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsortiumMemberCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConsortiumMemberCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_consortium_members::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -467,7 +514,7 @@ pub mod blockchain_members {
         }
     }
     pub mod list_consortium_members {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -491,7 +538,7 @@ pub mod blockchain_members {
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ApiKeyCollection, list_api_keys::Error> {
+    ) -> std::result::Result<models::ApiKeyCollection, list_api_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/listApiKeys",
@@ -522,7 +569,7 @@ pub mod blockchain_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiKeyCollection =
+                let rsp_value: models::ApiKeyCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_api_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -536,7 +583,7 @@ pub mod blockchain_members {
         }
     }
     pub mod list_api_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -558,10 +605,10 @@ pub mod blockchain_members {
     pub async fn list_regenerate_api_keys(
         operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
-        api_key: Option<&ApiKey>,
+        api_key: Option<&models::ApiKey>,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ApiKeyCollection, list_regenerate_api_keys::Error> {
+    ) -> std::result::Result<models::ApiKeyCollection, list_regenerate_api_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/regenerateApiKeys",
@@ -598,7 +645,7 @@ pub mod blockchain_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiKeyCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiKeyCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_regenerate_api_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -612,7 +659,7 @@ pub mod blockchain_members {
         }
     }
     pub mod list_regenerate_api_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -633,7 +680,7 @@ pub mod blockchain_members {
     }
 }
 pub mod blockchain_member_operation_results {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         location_name: &str,
@@ -666,7 +713,7 @@ pub mod blockchain_member_operation_results {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResult =
+                let rsp_value: models::OperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Ok200(rsp_value))
             }
@@ -681,10 +728,10 @@ pub mod blockchain_member_operation_results {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationResult),
+            Ok200(models::OperationResult),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -707,13 +754,13 @@ pub mod blockchain_member_operation_results {
     }
 }
 pub mod locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         location_name: &str,
-        name_availability_request: Option<&NameAvailabilityRequest>,
+        name_availability_request: Option<&models::NameAvailabilityRequest>,
         subscription_id: &str,
-    ) -> std::result::Result<NameAvailability, check_name_availability::Error> {
+    ) -> std::result::Result<models::NameAvailability, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/locations/{}/checkNameAvailability",
@@ -749,7 +796,7 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NameAvailability = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NameAvailability = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -763,7 +810,7 @@ pub mod locations {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -786,7 +833,7 @@ pub mod locations {
         operation_config: &crate::OperationConfig,
         location_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConsortiumCollection, list_consortiums::Error> {
+    ) -> std::result::Result<models::ConsortiumCollection, list_consortiums::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/locations/{}/listConsortiums",
@@ -816,7 +863,7 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsortiumCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConsortiumCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_consortiums::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -830,7 +877,7 @@ pub mod locations {
         }
     }
     pub mod list_consortiums {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -851,8 +898,10 @@ pub mod locations {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ResourceProviderOperationCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::ResourceProviderOperationCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Blockchain/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -873,7 +922,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceProviderOperationCollection =
+                let rsp_value: models::ResourceProviderOperationCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -887,7 +936,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -908,11 +957,11 @@ pub mod operations {
     }
 }
 pub mod skus {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceTypeSkuCollection, list::Error> {
+    ) -> std::result::Result<models::ResourceTypeSkuCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Blockchain/skus",
@@ -937,7 +986,7 @@ pub mod skus {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceTypeSkuCollection =
+                let rsp_value: models::ResourceTypeSkuCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -951,7 +1000,7 @@ pub mod skus {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -972,14 +1021,14 @@ pub mod skus {
     }
 }
 pub mod transaction_nodes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<TransactionNode, get::Error> {
+    ) -> std::result::Result<models::TransactionNode, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}",
@@ -1007,7 +1056,7 @@ pub mod transaction_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionNode =
+                let rsp_value: models::TransactionNode =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1021,7 +1070,7 @@ pub mod transaction_nodes {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1044,7 +1093,7 @@ pub mod transaction_nodes {
         operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
-        transaction_node: Option<&TransactionNode>,
+        transaction_node: Option<&models::TransactionNode>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create::Response, create::Error> {
@@ -1080,13 +1129,13 @@ pub mod transaction_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionNode =
+                let rsp_value: models::TransactionNode =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionNode =
+                let rsp_value: models::TransactionNode =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
@@ -1100,11 +1149,11 @@ pub mod transaction_nodes {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(TransactionNode),
-            Created201(TransactionNode),
+            Ok200(models::TransactionNode),
+            Created201(models::TransactionNode),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1128,10 +1177,10 @@ pub mod transaction_nodes {
         operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
-        transaction_node: Option<&TransactionNodeUpdate>,
+        transaction_node: Option<&models::TransactionNodeUpdate>,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<TransactionNode, update::Error> {
+    ) -> std::result::Result<models::TransactionNode, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}",
@@ -1164,7 +1213,7 @@ pub mod transaction_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionNode =
+                let rsp_value: models::TransactionNode =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1178,7 +1227,7 @@ pub mod transaction_nodes {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1241,7 +1290,7 @@ pub mod transaction_nodes {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1270,7 +1319,7 @@ pub mod transaction_nodes {
         blockchain_member_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<TransactionNodeCollection, list::Error> {
+    ) -> std::result::Result<models::TransactionNodeCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes",
@@ -1297,7 +1346,7 @@ pub mod transaction_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionNodeCollection =
+                let rsp_value: models::TransactionNodeCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1311,7 +1360,7 @@ pub mod transaction_nodes {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1336,7 +1385,7 @@ pub mod transaction_nodes {
         transaction_node_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ApiKeyCollection, list_api_keys::Error> {
+    ) -> std::result::Result<models::ApiKeyCollection, list_api_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}/listApiKeys",
@@ -1368,7 +1417,7 @@ pub mod transaction_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiKeyCollection =
+                let rsp_value: models::ApiKeyCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_api_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1382,7 +1431,7 @@ pub mod transaction_nodes {
         }
     }
     pub mod list_api_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1405,10 +1454,10 @@ pub mod transaction_nodes {
         operation_config: &crate::OperationConfig,
         blockchain_member_name: &str,
         transaction_node_name: &str,
-        api_key: Option<&ApiKey>,
+        api_key: Option<&models::ApiKey>,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ApiKeyCollection, list_regenerate_api_keys::Error> {
+    ) -> std::result::Result<models::ApiKeyCollection, list_regenerate_api_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Blockchain/blockchainMembers/{}/transactionNodes/{}/regenerateApiKeys" , operation_config . base_path () , subscription_id , resource_group_name , blockchain_member_name , transaction_node_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_regenerate_api_keys::Error::ParseUrlError)?;
@@ -1439,7 +1488,7 @@ pub mod transaction_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiKeyCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiKeyCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_regenerate_api_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1453,7 +1502,7 @@ pub mod transaction_nodes {
         }
     }
     pub mod list_regenerate_api_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

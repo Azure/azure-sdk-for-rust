@@ -2,15 +2,22 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ContainerServices_ListOrchestrators(#[from] container_services::list_orchestrators::Error),
+}
 pub mod container_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_orchestrators(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
         resource_type: Option<&str>,
-    ) -> std::result::Result<OrchestratorVersionProfileListResult, list_orchestrators::Error> {
+    ) -> std::result::Result<models::OrchestratorVersionProfileListResult, list_orchestrators::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerService/locations/{}/orchestrators",
@@ -42,7 +49,7 @@ pub mod container_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OrchestratorVersionProfileListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OrchestratorVersionProfileListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_orchestrators::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -56,7 +63,7 @@ pub mod container_services {
         }
     }
     pub mod list_orchestrators {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

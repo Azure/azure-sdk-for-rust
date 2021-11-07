@@ -2,14 +2,37 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Usages_Get(#[from] usages::get::Error),
+    #[error(transparent)]
+    Usages_List(#[from] usages::list::Error),
+    #[error(transparent)]
+    Quota_Get(#[from] quota::get::Error),
+    #[error(transparent)]
+    Quota_CreateOrUpdate(#[from] quota::create_or_update::Error),
+    #[error(transparent)]
+    Quota_Update(#[from] quota::update::Error),
+    #[error(transparent)]
+    Quota_List(#[from] quota::list::Error),
+    #[error(transparent)]
+    QuotaRequestStatus_Get(#[from] quota_request_status::get::Error),
+    #[error(transparent)]
+    QuotaRequestStatus_List(#[from] quota_request_status::list::Error),
+    #[error(transparent)]
+    QuotaOperation_List(#[from] quota_operation::list::Error),
+}
 pub mod usages {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_name: &str,
         scope: &str,
-    ) -> std::result::Result<CurrentUsagesBase, get::Error> {
+    ) -> std::result::Result<models::CurrentUsagesBase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Quota/usages/{}",
@@ -35,13 +58,13 @@ pub mod usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CurrentUsagesBase =
+                let rsp_value: models::CurrentUsagesBase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -51,7 +74,7 @@ pub mod usages {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -73,7 +96,7 @@ pub mod usages {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<UsagesLimits, list::Error> {
+    pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<models::UsagesLimits, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/providers/Microsoft.Quota/usages", operation_config.base_path(), scope);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -94,13 +117,13 @@ pub mod usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsagesLimits =
+                let rsp_value: models::UsagesLimits =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -110,7 +133,7 @@ pub mod usages {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -134,12 +157,12 @@ pub mod usages {
     }
 }
 pub mod quota {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_name: &str,
         scope: &str,
-    ) -> std::result::Result<CurrentQuotaLimitBase, get::Error> {
+    ) -> std::result::Result<models::CurrentQuotaLimitBase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Quota/quotas/{}",
@@ -165,13 +188,13 @@ pub mod quota {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CurrentQuotaLimitBase =
+                let rsp_value: models::CurrentQuotaLimitBase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -181,7 +204,7 @@ pub mod quota {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -207,7 +230,7 @@ pub mod quota {
         operation_config: &crate::OperationConfig,
         resource_name: &str,
         scope: &str,
-        create_quota_request: &CurrentQuotaLimitBase,
+        create_quota_request: &models::CurrentQuotaLimitBase,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -238,14 +261,14 @@ pub mod quota {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CurrentQuotaLimitBase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CurrentQuotaLimitBase = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExceptionResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -255,10 +278,10 @@ pub mod quota {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CurrentQuotaLimitBase),
+            Ok200(models::CurrentQuotaLimitBase),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -286,7 +309,7 @@ pub mod quota {
         operation_config: &crate::OperationConfig,
         resource_name: &str,
         scope: &str,
-        create_quota_request: &CurrentQuotaLimitBase,
+        create_quota_request: &models::CurrentQuotaLimitBase,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -314,14 +337,14 @@ pub mod quota {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CurrentQuotaLimitBase =
+                let rsp_value: models::CurrentQuotaLimitBase =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -331,10 +354,10 @@ pub mod quota {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CurrentQuotaLimitBase),
+            Ok200(models::CurrentQuotaLimitBase),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -358,7 +381,7 @@ pub mod quota {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<QuotaLimits, list::Error> {
+    pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<models::QuotaLimits, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/providers/Microsoft.Quota/quotas", operation_config.base_path(), scope);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -379,13 +402,13 @@ pub mod quota {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QuotaLimits =
+                let rsp_value: models::QuotaLimits =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -395,7 +418,7 @@ pub mod quota {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -419,12 +442,12 @@ pub mod quota {
     }
 }
 pub mod quota_request_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         id: &str,
         scope: &str,
-    ) -> std::result::Result<QuotaRequestDetails, get::Error> {
+    ) -> std::result::Result<models::QuotaRequestDetails, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Quota/quotaRequests/{}",
@@ -450,13 +473,13 @@ pub mod quota_request_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QuotaRequestDetails =
+                let rsp_value: models::QuotaRequestDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -466,7 +489,7 @@ pub mod quota_request_status {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -494,7 +517,7 @@ pub mod quota_request_status {
         filter: Option<&str>,
         top: Option<i32>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<QuotaRequestDetailsList, list::Error> {
+    ) -> std::result::Result<models::QuotaRequestDetailsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/providers/Microsoft.Quota/quotaRequests", operation_config.base_path(), scope);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -524,13 +547,13 @@ pub mod quota_request_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QuotaRequestDetailsList =
+                let rsp_value: models::QuotaRequestDetailsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -540,7 +563,7 @@ pub mod quota_request_status {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -563,9 +586,9 @@ pub mod quota_request_status {
         }
     }
 }
-pub mod operation {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+pub mod quota_operation {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Quota/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -586,13 +609,13 @@ pub mod operation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -602,7 +625,7 @@ pub mod operation {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

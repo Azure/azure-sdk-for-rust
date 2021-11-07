@@ -2,7 +2,42 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    GetDockerRegistryV2Support(#[from] get_docker_registry_v2_support::Error),
+    #[error(transparent)]
+    GetTagList(#[from] get_tag_list::Error),
+    #[error(transparent)]
+    GetManifest(#[from] get_manifest::Error),
+    #[error(transparent)]
+    GetRepositories(#[from] get_repositories::Error),
+    #[error(transparent)]
+    GetAcrRepositories(#[from] get_acr_repositories::Error),
+    #[error(transparent)]
+    GetAcrRepositoryAttributes(#[from] get_acr_repository_attributes::Error),
+    #[error(transparent)]
+    UpdateAcrRepositoryAttributes(#[from] update_acr_repository_attributes::Error),
+    #[error(transparent)]
+    DeleteAcrRepository(#[from] delete_acr_repository::Error),
+    #[error(transparent)]
+    GetAcrTags(#[from] get_acr_tags::Error),
+    #[error(transparent)]
+    GetAcrTagAttributes(#[from] get_acr_tag_attributes::Error),
+    #[error(transparent)]
+    UpdateAcrTagAttributes(#[from] update_acr_tag_attributes::Error),
+    #[error(transparent)]
+    DeleteAcrTag(#[from] delete_acr_tag::Error),
+    #[error(transparent)]
+    GetAcrManifests(#[from] get_acr_manifests::Error),
+    #[error(transparent)]
+    GetAcrManifestAttributes(#[from] get_acr_manifest_attributes::Error),
+    #[error(transparent)]
+    UpdateAcrManifestAttributes(#[from] update_acr_manifest_attributes::Error),
+}
 pub async fn get_docker_registry_v2_support(
     operation_config: &crate::OperationConfig,
 ) -> std::result::Result<(), get_docker_registry_v2_support::Error> {
@@ -31,7 +66,7 @@ pub async fn get_docker_registry_v2_support(
         http::StatusCode::OK => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_docker_registry_v2_support::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_docker_registry_v2_support::Error::DefaultResponse {
                 status_code,
@@ -41,7 +76,7 @@ pub async fn get_docker_registry_v2_support(
     }
 }
 pub mod get_docker_registry_v2_support {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -66,7 +101,7 @@ pub mod get_docker_registry_v2_support {
 pub async fn get_tag_list(
     operation_config: &crate::OperationConfig,
     name: &str,
-) -> std::result::Result<RepositoryTags, get_tag_list::Error> {
+) -> std::result::Result<models::RepositoryTags, get_tag_list::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/v2/{}/tags/list", operation_config.base_path(), name);
     let mut url = url::Url::parse(url_str).map_err(get_tag_list::Error::ParseUrlError)?;
@@ -89,14 +124,14 @@ pub async fn get_tag_list(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: RepositoryTags =
+            let rsp_value: models::RepositoryTags =
                 serde_json::from_slice(rsp_body).map_err(|source| get_tag_list::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => Err(get_tag_list::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors =
+            let rsp_value: models::AcrErrors =
                 serde_json::from_slice(rsp_body).map_err(|source| get_tag_list::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_tag_list::Error::DefaultResponse {
                 status_code,
@@ -106,7 +141,7 @@ pub async fn get_tag_list(
     }
 }
 pub mod get_tag_list {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -134,7 +169,7 @@ pub async fn get_manifest(
     operation_config: &crate::OperationConfig,
     name: &str,
     reference: &str,
-) -> std::result::Result<Manifest, get_manifest::Error> {
+) -> std::result::Result<models::Manifest, get_manifest::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/v2/{}/manifests/{}", operation_config.base_path(), name, reference);
     let mut url = url::Url::parse(url_str).map_err(get_manifest::Error::ParseUrlError)?;
@@ -157,14 +192,14 @@ pub async fn get_manifest(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Manifest =
+            let rsp_value: models::Manifest =
                 serde_json::from_slice(rsp_body).map_err(|source| get_manifest::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => Err(get_manifest::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors =
+            let rsp_value: models::AcrErrors =
                 serde_json::from_slice(rsp_body).map_err(|source| get_manifest::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_manifest::Error::DefaultResponse {
                 status_code,
@@ -174,7 +209,7 @@ pub async fn get_manifest(
     }
 }
 pub mod get_manifest {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -202,7 +237,7 @@ pub async fn get_repositories(
     operation_config: &crate::OperationConfig,
     last: Option<&str>,
     n: Option<&str>,
-) -> std::result::Result<Repositories, get_repositories::Error> {
+) -> std::result::Result<models::Repositories, get_repositories::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/v2/_catalog", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_repositories::Error::ParseUrlError)?;
@@ -231,13 +266,13 @@ pub async fn get_repositories(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Repositories =
+            let rsp_value: models::Repositories =
                 serde_json::from_slice(rsp_body).map_err(|source| get_repositories::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors =
+            let rsp_value: models::AcrErrors =
                 serde_json::from_slice(rsp_body).map_err(|source| get_repositories::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_repositories::Error::DefaultResponse {
                 status_code,
@@ -247,7 +282,7 @@ pub async fn get_repositories(
     }
 }
 pub mod get_repositories {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -273,7 +308,7 @@ pub async fn get_acr_repositories(
     operation_config: &crate::OperationConfig,
     last: Option<&str>,
     n: Option<&str>,
-) -> std::result::Result<Repositories, get_acr_repositories::Error> {
+) -> std::result::Result<models::Repositories, get_acr_repositories::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/_catalog", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_acr_repositories::Error::ParseUrlError)?;
@@ -302,13 +337,13 @@ pub async fn get_acr_repositories(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Repositories = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Repositories = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_acr_repositories::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_acr_repositories::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_acr_repositories::Error::DefaultResponse {
                 status_code,
@@ -318,7 +353,7 @@ pub async fn get_acr_repositories(
     }
 }
 pub mod get_acr_repositories {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -343,7 +378,7 @@ pub mod get_acr_repositories {
 pub async fn get_acr_repository_attributes(
     operation_config: &crate::OperationConfig,
     name: &str,
-) -> std::result::Result<RepositoryAttributes, get_acr_repository_attributes::Error> {
+) -> std::result::Result<models::RepositoryAttributes, get_acr_repository_attributes::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}", operation_config.base_path(), name);
     let mut url = url::Url::parse(url_str).map_err(get_acr_repository_attributes::Error::ParseUrlError)?;
@@ -368,14 +403,14 @@ pub async fn get_acr_repository_attributes(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: RepositoryAttributes = serde_json::from_slice(rsp_body)
+            let rsp_value: models::RepositoryAttributes = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_acr_repository_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => Err(get_acr_repository_attributes::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_acr_repository_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_acr_repository_attributes::Error::DefaultResponse {
                 status_code,
@@ -385,7 +420,7 @@ pub async fn get_acr_repository_attributes(
     }
 }
 pub mod get_acr_repository_attributes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -412,7 +447,7 @@ pub mod get_acr_repository_attributes {
 pub async fn update_acr_repository_attributes(
     operation_config: &crate::OperationConfig,
     name: &str,
-    value: Option<&ChangeableAttributes>,
+    value: Option<&models::ChangeableAttributes>,
 ) -> std::result::Result<(), update_acr_repository_attributes::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}", operation_config.base_path(), name);
@@ -445,7 +480,7 @@ pub async fn update_acr_repository_attributes(
         http::StatusCode::NOT_FOUND => Err(update_acr_repository_attributes::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_acr_repository_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_acr_repository_attributes::Error::DefaultResponse {
                 status_code,
@@ -455,7 +490,7 @@ pub async fn update_acr_repository_attributes(
     }
 }
 pub mod update_acr_repository_attributes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -482,7 +517,7 @@ pub mod update_acr_repository_attributes {
 pub async fn delete_acr_repository(
     operation_config: &crate::OperationConfig,
     name: &str,
-) -> std::result::Result<DeletedRepository, delete_acr_repository::Error> {
+) -> std::result::Result<models::DeletedRepository, delete_acr_repository::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}", operation_config.base_path(), name);
     let mut url = url::Url::parse(url_str).map_err(delete_acr_repository::Error::ParseUrlError)?;
@@ -507,14 +542,14 @@ pub async fn delete_acr_repository(
     match rsp.status() {
         http::StatusCode::ACCEPTED => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedRepository = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedRepository = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_acr_repository::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => Err(delete_acr_repository::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_acr_repository::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_acr_repository::Error::DefaultResponse {
                 status_code,
@@ -524,7 +559,7 @@ pub async fn delete_acr_repository(
     }
 }
 pub mod delete_acr_repository {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -555,7 +590,7 @@ pub async fn get_acr_tags(
     n: Option<&str>,
     orderby: Option<&str>,
     digest: Option<&str>,
-) -> std::result::Result<AcrRepositoryTags, get_acr_tags::Error> {
+) -> std::result::Result<models::AcrRepositoryTags, get_acr_tags::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}/_tags", operation_config.base_path(), name);
     let mut url = url::Url::parse(url_str).map_err(get_acr_tags::Error::ParseUrlError)?;
@@ -590,14 +625,14 @@ pub async fn get_acr_tags(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrRepositoryTags =
+            let rsp_value: models::AcrRepositoryTags =
                 serde_json::from_slice(rsp_body).map_err(|source| get_acr_tags::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => Err(get_acr_tags::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors =
+            let rsp_value: models::AcrErrors =
                 serde_json::from_slice(rsp_body).map_err(|source| get_acr_tags::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_acr_tags::Error::DefaultResponse {
                 status_code,
@@ -607,7 +642,7 @@ pub async fn get_acr_tags(
     }
 }
 pub mod get_acr_tags {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -635,7 +670,7 @@ pub async fn get_acr_tag_attributes(
     operation_config: &crate::OperationConfig,
     name: &str,
     reference: &str,
-) -> std::result::Result<AcrTagAttributes, get_acr_tag_attributes::Error> {
+) -> std::result::Result<models::AcrTagAttributes, get_acr_tag_attributes::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}/_tags/{}", operation_config.base_path(), name, reference);
     let mut url = url::Url::parse(url_str).map_err(get_acr_tag_attributes::Error::ParseUrlError)?;
@@ -660,14 +695,14 @@ pub async fn get_acr_tag_attributes(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrTagAttributes = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrTagAttributes = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_acr_tag_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => Err(get_acr_tag_attributes::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_acr_tag_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_acr_tag_attributes::Error::DefaultResponse {
                 status_code,
@@ -677,7 +712,7 @@ pub async fn get_acr_tag_attributes(
     }
 }
 pub mod get_acr_tag_attributes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -705,7 +740,7 @@ pub async fn update_acr_tag_attributes(
     operation_config: &crate::OperationConfig,
     name: &str,
     reference: &str,
-    value: Option<&ChangeableAttributes>,
+    value: Option<&models::ChangeableAttributes>,
 ) -> std::result::Result<(), update_acr_tag_attributes::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}/_tags/{}", operation_config.base_path(), name, reference);
@@ -738,7 +773,7 @@ pub async fn update_acr_tag_attributes(
         http::StatusCode::NOT_FOUND => Err(update_acr_tag_attributes::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_acr_tag_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_acr_tag_attributes::Error::DefaultResponse {
                 status_code,
@@ -748,7 +783,7 @@ pub async fn update_acr_tag_attributes(
     }
 }
 pub mod update_acr_tag_attributes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -801,7 +836,7 @@ pub async fn delete_acr_tag(
         http::StatusCode::NOT_FOUND => Err(delete_acr_tag::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors =
+            let rsp_value: models::AcrErrors =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_acr_tag::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_acr_tag::Error::DefaultResponse {
                 status_code,
@@ -811,7 +846,7 @@ pub async fn delete_acr_tag(
     }
 }
 pub mod delete_acr_tag {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -841,7 +876,7 @@ pub async fn get_acr_manifests(
     last: Option<&str>,
     n: Option<&str>,
     orderby: Option<&str>,
-) -> std::result::Result<AcrManifests, get_acr_manifests::Error> {
+) -> std::result::Result<models::AcrManifests, get_acr_manifests::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}/_manifests", operation_config.base_path(), name);
     let mut url = url::Url::parse(url_str).map_err(get_acr_manifests::Error::ParseUrlError)?;
@@ -873,14 +908,14 @@ pub async fn get_acr_manifests(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrManifests =
+            let rsp_value: models::AcrManifests =
                 serde_json::from_slice(rsp_body).map_err(|source| get_acr_manifests::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => Err(get_acr_manifests::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors =
+            let rsp_value: models::AcrErrors =
                 serde_json::from_slice(rsp_body).map_err(|source| get_acr_manifests::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_acr_manifests::Error::DefaultResponse {
                 status_code,
@@ -890,7 +925,7 @@ pub async fn get_acr_manifests(
     }
 }
 pub mod get_acr_manifests {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -918,7 +953,7 @@ pub async fn get_acr_manifest_attributes(
     operation_config: &crate::OperationConfig,
     name: &str,
     reference: &str,
-) -> std::result::Result<AcrManifestAttributes, get_acr_manifest_attributes::Error> {
+) -> std::result::Result<models::AcrManifestAttributes, get_acr_manifest_attributes::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}/_manifests/{}", operation_config.base_path(), name, reference);
     let mut url = url::Url::parse(url_str).map_err(get_acr_manifest_attributes::Error::ParseUrlError)?;
@@ -943,14 +978,14 @@ pub async fn get_acr_manifest_attributes(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrManifestAttributes = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrManifestAttributes = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_acr_manifest_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => Err(get_acr_manifest_attributes::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_acr_manifest_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_acr_manifest_attributes::Error::DefaultResponse {
                 status_code,
@@ -960,7 +995,7 @@ pub async fn get_acr_manifest_attributes(
     }
 }
 pub mod get_acr_manifest_attributes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -988,7 +1023,7 @@ pub async fn update_acr_manifest_attributes(
     operation_config: &crate::OperationConfig,
     name: &str,
     reference: &str,
-    value: Option<&ChangeableAttributes>,
+    value: Option<&models::ChangeableAttributes>,
 ) -> std::result::Result<(), update_acr_manifest_attributes::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/acr/v1/{}/_manifests/{}", operation_config.base_path(), name, reference);
@@ -1021,7 +1056,7 @@ pub async fn update_acr_manifest_attributes(
         http::StatusCode::NOT_FOUND => Err(update_acr_manifest_attributes::Error::NotFound404 {}),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: AcrErrors = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_acr_manifest_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_acr_manifest_attributes::Error::DefaultResponse {
                 status_code,
@@ -1031,7 +1066,7 @@ pub async fn update_acr_manifest_attributes(
     }
 }
 pub mod update_acr_manifest_attributes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]

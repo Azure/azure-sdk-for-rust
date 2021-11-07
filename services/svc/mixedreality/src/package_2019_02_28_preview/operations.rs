@@ -2,12 +2,19 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    GetToken(#[from] get_token::Error),
+}
 pub async fn get_token(
     operation_config: &crate::OperationConfig,
     account_id: &str,
     x_mrc_cv: Option<&str>,
-) -> std::result::Result<StsTokenResponseMessage, get_token::Error> {
+) -> std::result::Result<models::StsTokenResponseMessage, get_token::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/Accounts/{}/token", operation_config.base_path(), account_id);
     let mut url = url::Url::parse(url_str).map_err(get_token::Error::ParseUrlError)?;
@@ -34,7 +41,7 @@ pub async fn get_token(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StsTokenResponseMessage =
+            let rsp_value: models::StsTokenResponseMessage =
                 serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
@@ -45,7 +52,7 @@ pub async fn get_token(
     }
 }
 pub mod get_token {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]

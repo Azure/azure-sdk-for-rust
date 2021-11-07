@@ -2,9 +2,26 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    EaSubscriptionMigrateToNewPricingModel_Post(#[from] ea_subscription_migrate_to_new_pricing_model::post::Error),
+    #[error(transparent)]
+    EaSubscriptionRollbackToLegacyPricingModel_Post(#[from] ea_subscription_rollback_to_legacy_pricing_model::post::Error),
+    #[error(transparent)]
+    EaSubscriptionListMigrationDate_Post(#[from] ea_subscription_list_migration_date::post::Error),
+    #[error(transparent)]
+    ComponentCurrentPricingPlan_Get(#[from] component_current_pricing_plan::get::Error),
+    #[error(transparent)]
+    ComponentCurrentPricingPlan_CreateAndUpdate(#[from] component_current_pricing_plan::create_and_update::Error),
+    #[error(transparent)]
+    ComponentCurrentPricingPlan_Update(#[from] component_current_pricing_plan::update::Error),
+}
 pub mod ea_subscription_migrate_to_new_pricing_model {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn post(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<(), post::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -32,7 +49,7 @@ pub mod ea_subscription_migrate_to_new_pricing_model {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| post::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post::Error::DefaultResponse {
                     status_code,
@@ -42,7 +59,7 @@ pub mod ea_subscription_migrate_to_new_pricing_model {
         }
     }
     pub mod post {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +83,7 @@ pub mod ea_subscription_migrate_to_new_pricing_model {
     }
 }
 pub mod ea_subscription_rollback_to_legacy_pricing_model {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn post(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<(), post::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -94,7 +111,7 @@ pub mod ea_subscription_rollback_to_legacy_pricing_model {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| post::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post::Error::DefaultResponse {
                     status_code,
@@ -104,7 +121,7 @@ pub mod ea_subscription_rollback_to_legacy_pricing_model {
         }
     }
     pub mod post {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -128,11 +145,11 @@ pub mod ea_subscription_rollback_to_legacy_pricing_model {
     }
 }
 pub mod ea_subscription_list_migration_date {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn post(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<EaSubscriptionMigrationDate, post::Error> {
+    ) -> std::result::Result<models::EaSubscriptionMigrationDate, post::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/microsoft.insights/listMigrationdate",
@@ -158,7 +175,7 @@ pub mod ea_subscription_list_migration_date {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EaSubscriptionMigrationDate =
+                let rsp_value: models::EaSubscriptionMigrationDate =
                     serde_json::from_slice(rsp_body).map_err(|source| post::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -172,7 +189,7 @@ pub mod ea_subscription_list_migration_date {
         }
     }
     pub mod post {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -193,13 +210,13 @@ pub mod ea_subscription_list_migration_date {
     }
 }
 pub mod component_current_pricing_plan {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
         resource_name: &str,
-    ) -> std::result::Result<ApplicationInsightsComponentPricingPlan, get::Error> {
+    ) -> std::result::Result<models::ApplicationInsightsComponentPricingPlan, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/components/{}/pricingPlans/current",
@@ -226,7 +243,7 @@ pub mod component_current_pricing_plan {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationInsightsComponentPricingPlan =
+                let rsp_value: models::ApplicationInsightsComponentPricingPlan =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -240,7 +257,7 @@ pub mod component_current_pricing_plan {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -264,8 +281,8 @@ pub mod component_current_pricing_plan {
         resource_group_name: &str,
         subscription_id: &str,
         resource_name: &str,
-        pricing_plan_properties: &ApplicationInsightsComponentPricingPlan,
-    ) -> std::result::Result<ApplicationInsightsComponentPricingPlan, create_and_update::Error> {
+        pricing_plan_properties: &models::ApplicationInsightsComponentPricingPlan,
+    ) -> std::result::Result<models::ApplicationInsightsComponentPricingPlan, create_and_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/components/{}/pricingPlans/current",
@@ -296,7 +313,7 @@ pub mod component_current_pricing_plan {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationInsightsComponentPricingPlan = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApplicationInsightsComponentPricingPlan = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_and_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -310,7 +327,7 @@ pub mod component_current_pricing_plan {
         }
     }
     pub mod create_and_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -334,8 +351,8 @@ pub mod component_current_pricing_plan {
         resource_group_name: &str,
         subscription_id: &str,
         resource_name: &str,
-        pricing_plan_properties: &ApplicationInsightsComponentPricingPlan,
-    ) -> std::result::Result<ApplicationInsightsComponentPricingPlan, update::Error> {
+        pricing_plan_properties: &models::ApplicationInsightsComponentPricingPlan,
+    ) -> std::result::Result<models::ApplicationInsightsComponentPricingPlan, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/components/{}/pricingPlans/current",
@@ -363,7 +380,7 @@ pub mod component_current_pricing_plan {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationInsightsComponentPricingPlan =
+                let rsp_value: models::ApplicationInsightsComponentPricingPlan =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -377,7 +394,7 @@ pub mod component_current_pricing_plan {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

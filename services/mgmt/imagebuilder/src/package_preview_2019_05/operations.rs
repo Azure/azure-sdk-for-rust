@@ -2,13 +2,38 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    VirtualMachineImageTemplates_List(#[from] virtual_machine_image_templates::list::Error),
+    #[error(transparent)]
+    VirtualMachineImageTemplates_ListByResourceGroup(#[from] virtual_machine_image_templates::list_by_resource_group::Error),
+    #[error(transparent)]
+    VirtualMachineImageTemplates_Get(#[from] virtual_machine_image_templates::get::Error),
+    #[error(transparent)]
+    VirtualMachineImageTemplates_CreateOrUpdate(#[from] virtual_machine_image_templates::create_or_update::Error),
+    #[error(transparent)]
+    VirtualMachineImageTemplates_Update(#[from] virtual_machine_image_templates::update::Error),
+    #[error(transparent)]
+    VirtualMachineImageTemplates_Delete(#[from] virtual_machine_image_templates::delete::Error),
+    #[error(transparent)]
+    VirtualMachineImageTemplates_Run(#[from] virtual_machine_image_templates::run::Error),
+    #[error(transparent)]
+    VirtualMachineImageTemplates_ListRunOutputs(#[from] virtual_machine_image_templates::list_run_outputs::Error),
+    #[error(transparent)]
+    VirtualMachineImageTemplates_GetRunOutput(#[from] virtual_machine_image_templates::get_run_output::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod virtual_machine_image_templates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ImageTemplateListResult, list::Error> {
+    ) -> std::result::Result<models::ImageTemplateListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VirtualMachineImages/imageTemplates",
@@ -33,13 +58,13 @@ pub mod virtual_machine_image_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImageTemplateListResult =
+                let rsp_value: models::ImageTemplateListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -49,7 +74,7 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -75,7 +100,7 @@ pub mod virtual_machine_image_templates {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ImageTemplateListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ImageTemplateListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates",
@@ -106,13 +131,13 @@ pub mod virtual_machine_image_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImageTemplateListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImageTemplateListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -122,7 +147,7 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -149,7 +174,7 @@ pub mod virtual_machine_image_templates {
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
-    ) -> std::result::Result<ImageTemplate, get::Error> {
+    ) -> std::result::Result<models::ImageTemplate, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}",
@@ -176,13 +201,13 @@ pub mod virtual_machine_image_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImageTemplate =
+                let rsp_value: models::ImageTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -192,7 +217,7 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -216,7 +241,7 @@ pub mod virtual_machine_image_templates {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
-        parameters: &ImageTemplate,
+        parameters: &models::ImageTemplate,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
@@ -251,19 +276,19 @@ pub mod virtual_machine_image_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImageTemplate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImageTemplate = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImageTemplate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImageTemplate = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -273,11 +298,11 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ImageTemplate),
-            Created201(ImageTemplate),
+            Ok200(models::ImageTemplate),
+            Created201(models::ImageTemplate),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -302,7 +327,7 @@ pub mod virtual_machine_image_templates {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        parameters: &ImageTemplateUpdateParameters,
+        parameters: &models::ImageTemplateUpdateParameters,
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
@@ -334,14 +359,14 @@ pub mod virtual_machine_image_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImageTemplate =
+                let rsp_value: models::ImageTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -351,10 +376,10 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ImageTemplate),
+            Ok200(models::ImageTemplate),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -413,7 +438,7 @@ pub mod virtual_machine_image_templates {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -423,7 +448,7 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -486,7 +511,7 @@ pub mod virtual_machine_image_templates {
             http::StatusCode::ACCEPTED => Ok(run::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| run::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(run::Error::DefaultResponse {
                     status_code,
@@ -496,7 +521,7 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod run {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -528,7 +553,7 @@ pub mod virtual_machine_image_templates {
         subscription_id: &str,
         resource_group_name: &str,
         image_template_name: &str,
-    ) -> std::result::Result<RunOutputCollection, list_run_outputs::Error> {
+    ) -> std::result::Result<models::RunOutputCollection, list_run_outputs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}/runOutputs",
@@ -558,13 +583,13 @@ pub mod virtual_machine_image_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RunOutputCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RunOutputCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_run_outputs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_run_outputs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_run_outputs::Error::DefaultResponse {
                     status_code,
@@ -574,7 +599,7 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod list_run_outputs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -602,7 +627,7 @@ pub mod virtual_machine_image_templates {
         resource_group_name: &str,
         image_template_name: &str,
         run_output_name: &str,
-    ) -> std::result::Result<RunOutput, get_run_output::Error> {
+    ) -> std::result::Result<models::RunOutput, get_run_output::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VirtualMachineImages/imageTemplates/{}/runOutputs/{}",
@@ -633,13 +658,13 @@ pub mod virtual_machine_image_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RunOutput =
+                let rsp_value: models::RunOutput =
                     serde_json::from_slice(rsp_body).map_err(|source| get_run_output::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_run_output::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_run_output::Error::DefaultResponse {
                     status_code,
@@ -649,7 +674,7 @@ pub mod virtual_machine_image_templates {
         }
     }
     pub mod get_run_output {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -673,8 +698,8 @@ pub mod virtual_machine_image_templates {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.VirtualMachineImages/operations",
@@ -698,13 +723,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -714,7 +739,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

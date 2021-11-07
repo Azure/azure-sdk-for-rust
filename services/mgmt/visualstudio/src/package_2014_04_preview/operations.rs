@@ -2,10 +2,49 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Accounts_CheckNameAvailability(#[from] accounts::check_name_availability::Error),
+    #[error(transparent)]
+    Accounts_ListByResourceGroup(#[from] accounts::list_by_resource_group::Error),
+    #[error(transparent)]
+    Extensions_ListByAccount(#[from] extensions::list_by_account::Error),
+    #[error(transparent)]
+    Extensions_Get(#[from] extensions::get::Error),
+    #[error(transparent)]
+    Extensions_Create(#[from] extensions::create::Error),
+    #[error(transparent)]
+    Extensions_Update(#[from] extensions::update::Error),
+    #[error(transparent)]
+    Extensions_Delete(#[from] extensions::delete::Error),
+    #[error(transparent)]
+    Accounts_Get(#[from] accounts::get::Error),
+    #[error(transparent)]
+    Accounts_CreateOrUpdate(#[from] accounts::create_or_update::Error),
+    #[error(transparent)]
+    Accounts_Update(#[from] accounts::update::Error),
+    #[error(transparent)]
+    Accounts_Delete(#[from] accounts::delete::Error),
+    #[error(transparent)]
+    Projects_ListByResourceGroup(#[from] projects::list_by_resource_group::Error),
+    #[error(transparent)]
+    Projects_Get(#[from] projects::get::Error),
+    #[error(transparent)]
+    Projects_Create(#[from] projects::create::Error),
+    #[error(transparent)]
+    Projects_Update(#[from] projects::update::Error),
+    #[error(transparent)]
+    Projects_GetJobStatus(#[from] projects::get_job_status::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/microsoft.visualstudio/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -25,7 +64,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -39,7 +78,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -60,12 +99,12 @@ pub mod operations {
     }
 }
 pub mod accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        body: &CheckNameAvailabilityParameter,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+        body: &models::CheckNameAvailabilityParameter,
+    ) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/microsoft.visualstudio/checkNameAvailability",
@@ -96,7 +135,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -110,7 +149,7 @@ pub mod accounts {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -133,7 +172,7 @@ pub mod accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AccountResourceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AccountResourceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.visualstudio/account",
@@ -164,7 +203,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccountResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -178,7 +217,7 @@ pub mod accounts {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -202,7 +241,7 @@ pub mod accounts {
         resource_group_name: &str,
         subscription_id: &str,
         resource_name: &str,
-    ) -> std::result::Result<AccountResource, get::Error> {
+    ) -> std::result::Result<models::AccountResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.visualstudio/account/{}",
@@ -229,7 +268,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountResource =
+                let rsp_value: models::AccountResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -244,7 +283,7 @@ pub mod accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -269,9 +308,9 @@ pub mod accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-        body: &AccountResourceRequest,
+        body: &models::AccountResourceRequest,
         resource_name: &str,
-    ) -> std::result::Result<AccountResource, create_or_update::Error> {
+    ) -> std::result::Result<models::AccountResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.visualstudio/account/{}",
@@ -302,7 +341,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccountResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -317,7 +356,7 @@ pub mod accounts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -342,9 +381,9 @@ pub mod accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-        body: &AccountTagRequest,
+        body: &models::AccountTagRequest,
         resource_name: &str,
-    ) -> std::result::Result<AccountResource, update::Error> {
+    ) -> std::result::Result<models::AccountResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.visualstudio/account/{}",
@@ -372,7 +411,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountResource =
+                let rsp_value: models::AccountResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -387,7 +426,7 @@ pub mod accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -449,7 +488,7 @@ pub mod accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -470,13 +509,13 @@ pub mod accounts {
     }
 }
 pub mod extensions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
         account_resource_name: &str,
-    ) -> std::result::Result<ExtensionResourceListResult, list_by_account::Error> {
+    ) -> std::result::Result<models::ExtensionResourceListResult, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.visualstudio/account/{}/extension",
@@ -506,7 +545,7 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtensionResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExtensionResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -520,7 +559,7 @@ pub mod extensions {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -545,7 +584,7 @@ pub mod extensions {
         subscription_id: &str,
         account_resource_name: &str,
         extension_resource_name: &str,
-    ) -> std::result::Result<ExtensionResource, get::Error> {
+    ) -> std::result::Result<models::ExtensionResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.visualstudio/account/{}/extension/{}",
@@ -573,7 +612,7 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtensionResource =
+                let rsp_value: models::ExtensionResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -588,7 +627,7 @@ pub mod extensions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -613,10 +652,10 @@ pub mod extensions {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-        body: &ExtensionResourceRequest,
+        body: &models::ExtensionResourceRequest,
         account_resource_name: &str,
         extension_resource_name: &str,
-    ) -> std::result::Result<ExtensionResource, create::Error> {
+    ) -> std::result::Result<models::ExtensionResource, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.visualstudio/account/{}/extension/{}",
@@ -645,7 +684,7 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtensionResource =
+                let rsp_value: models::ExtensionResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -659,7 +698,7 @@ pub mod extensions {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -682,10 +721,10 @@ pub mod extensions {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-        body: &ExtensionResourceRequest,
+        body: &models::ExtensionResourceRequest,
         account_resource_name: &str,
         extension_resource_name: &str,
-    ) -> std::result::Result<ExtensionResource, update::Error> {
+    ) -> std::result::Result<models::ExtensionResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.visualstudio/account/{}/extension/{}",
@@ -714,7 +753,7 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtensionResource =
+                let rsp_value: models::ExtensionResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -728,7 +767,7 @@ pub mod extensions {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -790,7 +829,7 @@ pub mod extensions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -811,13 +850,13 @@ pub mod extensions {
     }
 }
 pub mod projects {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
         root_resource_name: &str,
-    ) -> std::result::Result<ProjectResourceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ProjectResourceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.visualstudio/account/{}/project",
@@ -849,7 +888,7 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProjectResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProjectResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -863,7 +902,7 @@ pub mod projects {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -888,7 +927,7 @@ pub mod projects {
         subscription_id: &str,
         root_resource_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<ProjectResource, get::Error> {
+    ) -> std::result::Result<models::ProjectResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.visualstudio/account/{}/project/{}",
@@ -916,7 +955,7 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProjectResource =
+                let rsp_value: models::ProjectResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -931,7 +970,7 @@ pub mod projects {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -954,7 +993,7 @@ pub mod projects {
     }
     pub async fn create(
         operation_config: &crate::OperationConfig,
-        body: &ProjectResource,
+        body: &models::ProjectResource,
         resource_group_name: &str,
         subscription_id: &str,
         root_resource_name: &str,
@@ -992,7 +1031,7 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProjectResource =
+                let rsp_value: models::ProjectResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
@@ -1007,10 +1046,10 @@ pub mod projects {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ProjectResource),
+            Ok200(models::ProjectResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1035,10 +1074,10 @@ pub mod projects {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-        body: &ProjectResource,
+        body: &models::ProjectResource,
         root_resource_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<ProjectResource, update::Error> {
+    ) -> std::result::Result<models::ProjectResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.visualstudio/account/{}/project/{}",
@@ -1067,7 +1106,7 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProjectResource =
+                let rsp_value: models::ProjectResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1081,7 +1120,7 @@ pub mod projects {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1145,7 +1184,7 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProjectResource =
+                let rsp_value: models::ProjectResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get_job_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get_job_status::Response::Ok200(rsp_value))
             }
@@ -1160,10 +1199,10 @@ pub mod projects {
         }
     }
     pub mod get_job_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ProjectResource),
+            Ok200(models::ProjectResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]

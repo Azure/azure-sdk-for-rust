@@ -2,13 +2,22 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Monitoring_GetSparkJobList(#[from] monitoring::get_spark_job_list::Error),
+    #[error(transparent)]
+    Monitoring_GetSqlJobQueryString(#[from] monitoring::get_sql_job_query_string::Error),
+}
 pub mod monitoring {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_spark_job_list(
         operation_config: &crate::OperationConfig,
         x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<SparkJobListViewResponse, get_spark_job_list::Error> {
+    ) -> std::result::Result<models::SparkJobListViewResponse, get_spark_job_list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/monitoring/workloadTypes/spark/Applications", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_spark_job_list::Error::ParseUrlError)?;
@@ -35,7 +44,7 @@ pub mod monitoring {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkJobListViewResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkJobListViewResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_spark_job_list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -49,7 +58,7 @@ pub mod monitoring {
         }
     }
     pub mod get_spark_job_list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -74,7 +83,7 @@ pub mod monitoring {
         filter: Option<&str>,
         orderby: Option<&str>,
         skip: Option<&str>,
-    ) -> std::result::Result<SqlQueryStringDataModel, get_sql_job_query_string::Error> {
+    ) -> std::result::Result<models::SqlQueryStringDataModel, get_sql_job_query_string::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/monitoring/workloadTypes/sql/querystring", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_sql_job_query_string::Error::ParseUrlError)?;
@@ -112,7 +121,7 @@ pub mod monitoring {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlQueryStringDataModel = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlQueryStringDataModel = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_sql_job_query_string::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -126,7 +135,7 @@ pub mod monitoring {
         }
     }
     pub mod get_sql_job_query_string {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

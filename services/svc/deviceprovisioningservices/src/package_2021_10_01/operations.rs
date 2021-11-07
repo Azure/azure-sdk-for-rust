@@ -2,10 +2,45 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    IndividualEnrollment_Get(#[from] individual_enrollment::get::Error),
+    #[error(transparent)]
+    IndividualEnrollment_CreateOrUpdate(#[from] individual_enrollment::create_or_update::Error),
+    #[error(transparent)]
+    IndividualEnrollment_Delete(#[from] individual_enrollment::delete::Error),
+    #[error(transparent)]
+    EnrollmentGroup_Get(#[from] enrollment_group::get::Error),
+    #[error(transparent)]
+    EnrollmentGroup_CreateOrUpdate(#[from] enrollment_group::create_or_update::Error),
+    #[error(transparent)]
+    EnrollmentGroup_Delete(#[from] enrollment_group::delete::Error),
+    #[error(transparent)]
+    DeviceRegistrationState_Get(#[from] device_registration_state::get::Error),
+    #[error(transparent)]
+    DeviceRegistrationState_Delete(#[from] device_registration_state::delete::Error),
+    #[error(transparent)]
+    IndividualEnrollment_Query(#[from] individual_enrollment::query::Error),
+    #[error(transparent)]
+    IndividualEnrollment_GetAttestationMechanism(#[from] individual_enrollment::get_attestation_mechanism::Error),
+    #[error(transparent)]
+    IndividualEnrollment_RunBulkOperation(#[from] individual_enrollment::run_bulk_operation::Error),
+    #[error(transparent)]
+    EnrollmentGroup_Query(#[from] enrollment_group::query::Error),
+    #[error(transparent)]
+    EnrollmentGroup_GetAttestationMechanism(#[from] enrollment_group::get_attestation_mechanism::Error),
+    #[error(transparent)]
+    EnrollmentGroup_RunBulkOperation(#[from] enrollment_group::run_bulk_operation::Error),
+    #[error(transparent)]
+    DeviceRegistrationState_Query(#[from] device_registration_state::query::Error),
+}
 pub mod individual_enrollment {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<IndividualEnrollment, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<models::IndividualEnrollment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollments/{}", operation_config.base_path(), id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -26,13 +61,13 @@ pub mod individual_enrollment {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IndividualEnrollment =
+                let rsp_value: models::IndividualEnrollment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -42,7 +77,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -67,9 +102,9 @@ pub mod individual_enrollment {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         id: &str,
-        enrollment: &IndividualEnrollment,
+        enrollment: &models::IndividualEnrollment,
         if_match: Option<&str>,
-    ) -> std::result::Result<IndividualEnrollment, create_or_update::Error> {
+    ) -> std::result::Result<models::IndividualEnrollment, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollments/{}", operation_config.base_path(), id);
         let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
@@ -97,13 +132,13 @@ pub mod individual_enrollment {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IndividualEnrollment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IndividualEnrollment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -113,7 +148,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -164,7 +199,7 @@ pub mod individual_enrollment {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -174,7 +209,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -200,8 +235,8 @@ pub mod individual_enrollment {
         operation_config: &crate::OperationConfig,
         x_ms_max_item_count: Option<i32>,
         x_ms_continuation: Option<&str>,
-        query_specification: &QuerySpecification,
-    ) -> std::result::Result<Vec<IndividualEnrollment>, query::Error> {
+        query_specification: &models::QuerySpecification,
+    ) -> std::result::Result<Vec<models::IndividualEnrollment>, query::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollments/query", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(query::Error::ParseUrlError)?;
@@ -229,13 +264,13 @@ pub mod individual_enrollment {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<IndividualEnrollment> =
+                let rsp_value: Vec<models::IndividualEnrollment> =
                     serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(query::Error::DefaultResponse {
                     status_code,
@@ -245,7 +280,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod query {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -270,7 +305,7 @@ pub mod individual_enrollment {
     pub async fn get_attestation_mechanism(
         operation_config: &crate::OperationConfig,
         id: &str,
-    ) -> std::result::Result<AttestationMechanism, get_attestation_mechanism::Error> {
+    ) -> std::result::Result<models::AttestationMechanism, get_attestation_mechanism::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollments/{}/attestationmechanism", operation_config.base_path(), id);
         let mut url = url::Url::parse(url_str).map_err(get_attestation_mechanism::Error::ParseUrlError)?;
@@ -297,13 +332,13 @@ pub mod individual_enrollment {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationMechanism = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AttestationMechanism = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_attestation_mechanism::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_attestation_mechanism::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_attestation_mechanism::Error::DefaultResponse {
                     status_code,
@@ -313,7 +348,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod get_attestation_mechanism {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -337,8 +372,8 @@ pub mod individual_enrollment {
     }
     pub async fn run_bulk_operation(
         operation_config: &crate::OperationConfig,
-        bulk_operation: &BulkEnrollmentOperation,
-    ) -> std::result::Result<BulkEnrollmentOperationResult, run_bulk_operation::Error> {
+        bulk_operation: &models::BulkEnrollmentOperation,
+    ) -> std::result::Result<models::BulkEnrollmentOperationResult, run_bulk_operation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollments", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(run_bulk_operation::Error::ParseUrlError)?;
@@ -363,13 +398,13 @@ pub mod individual_enrollment {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BulkEnrollmentOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BulkEnrollmentOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| run_bulk_operation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| run_bulk_operation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(run_bulk_operation::Error::DefaultResponse {
                     status_code,
@@ -379,7 +414,7 @@ pub mod individual_enrollment {
         }
     }
     pub mod run_bulk_operation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -403,8 +438,8 @@ pub mod individual_enrollment {
     }
 }
 pub mod enrollment_group {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<EnrollmentGroup, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<models::EnrollmentGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollmentGroups/{}", operation_config.base_path(), id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -425,13 +460,13 @@ pub mod enrollment_group {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnrollmentGroup =
+                let rsp_value: models::EnrollmentGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -441,7 +476,7 @@ pub mod enrollment_group {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -466,9 +501,9 @@ pub mod enrollment_group {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         id: &str,
-        enrollment_group: &EnrollmentGroup,
+        enrollment_group: &models::EnrollmentGroup,
         if_match: Option<&str>,
-    ) -> std::result::Result<EnrollmentGroup, create_or_update::Error> {
+    ) -> std::result::Result<models::EnrollmentGroup, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollmentGroups/{}", operation_config.base_path(), id);
         let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
@@ -496,13 +531,13 @@ pub mod enrollment_group {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnrollmentGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EnrollmentGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -512,7 +547,7 @@ pub mod enrollment_group {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -563,7 +598,7 @@ pub mod enrollment_group {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -573,7 +608,7 @@ pub mod enrollment_group {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -599,8 +634,8 @@ pub mod enrollment_group {
         operation_config: &crate::OperationConfig,
         x_ms_max_item_count: Option<i32>,
         x_ms_continuation: Option<&str>,
-        query_specification: &QuerySpecification,
-    ) -> std::result::Result<Vec<EnrollmentGroup>, query::Error> {
+        query_specification: &models::QuerySpecification,
+    ) -> std::result::Result<Vec<models::EnrollmentGroup>, query::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollmentGroups/query", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(query::Error::ParseUrlError)?;
@@ -628,13 +663,13 @@ pub mod enrollment_group {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<EnrollmentGroup> =
+                let rsp_value: Vec<models::EnrollmentGroup> =
                     serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(query::Error::DefaultResponse {
                     status_code,
@@ -644,7 +679,7 @@ pub mod enrollment_group {
         }
     }
     pub mod query {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -669,7 +704,7 @@ pub mod enrollment_group {
     pub async fn get_attestation_mechanism(
         operation_config: &crate::OperationConfig,
         id: &str,
-    ) -> std::result::Result<AttestationMechanism, get_attestation_mechanism::Error> {
+    ) -> std::result::Result<models::AttestationMechanism, get_attestation_mechanism::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollmentGroups/{}/attestationmechanism", operation_config.base_path(), id);
         let mut url = url::Url::parse(url_str).map_err(get_attestation_mechanism::Error::ParseUrlError)?;
@@ -696,13 +731,13 @@ pub mod enrollment_group {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationMechanism = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AttestationMechanism = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_attestation_mechanism::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_attestation_mechanism::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_attestation_mechanism::Error::DefaultResponse {
                     status_code,
@@ -712,7 +747,7 @@ pub mod enrollment_group {
         }
     }
     pub mod get_attestation_mechanism {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -736,8 +771,8 @@ pub mod enrollment_group {
     }
     pub async fn run_bulk_operation(
         operation_config: &crate::OperationConfig,
-        bulk_operation: &BulkEnrollmentGroupOperation,
-    ) -> std::result::Result<BulkEnrollmentGroupOperationResult, run_bulk_operation::Error> {
+        bulk_operation: &models::BulkEnrollmentGroupOperation,
+    ) -> std::result::Result<models::BulkEnrollmentGroupOperationResult, run_bulk_operation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/enrollmentGroups", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(run_bulk_operation::Error::ParseUrlError)?;
@@ -762,13 +797,13 @@ pub mod enrollment_group {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BulkEnrollmentGroupOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BulkEnrollmentGroupOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| run_bulk_operation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProvisioningServiceErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| run_bulk_operation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(run_bulk_operation::Error::DefaultResponse {
                     status_code,
@@ -778,7 +813,7 @@ pub mod enrollment_group {
         }
     }
     pub mod run_bulk_operation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -802,8 +837,11 @@ pub mod enrollment_group {
     }
 }
 pub mod device_registration_state {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<DeviceRegistrationState, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        id: &str,
+    ) -> std::result::Result<models::DeviceRegistrationState, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/registrations/{}", operation_config.base_path(), id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -824,13 +862,13 @@ pub mod device_registration_state {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceRegistrationState =
+                let rsp_value: models::DeviceRegistrationState =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -840,7 +878,7 @@ pub mod device_registration_state {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -891,7 +929,7 @@ pub mod device_registration_state {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -901,7 +939,7 @@ pub mod device_registration_state {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -928,7 +966,7 @@ pub mod device_registration_state {
         id: &str,
         x_ms_max_item_count: Option<i32>,
         x_ms_continuation: Option<&str>,
-    ) -> std::result::Result<Vec<DeviceRegistrationState>, query::Error> {
+    ) -> std::result::Result<Vec<models::DeviceRegistrationState>, query::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/registrations/{}/query", operation_config.base_path(), id);
         let mut url = url::Url::parse(url_str).map_err(query::Error::ParseUrlError)?;
@@ -956,13 +994,13 @@ pub mod device_registration_state {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<DeviceRegistrationState> =
+                let rsp_value: Vec<models::DeviceRegistrationState> =
                     serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProvisioningServiceErrorDetails =
+                let rsp_value: models::ProvisioningServiceErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(query::Error::DefaultResponse {
                     status_code,
@@ -972,7 +1010,7 @@ pub mod device_registration_state {
         }
     }
     pub mod query {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

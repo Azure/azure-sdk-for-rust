@@ -2,15 +2,206 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Workflows_ListBySubscription(#[from] workflows::list_by_subscription::Error),
+    #[error(transparent)]
+    Workflows_ListByResourceGroup(#[from] workflows::list_by_resource_group::Error),
+    #[error(transparent)]
+    Workflows_Get(#[from] workflows::get::Error),
+    #[error(transparent)]
+    Workflows_CreateOrUpdate(#[from] workflows::create_or_update::Error),
+    #[error(transparent)]
+    Workflows_Update(#[from] workflows::update::Error),
+    #[error(transparent)]
+    Workflows_Delete(#[from] workflows::delete::Error),
+    #[error(transparent)]
+    Workflows_Disable(#[from] workflows::disable::Error),
+    #[error(transparent)]
+    Workflows_Enable(#[from] workflows::enable::Error),
+    #[error(transparent)]
+    Workflows_GenerateUpgradedDefinition(#[from] workflows::generate_upgraded_definition::Error),
+    #[error(transparent)]
+    Workflows_ListCallbackUrl(#[from] workflows::list_callback_url::Error),
+    #[error(transparent)]
+    Workflows_ListSwagger(#[from] workflows::list_swagger::Error),
+    #[error(transparent)]
+    Workflows_Move(#[from] workflows::move_::Error),
+    #[error(transparent)]
+    Workflows_RegenerateAccessKey(#[from] workflows::regenerate_access_key::Error),
+    #[error(transparent)]
+    Workflows_ValidateByResourceGroup(#[from] workflows::validate_by_resource_group::Error),
+    #[error(transparent)]
+    WorkflowVersions_List(#[from] workflow_versions::list::Error),
+    #[error(transparent)]
+    WorkflowVersions_Get(#[from] workflow_versions::get::Error),
+    #[error(transparent)]
+    WorkflowTriggers_List(#[from] workflow_triggers::list::Error),
+    #[error(transparent)]
+    WorkflowTriggers_Get(#[from] workflow_triggers::get::Error),
+    #[error(transparent)]
+    WorkflowTriggers_Reset(#[from] workflow_triggers::reset::Error),
+    #[error(transparent)]
+    WorkflowTriggers_Run(#[from] workflow_triggers::run::Error),
+    #[error(transparent)]
+    WorkflowTriggers_GetSchemaJson(#[from] workflow_triggers::get_schema_json::Error),
+    #[error(transparent)]
+    WorkflowTriggers_SetState(#[from] workflow_triggers::set_state::Error),
+    #[error(transparent)]
+    WorkflowTriggers_ListCallbackUrl(#[from] workflow_triggers::list_callback_url::Error),
+    #[error(transparent)]
+    WorkflowVersionTriggers_ListCallbackUrl(#[from] workflow_version_triggers::list_callback_url::Error),
+    #[error(transparent)]
+    WorkflowTriggerHistories_List(#[from] workflow_trigger_histories::list::Error),
+    #[error(transparent)]
+    WorkflowTriggerHistories_Get(#[from] workflow_trigger_histories::get::Error),
+    #[error(transparent)]
+    WorkflowTriggerHistories_Resubmit(#[from] workflow_trigger_histories::resubmit::Error),
+    #[error(transparent)]
+    WorkflowRuns_List(#[from] workflow_runs::list::Error),
+    #[error(transparent)]
+    WorkflowRuns_Get(#[from] workflow_runs::get::Error),
+    #[error(transparent)]
+    WorkflowRuns_Delete(#[from] workflow_runs::delete::Error),
+    #[error(transparent)]
+    WorkflowRuns_Cancel(#[from] workflow_runs::cancel::Error),
+    #[error(transparent)]
+    WorkflowRunActions_List(#[from] workflow_run_actions::list::Error),
+    #[error(transparent)]
+    WorkflowRunActions_Get(#[from] workflow_run_actions::get::Error),
+    #[error(transparent)]
+    WorkflowRunActions_ListExpressionTraces(#[from] workflow_run_actions::list_expression_traces::Error),
+    #[error(transparent)]
+    WorkflowRunActionRepetitions_List(#[from] workflow_run_action_repetitions::list::Error),
+    #[error(transparent)]
+    WorkflowRunActionRepetitions_Get(#[from] workflow_run_action_repetitions::get::Error),
+    #[error(transparent)]
+    WorkflowRunActionRepetitions_ListExpressionTraces(#[from] workflow_run_action_repetitions::list_expression_traces::Error),
+    #[error(transparent)]
+    WorkflowRunActionRepetitionsRequestHistories_List(#[from] workflow_run_action_repetitions_request_histories::list::Error),
+    #[error(transparent)]
+    WorkflowRunActionRepetitionsRequestHistories_Get(#[from] workflow_run_action_repetitions_request_histories::get::Error),
+    #[error(transparent)]
+    WorkflowRunActionRequestHistories_List(#[from] workflow_run_action_request_histories::list::Error),
+    #[error(transparent)]
+    WorkflowRunActionRequestHistories_Get(#[from] workflow_run_action_request_histories::get::Error),
+    #[error(transparent)]
+    WorkflowRunActionScopeRepetitions_List(#[from] workflow_run_action_scope_repetitions::list::Error),
+    #[error(transparent)]
+    WorkflowRunActionScopeRepetitions_Get(#[from] workflow_run_action_scope_repetitions::get::Error),
+    #[error(transparent)]
+    WorkflowRunOperations_Get(#[from] workflow_run_operations::get::Error),
+    #[error(transparent)]
+    Workflows_ValidateByLocation(#[from] workflows::validate_by_location::Error),
+    #[error(transparent)]
+    IntegrationAccounts_ListBySubscription(#[from] integration_accounts::list_by_subscription::Error),
+    #[error(transparent)]
+    IntegrationAccounts_ListByResourceGroup(#[from] integration_accounts::list_by_resource_group::Error),
+    #[error(transparent)]
+    IntegrationAccounts_Get(#[from] integration_accounts::get::Error),
+    #[error(transparent)]
+    IntegrationAccounts_CreateOrUpdate(#[from] integration_accounts::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccounts_Update(#[from] integration_accounts::update::Error),
+    #[error(transparent)]
+    IntegrationAccounts_Delete(#[from] integration_accounts::delete::Error),
+    #[error(transparent)]
+    IntegrationAccountAssemblies_List(#[from] integration_account_assemblies::list::Error),
+    #[error(transparent)]
+    IntegrationAccountAssemblies_Get(#[from] integration_account_assemblies::get::Error),
+    #[error(transparent)]
+    IntegrationAccountAssemblies_CreateOrUpdate(#[from] integration_account_assemblies::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccountAssemblies_Delete(#[from] integration_account_assemblies::delete::Error),
+    #[error(transparent)]
+    IntegrationAccountAssemblies_ListContentCallbackUrl(#[from] integration_account_assemblies::list_content_callback_url::Error),
+    #[error(transparent)]
+    IntegrationAccountBatchConfigurations_List(#[from] integration_account_batch_configurations::list::Error),
+    #[error(transparent)]
+    IntegrationAccountBatchConfigurations_Get(#[from] integration_account_batch_configurations::get::Error),
+    #[error(transparent)]
+    IntegrationAccountBatchConfigurations_CreateOrUpdate(#[from] integration_account_batch_configurations::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccountBatchConfigurations_Delete(#[from] integration_account_batch_configurations::delete::Error),
+    #[error(transparent)]
+    IntegrationAccounts_ListCallbackUrl(#[from] integration_accounts::list_callback_url::Error),
+    #[error(transparent)]
+    IntegrationAccounts_ListKeyVaultKeys(#[from] integration_accounts::list_key_vault_keys::Error),
+    #[error(transparent)]
+    IntegrationAccounts_LogTrackingEvents(#[from] integration_accounts::log_tracking_events::Error),
+    #[error(transparent)]
+    IntegrationAccounts_RegenerateAccessKey(#[from] integration_accounts::regenerate_access_key::Error),
+    #[error(transparent)]
+    IntegrationAccountSchemas_List(#[from] integration_account_schemas::list::Error),
+    #[error(transparent)]
+    IntegrationAccountSchemas_Get(#[from] integration_account_schemas::get::Error),
+    #[error(transparent)]
+    IntegrationAccountSchemas_CreateOrUpdate(#[from] integration_account_schemas::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccountSchemas_Delete(#[from] integration_account_schemas::delete::Error),
+    #[error(transparent)]
+    IntegrationAccountSchemas_ListContentCallbackUrl(#[from] integration_account_schemas::list_content_callback_url::Error),
+    #[error(transparent)]
+    IntegrationAccountMaps_List(#[from] integration_account_maps::list::Error),
+    #[error(transparent)]
+    IntegrationAccountMaps_Get(#[from] integration_account_maps::get::Error),
+    #[error(transparent)]
+    IntegrationAccountMaps_CreateOrUpdate(#[from] integration_account_maps::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccountMaps_Delete(#[from] integration_account_maps::delete::Error),
+    #[error(transparent)]
+    IntegrationAccountMaps_ListContentCallbackUrl(#[from] integration_account_maps::list_content_callback_url::Error),
+    #[error(transparent)]
+    IntegrationAccountPartners_List(#[from] integration_account_partners::list::Error),
+    #[error(transparent)]
+    IntegrationAccountPartners_Get(#[from] integration_account_partners::get::Error),
+    #[error(transparent)]
+    IntegrationAccountPartners_CreateOrUpdate(#[from] integration_account_partners::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccountPartners_Delete(#[from] integration_account_partners::delete::Error),
+    #[error(transparent)]
+    IntegrationAccountPartners_ListContentCallbackUrl(#[from] integration_account_partners::list_content_callback_url::Error),
+    #[error(transparent)]
+    IntegrationAccountAgreements_List(#[from] integration_account_agreements::list::Error),
+    #[error(transparent)]
+    IntegrationAccountAgreements_Get(#[from] integration_account_agreements::get::Error),
+    #[error(transparent)]
+    IntegrationAccountAgreements_CreateOrUpdate(#[from] integration_account_agreements::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccountAgreements_Delete(#[from] integration_account_agreements::delete::Error),
+    #[error(transparent)]
+    IntegrationAccountAgreements_ListContentCallbackUrl(#[from] integration_account_agreements::list_content_callback_url::Error),
+    #[error(transparent)]
+    IntegrationAccountCertificates_List(#[from] integration_account_certificates::list::Error),
+    #[error(transparent)]
+    IntegrationAccountCertificates_Get(#[from] integration_account_certificates::get::Error),
+    #[error(transparent)]
+    IntegrationAccountCertificates_CreateOrUpdate(#[from] integration_account_certificates::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccountCertificates_Delete(#[from] integration_account_certificates::delete::Error),
+    #[error(transparent)]
+    IntegrationAccountSessions_List(#[from] integration_account_sessions::list::Error),
+    #[error(transparent)]
+    IntegrationAccountSessions_Get(#[from] integration_account_sessions::get::Error),
+    #[error(transparent)]
+    IntegrationAccountSessions_CreateOrUpdate(#[from] integration_account_sessions::create_or_update::Error),
+    #[error(transparent)]
+    IntegrationAccountSessions_Delete(#[from] integration_account_sessions::delete::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod workflows {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<WorkflowListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::WorkflowListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Logic/workflows",
@@ -44,7 +235,7 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -58,7 +249,7 @@ pub mod workflows {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -83,7 +274,7 @@ pub mod workflows {
         resource_group_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<WorkflowListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::WorkflowListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows",
@@ -120,7 +311,7 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -134,7 +325,7 @@ pub mod workflows {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -158,7 +349,7 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-    ) -> std::result::Result<Workflow, get::Error> {
+    ) -> std::result::Result<models::Workflow, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}",
@@ -185,7 +376,7 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workflow =
+                let rsp_value: models::Workflow =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -199,7 +390,7 @@ pub mod workflows {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -223,7 +414,7 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-        workflow: &Workflow,
+        workflow: &models::Workflow,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -255,13 +446,13 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workflow = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Workflow = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workflow = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Workflow = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -275,11 +466,11 @@ pub mod workflows {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Workflow),
-            Created201(Workflow),
+            Ok200(models::Workflow),
+            Created201(models::Workflow),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -304,8 +495,8 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-        workflow: &Workflow,
-    ) -> std::result::Result<Workflow, update::Error> {
+        workflow: &models::Workflow,
+    ) -> std::result::Result<models::Workflow, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}",
@@ -333,7 +524,7 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workflow =
+                let rsp_value: models::Workflow =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -347,7 +538,7 @@ pub mod workflows {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -408,7 +599,7 @@ pub mod workflows {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -477,7 +668,7 @@ pub mod workflows {
         }
     }
     pub mod disable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -538,7 +729,7 @@ pub mod workflows {
         }
     }
     pub mod enable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -562,8 +753,8 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-        parameters: &GenerateUpgradedDefinitionParameters,
-    ) -> std::result::Result<Object, generate_upgraded_definition::Error> {
+        parameters: &models::GenerateUpgradedDefinitionParameters,
+    ) -> std::result::Result<models::Object, generate_upgraded_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/generateUpgradedDefinition",
@@ -596,7 +787,7 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Object = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Object = serde_json::from_slice(rsp_body)
                     .map_err(|source| generate_upgraded_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -610,7 +801,7 @@ pub mod workflows {
         }
     }
     pub mod generate_upgraded_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -634,8 +825,8 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-        list_callback_url: &GetCallbackUrlParameters,
-    ) -> std::result::Result<WorkflowTriggerCallbackUrl, list_callback_url::Error> {
+        list_callback_url: &models::GetCallbackUrlParameters,
+    ) -> std::result::Result<models::WorkflowTriggerCallbackUrl, list_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/listCallbackUrl",
@@ -666,7 +857,7 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -680,7 +871,7 @@ pub mod workflows {
         }
     }
     pub mod list_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -704,7 +895,7 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-    ) -> std::result::Result<Object, list_swagger::Error> {
+    ) -> std::result::Result<models::Object, list_swagger::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/listSwagger",
@@ -735,7 +926,7 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Object =
+                let rsp_value: models::Object =
                     serde_json::from_slice(rsp_body).map_err(|source| list_swagger::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -749,7 +940,7 @@ pub mod workflows {
         }
     }
     pub mod list_swagger {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -773,7 +964,7 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-        move_: &Workflow,
+        move_: &models::Workflow,
     ) -> std::result::Result<move_::Response, move_::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -812,7 +1003,7 @@ pub mod workflows {
         }
     }
     pub mod move_ {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -841,7 +1032,7 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-        key_type: &RegenerateActionParameter,
+        key_type: &models::RegenerateActionParameter,
     ) -> std::result::Result<(), regenerate_access_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -884,7 +1075,7 @@ pub mod workflows {
         }
     }
     pub mod regenerate_access_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -908,7 +1099,7 @@ pub mod workflows {
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
-        validate: &Workflow,
+        validate: &models::Workflow,
     ) -> std::result::Result<(), validate_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -951,7 +1142,7 @@ pub mod workflows {
         }
     }
     pub mod validate_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -976,7 +1167,7 @@ pub mod workflows {
         resource_group_name: &str,
         location: &str,
         workflow_name: &str,
-        workflow: &Workflow,
+        workflow: &models::Workflow,
     ) -> std::result::Result<(), validate_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1018,7 +1209,7 @@ pub mod workflows {
         }
     }
     pub mod validate_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1039,14 +1230,14 @@ pub mod workflows {
     }
 }
 pub mod workflow_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workflow_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<WorkflowVersionListResult, list::Error> {
+    ) -> std::result::Result<models::WorkflowVersionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/versions",
@@ -1076,7 +1267,7 @@ pub mod workflow_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowVersionListResult =
+                let rsp_value: models::WorkflowVersionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1090,7 +1281,7 @@ pub mod workflow_versions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1115,7 +1306,7 @@ pub mod workflow_versions {
         resource_group_name: &str,
         workflow_name: &str,
         version_id: &str,
-    ) -> std::result::Result<WorkflowVersion, get::Error> {
+    ) -> std::result::Result<models::WorkflowVersion, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/versions/{}",
@@ -1143,7 +1334,7 @@ pub mod workflow_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowVersion =
+                let rsp_value: models::WorkflowVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1157,7 +1348,7 @@ pub mod workflow_versions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1178,7 +1369,7 @@ pub mod workflow_versions {
     }
 }
 pub mod workflow_triggers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1186,7 +1377,7 @@ pub mod workflow_triggers {
         workflow_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<WorkflowTriggerListResult, list::Error> {
+    ) -> std::result::Result<models::WorkflowTriggerListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/triggers",
@@ -1219,7 +1410,7 @@ pub mod workflow_triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerListResult =
+                let rsp_value: models::WorkflowTriggerListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1233,7 +1424,7 @@ pub mod workflow_triggers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1258,7 +1449,7 @@ pub mod workflow_triggers {
         resource_group_name: &str,
         workflow_name: &str,
         trigger_name: &str,
-    ) -> std::result::Result<WorkflowTrigger, get::Error> {
+    ) -> std::result::Result<models::WorkflowTrigger, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/triggers/{}",
@@ -1286,7 +1477,7 @@ pub mod workflow_triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTrigger =
+                let rsp_value: models::WorkflowTrigger =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1300,7 +1491,7 @@ pub mod workflow_triggers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1363,7 +1554,7 @@ pub mod workflow_triggers {
         }
     }
     pub mod reset {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1417,7 +1608,7 @@ pub mod workflow_triggers {
         match rsp.status() {
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Object =
+                let rsp_value: models::Object =
                     serde_json::from_slice(rsp_body).map_err(|source| run::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(run::Error::DefaultResponse {
                     status_code,
@@ -1427,7 +1618,7 @@ pub mod workflow_triggers {
         }
     }
     pub mod run {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {}
         #[derive(Debug, thiserror :: Error)]
@@ -1457,7 +1648,7 @@ pub mod workflow_triggers {
         resource_group_name: &str,
         workflow_name: &str,
         trigger_name: &str,
-    ) -> std::result::Result<JsonSchema, get_schema_json::Error> {
+    ) -> std::result::Result<models::JsonSchema, get_schema_json::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/triggers/{}/schemas/json",
@@ -1488,7 +1679,7 @@ pub mod workflow_triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JsonSchema = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JsonSchema = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_schema_json::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1502,7 +1693,7 @@ pub mod workflow_triggers {
         }
     }
     pub mod get_schema_json {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1527,7 +1718,7 @@ pub mod workflow_triggers {
         resource_group_name: &str,
         workflow_name: &str,
         trigger_name: &str,
-        set_state: &SetTriggerStateActionDefinition,
+        set_state: &models::SetTriggerStateActionDefinition,
     ) -> std::result::Result<(), set_state::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1569,7 +1760,7 @@ pub mod workflow_triggers {
         }
     }
     pub mod set_state {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1594,7 +1785,7 @@ pub mod workflow_triggers {
         resource_group_name: &str,
         workflow_name: &str,
         trigger_name: &str,
-    ) -> std::result::Result<WorkflowTriggerCallbackUrl, list_callback_url::Error> {
+    ) -> std::result::Result<models::WorkflowTriggerCallbackUrl, list_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/triggers/{}/listCallbackUrl",
@@ -1626,7 +1817,7 @@ pub mod workflow_triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1640,7 +1831,7 @@ pub mod workflow_triggers {
         }
     }
     pub mod list_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1661,7 +1852,7 @@ pub mod workflow_triggers {
     }
 }
 pub mod workflow_version_triggers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_callback_url(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1669,8 +1860,8 @@ pub mod workflow_version_triggers {
         workflow_name: &str,
         version_id: &str,
         trigger_name: &str,
-        parameters: Option<&GetCallbackUrlParameters>,
-    ) -> std::result::Result<WorkflowTriggerCallbackUrl, list_callback_url::Error> {
+        parameters: Option<&models::GetCallbackUrlParameters>,
+    ) -> std::result::Result<models::WorkflowTriggerCallbackUrl, list_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/versions/{}/triggers/{}/listCallbackUrl",
@@ -1707,7 +1898,7 @@ pub mod workflow_version_triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1721,7 +1912,7 @@ pub mod workflow_version_triggers {
         }
     }
     pub mod list_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1742,7 +1933,7 @@ pub mod workflow_version_triggers {
     }
 }
 pub mod workflow_trigger_histories {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1751,7 +1942,7 @@ pub mod workflow_trigger_histories {
         trigger_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<WorkflowTriggerHistoryListResult, list::Error> {
+    ) -> std::result::Result<models::WorkflowTriggerHistoryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/triggers/{}/histories",
@@ -1785,7 +1976,7 @@ pub mod workflow_trigger_histories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerHistoryListResult =
+                let rsp_value: models::WorkflowTriggerHistoryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1799,7 +1990,7 @@ pub mod workflow_trigger_histories {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1825,7 +2016,7 @@ pub mod workflow_trigger_histories {
         workflow_name: &str,
         trigger_name: &str,
         history_name: &str,
-    ) -> std::result::Result<WorkflowTriggerHistory, get::Error> {
+    ) -> std::result::Result<models::WorkflowTriggerHistory, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/triggers/{}/histories/{}",
@@ -1854,7 +2045,7 @@ pub mod workflow_trigger_histories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerHistory =
+                let rsp_value: models::WorkflowTriggerHistory =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1868,7 +2059,7 @@ pub mod workflow_trigger_histories {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1936,7 +2127,7 @@ pub mod workflow_trigger_histories {
         }
     }
     pub mod resubmit {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1957,7 +2148,7 @@ pub mod workflow_trigger_histories {
     }
 }
 pub mod workflow_runs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1965,7 +2156,7 @@ pub mod workflow_runs {
         workflow_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<WorkflowRunListResult, list::Error> {
+    ) -> std::result::Result<models::WorkflowRunListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs",
@@ -1998,7 +2189,7 @@ pub mod workflow_runs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRunListResult =
+                let rsp_value: models::WorkflowRunListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2012,7 +2203,7 @@ pub mod workflow_runs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2037,7 +2228,7 @@ pub mod workflow_runs {
         resource_group_name: &str,
         workflow_name: &str,
         run_name: &str,
-    ) -> std::result::Result<WorkflowRun, get::Error> {
+    ) -> std::result::Result<models::WorkflowRun, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}",
@@ -2065,7 +2256,7 @@ pub mod workflow_runs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRun =
+                let rsp_value: models::WorkflowRun =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2079,7 +2270,7 @@ pub mod workflow_runs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2142,7 +2333,7 @@ pub mod workflow_runs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2210,7 +2401,7 @@ pub mod workflow_runs {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2231,7 +2422,7 @@ pub mod workflow_runs {
     }
 }
 pub mod workflow_run_actions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2240,7 +2431,7 @@ pub mod workflow_run_actions {
         run_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<WorkflowRunActionListResult, list::Error> {
+    ) -> std::result::Result<models::WorkflowRunActionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions",
@@ -2274,7 +2465,7 @@ pub mod workflow_run_actions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRunActionListResult =
+                let rsp_value: models::WorkflowRunActionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2288,7 +2479,7 @@ pub mod workflow_run_actions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2314,7 +2505,7 @@ pub mod workflow_run_actions {
         workflow_name: &str,
         run_name: &str,
         action_name: &str,
-    ) -> std::result::Result<WorkflowRunAction, get::Error> {
+    ) -> std::result::Result<models::WorkflowRunAction, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}",
@@ -2343,7 +2534,7 @@ pub mod workflow_run_actions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRunAction =
+                let rsp_value: models::WorkflowRunAction =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2357,7 +2548,7 @@ pub mod workflow_run_actions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2383,7 +2574,7 @@ pub mod workflow_run_actions {
         workflow_name: &str,
         run_name: &str,
         action_name: &str,
-    ) -> std::result::Result<ExpressionTraces, list_expression_traces::Error> {
+    ) -> std::result::Result<models::ExpressionTraces, list_expression_traces::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/listExpressionTraces",
@@ -2418,7 +2609,7 @@ pub mod workflow_run_actions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExpressionTraces = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExpressionTraces = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_expression_traces::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2432,7 +2623,7 @@ pub mod workflow_run_actions {
         }
     }
     pub mod list_expression_traces {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2453,7 +2644,7 @@ pub mod workflow_run_actions {
     }
 }
 pub mod workflow_run_action_repetitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2461,7 +2652,7 @@ pub mod workflow_run_action_repetitions {
         workflow_name: &str,
         run_name: &str,
         action_name: &str,
-    ) -> std::result::Result<WorkflowRunActionRepetitionDefinitionCollection, list::Error> {
+    ) -> std::result::Result<models::WorkflowRunActionRepetitionDefinitionCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/repetitions",
@@ -2490,7 +2681,7 @@ pub mod workflow_run_action_repetitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRunActionRepetitionDefinitionCollection =
+                let rsp_value: models::WorkflowRunActionRepetitionDefinitionCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2504,7 +2695,7 @@ pub mod workflow_run_action_repetitions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2531,7 +2722,7 @@ pub mod workflow_run_action_repetitions {
         run_name: &str,
         action_name: &str,
         repetition_name: &str,
-    ) -> std::result::Result<WorkflowRunActionRepetitionDefinition, get::Error> {
+    ) -> std::result::Result<models::WorkflowRunActionRepetitionDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/repetitions/{}",
@@ -2561,7 +2752,7 @@ pub mod workflow_run_action_repetitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRunActionRepetitionDefinition =
+                let rsp_value: models::WorkflowRunActionRepetitionDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2575,7 +2766,7 @@ pub mod workflow_run_action_repetitions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2602,7 +2793,7 @@ pub mod workflow_run_action_repetitions {
         run_name: &str,
         action_name: &str,
         repetition_name: &str,
-    ) -> std::result::Result<ExpressionTraces, list_expression_traces::Error> {
+    ) -> std::result::Result<models::ExpressionTraces, list_expression_traces::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/repetitions/{}/listExpressionTraces" , operation_config . base_path () , subscription_id , resource_group_name , workflow_name , run_name , action_name , repetition_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_expression_traces::Error::ParseUrlError)?;
@@ -2629,7 +2820,7 @@ pub mod workflow_run_action_repetitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExpressionTraces = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExpressionTraces = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_expression_traces::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2643,7 +2834,7 @@ pub mod workflow_run_action_repetitions {
         }
     }
     pub mod list_expression_traces {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2664,7 +2855,7 @@ pub mod workflow_run_action_repetitions {
     }
 }
 pub mod workflow_run_action_repetitions_request_histories {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2673,7 +2864,7 @@ pub mod workflow_run_action_repetitions_request_histories {
         run_name: &str,
         action_name: &str,
         repetition_name: &str,
-    ) -> std::result::Result<RequestHistoryListResult, list::Error> {
+    ) -> std::result::Result<models::RequestHistoryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/repetitions/{}/requestHistories" , operation_config . base_path () , subscription_id , resource_group_name , workflow_name , run_name , action_name , repetition_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2694,13 +2885,13 @@ pub mod workflow_run_action_repetitions_request_histories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RequestHistoryListResult =
+                let rsp_value: models::RequestHistoryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2710,7 +2901,7 @@ pub mod workflow_run_action_repetitions_request_histories {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2741,7 +2932,7 @@ pub mod workflow_run_action_repetitions_request_histories {
         action_name: &str,
         repetition_name: &str,
         request_history_name: &str,
-    ) -> std::result::Result<RequestHistory, get::Error> {
+    ) -> std::result::Result<models::RequestHistory, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/repetitions/{}/requestHistories/{}" , operation_config . base_path () , subscription_id , resource_group_name , workflow_name , run_name , action_name , repetition_name , request_history_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -2762,13 +2953,13 @@ pub mod workflow_run_action_repetitions_request_histories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RequestHistory =
+                let rsp_value: models::RequestHistory =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2778,7 +2969,7 @@ pub mod workflow_run_action_repetitions_request_histories {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2802,7 +2993,7 @@ pub mod workflow_run_action_repetitions_request_histories {
     }
 }
 pub mod workflow_run_action_request_histories {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2810,7 +3001,7 @@ pub mod workflow_run_action_request_histories {
         workflow_name: &str,
         run_name: &str,
         action_name: &str,
-    ) -> std::result::Result<RequestHistoryListResult, list::Error> {
+    ) -> std::result::Result<models::RequestHistoryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/requestHistories",
@@ -2839,13 +3030,13 @@ pub mod workflow_run_action_request_histories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RequestHistoryListResult =
+                let rsp_value: models::RequestHistoryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2855,7 +3046,7 @@ pub mod workflow_run_action_request_histories {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2885,7 +3076,7 @@ pub mod workflow_run_action_request_histories {
         run_name: &str,
         action_name: &str,
         request_history_name: &str,
-    ) -> std::result::Result<RequestHistory, get::Error> {
+    ) -> std::result::Result<models::RequestHistory, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/requestHistories/{}",
@@ -2915,13 +3106,13 @@ pub mod workflow_run_action_request_histories {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RequestHistory =
+                let rsp_value: models::RequestHistory =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2931,7 +3122,7 @@ pub mod workflow_run_action_request_histories {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2955,7 +3146,7 @@ pub mod workflow_run_action_request_histories {
     }
 }
 pub mod workflow_run_action_scope_repetitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2963,7 +3154,7 @@ pub mod workflow_run_action_scope_repetitions {
         workflow_name: &str,
         run_name: &str,
         action_name: &str,
-    ) -> std::result::Result<WorkflowRunActionRepetitionDefinitionCollection, list::Error> {
+    ) -> std::result::Result<models::WorkflowRunActionRepetitionDefinitionCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/scopeRepetitions",
@@ -2992,7 +3183,7 @@ pub mod workflow_run_action_scope_repetitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRunActionRepetitionDefinitionCollection =
+                let rsp_value: models::WorkflowRunActionRepetitionDefinitionCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3006,7 +3197,7 @@ pub mod workflow_run_action_scope_repetitions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3033,7 +3224,7 @@ pub mod workflow_run_action_scope_repetitions {
         run_name: &str,
         action_name: &str,
         repetition_name: &str,
-    ) -> std::result::Result<WorkflowRunActionRepetitionDefinition, get::Error> {
+    ) -> std::result::Result<models::WorkflowRunActionRepetitionDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/actions/{}/scopeRepetitions/{}",
@@ -3063,7 +3254,7 @@ pub mod workflow_run_action_scope_repetitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRunActionRepetitionDefinition =
+                let rsp_value: models::WorkflowRunActionRepetitionDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3077,7 +3268,7 @@ pub mod workflow_run_action_scope_repetitions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3098,7 +3289,7 @@ pub mod workflow_run_action_scope_repetitions {
     }
 }
 pub mod workflow_run_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3106,7 +3297,7 @@ pub mod workflow_run_operations {
         workflow_name: &str,
         run_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<WorkflowRun, get::Error> {
+    ) -> std::result::Result<models::WorkflowRun, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/workflows/{}/runs/{}/operations/{}",
@@ -3135,7 +3326,7 @@ pub mod workflow_run_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowRun =
+                let rsp_value: models::WorkflowRun =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3149,7 +3340,7 @@ pub mod workflow_run_operations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3170,12 +3361,12 @@ pub mod workflow_run_operations {
     }
 }
 pub mod integration_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         top: Option<i32>,
-    ) -> std::result::Result<IntegrationAccountListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::IntegrationAccountListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Logic/integrationAccounts",
@@ -3206,7 +3397,7 @@ pub mod integration_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3220,7 +3411,7 @@ pub mod integration_accounts {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3244,7 +3435,7 @@ pub mod integration_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<IntegrationAccountListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::IntegrationAccountListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts",
@@ -3278,7 +3469,7 @@ pub mod integration_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3292,7 +3483,7 @@ pub mod integration_accounts {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3316,7 +3507,7 @@ pub mod integration_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-    ) -> std::result::Result<IntegrationAccount, get::Error> {
+    ) -> std::result::Result<models::IntegrationAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}",
@@ -3343,7 +3534,7 @@ pub mod integration_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccount =
+                let rsp_value: models::IntegrationAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3357,7 +3548,7 @@ pub mod integration_accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3381,7 +3572,7 @@ pub mod integration_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-        integration_account: &IntegrationAccount,
+        integration_account: &models::IntegrationAccount,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3413,13 +3604,13 @@ pub mod integration_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -3433,11 +3624,11 @@ pub mod integration_accounts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IntegrationAccount),
-            Created201(IntegrationAccount),
+            Ok200(models::IntegrationAccount),
+            Created201(models::IntegrationAccount),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3462,8 +3653,8 @@ pub mod integration_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-        integration_account: &IntegrationAccount,
-    ) -> std::result::Result<IntegrationAccount, update::Error> {
+        integration_account: &models::IntegrationAccount,
+    ) -> std::result::Result<models::IntegrationAccount, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}",
@@ -3491,7 +3682,7 @@ pub mod integration_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccount =
+                let rsp_value: models::IntegrationAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3505,7 +3696,7 @@ pub mod integration_accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3566,7 +3757,7 @@ pub mod integration_accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3595,8 +3786,8 @@ pub mod integration_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-        parameters: &GetCallbackUrlParameters,
-    ) -> std::result::Result<CallbackUrl, list_callback_url::Error> {
+        parameters: &models::GetCallbackUrlParameters,
+    ) -> std::result::Result<models::CallbackUrl, list_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/listCallbackUrl",
@@ -3627,7 +3818,7 @@ pub mod integration_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3641,7 +3832,7 @@ pub mod integration_accounts {
         }
     }
     pub mod list_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3665,8 +3856,8 @@ pub mod integration_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-        list_key_vault_keys: &ListKeyVaultKeysDefinition,
-    ) -> std::result::Result<KeyVaultKeyCollection, list_key_vault_keys::Error> {
+        list_key_vault_keys: &models::ListKeyVaultKeysDefinition,
+    ) -> std::result::Result<models::KeyVaultKeyCollection, list_key_vault_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/listKeyVaultKeys",
@@ -3697,7 +3888,7 @@ pub mod integration_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KeyVaultKeyCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::KeyVaultKeyCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_key_vault_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3711,7 +3902,7 @@ pub mod integration_accounts {
         }
     }
     pub mod list_key_vault_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3735,7 +3926,7 @@ pub mod integration_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-        log_tracking_events: &TrackingEventsDefinition,
+        log_tracking_events: &models::TrackingEventsDefinition,
     ) -> std::result::Result<(), log_tracking_events::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3776,7 +3967,7 @@ pub mod integration_accounts {
         }
     }
     pub mod log_tracking_events {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3800,8 +3991,8 @@ pub mod integration_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-        regenerate_access_key: &RegenerateActionParameter,
-    ) -> std::result::Result<IntegrationAccount, regenerate_access_key::Error> {
+        regenerate_access_key: &models::RegenerateActionParameter,
+    ) -> std::result::Result<models::IntegrationAccount, regenerate_access_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/regenerateAccessKey",
@@ -3834,7 +4025,7 @@ pub mod integration_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_access_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3848,7 +4039,7 @@ pub mod integration_accounts {
         }
     }
     pub mod regenerate_access_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3869,13 +4060,13 @@ pub mod integration_accounts {
     }
 }
 pub mod integration_account_assemblies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-    ) -> std::result::Result<AssemblyCollection, list::Error> {
+    ) -> std::result::Result<models::AssemblyCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/assemblies",
@@ -3902,7 +4093,7 @@ pub mod integration_account_assemblies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AssemblyCollection =
+                let rsp_value: models::AssemblyCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3916,7 +4107,7 @@ pub mod integration_account_assemblies {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3941,7 +4132,7 @@ pub mod integration_account_assemblies {
         resource_group_name: &str,
         integration_account_name: &str,
         assembly_artifact_name: &str,
-    ) -> std::result::Result<AssemblyDefinition, get::Error> {
+    ) -> std::result::Result<models::AssemblyDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/assemblies/{}",
@@ -3969,7 +4160,7 @@ pub mod integration_account_assemblies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AssemblyDefinition =
+                let rsp_value: models::AssemblyDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3983,7 +4174,7 @@ pub mod integration_account_assemblies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4008,7 +4199,7 @@ pub mod integration_account_assemblies {
         resource_group_name: &str,
         integration_account_name: &str,
         assembly_artifact_name: &str,
-        assembly_artifact: &AssemblyDefinition,
+        assembly_artifact: &models::AssemblyDefinition,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4041,13 +4232,13 @@ pub mod integration_account_assemblies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AssemblyDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AssemblyDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AssemblyDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AssemblyDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -4061,11 +4252,11 @@ pub mod integration_account_assemblies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AssemblyDefinition),
-            Created201(AssemblyDefinition),
+            Ok200(models::AssemblyDefinition),
+            Created201(models::AssemblyDefinition),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4129,7 +4320,7 @@ pub mod integration_account_assemblies {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4159,7 +4350,7 @@ pub mod integration_account_assemblies {
         resource_group_name: &str,
         integration_account_name: &str,
         assembly_artifact_name: &str,
-    ) -> std::result::Result<WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
+    ) -> std::result::Result<models::WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/assemblies/{}/listContentCallbackUrl",
@@ -4193,7 +4384,7 @@ pub mod integration_account_assemblies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_content_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4207,7 +4398,7 @@ pub mod integration_account_assemblies {
         }
     }
     pub mod list_content_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4228,13 +4419,13 @@ pub mod integration_account_assemblies {
     }
 }
 pub mod integration_account_batch_configurations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
-    ) -> std::result::Result<BatchConfigurationCollection, list::Error> {
+    ) -> std::result::Result<models::BatchConfigurationCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/batchConfigurations",
@@ -4261,7 +4452,7 @@ pub mod integration_account_batch_configurations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchConfigurationCollection =
+                let rsp_value: models::BatchConfigurationCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4275,7 +4466,7 @@ pub mod integration_account_batch_configurations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4300,7 +4491,7 @@ pub mod integration_account_batch_configurations {
         resource_group_name: &str,
         integration_account_name: &str,
         batch_configuration_name: &str,
-    ) -> std::result::Result<BatchConfiguration, get::Error> {
+    ) -> std::result::Result<models::BatchConfiguration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/batchConfigurations/{}",
@@ -4328,7 +4519,7 @@ pub mod integration_account_batch_configurations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchConfiguration =
+                let rsp_value: models::BatchConfiguration =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4342,7 +4533,7 @@ pub mod integration_account_batch_configurations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4367,7 +4558,7 @@ pub mod integration_account_batch_configurations {
         resource_group_name: &str,
         integration_account_name: &str,
         batch_configuration_name: &str,
-        batch_configuration: &BatchConfiguration,
+        batch_configuration: &models::BatchConfiguration,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4400,13 +4591,13 @@ pub mod integration_account_batch_configurations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchConfiguration = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchConfiguration = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchConfiguration = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchConfiguration = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -4420,11 +4611,11 @@ pub mod integration_account_batch_configurations {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BatchConfiguration),
-            Created201(BatchConfiguration),
+            Ok200(models::BatchConfiguration),
+            Created201(models::BatchConfiguration),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4488,7 +4679,7 @@ pub mod integration_account_batch_configurations {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4514,7 +4705,7 @@ pub mod integration_account_batch_configurations {
     }
 }
 pub mod integration_account_schemas {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -4522,7 +4713,7 @@ pub mod integration_account_schemas {
         integration_account_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<IntegrationAccountSchemaListResult, list::Error> {
+    ) -> std::result::Result<models::IntegrationAccountSchemaListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/schemas",
@@ -4555,7 +4746,7 @@ pub mod integration_account_schemas {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountSchemaListResult =
+                let rsp_value: models::IntegrationAccountSchemaListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4569,7 +4760,7 @@ pub mod integration_account_schemas {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4594,7 +4785,7 @@ pub mod integration_account_schemas {
         resource_group_name: &str,
         integration_account_name: &str,
         schema_name: &str,
-    ) -> std::result::Result<IntegrationAccountSchema, get::Error> {
+    ) -> std::result::Result<models::IntegrationAccountSchema, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/schemas/{}",
@@ -4622,7 +4813,7 @@ pub mod integration_account_schemas {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountSchema =
+                let rsp_value: models::IntegrationAccountSchema =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4636,7 +4827,7 @@ pub mod integration_account_schemas {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4661,7 +4852,7 @@ pub mod integration_account_schemas {
         resource_group_name: &str,
         integration_account_name: &str,
         schema_name: &str,
-        schema: &IntegrationAccountSchema,
+        schema: &models::IntegrationAccountSchema,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4694,13 +4885,13 @@ pub mod integration_account_schemas {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountSchema = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountSchema = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountSchema = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountSchema = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -4714,11 +4905,11 @@ pub mod integration_account_schemas {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IntegrationAccountSchema),
-            Created201(IntegrationAccountSchema),
+            Ok200(models::IntegrationAccountSchema),
+            Created201(models::IntegrationAccountSchema),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4782,7 +4973,7 @@ pub mod integration_account_schemas {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4812,8 +5003,8 @@ pub mod integration_account_schemas {
         resource_group_name: &str,
         integration_account_name: &str,
         schema_name: &str,
-        list_content_callback_url: &GetCallbackUrlParameters,
-    ) -> std::result::Result<WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
+        list_content_callback_url: &models::GetCallbackUrlParameters,
+    ) -> std::result::Result<models::WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/schemas/{}/listContentCallbackUrl",
@@ -4847,7 +5038,7 @@ pub mod integration_account_schemas {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_content_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4861,7 +5052,7 @@ pub mod integration_account_schemas {
         }
     }
     pub mod list_content_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4882,7 +5073,7 @@ pub mod integration_account_schemas {
     }
 }
 pub mod integration_account_maps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -4890,7 +5081,7 @@ pub mod integration_account_maps {
         integration_account_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<IntegrationAccountMapListResult, list::Error> {
+    ) -> std::result::Result<models::IntegrationAccountMapListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/maps",
@@ -4923,7 +5114,7 @@ pub mod integration_account_maps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountMapListResult =
+                let rsp_value: models::IntegrationAccountMapListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4937,7 +5128,7 @@ pub mod integration_account_maps {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4962,7 +5153,7 @@ pub mod integration_account_maps {
         resource_group_name: &str,
         integration_account_name: &str,
         map_name: &str,
-    ) -> std::result::Result<IntegrationAccountMap, get::Error> {
+    ) -> std::result::Result<models::IntegrationAccountMap, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/maps/{}",
@@ -4990,7 +5181,7 @@ pub mod integration_account_maps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountMap =
+                let rsp_value: models::IntegrationAccountMap =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5004,7 +5195,7 @@ pub mod integration_account_maps {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5029,7 +5220,7 @@ pub mod integration_account_maps {
         resource_group_name: &str,
         integration_account_name: &str,
         map_name: &str,
-        map: &IntegrationAccountMap,
+        map: &models::IntegrationAccountMap,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5062,13 +5253,13 @@ pub mod integration_account_maps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountMap = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountMap = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountMap = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountMap = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -5082,11 +5273,11 @@ pub mod integration_account_maps {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IntegrationAccountMap),
-            Created201(IntegrationAccountMap),
+            Ok200(models::IntegrationAccountMap),
+            Created201(models::IntegrationAccountMap),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5150,7 +5341,7 @@ pub mod integration_account_maps {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -5180,8 +5371,8 @@ pub mod integration_account_maps {
         resource_group_name: &str,
         integration_account_name: &str,
         map_name: &str,
-        list_content_callback_url: &GetCallbackUrlParameters,
-    ) -> std::result::Result<WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
+        list_content_callback_url: &models::GetCallbackUrlParameters,
+    ) -> std::result::Result<models::WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/maps/{}/listContentCallbackUrl",
@@ -5215,7 +5406,7 @@ pub mod integration_account_maps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_content_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5229,7 +5420,7 @@ pub mod integration_account_maps {
         }
     }
     pub mod list_content_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5250,7 +5441,7 @@ pub mod integration_account_maps {
     }
 }
 pub mod integration_account_partners {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5258,7 +5449,7 @@ pub mod integration_account_partners {
         integration_account_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<IntegrationAccountPartnerListResult, list::Error> {
+    ) -> std::result::Result<models::IntegrationAccountPartnerListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/partners",
@@ -5291,7 +5482,7 @@ pub mod integration_account_partners {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountPartnerListResult =
+                let rsp_value: models::IntegrationAccountPartnerListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5305,7 +5496,7 @@ pub mod integration_account_partners {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5330,7 +5521,7 @@ pub mod integration_account_partners {
         resource_group_name: &str,
         integration_account_name: &str,
         partner_name: &str,
-    ) -> std::result::Result<IntegrationAccountPartner, get::Error> {
+    ) -> std::result::Result<models::IntegrationAccountPartner, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/partners/{}",
@@ -5358,7 +5549,7 @@ pub mod integration_account_partners {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountPartner =
+                let rsp_value: models::IntegrationAccountPartner =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5372,7 +5563,7 @@ pub mod integration_account_partners {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5397,7 +5588,7 @@ pub mod integration_account_partners {
         resource_group_name: &str,
         integration_account_name: &str,
         partner_name: &str,
-        partner: &IntegrationAccountPartner,
+        partner: &models::IntegrationAccountPartner,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5430,13 +5621,13 @@ pub mod integration_account_partners {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountPartner = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountPartner = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountPartner = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountPartner = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -5450,11 +5641,11 @@ pub mod integration_account_partners {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IntegrationAccountPartner),
-            Created201(IntegrationAccountPartner),
+            Ok200(models::IntegrationAccountPartner),
+            Created201(models::IntegrationAccountPartner),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5518,7 +5709,7 @@ pub mod integration_account_partners {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -5548,8 +5739,8 @@ pub mod integration_account_partners {
         resource_group_name: &str,
         integration_account_name: &str,
         partner_name: &str,
-        list_content_callback_url: &GetCallbackUrlParameters,
-    ) -> std::result::Result<WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
+        list_content_callback_url: &models::GetCallbackUrlParameters,
+    ) -> std::result::Result<models::WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/partners/{}/listContentCallbackUrl",
@@ -5583,7 +5774,7 @@ pub mod integration_account_partners {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_content_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5597,7 +5788,7 @@ pub mod integration_account_partners {
         }
     }
     pub mod list_content_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5618,7 +5809,7 @@ pub mod integration_account_partners {
     }
 }
 pub mod integration_account_agreements {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5626,7 +5817,7 @@ pub mod integration_account_agreements {
         integration_account_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<IntegrationAccountAgreementListResult, list::Error> {
+    ) -> std::result::Result<models::IntegrationAccountAgreementListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/agreements",
@@ -5659,7 +5850,7 @@ pub mod integration_account_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountAgreementListResult =
+                let rsp_value: models::IntegrationAccountAgreementListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5673,7 +5864,7 @@ pub mod integration_account_agreements {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5698,7 +5889,7 @@ pub mod integration_account_agreements {
         resource_group_name: &str,
         integration_account_name: &str,
         agreement_name: &str,
-    ) -> std::result::Result<IntegrationAccountAgreement, get::Error> {
+    ) -> std::result::Result<models::IntegrationAccountAgreement, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/agreements/{}",
@@ -5726,7 +5917,7 @@ pub mod integration_account_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountAgreement =
+                let rsp_value: models::IntegrationAccountAgreement =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5740,7 +5931,7 @@ pub mod integration_account_agreements {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5765,7 +5956,7 @@ pub mod integration_account_agreements {
         resource_group_name: &str,
         integration_account_name: &str,
         agreement_name: &str,
-        agreement: &IntegrationAccountAgreement,
+        agreement: &models::IntegrationAccountAgreement,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5798,13 +5989,13 @@ pub mod integration_account_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountAgreement = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountAgreement = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountAgreement = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountAgreement = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -5818,11 +6009,11 @@ pub mod integration_account_agreements {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IntegrationAccountAgreement),
-            Created201(IntegrationAccountAgreement),
+            Ok200(models::IntegrationAccountAgreement),
+            Created201(models::IntegrationAccountAgreement),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5886,7 +6077,7 @@ pub mod integration_account_agreements {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -5916,8 +6107,8 @@ pub mod integration_account_agreements {
         resource_group_name: &str,
         integration_account_name: &str,
         agreement_name: &str,
-        list_content_callback_url: &GetCallbackUrlParameters,
-    ) -> std::result::Result<WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
+        list_content_callback_url: &models::GetCallbackUrlParameters,
+    ) -> std::result::Result<models::WorkflowTriggerCallbackUrl, list_content_callback_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/agreements/{}/listContentCallbackUrl",
@@ -5951,7 +6142,7 @@ pub mod integration_account_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowTriggerCallbackUrl = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_content_callback_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5965,7 +6156,7 @@ pub mod integration_account_agreements {
         }
     }
     pub mod list_content_callback_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5986,14 +6177,14 @@ pub mod integration_account_agreements {
     }
 }
 pub mod integration_account_certificates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         integration_account_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<IntegrationAccountCertificateListResult, list::Error> {
+    ) -> std::result::Result<models::IntegrationAccountCertificateListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/certificates",
@@ -6023,7 +6214,7 @@ pub mod integration_account_certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountCertificateListResult =
+                let rsp_value: models::IntegrationAccountCertificateListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6037,7 +6228,7 @@ pub mod integration_account_certificates {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6062,7 +6253,7 @@ pub mod integration_account_certificates {
         resource_group_name: &str,
         integration_account_name: &str,
         certificate_name: &str,
-    ) -> std::result::Result<IntegrationAccountCertificate, get::Error> {
+    ) -> std::result::Result<models::IntegrationAccountCertificate, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/certificates/{}",
@@ -6090,7 +6281,7 @@ pub mod integration_account_certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountCertificate =
+                let rsp_value: models::IntegrationAccountCertificate =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6104,7 +6295,7 @@ pub mod integration_account_certificates {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6129,7 +6320,7 @@ pub mod integration_account_certificates {
         resource_group_name: &str,
         integration_account_name: &str,
         certificate_name: &str,
-        certificate: &IntegrationAccountCertificate,
+        certificate: &models::IntegrationAccountCertificate,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6162,13 +6353,13 @@ pub mod integration_account_certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountCertificate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountCertificate = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountCertificate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountCertificate = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -6182,11 +6373,11 @@ pub mod integration_account_certificates {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IntegrationAccountCertificate),
-            Created201(IntegrationAccountCertificate),
+            Ok200(models::IntegrationAccountCertificate),
+            Created201(models::IntegrationAccountCertificate),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -6250,7 +6441,7 @@ pub mod integration_account_certificates {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -6276,7 +6467,7 @@ pub mod integration_account_certificates {
     }
 }
 pub mod integration_account_sessions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -6284,7 +6475,7 @@ pub mod integration_account_sessions {
         integration_account_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<IntegrationAccountSessionListResult, list::Error> {
+    ) -> std::result::Result<models::IntegrationAccountSessionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/sessions",
@@ -6317,7 +6508,7 @@ pub mod integration_account_sessions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountSessionListResult =
+                let rsp_value: models::IntegrationAccountSessionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6331,7 +6522,7 @@ pub mod integration_account_sessions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6356,7 +6547,7 @@ pub mod integration_account_sessions {
         resource_group_name: &str,
         integration_account_name: &str,
         session_name: &str,
-    ) -> std::result::Result<IntegrationAccountSession, get::Error> {
+    ) -> std::result::Result<models::IntegrationAccountSession, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Logic/integrationAccounts/{}/sessions/{}",
@@ -6384,7 +6575,7 @@ pub mod integration_account_sessions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountSession =
+                let rsp_value: models::IntegrationAccountSession =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6398,7 +6589,7 @@ pub mod integration_account_sessions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6423,7 +6614,7 @@ pub mod integration_account_sessions {
         resource_group_name: &str,
         integration_account_name: &str,
         session_name: &str,
-        session: &IntegrationAccountSession,
+        session: &models::IntegrationAccountSession,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6456,13 +6647,13 @@ pub mod integration_account_sessions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountSession = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountSession = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IntegrationAccountSession = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IntegrationAccountSession = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -6476,11 +6667,11 @@ pub mod integration_account_sessions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IntegrationAccountSession),
-            Created201(IntegrationAccountSession),
+            Ok200(models::IntegrationAccountSession),
+            Created201(models::IntegrationAccountSession),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -6544,7 +6735,7 @@ pub mod integration_account_sessions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -6570,8 +6761,8 @@ pub mod integration_account_sessions {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Logic/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -6592,13 +6783,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -6608,7 +6799,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

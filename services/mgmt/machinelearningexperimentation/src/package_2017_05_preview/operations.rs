@@ -2,10 +2,49 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Accounts_Get(#[from] accounts::get::Error),
+    #[error(transparent)]
+    Accounts_CreateOrUpdate(#[from] accounts::create_or_update::Error),
+    #[error(transparent)]
+    Accounts_Update(#[from] accounts::update::Error),
+    #[error(transparent)]
+    Accounts_Delete(#[from] accounts::delete::Error),
+    #[error(transparent)]
+    Accounts_ListByResourceGroup(#[from] accounts::list_by_resource_group::Error),
+    #[error(transparent)]
+    Workspaces_Get(#[from] workspaces::get::Error),
+    #[error(transparent)]
+    Workspaces_CreateOrUpdate(#[from] workspaces::create_or_update::Error),
+    #[error(transparent)]
+    Workspaces_Update(#[from] workspaces::update::Error),
+    #[error(transparent)]
+    Workspaces_Delete(#[from] workspaces::delete::Error),
+    #[error(transparent)]
+    Workspaces_ListByAccounts(#[from] workspaces::list_by_accounts::Error),
+    #[error(transparent)]
+    Projects_Get(#[from] projects::get::Error),
+    #[error(transparent)]
+    Projects_CreateOrUpdate(#[from] projects::create_or_update::Error),
+    #[error(transparent)]
+    Projects_Update(#[from] projects::update::Error),
+    #[error(transparent)]
+    Projects_Delete(#[from] projects::delete::Error),
+    #[error(transparent)]
+    Projects_ListByWorkspace(#[from] projects::list_by_workspace::Error),
+    #[error(transparent)]
+    Accounts_List(#[from] accounts::list::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.MachineLearningExperimentation/operations",
@@ -29,13 +68,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -45,7 +84,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -69,13 +108,13 @@ pub mod operations {
     }
 }
 pub mod accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<Account, get::Error> {
+    ) -> std::result::Result<models::Account, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}",
@@ -102,13 +141,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Account =
+                let rsp_value: models::Account =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -118,7 +157,7 @@ pub mod accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -145,7 +184,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &Account,
+        parameters: &models::Account,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -177,19 +216,19 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Account = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Account = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Account = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Account = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -199,11 +238,11 @@ pub mod accounts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Account),
-            Created201(Account),
+            Ok200(models::Account),
+            Created201(models::Account),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -231,8 +270,8 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &AccountUpdateParameters,
-    ) -> std::result::Result<Account, update::Error> {
+        parameters: &models::AccountUpdateParameters,
+    ) -> std::result::Result<models::Account, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}",
@@ -260,13 +299,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Account =
+                let rsp_value: models::Account =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -276,7 +315,7 @@ pub mod accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -332,7 +371,7 @@ pub mod accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -342,7 +381,7 @@ pub mod accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -373,7 +412,7 @@ pub mod accounts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<AccountListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AccountListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts",
@@ -404,13 +443,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccountListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -420,7 +459,7 @@ pub mod accounts {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -445,7 +484,7 @@ pub mod accounts {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AccountListResult, list::Error> {
+    ) -> std::result::Result<models::AccountListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MachineLearningExperimentation/accounts",
@@ -470,13 +509,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountListResult =
+                let rsp_value: models::AccountListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -486,7 +525,7 @@ pub mod accounts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -510,14 +549,14 @@ pub mod accounts {
     }
 }
 pub mod workspaces {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<Workspace, get::Error> {
+    ) -> std::result::Result<models::Workspace, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}",
@@ -545,13 +584,13 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workspace =
+                let rsp_value: models::Workspace =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -561,7 +600,7 @@ pub mod workspaces {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -589,7 +628,7 @@ pub mod workspaces {
         resource_group_name: &str,
         account_name: &str,
         workspace_name: &str,
-        parameters: &Workspace,
+        parameters: &models::Workspace,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -622,19 +661,19 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workspace = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Workspace = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workspace = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Workspace = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -644,11 +683,11 @@ pub mod workspaces {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Workspace),
-            Created201(Workspace),
+            Ok200(models::Workspace),
+            Created201(models::Workspace),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -677,8 +716,8 @@ pub mod workspaces {
         resource_group_name: &str,
         account_name: &str,
         workspace_name: &str,
-        parameters: &WorkspaceUpdateParameters,
-    ) -> std::result::Result<Workspace, update::Error> {
+        parameters: &models::WorkspaceUpdateParameters,
+    ) -> std::result::Result<models::Workspace, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}",
@@ -707,13 +746,13 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workspace =
+                let rsp_value: models::Workspace =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -723,7 +762,7 @@ pub mod workspaces {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -781,7 +820,7 @@ pub mod workspaces {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -791,7 +830,7 @@ pub mod workspaces {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -823,7 +862,7 @@ pub mod workspaces {
         subscription_id: &str,
         account_name: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<WorkspaceListResult, list_by_accounts::Error> {
+    ) -> std::result::Result<models::WorkspaceListResult, list_by_accounts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces",
@@ -853,13 +892,13 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkspaceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_accounts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_accounts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_accounts::Error::DefaultResponse {
                     status_code,
@@ -869,7 +908,7 @@ pub mod workspaces {
         }
     }
     pub mod list_by_accounts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -893,7 +932,7 @@ pub mod workspaces {
     }
 }
 pub mod projects {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -901,7 +940,7 @@ pub mod projects {
         account_name: &str,
         workspace_name: &str,
         project_name: &str,
-    ) -> std::result::Result<Project, get::Error> {
+    ) -> std::result::Result<models::Project, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , workspace_name , project_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -922,13 +961,13 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Project =
+                let rsp_value: models::Project =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -938,7 +977,7 @@ pub mod projects {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -967,7 +1006,7 @@ pub mod projects {
         account_name: &str,
         workspace_name: &str,
         project_name: &str,
-        parameters: &Project,
+        parameters: &models::Project,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , workspace_name , project_name) ;
@@ -993,19 +1032,19 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Project = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Project = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Project = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Project = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1015,11 +1054,11 @@ pub mod projects {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Project),
-            Created201(Project),
+            Ok200(models::Project),
+            Created201(models::Project),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1049,8 +1088,8 @@ pub mod projects {
         account_name: &str,
         workspace_name: &str,
         project_name: &str,
-        parameters: &ProjectUpdateParameters,
-    ) -> std::result::Result<Project, update::Error> {
+        parameters: &models::ProjectUpdateParameters,
+    ) -> std::result::Result<models::Project, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , workspace_name , project_name) ;
         let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
@@ -1072,13 +1111,13 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Project =
+                let rsp_value: models::Project =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1088,7 +1127,7 @@ pub mod projects {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1140,7 +1179,7 @@ pub mod projects {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1150,7 +1189,7 @@ pub mod projects {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1183,7 +1222,7 @@ pub mod projects {
         account_name: &str,
         workspace_name: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ProjectListResult, list_by_workspace::Error> {
+    ) -> std::result::Result<models::ProjectListResult, list_by_workspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects",
@@ -1214,13 +1253,13 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProjectListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProjectListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_workspace::Error::DefaultResponse {
                     status_code,
@@ -1230,7 +1269,7 @@ pub mod projects {
         }
     }
     pub mod list_by_workspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

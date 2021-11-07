@@ -5776,42 +5776,6 @@ pub struct ParquetFormat {
 pub struct DatasetCompression {
     #[serde(rename = "type")]
     pub type_: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetBZip2Compression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetGZipCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetDeflateCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetZipDeflateCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetTarCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetTarGZipCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<serde_json::Value>,
 }

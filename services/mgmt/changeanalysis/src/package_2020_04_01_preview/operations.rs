@@ -2,14 +2,29 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ConfigurationProfile_Get(#[from] configuration_profile::get::Error),
+    #[error(transparent)]
+    ConfigurationProfile_Create(#[from] configuration_profile::create::Error),
+    #[error(transparent)]
+    ConfigurationProfile_Update(#[from] configuration_profile::update::Error),
+    #[error(transparent)]
+    ConfigurationProfile_Delete(#[from] configuration_profile::delete::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod configuration_profile {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         profile_name: &str,
-    ) -> std::result::Result<ConfigurationProfileResource, get::Error> {
+    ) -> std::result::Result<models::ConfigurationProfileResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ChangeAnalysis/profile/{}",
@@ -35,13 +50,13 @@ pub mod configuration_profile {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfigurationProfileResource =
+                let rsp_value: models::ConfigurationProfileResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -51,7 +66,7 @@ pub mod configuration_profile {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -77,8 +92,8 @@ pub mod configuration_profile {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         profile_name: &str,
-        body: Option<&ConfigurationProfileResource>,
-    ) -> std::result::Result<ConfigurationProfileResource, create::Error> {
+        body: Option<&models::ConfigurationProfileResource>,
+    ) -> std::result::Result<models::ConfigurationProfileResource, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ChangeAnalysis/profile/{}",
@@ -109,13 +124,13 @@ pub mod configuration_profile {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfigurationProfileResource =
+                let rsp_value: models::ConfigurationProfileResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -125,7 +140,7 @@ pub mod configuration_profile {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -151,8 +166,8 @@ pub mod configuration_profile {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         profile_name: &str,
-        body: Option<&ConfigurationProfileResource>,
-    ) -> std::result::Result<ConfigurationProfileResource, update::Error> {
+        body: Option<&models::ConfigurationProfileResource>,
+    ) -> std::result::Result<models::ConfigurationProfileResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ChangeAnalysis/profile/{}",
@@ -183,13 +198,13 @@ pub mod configuration_profile {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfigurationProfileResource =
+                let rsp_value: models::ConfigurationProfileResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -199,7 +214,7 @@ pub mod configuration_profile {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -253,7 +268,7 @@ pub mod configuration_profile {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -263,7 +278,7 @@ pub mod configuration_profile {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -292,11 +307,11 @@ pub mod configuration_profile {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         skip_token: Option<&str>,
-    ) -> std::result::Result<ResourceProviderOperationList, list::Error> {
+    ) -> std::result::Result<models::ResourceProviderOperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ChangeAnalysis/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -320,13 +335,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceProviderOperationList =
+                let rsp_value: models::ResourceProviderOperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -336,7 +351,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

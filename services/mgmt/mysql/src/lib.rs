@@ -6,44 +6,44 @@
 #[cfg(feature = "package-2017-12-01-preview")]
 pub mod package_2017_12_01_preview;
 #[cfg(all(feature = "package-2017-12-01-preview", not(feature = "no-default-version")))]
-pub use package_2017_12_01_preview::{models, operations};
+pub use package_2017_12_01_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2017-12-01")]
 pub mod package_2017_12_01;
 #[cfg(all(feature = "package-2017-12-01", not(feature = "no-default-version")))]
-pub use package_2017_12_01::{models, operations};
+pub use package_2017_12_01::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-06-01-privatepreview")]
 pub mod package_2018_06_01_privatepreview;
 #[cfg(all(feature = "package-2018-06-01-privatepreview", not(feature = "no-default-version")))]
-pub use package_2018_06_01_privatepreview::{models, operations};
+pub use package_2018_06_01_privatepreview::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-06-01")]
 pub mod package_2018_06_01;
 #[cfg(all(feature = "package-2018-06-01", not(feature = "no-default-version")))]
-pub use package_2018_06_01::{models, operations};
+pub use package_2018_06_01::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-01-01-privatepreview")]
 pub mod package_2020_01_01_privatepreview;
 #[cfg(all(feature = "package-2020-01-01-privatepreview", not(feature = "no-default-version")))]
-pub use package_2020_01_01_privatepreview::{models, operations};
+pub use package_2020_01_01_privatepreview::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-01-01")]
 pub mod package_2020_01_01;
 #[cfg(all(feature = "package-2020-01-01", not(feature = "no-default-version")))]
-pub use package_2020_01_01::{models, operations};
+pub use package_2020_01_01::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-07-01-privatepreview")]
 pub mod package_2020_07_01_privatepreview;
 #[cfg(all(feature = "package-2020-07-01-privatepreview", not(feature = "no-default-version")))]
-pub use package_2020_07_01_privatepreview::{models, operations};
+pub use package_2020_07_01_privatepreview::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-07-01-preview")]
 pub mod package_2020_07_01_preview;
 #[cfg(all(feature = "package-2020-07-01-preview", not(feature = "no-default-version")))]
-pub use package_2020_07_01_preview::{models, operations};
+pub use package_2020_07_01_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-flexibleserver-2021-05-01-preview")]
 pub mod package_flexibleserver_2021_05_01_preview;
 #[cfg(all(feature = "package-flexibleserver-2021-05-01-preview", not(feature = "no-default-version")))]
-pub use package_flexibleserver_2021_05_01_preview::{models, operations};
+pub use package_flexibleserver_2021_05_01_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-flexibleserver-2021-05-01")]
 pub mod package_flexibleserver_2021_05_01;
 use azure_core::setters;
 #[cfg(all(feature = "package-flexibleserver-2021-05-01", not(feature = "no-default-version")))]
-pub use package_flexibleserver_2021_05_01::{models, operations};
+pub use package_flexibleserver_2021_05_01::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

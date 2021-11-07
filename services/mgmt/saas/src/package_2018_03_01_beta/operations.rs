@@ -2,12 +2,55 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Applications_List(#[from] applications::list::Error),
+    #[error(transparent)]
+    SaaS_GetResource(#[from] saa_s::get_resource::Error),
+    #[error(transparent)]
+    SaaS_UpdateResource(#[from] saa_s::update_resource::Error),
+    #[error(transparent)]
+    SaaS_Delete(#[from] saa_s::delete::Error),
+    #[error(transparent)]
+    SaasResources_List(#[from] saas_resources::list::Error),
+    #[error(transparent)]
+    SaaS_CreateResource(#[from] saa_s::create_resource::Error),
+    #[error(transparent)]
+    SaasResourceListAccessToken(#[from] saas_resource_list_access_token::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_ListByAzureSubscription(#[from] saas_subscription_level::list_by_azure_subscription::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_ListByResourceGroup(#[from] saas_subscription_level::list_by_resource_group::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_Get(#[from] saas_subscription_level::get::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_CreateOrUpdate(#[from] saas_subscription_level::create_or_update::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_Update(#[from] saas_subscription_level::update::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_Delete(#[from] saas_subscription_level::delete::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_UpdateToUnsubscribed(#[from] saas_subscription_level::update_to_unsubscribed::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_ListAccessToken(#[from] saas_subscription_level::list_access_token::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_ValidateMoveResources(#[from] saas_subscription_level::validate_move_resources::Error),
+    #[error(transparent)]
+    SaasSubscriptionLevel_MoveResources(#[from] saas_subscription_level::move_resources::Error),
+    #[error(transparent)]
+    SaaSOperation_Get(#[from] saa_s_operation::get::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<SaasAppOperationsResponseWithContinuation, list::Error> {
+    ) -> std::result::Result<models::SaasAppOperationsResponseWithContinuation, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.SaaS/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -28,13 +71,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasAppOperationsResponseWithContinuation =
+                let rsp_value: models::SaasAppOperationsResponseWithContinuation =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -44,7 +87,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -68,12 +111,12 @@ pub mod operations {
     }
 }
 pub mod applications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<SaasAppResponseWithContinuation, list::Error> {
+    ) -> std::result::Result<models::SaasAppResponseWithContinuation, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/applications",
@@ -99,13 +142,13 @@ pub mod applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasAppResponseWithContinuation =
+                let rsp_value: models::SaasAppResponseWithContinuation =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -115,7 +158,7 @@ pub mod applications {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -139,11 +182,11 @@ pub mod applications {
     }
 }
 pub mod saa_s {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_resource(
         operation_config: &crate::OperationConfig,
         resource_id: &str,
-    ) -> std::result::Result<SaasResource, get_resource::Error> {
+    ) -> std::result::Result<models::SaasResource, get_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.SaaS/saasresources/{}",
@@ -171,13 +214,13 @@ pub mod saa_s {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResource =
+                let rsp_value: models::SaasResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_resource::Error::DefaultResponse {
                     status_code,
@@ -187,7 +230,7 @@ pub mod saa_s {
         }
     }
     pub mod get_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -212,7 +255,7 @@ pub mod saa_s {
     pub async fn update_resource(
         operation_config: &crate::OperationConfig,
         resource_id: &str,
-        parameters: &SaasResourceCreation,
+        parameters: &models::SaasResourceCreation,
     ) -> std::result::Result<update_resource::Response, update_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -242,7 +285,7 @@ pub mod saa_s {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SaasResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_resource::Response::Ok200(rsp_value))
             }
@@ -250,7 +293,7 @@ pub mod saa_s {
             http::StatusCode::NO_CONTENT => Ok(update_resource::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_resource::Error::DefaultResponse {
                     status_code,
@@ -260,10 +303,10 @@ pub mod saa_s {
         }
     }
     pub mod update_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SaasResource),
+            Ok200(models::SaasResource),
             Accepted202,
             NoContent204,
         }
@@ -291,7 +334,7 @@ pub mod saa_s {
     pub async fn delete(
         operation_config: &crate::OperationConfig,
         resource_id: &str,
-        parameters: &DeleteOptions,
+        parameters: &models::DeleteOptions,
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -320,7 +363,7 @@ pub mod saa_s {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -330,7 +373,7 @@ pub mod saa_s {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -359,7 +402,7 @@ pub mod saa_s {
     }
     pub async fn create_resource(
         operation_config: &crate::OperationConfig,
-        parameters: &SaasResourceCreation,
+        parameters: &models::SaasResourceCreation,
     ) -> std::result::Result<create_resource::Response, create_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.SaaS/saasresources", operation_config.base_path(),);
@@ -385,14 +428,14 @@ pub mod saa_s {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SaasResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_resource::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_resource::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_resource::Error::DefaultResponse {
                     status_code,
@@ -402,10 +445,10 @@ pub mod saa_s {
         }
     }
     pub mod create_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SaasResource),
+            Ok200(models::SaasResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -431,8 +474,10 @@ pub mod saa_s {
     }
 }
 pub mod saas_resources {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<SaasResourceResponseWithContinuation, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::SaasResourceResponseWithContinuation, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.SaaS/saasresources", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -453,13 +498,13 @@ pub mod saas_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResourceResponseWithContinuation =
+                let rsp_value: models::SaasResourceResponseWithContinuation =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -469,7 +514,7 @@ pub mod saas_resources {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -495,7 +540,7 @@ pub mod saas_resources {
 pub async fn saas_resource_list_access_token(
     operation_config: &crate::OperationConfig,
     resource_id: &str,
-) -> std::result::Result<AccessTokenResult, saas_resource_list_access_token::Error> {
+) -> std::result::Result<models::AccessTokenResult, saas_resource_list_access_token::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.SaaS/saasresources/{}/listAccessToken",
@@ -526,13 +571,13 @@ pub async fn saas_resource_list_access_token(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AccessTokenResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AccessTokenResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| saas_resource_list_access_token::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| saas_resource_list_access_token::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(saas_resource_list_access_token::Error::DefaultResponse {
                 status_code,
@@ -542,7 +587,7 @@ pub async fn saas_resource_list_access_token(
     }
 }
 pub mod saas_resource_list_access_token {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -565,11 +610,11 @@ pub mod saas_resource_list_access_token {
     }
 }
 pub mod saas_subscription_level {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_azure_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<SaasResourceResponseWithContinuation, list_by_azure_subscription::Error> {
+    ) -> std::result::Result<models::SaasResourceResponseWithContinuation, list_by_azure_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SaaS/resources",
@@ -599,13 +644,13 @@ pub mod saas_subscription_level {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResourceResponseWithContinuation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SaasResourceResponseWithContinuation = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_azure_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_azure_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_azure_subscription::Error::DefaultResponse {
                     status_code,
@@ -615,7 +660,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod list_by_azure_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -641,7 +686,7 @@ pub mod saas_subscription_level {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<SaasResourceResponseWithContinuation, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::SaasResourceResponseWithContinuation, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources",
@@ -672,13 +717,13 @@ pub mod saas_subscription_level {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResourceResponseWithContinuation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SaasResourceResponseWithContinuation = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -688,7 +733,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -715,7 +760,7 @@ pub mod saas_subscription_level {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<SaasResource, get::Error> {
+    ) -> std::result::Result<models::SaasResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources/{}",
@@ -742,13 +787,13 @@ pub mod saas_subscription_level {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResource =
+                let rsp_value: models::SaasResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -758,7 +803,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -785,7 +830,7 @@ pub mod saas_subscription_level {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &SaasResourceCreation,
+        parameters: &models::SaasResourceCreation,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -817,7 +862,7 @@ pub mod saas_subscription_level {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SaasResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -825,7 +870,7 @@ pub mod saas_subscription_level {
             http::StatusCode::NO_CONTENT => Ok(create_or_update::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -835,10 +880,10 @@ pub mod saas_subscription_level {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SaasResource),
+            Ok200(models::SaasResource),
             Accepted202,
             NoContent204,
         }
@@ -868,7 +913,7 @@ pub mod saas_subscription_level {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &SaasResourceCreation,
+        parameters: &models::SaasResourceCreation,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -897,7 +942,7 @@ pub mod saas_subscription_level {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResource =
+                let rsp_value: models::SaasResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -905,7 +950,7 @@ pub mod saas_subscription_level {
             http::StatusCode::NO_CONTENT => Ok(update::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -915,10 +960,10 @@ pub mod saas_subscription_level {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SaasResource),
+            Ok200(models::SaasResource),
             Accepted202,
             NoContent204,
         }
@@ -978,7 +1023,7 @@ pub mod saas_subscription_level {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -988,7 +1033,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1021,7 +1066,7 @@ pub mod saas_subscription_level {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &DeleteOptions,
+        parameters: &models::DeleteOptions,
     ) -> std::result::Result<update_to_unsubscribed::Response, update_to_unsubscribed::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1058,7 +1103,7 @@ pub mod saas_subscription_level {
             http::StatusCode::NO_CONTENT => Ok(update_to_unsubscribed::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_to_unsubscribed::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_to_unsubscribed::Error::DefaultResponse {
                     status_code,
@@ -1068,7 +1113,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod update_to_unsubscribed {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1101,7 +1146,7 @@ pub mod saas_subscription_level {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<AccessTokenResult, list_access_token::Error> {
+    ) -> std::result::Result<models::AccessTokenResult, list_access_token::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources/{}/listAccessToken",
@@ -1132,13 +1177,13 @@ pub mod saas_subscription_level {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccessTokenResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccessTokenResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_access_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_access_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_access_token::Error::DefaultResponse {
                     status_code,
@@ -1148,7 +1193,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod list_access_token {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1174,7 +1219,7 @@ pub mod saas_subscription_level {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        move_resource_parameter: &MoveResource,
+        move_resource_parameter: &models::MoveResource,
     ) -> std::result::Result<(), validate_move_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1208,7 +1253,7 @@ pub mod saas_subscription_level {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_move_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate_move_resources::Error::DefaultResponse {
                     status_code,
@@ -1218,7 +1263,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod validate_move_resources {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1244,7 +1289,7 @@ pub mod saas_subscription_level {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        move_resource_parameter: &MoveResource,
+        move_resource_parameter: &models::MoveResource,
     ) -> std::result::Result<move_resources::Response, move_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1277,7 +1322,7 @@ pub mod saas_subscription_level {
             http::StatusCode::ACCEPTED => Ok(move_resources::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| move_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(move_resources::Error::DefaultResponse {
                     status_code,
@@ -1287,7 +1332,7 @@ pub mod saas_subscription_level {
         }
     }
     pub mod move_resources {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1316,7 +1361,7 @@ pub mod saas_subscription_level {
     }
 }
 pub mod saa_s_operation {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(operation_config: &crate::OperationConfig, operation_id: &str) -> std::result::Result<get::Response, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1342,14 +1387,14 @@ pub mod saa_s_operation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SaasResource =
+                let rsp_value: models::SaasResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(get::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1359,10 +1404,10 @@ pub mod saa_s_operation {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SaasResource),
+            Ok200(models::SaasResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]

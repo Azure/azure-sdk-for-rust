@@ -2,14 +2,53 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    DataCollectionEndpoints_ListByResourceGroup(#[from] data_collection_endpoints::list_by_resource_group::Error),
+    #[error(transparent)]
+    DataCollectionEndpoints_ListBySubscription(#[from] data_collection_endpoints::list_by_subscription::Error),
+    #[error(transparent)]
+    DataCollectionEndpoints_Get(#[from] data_collection_endpoints::get::Error),
+    #[error(transparent)]
+    DataCollectionEndpoints_Create(#[from] data_collection_endpoints::create::Error),
+    #[error(transparent)]
+    DataCollectionEndpoints_Update(#[from] data_collection_endpoints::update::Error),
+    #[error(transparent)]
+    DataCollectionEndpoints_Delete(#[from] data_collection_endpoints::delete::Error),
+    #[error(transparent)]
+    DataCollectionRules_ListByResourceGroup(#[from] data_collection_rules::list_by_resource_group::Error),
+    #[error(transparent)]
+    DataCollectionRules_ListBySubscription(#[from] data_collection_rules::list_by_subscription::Error),
+    #[error(transparent)]
+    DataCollectionRules_Get(#[from] data_collection_rules::get::Error),
+    #[error(transparent)]
+    DataCollectionRules_Create(#[from] data_collection_rules::create::Error),
+    #[error(transparent)]
+    DataCollectionRules_Update(#[from] data_collection_rules::update::Error),
+    #[error(transparent)]
+    DataCollectionRules_Delete(#[from] data_collection_rules::delete::Error),
+    #[error(transparent)]
+    DataCollectionRuleAssociations_ListByResource(#[from] data_collection_rule_associations::list_by_resource::Error),
+    #[error(transparent)]
+    DataCollectionRuleAssociations_ListByRule(#[from] data_collection_rule_associations::list_by_rule::Error),
+    #[error(transparent)]
+    DataCollectionRuleAssociations_Get(#[from] data_collection_rule_associations::get::Error),
+    #[error(transparent)]
+    DataCollectionRuleAssociations_Create(#[from] data_collection_rule_associations::create::Error),
+    #[error(transparent)]
+    DataCollectionRuleAssociations_Delete(#[from] data_collection_rule_associations::delete::Error),
+}
 pub mod data_collection_endpoints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DataCollectionEndpointResourceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DataCollectionEndpointResourceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionEndpoints",
@@ -40,13 +79,13 @@ pub mod data_collection_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionEndpointResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataCollectionEndpointResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -56,7 +95,7 @@ pub mod data_collection_endpoints {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -81,7 +120,7 @@ pub mod data_collection_endpoints {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DataCollectionEndpointResourceListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::DataCollectionEndpointResourceListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Insights/dataCollectionEndpoints",
@@ -109,13 +148,13 @@ pub mod data_collection_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionEndpointResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataCollectionEndpointResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -125,7 +164,7 @@ pub mod data_collection_endpoints {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -152,7 +191,7 @@ pub mod data_collection_endpoints {
         subscription_id: &str,
         resource_group_name: &str,
         data_collection_endpoint_name: &str,
-    ) -> std::result::Result<DataCollectionEndpointResource, get::Error> {
+    ) -> std::result::Result<models::DataCollectionEndpointResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionEndpoints/{}",
@@ -179,13 +218,13 @@ pub mod data_collection_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionEndpointResource =
+                let rsp_value: models::DataCollectionEndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -195,7 +234,7 @@ pub mod data_collection_endpoints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -222,7 +261,7 @@ pub mod data_collection_endpoints {
         subscription_id: &str,
         resource_group_name: &str,
         data_collection_endpoint_name: &str,
-        body: Option<&DataCollectionEndpointResource>,
+        body: Option<&models::DataCollectionEndpointResource>,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -255,19 +294,19 @@ pub mod data_collection_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionEndpointResource =
+                let rsp_value: models::DataCollectionEndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionEndpointResource =
+                let rsp_value: models::DataCollectionEndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -277,11 +316,11 @@ pub mod data_collection_endpoints {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataCollectionEndpointResource),
-            Created201(DataCollectionEndpointResource),
+            Ok200(models::DataCollectionEndpointResource),
+            Created201(models::DataCollectionEndpointResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -309,8 +348,8 @@ pub mod data_collection_endpoints {
         subscription_id: &str,
         resource_group_name: &str,
         data_collection_endpoint_name: &str,
-        body: Option<&ResourceForUpdate>,
-    ) -> std::result::Result<DataCollectionEndpointResource, update::Error> {
+        body: Option<&models::ResourceForUpdate>,
+    ) -> std::result::Result<models::DataCollectionEndpointResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionEndpoints/{}",
@@ -342,13 +381,13 @@ pub mod data_collection_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionEndpointResource =
+                let rsp_value: models::DataCollectionEndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -358,7 +397,7 @@ pub mod data_collection_endpoints {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -414,7 +453,7 @@ pub mod data_collection_endpoints {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -424,7 +463,7 @@ pub mod data_collection_endpoints {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -453,12 +492,12 @@ pub mod data_collection_endpoints {
     }
 }
 pub mod data_collection_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DataCollectionRuleResourceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DataCollectionRuleResourceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules",
@@ -489,13 +528,13 @@ pub mod data_collection_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataCollectionRuleResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -505,7 +544,7 @@ pub mod data_collection_rules {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -530,7 +569,7 @@ pub mod data_collection_rules {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DataCollectionRuleResourceListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::DataCollectionRuleResourceListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Insights/dataCollectionRules",
@@ -558,13 +597,13 @@ pub mod data_collection_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataCollectionRuleResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -574,7 +613,7 @@ pub mod data_collection_rules {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -601,7 +640,7 @@ pub mod data_collection_rules {
         subscription_id: &str,
         resource_group_name: &str,
         data_collection_rule_name: &str,
-    ) -> std::result::Result<DataCollectionRuleResource, get::Error> {
+    ) -> std::result::Result<models::DataCollectionRuleResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules/{}",
@@ -628,13 +667,13 @@ pub mod data_collection_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleResource =
+                let rsp_value: models::DataCollectionRuleResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -644,7 +683,7 @@ pub mod data_collection_rules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -671,7 +710,7 @@ pub mod data_collection_rules {
         subscription_id: &str,
         resource_group_name: &str,
         data_collection_rule_name: &str,
-        body: Option<&DataCollectionRuleResource>,
+        body: Option<&models::DataCollectionRuleResource>,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -704,19 +743,19 @@ pub mod data_collection_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleResource =
+                let rsp_value: models::DataCollectionRuleResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleResource =
+                let rsp_value: models::DataCollectionRuleResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -726,11 +765,11 @@ pub mod data_collection_rules {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataCollectionRuleResource),
-            Created201(DataCollectionRuleResource),
+            Ok200(models::DataCollectionRuleResource),
+            Created201(models::DataCollectionRuleResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -758,8 +797,8 @@ pub mod data_collection_rules {
         subscription_id: &str,
         resource_group_name: &str,
         data_collection_rule_name: &str,
-        body: Option<&ResourceForUpdate>,
-    ) -> std::result::Result<DataCollectionRuleResource, update::Error> {
+        body: Option<&models::ResourceForUpdate>,
+    ) -> std::result::Result<models::DataCollectionRuleResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules/{}",
@@ -791,13 +830,13 @@ pub mod data_collection_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleResource =
+                let rsp_value: models::DataCollectionRuleResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -807,7 +846,7 @@ pub mod data_collection_rules {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -863,7 +902,7 @@ pub mod data_collection_rules {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -873,7 +912,7 @@ pub mod data_collection_rules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -902,11 +941,11 @@ pub mod data_collection_rules {
     }
 }
 pub mod data_collection_rule_associations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-    ) -> std::result::Result<DataCollectionRuleAssociationProxyOnlyResourceListResult, list_by_resource::Error> {
+    ) -> std::result::Result<models::DataCollectionRuleAssociationProxyOnlyResourceListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/dataCollectionRuleAssociations",
@@ -934,13 +973,13 @@ pub mod data_collection_rule_associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleAssociationProxyOnlyResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataCollectionRuleAssociationProxyOnlyResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponseCommonV2 = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource::Error::DefaultResponse {
                     status_code,
@@ -950,7 +989,7 @@ pub mod data_collection_rule_associations {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -977,7 +1016,7 @@ pub mod data_collection_rule_associations {
         subscription_id: &str,
         resource_group_name: &str,
         data_collection_rule_name: &str,
-    ) -> std::result::Result<DataCollectionRuleAssociationProxyOnlyResourceListResult, list_by_rule::Error> {
+    ) -> std::result::Result<models::DataCollectionRuleAssociationProxyOnlyResourceListResult, list_by_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/dataCollectionRules/{}/associations",
@@ -1007,13 +1046,13 @@ pub mod data_collection_rule_associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleAssociationProxyOnlyResourceListResult =
+                let rsp_value: models::DataCollectionRuleAssociationProxyOnlyResourceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_rule::Error::DefaultResponse {
                     status_code,
@@ -1023,7 +1062,7 @@ pub mod data_collection_rule_associations {
         }
     }
     pub mod list_by_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1049,7 +1088,7 @@ pub mod data_collection_rule_associations {
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         association_name: &str,
-    ) -> std::result::Result<DataCollectionRuleAssociationProxyOnlyResource, get::Error> {
+    ) -> std::result::Result<models::DataCollectionRuleAssociationProxyOnlyResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/dataCollectionRuleAssociations/{}",
@@ -1075,13 +1114,13 @@ pub mod data_collection_rule_associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleAssociationProxyOnlyResource =
+                let rsp_value: models::DataCollectionRuleAssociationProxyOnlyResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1091,7 +1130,7 @@ pub mod data_collection_rule_associations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1117,7 +1156,7 @@ pub mod data_collection_rule_associations {
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         association_name: &str,
-        body: Option<&DataCollectionRuleAssociationProxyOnlyResource>,
+        body: Option<&models::DataCollectionRuleAssociationProxyOnlyResource>,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1149,19 +1188,19 @@ pub mod data_collection_rule_associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleAssociationProxyOnlyResource =
+                let rsp_value: models::DataCollectionRuleAssociationProxyOnlyResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataCollectionRuleAssociationProxyOnlyResource =
+                let rsp_value: models::DataCollectionRuleAssociationProxyOnlyResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1171,11 +1210,11 @@ pub mod data_collection_rule_associations {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataCollectionRuleAssociationProxyOnlyResource),
-            Created201(DataCollectionRuleAssociationProxyOnlyResource),
+            Ok200(models::DataCollectionRuleAssociationProxyOnlyResource),
+            Created201(models::DataCollectionRuleAssociationProxyOnlyResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1230,7 +1269,7 @@ pub mod data_collection_rule_associations {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseCommonV2 =
+                let rsp_value: models::ErrorResponseCommonV2 =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1240,7 +1279,7 @@ pub mod data_collection_rule_associations {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

@@ -2,15 +2,28 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ContainerService_Get(#[from] container_service::get::Error),
+    #[error(transparent)]
+    ContainerService_CreateOrUpdate(#[from] container_service::create_or_update::Error),
+    #[error(transparent)]
+    ContainerService_Delete(#[from] container_service::delete::Error),
+    #[error(transparent)]
+    ContainerService_ListByResourceGroup(#[from] container_service::list_by_resource_group::Error),
+}
 pub mod container_service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         container_service_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ContainerService, get::Error> {
+    ) -> std::result::Result<models::ContainerService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/containerServices/{}",
@@ -37,7 +50,7 @@ pub mod container_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerService =
+                let rsp_value: models::ContainerService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -51,7 +64,7 @@ pub mod container_service {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -74,7 +87,7 @@ pub mod container_service {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         container_service_name: &str,
-        parameters: &ContainerService,
+        parameters: &models::ContainerService,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -107,19 +120,19 @@ pub mod container_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
@@ -133,12 +146,12 @@ pub mod container_service {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ContainerService),
-            Created201(ContainerService),
-            Accepted202(ContainerService),
+            Ok200(models::ContainerService),
+            Created201(models::ContainerService),
+            Accepted202(models::ContainerService),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -200,7 +213,7 @@ pub mod container_service {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -228,7 +241,7 @@ pub mod container_service {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ContainerServiceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ContainerServiceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/containerServices",
@@ -259,7 +272,7 @@ pub mod container_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerServiceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerServiceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -273,7 +286,7 @@ pub mod container_service {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

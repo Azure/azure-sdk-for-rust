@@ -2,10 +2,43 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    AttestationProviders_Get(#[from] attestation_providers::get::Error),
+    #[error(transparent)]
+    AttestationProviders_Create(#[from] attestation_providers::create::Error),
+    #[error(transparent)]
+    AttestationProviders_Update(#[from] attestation_providers::update::Error),
+    #[error(transparent)]
+    AttestationProviders_Delete(#[from] attestation_providers::delete::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_List(#[from] private_endpoint_connections::list::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Get(#[from] private_endpoint_connections::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Create(#[from] private_endpoint_connections::create::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Delete(#[from] private_endpoint_connections::delete::Error),
+    #[error(transparent)]
+    PrivateLinkResources_ListByProvider(#[from] private_link_resources::list_by_provider::Error),
+    #[error(transparent)]
+    AttestationProviders_List(#[from] attestation_providers::list::Error),
+    #[error(transparent)]
+    AttestationProviders_ListByResourceGroup(#[from] attestation_providers::list_by_resource_group::Error),
+    #[error(transparent)]
+    AttestationProviders_ListDefault(#[from] attestation_providers::list_default::Error),
+    #[error(transparent)]
+    AttestationProviders_GetDefaultByLocation(#[from] attestation_providers::get_default_by_location::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Attestation/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +59,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +75,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,13 +99,13 @@ pub mod operations {
     }
 }
 pub mod attestation_providers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         provider_name: &str,
-    ) -> std::result::Result<AttestationProvider, get::Error> {
+    ) -> std::result::Result<models::AttestationProvider, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProviders/{}",
@@ -99,13 +132,13 @@ pub mod attestation_providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationProvider =
+                let rsp_value: models::AttestationProvider =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -115,7 +148,7 @@ pub mod attestation_providers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -142,7 +175,7 @@ pub mod attestation_providers {
         subscription_id: &str,
         resource_group_name: &str,
         provider_name: &str,
-        creation_params: &AttestationServiceCreationParams,
+        creation_params: &models::AttestationServiceCreationParams,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -171,19 +204,19 @@ pub mod attestation_providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationProvider =
+                let rsp_value: models::AttestationProvider =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationProvider =
+                let rsp_value: models::AttestationProvider =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -193,11 +226,11 @@ pub mod attestation_providers {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AttestationProvider),
-            Created201(AttestationProvider),
+            Ok200(models::AttestationProvider),
+            Created201(models::AttestationProvider),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -225,8 +258,8 @@ pub mod attestation_providers {
         subscription_id: &str,
         resource_group_name: &str,
         provider_name: &str,
-        update_params: &AttestationServicePatchParams,
-    ) -> std::result::Result<AttestationProvider, update::Error> {
+        update_params: &models::AttestationServicePatchParams,
+    ) -> std::result::Result<models::AttestationProvider, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProviders/{}",
@@ -254,13 +287,13 @@ pub mod attestation_providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationProvider =
+                let rsp_value: models::AttestationProvider =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -270,7 +303,7 @@ pub mod attestation_providers {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -327,7 +360,7 @@ pub mod attestation_providers {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -337,7 +370,7 @@ pub mod attestation_providers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -368,7 +401,7 @@ pub mod attestation_providers {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AttestationProviderListResult, list::Error> {
+    ) -> std::result::Result<models::AttestationProviderListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Attestation/attestationProviders",
@@ -393,13 +426,13 @@ pub mod attestation_providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationProviderListResult =
+                let rsp_value: models::AttestationProviderListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -409,7 +442,7 @@ pub mod attestation_providers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -435,7 +468,7 @@ pub mod attestation_providers {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AttestationProviderListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AttestationProviderListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProviders",
@@ -466,13 +499,13 @@ pub mod attestation_providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationProviderListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AttestationProviderListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -482,7 +515,7 @@ pub mod attestation_providers {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -507,7 +540,7 @@ pub mod attestation_providers {
     pub async fn list_default(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AttestationProviderListResult, list_default::Error> {
+    ) -> std::result::Result<models::AttestationProviderListResult, list_default::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Attestation/defaultProviders",
@@ -535,13 +568,13 @@ pub mod attestation_providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationProviderListResult =
+                let rsp_value: models::AttestationProviderListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_default::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_default::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_default::Error::DefaultResponse {
                     status_code,
@@ -551,7 +584,7 @@ pub mod attestation_providers {
         }
     }
     pub mod list_default {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -577,7 +610,7 @@ pub mod attestation_providers {
         operation_config: &crate::OperationConfig,
         location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AttestationProvider, get_default_by_location::Error> {
+    ) -> std::result::Result<models::AttestationProvider, get_default_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Attestation/locations/{}/defaultProvider",
@@ -608,13 +641,13 @@ pub mod attestation_providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationProvider = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AttestationProvider = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_default_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_default_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_default_by_location::Error::DefaultResponse {
                     status_code,
@@ -624,7 +657,7 @@ pub mod attestation_providers {
         }
     }
     pub mod get_default_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -648,13 +681,13 @@ pub mod attestation_providers {
     }
 }
 pub mod private_endpoint_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         provider_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProvider/{}/privateEndpointConnections",
@@ -681,13 +714,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult =
+                let rsp_value: models::PrivateEndpointConnectionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -697,7 +730,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -725,7 +758,7 @@ pub mod private_endpoint_connections {
         provider_name: &str,
         subscription_id: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProviders/{}/privateEndpointConnections/{}",
@@ -753,13 +786,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -769,7 +802,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -797,8 +830,8 @@ pub mod private_endpoint_connections {
         provider_name: &str,
         subscription_id: &str,
         private_endpoint_connection_name: &str,
-        properties: &PrivateEndpointConnection,
-    ) -> std::result::Result<PrivateEndpointConnection, create::Error> {
+        properties: &models::PrivateEndpointConnection,
+    ) -> std::result::Result<models::PrivateEndpointConnection, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProviders/{}/privateEndpointConnections/{}",
@@ -827,13 +860,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -843,7 +876,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -901,7 +934,7 @@ pub mod private_endpoint_connections {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -911,7 +944,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -940,13 +973,13 @@ pub mod private_endpoint_connections {
     }
 }
 pub mod private_link_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_provider(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         provider_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_provider::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_provider::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProviders/{}/privateLinkResources",
@@ -976,13 +1009,13 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_provider::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_provider::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_provider::Error::DefaultResponse {
                     status_code,
@@ -992,7 +1025,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_provider {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

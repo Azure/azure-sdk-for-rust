@@ -6,12 +6,12 @@
 #[cfg(feature = "package-2018-03")]
 pub mod package_2018_03;
 #[cfg(all(feature = "package-2018-03", not(feature = "no-default-version")))]
-pub use package_2018_03::{models, operations};
+pub use package_2018_03::{models, operations, operations::Error};
 #[cfg(feature = "package-2017-05")]
 pub mod package_2017_05;
 use azure_core::setters;
 #[cfg(all(feature = "package-2017-05", not(feature = "no-default-version")))]
-pub use package_2017_05::{models, operations};
+pub use package_2017_05::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

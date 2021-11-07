@@ -2,9 +2,84 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    PolicyTrackedResources_ListQueryResultsForManagementGroup(
+        #[from] policy_tracked_resources::list_query_results_for_management_group::Error,
+    ),
+    #[error(transparent)]
+    PolicyTrackedResources_ListQueryResultsForSubscription(#[from] policy_tracked_resources::list_query_results_for_subscription::Error),
+    #[error(transparent)]
+    PolicyTrackedResources_ListQueryResultsForResourceGroup(#[from] policy_tracked_resources::list_query_results_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyTrackedResources_ListQueryResultsForResource(#[from] policy_tracked_resources::list_query_results_for_resource::Error),
+    #[error(transparent)]
+    Remediations_ListDeploymentsAtManagementGroup(#[from] remediations::list_deployments_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_CancelAtManagementGroup(#[from] remediations::cancel_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_ListForManagementGroup(#[from] remediations::list_for_management_group::Error),
+    #[error(transparent)]
+    Remediations_GetAtManagementGroup(#[from] remediations::get_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_CreateOrUpdateAtManagementGroup(#[from] remediations::create_or_update_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_DeleteAtManagementGroup(#[from] remediations::delete_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_ListDeploymentsAtSubscription(#[from] remediations::list_deployments_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_CancelAtSubscription(#[from] remediations::cancel_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_ListForSubscription(#[from] remediations::list_for_subscription::Error),
+    #[error(transparent)]
+    Remediations_GetAtSubscription(#[from] remediations::get_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_CreateOrUpdateAtSubscription(#[from] remediations::create_or_update_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_DeleteAtSubscription(#[from] remediations::delete_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_ListDeploymentsAtResourceGroup(#[from] remediations::list_deployments_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_CancelAtResourceGroup(#[from] remediations::cancel_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_ListForResourceGroup(#[from] remediations::list_for_resource_group::Error),
+    #[error(transparent)]
+    Remediations_GetAtResourceGroup(#[from] remediations::get_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_CreateOrUpdateAtResourceGroup(#[from] remediations::create_or_update_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_DeleteAtResourceGroup(#[from] remediations::delete_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_ListDeploymentsAtResource(#[from] remediations::list_deployments_at_resource::Error),
+    #[error(transparent)]
+    Remediations_CancelAtResource(#[from] remediations::cancel_at_resource::Error),
+    #[error(transparent)]
+    Remediations_ListForResource(#[from] remediations::list_for_resource::Error),
+    #[error(transparent)]
+    Remediations_GetAtResource(#[from] remediations::get_at_resource::Error),
+    #[error(transparent)]
+    Remediations_CreateOrUpdateAtResource(#[from] remediations::create_or_update_at_resource::Error),
+    #[error(transparent)]
+    Remediations_DeleteAtResource(#[from] remediations::delete_at_resource::Error),
+    #[error(transparent)]
+    PolicyEvents_NextLink(#[from] policy_events::next_link::Error),
+    #[error(transparent)]
+    PolicyStates_NextLink(#[from] policy_states::next_link::Error),
+    #[error(transparent)]
+    PolicyMetadata_GetResource(#[from] policy_metadata::get_resource::Error),
+    #[error(transparent)]
+    PolicyMetadata_List(#[from] policy_metadata::list::Error),
+    #[error(transparent)]
+    PolicyRestrictions_CheckAtSubscriptionScope(#[from] policy_restrictions::check_at_subscription_scope::Error),
+    #[error(transparent)]
+    PolicyRestrictions_CheckAtResourceGroupScope(#[from] policy_restrictions::check_at_resource_group_scope::Error),
+}
 pub mod policy_tracked_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_query_results_for_management_group(
         operation_config: &crate::OperationConfig,
         management_groups_namespace: &str,
@@ -12,7 +87,7 @@ pub mod policy_tracked_resources {
         policy_tracked_resources_resource: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<PolicyTrackedResourcesQueryResults, list_query_results_for_management_group::Error> {
+    ) -> std::result::Result<models::PolicyTrackedResourcesQueryResults, list_query_results_for_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
@@ -51,13 +126,13 @@ pub mod policy_tracked_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_management_group::Error::DefaultResponse {
                     status_code,
@@ -67,7 +142,7 @@ pub mod policy_tracked_resources {
         }
     }
     pub mod list_query_results_for_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -95,7 +170,7 @@ pub mod policy_tracked_resources {
         top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PolicyTrackedResourcesQueryResults, list_query_results_for_subscription::Error> {
+    ) -> std::result::Result<models::PolicyTrackedResourcesQueryResults, list_query_results_for_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
@@ -133,13 +208,13 @@ pub mod policy_tracked_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_subscription::Error::DefaultResponse {
                     status_code,
@@ -149,7 +224,7 @@ pub mod policy_tracked_resources {
         }
     }
     pub mod list_query_results_for_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -178,7 +253,7 @@ pub mod policy_tracked_resources {
         top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PolicyTrackedResourcesQueryResults, list_query_results_for_resource_group::Error> {
+    ) -> std::result::Result<models::PolicyTrackedResourcesQueryResults, list_query_results_for_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
@@ -217,13 +292,13 @@ pub mod policy_tracked_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_resource_group::Error::DefaultResponse {
                     status_code,
@@ -233,7 +308,7 @@ pub mod policy_tracked_resources {
         }
     }
     pub mod list_query_results_for_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -261,7 +336,7 @@ pub mod policy_tracked_resources {
         policy_tracked_resources_resource: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<PolicyTrackedResourcesQueryResults, list_query_results_for_resource::Error> {
+    ) -> std::result::Result<models::PolicyTrackedResourcesQueryResults, list_query_results_for_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
@@ -299,13 +374,13 @@ pub mod policy_tracked_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_resource::Error::DefaultResponse {
                     status_code,
@@ -315,7 +390,7 @@ pub mod policy_tracked_resources {
         }
     }
     pub mod list_query_results_for_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -339,14 +414,14 @@ pub mod policy_tracked_resources {
     }
 }
 pub mod remediations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_deployments_at_management_group(
         operation_config: &crate::OperationConfig,
         management_groups_namespace: &str,
         management_group_id: &str,
         remediation_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<RemediationDeploymentsListResult, list_deployments_at_management_group::Error> {
+    ) -> std::result::Result<models::RemediationDeploymentsListResult, list_deployments_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
@@ -382,13 +457,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_deployments_at_management_group::Error::DefaultResponse {
                     status_code,
@@ -398,7 +473,7 @@ pub mod remediations {
         }
     }
     pub mod list_deployments_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -425,7 +500,7 @@ pub mod remediations {
         management_groups_namespace: &str,
         management_group_id: &str,
         remediation_name: &str,
-    ) -> std::result::Result<Remediation, cancel_at_management_group::Error> {
+    ) -> std::result::Result<models::Remediation, cancel_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
@@ -458,13 +533,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel_at_management_group::Error::DefaultResponse {
                     status_code,
@@ -474,7 +549,7 @@ pub mod remediations {
         }
     }
     pub mod cancel_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -502,7 +577,7 @@ pub mod remediations {
         management_group_id: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<RemediationListResult, list_for_management_group::Error> {
+    ) -> std::result::Result<models::RemediationListResult, list_for_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations",
@@ -539,13 +614,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RemediationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_for_management_group::Error::DefaultResponse {
                     status_code,
@@ -555,7 +630,7 @@ pub mod remediations {
         }
     }
     pub mod list_for_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -582,7 +657,7 @@ pub mod remediations {
         management_groups_namespace: &str,
         management_group_id: &str,
         remediation_name: &str,
-    ) -> std::result::Result<Remediation, get_at_management_group::Error> {
+    ) -> std::result::Result<models::Remediation, get_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
@@ -614,13 +689,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_at_management_group::Error::DefaultResponse {
                     status_code,
@@ -630,7 +705,7 @@ pub mod remediations {
         }
     }
     pub mod get_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -657,7 +732,7 @@ pub mod remediations {
         management_groups_namespace: &str,
         management_group_id: &str,
         remediation_name: &str,
-        parameters: &Remediation,
+        parameters: &models::Remediation,
     ) -> std::result::Result<create_or_update_at_management_group::Response, create_or_update_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -691,19 +766,19 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_management_group::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_management_group::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_at_management_group::Error::DefaultResponse {
                     status_code,
@@ -713,11 +788,11 @@ pub mod remediations {
         }
     }
     pub mod create_or_update_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Remediation),
-            Created201(Remediation),
+            Ok200(models::Remediation),
+            Created201(models::Remediation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -777,14 +852,14 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete_at_management_group::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete_at_management_group::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_at_management_group::Error::DefaultResponse {
                     status_code,
@@ -794,10 +869,10 @@ pub mod remediations {
         }
     }
     pub mod delete_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Remediation),
+            Ok200(models::Remediation),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -826,7 +901,7 @@ pub mod remediations {
         subscription_id: &str,
         remediation_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<RemediationDeploymentsListResult, list_deployments_at_subscription::Error> {
+    ) -> std::result::Result<models::RemediationDeploymentsListResult, list_deployments_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
@@ -861,13 +936,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_deployments_at_subscription::Error::DefaultResponse {
                     status_code,
@@ -877,7 +952,7 @@ pub mod remediations {
         }
     }
     pub mod list_deployments_at_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -903,7 +978,7 @@ pub mod remediations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         remediation_name: &str,
-    ) -> std::result::Result<Remediation, cancel_at_subscription::Error> {
+    ) -> std::result::Result<models::Remediation, cancel_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
@@ -935,13 +1010,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel_at_subscription::Error::DefaultResponse {
                     status_code,
@@ -951,7 +1026,7 @@ pub mod remediations {
         }
     }
     pub mod cancel_at_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -978,7 +1053,7 @@ pub mod remediations {
         subscription_id: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<RemediationListResult, list_for_subscription::Error> {
+    ) -> std::result::Result<models::RemediationListResult, list_for_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations",
@@ -1014,13 +1089,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RemediationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_for_subscription::Error::DefaultResponse {
                     status_code,
@@ -1030,7 +1105,7 @@ pub mod remediations {
         }
     }
     pub mod list_for_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1056,7 +1131,7 @@ pub mod remediations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         remediation_name: &str,
-    ) -> std::result::Result<Remediation, get_at_subscription::Error> {
+    ) -> std::result::Result<models::Remediation, get_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
@@ -1085,13 +1160,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_at_subscription::Error::DefaultResponse {
                     status_code,
@@ -1101,7 +1176,7 @@ pub mod remediations {
         }
     }
     pub mod get_at_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1127,7 +1202,7 @@ pub mod remediations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         remediation_name: &str,
-        parameters: &Remediation,
+        parameters: &models::Remediation,
     ) -> std::result::Result<create_or_update_at_subscription::Response, create_or_update_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1160,19 +1235,19 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_subscription::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_subscription::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_at_subscription::Error::DefaultResponse {
                     status_code,
@@ -1182,11 +1257,11 @@ pub mod remediations {
         }
     }
     pub mod create_or_update_at_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Remediation),
-            Created201(Remediation),
+            Ok200(models::Remediation),
+            Created201(models::Remediation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1244,14 +1319,14 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete_at_subscription::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete_at_subscription::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_at_subscription::Error::DefaultResponse {
                     status_code,
@@ -1261,10 +1336,10 @@ pub mod remediations {
         }
     }
     pub mod delete_at_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Remediation),
+            Ok200(models::Remediation),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1294,7 +1369,7 @@ pub mod remediations {
         resource_group_name: &str,
         remediation_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<RemediationDeploymentsListResult, list_deployments_at_resource_group::Error> {
+    ) -> std::result::Result<models::RemediationDeploymentsListResult, list_deployments_at_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
@@ -1330,13 +1405,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_deployments_at_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1346,7 +1421,7 @@ pub mod remediations {
         }
     }
     pub mod list_deployments_at_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1373,7 +1448,7 @@ pub mod remediations {
         subscription_id: &str,
         resource_group_name: &str,
         remediation_name: &str,
-    ) -> std::result::Result<Remediation, cancel_at_resource_group::Error> {
+    ) -> std::result::Result<models::Remediation, cancel_at_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
@@ -1406,13 +1481,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel_at_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1422,7 +1497,7 @@ pub mod remediations {
         }
     }
     pub mod cancel_at_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1450,7 +1525,7 @@ pub mod remediations {
         resource_group_name: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<RemediationListResult, list_for_resource_group::Error> {
+    ) -> std::result::Result<models::RemediationListResult, list_for_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations",
@@ -1487,13 +1562,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RemediationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_for_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1503,7 +1578,7 @@ pub mod remediations {
         }
     }
     pub mod list_for_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1530,7 +1605,7 @@ pub mod remediations {
         subscription_id: &str,
         resource_group_name: &str,
         remediation_name: &str,
-    ) -> std::result::Result<Remediation, get_at_resource_group::Error> {
+    ) -> std::result::Result<models::Remediation, get_at_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
@@ -1562,13 +1637,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_at_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1578,7 +1653,7 @@ pub mod remediations {
         }
     }
     pub mod get_at_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1605,7 +1680,7 @@ pub mod remediations {
         subscription_id: &str,
         resource_group_name: &str,
         remediation_name: &str,
-        parameters: &Remediation,
+        parameters: &models::Remediation,
     ) -> std::result::Result<create_or_update_at_resource_group::Response, create_or_update_at_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1639,19 +1714,19 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_resource_group::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_resource_group::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_at_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1661,11 +1736,11 @@ pub mod remediations {
         }
     }
     pub mod create_or_update_at_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Remediation),
-            Created201(Remediation),
+            Ok200(models::Remediation),
+            Created201(models::Remediation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1725,14 +1800,14 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete_at_resource_group::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete_at_resource_group::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_at_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1742,10 +1817,10 @@ pub mod remediations {
         }
     }
     pub mod delete_at_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Remediation),
+            Ok200(models::Remediation),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1774,7 +1849,7 @@ pub mod remediations {
         resource_id: &str,
         remediation_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<RemediationDeploymentsListResult, list_deployments_at_resource::Error> {
+    ) -> std::result::Result<models::RemediationDeploymentsListResult, list_deployments_at_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
@@ -1809,13 +1884,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_deployments_at_resource::Error::DefaultResponse {
                     status_code,
@@ -1825,7 +1900,7 @@ pub mod remediations {
         }
     }
     pub mod list_deployments_at_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1851,7 +1926,7 @@ pub mod remediations {
         operation_config: &crate::OperationConfig,
         resource_id: &str,
         remediation_name: &str,
-    ) -> std::result::Result<Remediation, cancel_at_resource::Error> {
+    ) -> std::result::Result<models::Remediation, cancel_at_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
@@ -1881,13 +1956,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel_at_resource::Error::DefaultResponse {
                     status_code,
@@ -1897,7 +1972,7 @@ pub mod remediations {
         }
     }
     pub mod cancel_at_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1924,7 +1999,7 @@ pub mod remediations {
         resource_id: &str,
         top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<RemediationListResult, list_for_resource::Error> {
+    ) -> std::result::Result<models::RemediationListResult, list_for_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/remediations",
@@ -1958,13 +2033,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RemediationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_for_resource::Error::DefaultResponse {
                     status_code,
@@ -1974,7 +2049,7 @@ pub mod remediations {
         }
     }
     pub mod list_for_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2000,7 +2075,7 @@ pub mod remediations {
         operation_config: &crate::OperationConfig,
         resource_id: &str,
         remediation_name: &str,
-    ) -> std::result::Result<Remediation, get_at_resource::Error> {
+    ) -> std::result::Result<models::Remediation, get_at_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
@@ -2029,13 +2104,13 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_at_resource::Error::DefaultResponse {
                     status_code,
@@ -2045,7 +2120,7 @@ pub mod remediations {
         }
     }
     pub mod get_at_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2071,7 +2146,7 @@ pub mod remediations {
         operation_config: &crate::OperationConfig,
         resource_id: &str,
         remediation_name: &str,
-        parameters: &Remediation,
+        parameters: &models::Remediation,
     ) -> std::result::Result<create_or_update_at_resource::Response, create_or_update_at_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2104,19 +2179,19 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_resource::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_resource::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_at_resource::Error::DefaultResponse {
                     status_code,
@@ -2126,11 +2201,11 @@ pub mod remediations {
         }
     }
     pub mod create_or_update_at_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Remediation),
-            Created201(Remediation),
+            Ok200(models::Remediation),
+            Created201(models::Remediation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2186,14 +2261,14 @@ pub mod remediations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Remediation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete_at_resource::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete_at_resource::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_at_resource::Error::DefaultResponse {
                     status_code,
@@ -2203,10 +2278,10 @@ pub mod remediations {
         }
     }
     pub mod delete_at_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Remediation),
+            Ok200(models::Remediation),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2232,12 +2307,12 @@ pub mod remediations {
     }
 }
 pub mod policy_events {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn next_link(
         operation_config: &crate::OperationConfig,
         skiptoken: Option<&str>,
         next_link: &str,
-    ) -> std::result::Result<PolicyEventsQueryResults, next_link::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, next_link::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}{}?Next paging op for policy events", operation_config.base_path(), next_link);
         let mut url = url::Url::parse(url_str).map_err(next_link::Error::ParseUrlError)?;
@@ -2265,13 +2340,13 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults =
+                let rsp_value: models::PolicyEventsQueryResults =
                     serde_json::from_slice(rsp_body).map_err(|source| next_link::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure =
+                let rsp_value: models::QueryFailure =
                     serde_json::from_slice(rsp_body).map_err(|source| next_link::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(next_link::Error::DefaultResponse {
                     status_code,
@@ -2281,7 +2356,7 @@ pub mod policy_events {
         }
     }
     pub mod next_link {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2305,12 +2380,12 @@ pub mod policy_events {
     }
 }
 pub mod policy_states {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn next_link(
         operation_config: &crate::OperationConfig,
         skiptoken: Option<&str>,
         next_link: &str,
-    ) -> std::result::Result<PolicyStatesQueryResults, next_link::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, next_link::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}{}?Next paging op for policy states", operation_config.base_path(), next_link);
         let mut url = url::Url::parse(url_str).map_err(next_link::Error::ParseUrlError)?;
@@ -2338,13 +2413,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults =
+                let rsp_value: models::PolicyStatesQueryResults =
                     serde_json::from_slice(rsp_body).map_err(|source| next_link::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure =
+                let rsp_value: models::QueryFailure =
                     serde_json::from_slice(rsp_body).map_err(|source| next_link::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(next_link::Error::DefaultResponse {
                     status_code,
@@ -2354,7 +2429,7 @@ pub mod policy_states {
         }
     }
     pub mod next_link {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2378,11 +2453,11 @@ pub mod policy_states {
     }
 }
 pub mod policy_metadata {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_resource(
         operation_config: &crate::OperationConfig,
         resource_name: &str,
-    ) -> std::result::Result<PolicyMetadata, get_resource::Error> {
+    ) -> std::result::Result<models::PolicyMetadata, get_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.PolicyInsights/policyMetadata/{}",
@@ -2410,13 +2485,13 @@ pub mod policy_metadata {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyMetadata =
+                let rsp_value: models::PolicyMetadata =
                     serde_json::from_slice(rsp_body).map_err(|source| get_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_resource::Error::DefaultResponse {
                     status_code,
@@ -2426,7 +2501,7 @@ pub mod policy_metadata {
         }
     }
     pub mod get_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2451,7 +2526,7 @@ pub mod policy_metadata {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         top: Option<i32>,
-    ) -> std::result::Result<PolicyMetadataCollection, list::Error> {
+    ) -> std::result::Result<models::PolicyMetadataCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.PolicyInsights/policyMetadata", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2475,13 +2550,13 @@ pub mod policy_metadata {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyMetadataCollection =
+                let rsp_value: models::PolicyMetadataCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2491,7 +2566,7 @@ pub mod policy_metadata {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2515,12 +2590,12 @@ pub mod policy_metadata {
     }
 }
 pub mod policy_restrictions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_at_subscription_scope(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        parameters: &CheckRestrictionsRequest,
-    ) -> std::result::Result<CheckRestrictionsResult, check_at_subscription_scope::Error> {
+        parameters: &models::CheckRestrictionsRequest,
+    ) -> std::result::Result<models::CheckRestrictionsResult, check_at_subscription_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
@@ -2551,13 +2626,13 @@ pub mod policy_restrictions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckRestrictionsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckRestrictionsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_at_subscription_scope::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_at_subscription_scope::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_at_subscription_scope::Error::DefaultResponse {
                     status_code,
@@ -2567,7 +2642,7 @@ pub mod policy_restrictions {
         }
     }
     pub mod check_at_subscription_scope {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2593,8 +2668,8 @@ pub mod policy_restrictions {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        parameters: &CheckRestrictionsRequest,
-    ) -> std::result::Result<CheckRestrictionsResult, check_at_resource_group_scope::Error> {
+        parameters: &models::CheckRestrictionsRequest,
+    ) -> std::result::Result<models::CheckRestrictionsResult, check_at_resource_group_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
@@ -2626,13 +2701,13 @@ pub mod policy_restrictions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckRestrictionsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckRestrictionsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_at_resource_group_scope::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_at_resource_group_scope::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_at_resource_group_scope::Error::DefaultResponse {
                     status_code,
@@ -2642,7 +2717,7 @@ pub mod policy_restrictions {
         }
     }
     pub mod check_at_resource_group_scope {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

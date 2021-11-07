@@ -2,9 +2,18 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    MetricBaseline_Get(#[from] metric_baseline::get::Error),
+    #[error(transparent)]
+    MetricBaseline_CalculateBaseline(#[from] metric_baseline::calculate_baseline::Error),
+}
 pub mod metric_baseline {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
@@ -14,7 +23,7 @@ pub mod metric_baseline {
         aggregation: Option<&str>,
         sensitivities: Option<&str>,
         result_type: Option<&str>,
-    ) -> std::result::Result<BaselineResponse, get::Error> {
+    ) -> std::result::Result<models::BaselineResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/baseline/{}",
@@ -55,13 +64,13 @@ pub mod metric_baseline {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BaselineResponse =
+                let rsp_value: models::BaselineResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -71,7 +80,7 @@ pub mod metric_baseline {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -96,8 +105,8 @@ pub mod metric_baseline {
     pub async fn calculate_baseline(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-        time_series_information: &TimeSeriesInformation,
-    ) -> std::result::Result<CalculateBaselineResponse, calculate_baseline::Error> {
+        time_series_information: &models::TimeSeriesInformation,
+    ) -> std::result::Result<models::CalculateBaselineResponse, calculate_baseline::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/calculatebaseline",
@@ -126,13 +135,13 @@ pub mod metric_baseline {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CalculateBaselineResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CalculateBaselineResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| calculate_baseline::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| calculate_baseline::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(calculate_baseline::Error::DefaultResponse {
                     status_code,
@@ -142,7 +151,7 @@ pub mod metric_baseline {
         }
     }
     pub mod calculate_baseline {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

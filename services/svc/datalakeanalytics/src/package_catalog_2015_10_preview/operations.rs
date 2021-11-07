@@ -2,14 +2,79 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Catalog_GetSecret(#[from] catalog::get_secret::Error),
+    #[error(transparent)]
+    Catalog_CreateSecret(#[from] catalog::create_secret::Error),
+    #[error(transparent)]
+    Catalog_UpdateSecret(#[from] catalog::update_secret::Error),
+    #[error(transparent)]
+    Catalog_DeleteSecret(#[from] catalog::delete_secret::Error),
+    #[error(transparent)]
+    Catalog_DeleteAllSecrets(#[from] catalog::delete_all_secrets::Error),
+    #[error(transparent)]
+    Catalog_GetExternalDataSource(#[from] catalog::get_external_data_source::Error),
+    #[error(transparent)]
+    Catalog_ListExternalDataSources(#[from] catalog::list_external_data_sources::Error),
+    #[error(transparent)]
+    Catalog_GetCredential(#[from] catalog::get_credential::Error),
+    #[error(transparent)]
+    Catalog_ListCredentials(#[from] catalog::list_credentials::Error),
+    #[error(transparent)]
+    Catalog_GetProcedure(#[from] catalog::get_procedure::Error),
+    #[error(transparent)]
+    Catalog_ListProcedures(#[from] catalog::list_procedures::Error),
+    #[error(transparent)]
+    Catalog_GetTable(#[from] catalog::get_table::Error),
+    #[error(transparent)]
+    Catalog_ListTables(#[from] catalog::list_tables::Error),
+    #[error(transparent)]
+    Catalog_GetTableType(#[from] catalog::get_table_type::Error),
+    #[error(transparent)]
+    Catalog_ListTableTypes(#[from] catalog::list_table_types::Error),
+    #[error(transparent)]
+    Catalog_GetView(#[from] catalog::get_view::Error),
+    #[error(transparent)]
+    Catalog_ListViews(#[from] catalog::list_views::Error),
+    #[error(transparent)]
+    Catalog_GetTableStatistic(#[from] catalog::get_table_statistic::Error),
+    #[error(transparent)]
+    Catalog_ListTableStatistics(#[from] catalog::list_table_statistics::Error),
+    #[error(transparent)]
+    Catalog_GetTablePartition(#[from] catalog::get_table_partition::Error),
+    #[error(transparent)]
+    Catalog_ListTablePartitions(#[from] catalog::list_table_partitions::Error),
+    #[error(transparent)]
+    Catalog_ListTypes(#[from] catalog::list_types::Error),
+    #[error(transparent)]
+    Catalog_GetTableValuedFunction(#[from] catalog::get_table_valued_function::Error),
+    #[error(transparent)]
+    Catalog_ListTableValuedFunctions(#[from] catalog::list_table_valued_functions::Error),
+    #[error(transparent)]
+    Catalog_GetAssembly(#[from] catalog::get_assembly::Error),
+    #[error(transparent)]
+    Catalog_ListAssemblies(#[from] catalog::list_assemblies::Error),
+    #[error(transparent)]
+    Catalog_GetSchema(#[from] catalog::get_schema::Error),
+    #[error(transparent)]
+    Catalog_ListSchemas(#[from] catalog::list_schemas::Error),
+    #[error(transparent)]
+    Catalog_GetDatabase(#[from] catalog::get_database::Error),
+    #[error(transparent)]
+    Catalog_ListDatabases(#[from] catalog::list_databases::Error),
+}
 pub mod catalog {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_secret(
         operation_config: &crate::OperationConfig,
         database_name: &str,
         secret_name: &str,
-    ) -> std::result::Result<USqlSecret, get_secret::Error> {
+    ) -> std::result::Result<models::USqlSecret, get_secret::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/secrets/{}",
@@ -38,7 +103,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlSecret =
+                let rsp_value: models::USqlSecret =
                     serde_json::from_slice(rsp_body).map_err(|source| get_secret::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -52,7 +117,7 @@ pub mod catalog {
         }
     }
     pub mod get_secret {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -75,8 +140,8 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         secret_name: &str,
-        parameters: &DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
-    ) -> std::result::Result<USqlSecret, create_secret::Error> {
+        parameters: &models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
+    ) -> std::result::Result<models::USqlSecret, create_secret::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/secrets/{}",
@@ -106,7 +171,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlSecret =
+                let rsp_value: models::USqlSecret =
                     serde_json::from_slice(rsp_body).map_err(|source| create_secret::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -120,7 +185,7 @@ pub mod catalog {
         }
     }
     pub mod create_secret {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -143,8 +208,8 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         secret_name: &str,
-        parameters: &DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
-    ) -> std::result::Result<USqlSecret, update_secret::Error> {
+        parameters: &models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
+    ) -> std::result::Result<models::USqlSecret, update_secret::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/secrets/{}",
@@ -174,7 +239,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlSecret =
+                let rsp_value: models::USqlSecret =
                     serde_json::from_slice(rsp_body).map_err(|source| update_secret::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -188,7 +253,7 @@ pub mod catalog {
         }
     }
     pub mod update_secret {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -249,7 +314,7 @@ pub mod catalog {
         }
     }
     pub mod delete_secret {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -304,7 +369,7 @@ pub mod catalog {
         }
     }
     pub mod delete_all_secrets {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -327,7 +392,7 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         external_data_source_name: &str,
-    ) -> std::result::Result<USqlExternalDataSource, get_external_data_source::Error> {
+    ) -> std::result::Result<models::USqlExternalDataSource, get_external_data_source::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/externaldatasources/{}",
@@ -358,7 +423,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlExternalDataSource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlExternalDataSource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_external_data_source::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -372,7 +437,7 @@ pub mod catalog {
         }
     }
     pub mod get_external_data_source {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -401,7 +466,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlExternalDataSourceList, list_external_data_sources::Error> {
+    ) -> std::result::Result<models::USqlExternalDataSourceList, list_external_data_sources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/externaldatasources",
@@ -452,7 +517,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlExternalDataSourceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlExternalDataSourceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_external_data_sources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -466,7 +531,7 @@ pub mod catalog {
         }
     }
     pub mod list_external_data_sources {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -489,7 +554,7 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         credential_name: &str,
-    ) -> std::result::Result<USqlCredential, get_credential::Error> {
+    ) -> std::result::Result<models::USqlCredential, get_credential::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/credentials/{}",
@@ -518,7 +583,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlCredential =
+                let rsp_value: models::USqlCredential =
                     serde_json::from_slice(rsp_body).map_err(|source| get_credential::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -532,7 +597,7 @@ pub mod catalog {
         }
     }
     pub mod get_credential {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -561,7 +626,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlCredentialList, list_credentials::Error> {
+    ) -> std::result::Result<models::USqlCredentialList, list_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/credentials",
@@ -610,7 +675,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlCredentialList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlCredentialList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -624,7 +689,7 @@ pub mod catalog {
         }
     }
     pub mod list_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -648,7 +713,7 @@ pub mod catalog {
         database_name: &str,
         schema_name: &str,
         procedure_name: &str,
-    ) -> std::result::Result<USqlProcedure, get_procedure::Error> {
+    ) -> std::result::Result<models::USqlProcedure, get_procedure::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/procedures/{}",
@@ -678,7 +743,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlProcedure =
+                let rsp_value: models::USqlProcedure =
                     serde_json::from_slice(rsp_body).map_err(|source| get_procedure::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -692,7 +757,7 @@ pub mod catalog {
         }
     }
     pub mod get_procedure {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -722,7 +787,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlProcedureList, list_procedures::Error> {
+    ) -> std::result::Result<models::USqlProcedureList, list_procedures::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/procedures",
@@ -772,7 +837,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlProcedureList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlProcedureList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_procedures::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -786,7 +851,7 @@ pub mod catalog {
         }
     }
     pub mod list_procedures {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -810,7 +875,7 @@ pub mod catalog {
         database_name: &str,
         schema_name: &str,
         table_name: &str,
-    ) -> std::result::Result<USqlTable, get_table::Error> {
+    ) -> std::result::Result<models::USqlTable, get_table::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tables/{}",
@@ -840,7 +905,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTable =
+                let rsp_value: models::USqlTable =
                     serde_json::from_slice(rsp_body).map_err(|source| get_table::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -854,7 +919,7 @@ pub mod catalog {
         }
     }
     pub mod get_table {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -884,7 +949,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlTableList, list_tables::Error> {
+    ) -> std::result::Result<models::USqlTableList, list_tables::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tables",
@@ -934,7 +999,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTableList =
+                let rsp_value: models::USqlTableList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_tables::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -948,7 +1013,7 @@ pub mod catalog {
         }
     }
     pub mod list_tables {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -972,7 +1037,7 @@ pub mod catalog {
         database_name: &str,
         schema_name: &str,
         table_type_name: &str,
-    ) -> std::result::Result<USqlTableType, get_table_type::Error> {
+    ) -> std::result::Result<models::USqlTableType, get_table_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tabletypes/{}",
@@ -1002,7 +1067,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTableType =
+                let rsp_value: models::USqlTableType =
                     serde_json::from_slice(rsp_body).map_err(|source| get_table_type::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1016,7 +1081,7 @@ pub mod catalog {
         }
     }
     pub mod get_table_type {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1046,7 +1111,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlTableTypeList, list_table_types::Error> {
+    ) -> std::result::Result<models::USqlTableTypeList, list_table_types::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tabletypes",
@@ -1096,7 +1161,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTableTypeList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlTableTypeList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_table_types::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1110,7 +1175,7 @@ pub mod catalog {
         }
     }
     pub mod list_table_types {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1134,7 +1199,7 @@ pub mod catalog {
         database_name: &str,
         schema_name: &str,
         view_name: &str,
-    ) -> std::result::Result<USqlView, get_view::Error> {
+    ) -> std::result::Result<models::USqlView, get_view::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/views/{}",
@@ -1164,7 +1229,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlView =
+                let rsp_value: models::USqlView =
                     serde_json::from_slice(rsp_body).map_err(|source| get_view::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1178,7 +1243,7 @@ pub mod catalog {
         }
     }
     pub mod get_view {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1208,7 +1273,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlViewList, list_views::Error> {
+    ) -> std::result::Result<models::USqlViewList, list_views::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/views",
@@ -1258,7 +1323,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlViewList =
+                let rsp_value: models::USqlViewList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_views::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1272,7 +1337,7 @@ pub mod catalog {
         }
     }
     pub mod list_views {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1297,7 +1362,7 @@ pub mod catalog {
         schema_name: &str,
         table_name: &str,
         statistics_name: &str,
-    ) -> std::result::Result<USqlTableStatistics, get_table_statistic::Error> {
+    ) -> std::result::Result<models::USqlTableStatistics, get_table_statistic::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics/{}",
@@ -1328,7 +1393,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTableStatistics = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlTableStatistics = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_table_statistic::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1342,7 +1407,7 @@ pub mod catalog {
         }
     }
     pub mod get_table_statistic {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1373,7 +1438,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlTableStatisticsList, list_table_statistics::Error> {
+    ) -> std::result::Result<models::USqlTableStatisticsList, list_table_statistics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics",
@@ -1426,7 +1491,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTableStatisticsList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlTableStatisticsList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_table_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1440,7 +1505,7 @@ pub mod catalog {
         }
     }
     pub mod list_table_statistics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1465,7 +1530,7 @@ pub mod catalog {
         schema_name: &str,
         table_name: &str,
         partition_name: &str,
-    ) -> std::result::Result<USqlTablePartition, get_table_partition::Error> {
+    ) -> std::result::Result<models::USqlTablePartition, get_table_partition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}",
@@ -1496,7 +1561,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTablePartition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlTablePartition = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_table_partition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1510,7 +1575,7 @@ pub mod catalog {
         }
     }
     pub mod get_table_partition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1541,7 +1606,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlTablePartitionList, list_table_partitions::Error> {
+    ) -> std::result::Result<models::USqlTablePartitionList, list_table_partitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions",
@@ -1594,7 +1659,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTablePartitionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlTablePartitionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_table_partitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1608,7 +1673,7 @@ pub mod catalog {
         }
     }
     pub mod list_table_partitions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1638,7 +1703,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlTypeList, list_types::Error> {
+    ) -> std::result::Result<models::USqlTypeList, list_types::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/types",
@@ -1688,7 +1753,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTypeList =
+                let rsp_value: models::USqlTypeList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_types::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1702,7 +1767,7 @@ pub mod catalog {
         }
     }
     pub mod list_types {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1726,7 +1791,7 @@ pub mod catalog {
         database_name: &str,
         schema_name: &str,
         table_valued_function_name: &str,
-    ) -> std::result::Result<USqlTableValuedFunction, get_table_valued_function::Error> {
+    ) -> std::result::Result<models::USqlTableValuedFunction, get_table_valued_function::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions/{}",
@@ -1758,7 +1823,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTableValuedFunction = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlTableValuedFunction = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_table_valued_function::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1772,7 +1837,7 @@ pub mod catalog {
         }
     }
     pub mod get_table_valued_function {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1802,7 +1867,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlTableValuedFunctionList, list_table_valued_functions::Error> {
+    ) -> std::result::Result<models::USqlTableValuedFunctionList, list_table_valued_functions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions",
@@ -1854,7 +1919,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlTableValuedFunctionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlTableValuedFunctionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_table_valued_functions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1868,7 +1933,7 @@ pub mod catalog {
         }
     }
     pub mod list_table_valued_functions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1891,7 +1956,7 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         assembly_name: &str,
-    ) -> std::result::Result<USqlAssembly, get_assembly::Error> {
+    ) -> std::result::Result<models::USqlAssembly, get_assembly::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/assemblies/{}",
@@ -1920,7 +1985,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlAssembly =
+                let rsp_value: models::USqlAssembly =
                     serde_json::from_slice(rsp_body).map_err(|source| get_assembly::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1934,7 +1999,7 @@ pub mod catalog {
         }
     }
     pub mod get_assembly {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1963,7 +2028,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlAssemblyList, list_assemblies::Error> {
+    ) -> std::result::Result<models::USqlAssemblyList, list_assemblies::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/assemblies",
@@ -2012,7 +2077,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlAssemblyList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::USqlAssemblyList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_assemblies::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2026,7 +2091,7 @@ pub mod catalog {
         }
     }
     pub mod list_assemblies {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2049,7 +2114,7 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         schema_name: &str,
-    ) -> std::result::Result<USqlSchema, get_schema::Error> {
+    ) -> std::result::Result<models::USqlSchema, get_schema::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/catalog/usql/databases/{}/schemas/{}",
@@ -2078,7 +2143,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlSchema =
+                let rsp_value: models::USqlSchema =
                     serde_json::from_slice(rsp_body).map_err(|source| get_schema::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2092,7 +2157,7 @@ pub mod catalog {
         }
     }
     pub mod get_schema {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2121,7 +2186,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlSchemaList, list_schemas::Error> {
+    ) -> std::result::Result<models::USqlSchemaList, list_schemas::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/catalog/usql/databases/{}/schemas", operation_config.base_path(), database_name);
         let mut url = url::Url::parse(url_str).map_err(list_schemas::Error::ParseUrlError)?;
@@ -2166,7 +2231,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlSchemaList =
+                let rsp_value: models::USqlSchemaList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_schemas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2180,7 +2245,7 @@ pub mod catalog {
         }
     }
     pub mod list_schemas {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2202,7 +2267,7 @@ pub mod catalog {
     pub async fn get_database(
         operation_config: &crate::OperationConfig,
         database_name: &str,
-    ) -> std::result::Result<USqlDatabase, get_database::Error> {
+    ) -> std::result::Result<models::USqlDatabase, get_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/catalog/usql/databases/{}", operation_config.base_path(), database_name);
         let mut url = url::Url::parse(url_str).map_err(get_database::Error::ParseUrlError)?;
@@ -2226,7 +2291,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlDatabase =
+                let rsp_value: models::USqlDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| get_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2240,7 +2305,7 @@ pub mod catalog {
         }
     }
     pub mod get_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2268,7 +2333,7 @@ pub mod catalog {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<USqlDatabaseList, list_databases::Error> {
+    ) -> std::result::Result<models::USqlDatabaseList, list_databases::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/catalog/usql/databases", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_databases::Error::ParseUrlError)?;
@@ -2313,7 +2378,7 @@ pub mod catalog {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: USqlDatabaseList =
+                let rsp_value: models::USqlDatabaseList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_databases::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2327,7 +2392,7 @@ pub mod catalog {
         }
     }
     pub mod list_databases {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

@@ -2,10 +2,29 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Endpoints_List(#[from] endpoints::list::Error),
+    #[error(transparent)]
+    Endpoints_Get(#[from] endpoints::get::Error),
+    #[error(transparent)]
+    Endpoints_CreateOrUpdate(#[from] endpoints::create_or_update::Error),
+    #[error(transparent)]
+    Endpoints_Update(#[from] endpoints::update::Error),
+    #[error(transparent)]
+    Endpoints_Delete(#[from] endpoints::delete::Error),
+    #[error(transparent)]
+    Endpoints_ListCredentials(#[from] endpoints::list_credentials::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.HybridConnectivity/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +45,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +61,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,8 +85,11 @@ pub mod operations {
     }
 }
 pub mod endpoints {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig, resource_uri: &str) -> std::result::Result<EndpointsList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        resource_uri: &str,
+    ) -> std::result::Result<models::EndpointsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.HybridConnectivity/endpoints",
@@ -92,13 +114,13 @@ pub mod endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EndpointsList =
+                let rsp_value: models::EndpointsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -108,7 +130,7 @@ pub mod endpoints {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -134,7 +156,7 @@ pub mod endpoints {
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         endpoint_name: &str,
-    ) -> std::result::Result<EndpointResource, get::Error> {
+    ) -> std::result::Result<models::EndpointResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
@@ -160,13 +182,13 @@ pub mod endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EndpointResource =
+                let rsp_value: models::EndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -176,7 +198,7 @@ pub mod endpoints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -202,8 +224,8 @@ pub mod endpoints {
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         endpoint_name: &str,
-        endpoint_resource: &EndpointResource,
-    ) -> std::result::Result<EndpointResource, create_or_update::Error> {
+        endpoint_resource: &models::EndpointResource,
+    ) -> std::result::Result<models::EndpointResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
@@ -233,13 +255,13 @@ pub mod endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EndpointResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EndpointResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -249,7 +271,7 @@ pub mod endpoints {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -275,8 +297,8 @@ pub mod endpoints {
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         endpoint_name: &str,
-        endpoint_resource: &EndpointResource,
-    ) -> std::result::Result<EndpointResource, update::Error> {
+        endpoint_resource: &models::EndpointResource,
+    ) -> std::result::Result<models::EndpointResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
@@ -303,13 +325,13 @@ pub mod endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EndpointResource =
+                let rsp_value: models::EndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -319,7 +341,7 @@ pub mod endpoints {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -373,7 +395,7 @@ pub mod endpoints {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -383,7 +405,7 @@ pub mod endpoints {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -415,7 +437,7 @@ pub mod endpoints {
         resource_uri: &str,
         endpoint_name: &str,
         expiresin: Option<i64>,
-    ) -> std::result::Result<EndpointAccessResource, list_credentials::Error> {
+    ) -> std::result::Result<models::EndpointAccessResource, list_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/listCredentials",
@@ -448,13 +470,13 @@ pub mod endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EndpointAccessResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EndpointAccessResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_credentials::Error::DefaultResponse {
                     status_code,
@@ -464,7 +486,7 @@ pub mod endpoints {
         }
     }
     pub mod list_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

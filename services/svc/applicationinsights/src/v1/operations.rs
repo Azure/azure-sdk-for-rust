@@ -2,9 +2,34 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Metrics_Get(#[from] metrics::get::Error),
+    #[error(transparent)]
+    Metrics_GetMultiple(#[from] metrics::get_multiple::Error),
+    #[error(transparent)]
+    Metrics_GetMetadata(#[from] metrics::get_metadata::Error),
+    #[error(transparent)]
+    Events_GetByType(#[from] events::get_by_type::Error),
+    #[error(transparent)]
+    Events_Get(#[from] events::get::Error),
+    #[error(transparent)]
+    Events_GetOdataMetadata(#[from] events::get_odata_metadata::Error),
+    #[error(transparent)]
+    Query_Get(#[from] query::get::Error),
+    #[error(transparent)]
+    Query_Execute(#[from] query::execute::Error),
+    #[error(transparent)]
+    Metadata_Get(#[from] metadata::get::Error),
+    #[error(transparent)]
+    Metadata_Post(#[from] metadata::post::Error),
+}
 pub mod metrics {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         app_id: &str,
@@ -16,7 +41,7 @@ pub mod metrics {
         top: Option<i32>,
         orderby: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<MetricsResult, get::Error> {
+    ) -> std::result::Result<models::MetricsResult, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/metrics/{}", operation_config.base_path(), app_id, metric_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -51,13 +76,13 @@ pub mod metrics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricsResult =
+                let rsp_value: models::MetricsResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -67,7 +92,7 @@ pub mod metrics {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -92,8 +117,8 @@ pub mod metrics {
     pub async fn get_multiple(
         operation_config: &crate::OperationConfig,
         app_id: &str,
-        body: &MetricsPostBody,
-    ) -> std::result::Result<MetricsResults, get_multiple::Error> {
+        body: &models::MetricsPostBody,
+    ) -> std::result::Result<models::MetricsResults, get_multiple::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/metrics", operation_config.base_path(), app_id);
         let mut url = url::Url::parse(url_str).map_err(get_multiple::Error::ParseUrlError)?;
@@ -117,13 +142,13 @@ pub mod metrics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricsResults =
+                let rsp_value: models::MetricsResults =
                     serde_json::from_slice(rsp_body).map_err(|source| get_multiple::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_multiple::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_multiple::Error::DefaultResponse {
                     status_code,
@@ -133,7 +158,7 @@ pub mod metrics {
         }
     }
     pub mod get_multiple {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -187,7 +212,7 @@ pub mod metrics {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::DefaultResponse {
                     status_code,
@@ -197,7 +222,7 @@ pub mod metrics {
         }
     }
     pub mod get_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -221,7 +246,7 @@ pub mod metrics {
     }
 }
 pub mod events {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_by_type(
         operation_config: &crate::OperationConfig,
         app_id: &str,
@@ -236,7 +261,7 @@ pub mod events {
         format: Option<&str>,
         count: Option<bool>,
         apply: Option<&str>,
-    ) -> std::result::Result<EventsResults, get_by_type::Error> {
+    ) -> std::result::Result<models::EventsResults, get_by_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/events/{}", operation_config.base_path(), app_id, event_type);
         let mut url = url::Url::parse(url_str).map_err(get_by_type::Error::ParseUrlError)?;
@@ -289,13 +314,13 @@ pub mod events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventsResults =
+                let rsp_value: models::EventsResults =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_type::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_type::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_type::Error::DefaultResponse {
                     status_code,
@@ -305,7 +330,7 @@ pub mod events {
         }
     }
     pub mod get_by_type {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -333,7 +358,7 @@ pub mod events {
         event_type: &str,
         timespan: Option<&str>,
         event_id: &str,
-    ) -> std::result::Result<EventsResults, get::Error> {
+    ) -> std::result::Result<models::EventsResults, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/apps/{}/events/{}/{}",
@@ -362,13 +387,13 @@ pub mod events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventsResults =
+                let rsp_value: models::EventsResults =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -378,7 +403,7 @@ pub mod events {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -432,7 +457,7 @@ pub mod events {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_odata_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_odata_metadata::Error::DefaultResponse {
                     status_code,
@@ -442,7 +467,7 @@ pub mod events {
         }
     }
     pub mod get_odata_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -466,13 +491,13 @@ pub mod events {
     }
 }
 pub mod query {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         app_id: &str,
         query: &str,
         timespan: Option<&str>,
-    ) -> std::result::Result<QueryResults, get::Error> {
+    ) -> std::result::Result<models::QueryResults, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/query", operation_config.base_path(), app_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -496,13 +521,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResults =
+                let rsp_value: models::QueryResults =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -512,7 +537,7 @@ pub mod query {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -537,8 +562,8 @@ pub mod query {
     pub async fn execute(
         operation_config: &crate::OperationConfig,
         app_id: &str,
-        body: &QueryBody,
-    ) -> std::result::Result<QueryResults, execute::Error> {
+        body: &models::QueryBody,
+    ) -> std::result::Result<models::QueryResults, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/query", operation_config.base_path(), app_id);
         let mut url = url::Url::parse(url_str).map_err(execute::Error::ParseUrlError)?;
@@ -562,13 +587,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResults =
+                let rsp_value: models::QueryResults =
                     serde_json::from_slice(rsp_body).map_err(|source| execute::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| execute::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(execute::Error::DefaultResponse {
                     status_code,
@@ -578,7 +603,7 @@ pub mod query {
         }
     }
     pub mod execute {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -602,8 +627,8 @@ pub mod query {
     }
 }
 pub mod metadata {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, app_id: &str) -> std::result::Result<MetadataResults, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig, app_id: &str) -> std::result::Result<models::MetadataResults, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/metadata", operation_config.base_path(), app_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -623,13 +648,13 @@ pub mod metadata {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataResults =
+                let rsp_value: models::MetadataResults =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -639,7 +664,7 @@ pub mod metadata {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -661,7 +686,10 @@ pub mod metadata {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn post(operation_config: &crate::OperationConfig, app_id: &str) -> std::result::Result<MetadataResults, post::Error> {
+    pub async fn post(
+        operation_config: &crate::OperationConfig,
+        app_id: &str,
+    ) -> std::result::Result<models::MetadataResults, post::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/metadata", operation_config.base_path(), app_id);
         let mut url = url::Url::parse(url_str).map_err(post::Error::ParseUrlError)?;
@@ -682,13 +710,13 @@ pub mod metadata {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataResults =
+                let rsp_value: models::MetadataResults =
                     serde_json::from_slice(rsp_body).map_err(|source| post::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| post::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post::Error::DefaultResponse {
                     status_code,
@@ -698,7 +726,7 @@ pub mod metadata {
         }
     }
     pub mod post {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

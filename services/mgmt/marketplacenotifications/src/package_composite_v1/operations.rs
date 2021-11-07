@@ -2,61 +2,67 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Notifications_List(#[from] notifications::list::Error),
+    #[error(transparent)]
+    Notification_Get(#[from] notification::get::Error),
+    #[error(transparent)]
+    Notification_GetOperations(#[from] notification::get_operations::Error),
+}
 pub mod notifications {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_with_authorization(
+    use super::{models, API_VERSION};
+    pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription: &str,
         principal_id: &str,
-    ) -> std::result::Result<NotificationList, get_with_authorization::Error> {
+    ) -> std::result::Result<models::NotificationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceNotifications/reviewsNotifications",
             operation_config.base_path(),
             subscription
         );
-        let mut url = url::Url::parse(url_str).map_err(get_with_authorization::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(get_with_authorization::Error::GetTokenError)?;
+                .map_err(list::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         url.query_pairs_mut().append_pair("principalId", principal_id);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_with_authorization::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_with_authorization::Error::ExecuteRequestError)?;
+        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationList = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_with_authorization::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::NotificationList =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_with_authorization::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_with_authorization::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod get_with_authorization {
-        use super::{models, models::*, API_VERSION};
+    pub mod list {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,13 +86,13 @@ pub mod notifications {
     }
 }
 pub mod notification {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_with_authorization(
+    use super::{models, API_VERSION};
+    pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription: &str,
         notification: &str,
         principal_id: &str,
-    ) -> std::result::Result<Notification, get_with_authorization::Error> {
+    ) -> std::result::Result<models::Notification, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceNotifications/reviewsNotification/{}",
@@ -94,47 +100,42 @@ pub mod notification {
             subscription,
             notification
         );
-        let mut url = url::Url::parse(url_str).map_err(get_with_authorization::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(get_with_authorization::Error::GetTokenError)?;
+                .map_err(get::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         url.query_pairs_mut().append_pair("principalId", principal_id);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_with_authorization::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_with_authorization::Error::ExecuteRequestError)?;
+        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
+        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Notification = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_with_authorization::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::Notification =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_with_authorization::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_with_authorization::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod get_with_authorization {
-        use super::{models, models::*, API_VERSION};
+    pub mod get {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -158,7 +159,7 @@ pub mod notification {
     }
     pub async fn get_operations(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<AvailableOperations, get_operations::Error> {
+    ) -> std::result::Result<models::AvailableOperations, get_operations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.MarketplaceNotifications/operations",
@@ -185,13 +186,13 @@ pub mod notification {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailableOperations =
+                let rsp_value: models::AvailableOperations =
                     serde_json::from_slice(rsp_body).map_err(|source| get_operations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_operations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_operations::Error::DefaultResponse {
                     status_code,
@@ -201,7 +202,7 @@ pub mod notification {
         }
     }
     pub mod get_operations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

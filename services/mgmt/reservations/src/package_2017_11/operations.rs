@@ -2,11 +2,38 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    GetCatalog(#[from] get_catalog::Error),
+    #[error(transparent)]
+    GetAppliedReservationList(#[from] get_applied_reservation_list::Error),
+    #[error(transparent)]
+    ReservationOrder_List(#[from] reservation_order::list::Error),
+    #[error(transparent)]
+    ReservationOrder_Get(#[from] reservation_order::get::Error),
+    #[error(transparent)]
+    Reservation_Split(#[from] reservation::split::Error),
+    #[error(transparent)]
+    Reservation_Merge(#[from] reservation::merge::Error),
+    #[error(transparent)]
+    Reservation_List(#[from] reservation::list::Error),
+    #[error(transparent)]
+    Reservation_Get(#[from] reservation::get::Error),
+    #[error(transparent)]
+    Reservation_Update(#[from] reservation::update::Error),
+    #[error(transparent)]
+    Reservation_ListRevisions(#[from] reservation::list_revisions::Error),
+    #[error(transparent)]
+    Operation_List(#[from] operation::list::Error),
+}
 pub async fn get_catalog(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-) -> std::result::Result<Vec<Catalog>, get_catalog::Error> {
+) -> std::result::Result<Vec<models::Catalog>, get_catalog::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.Capacity/catalogs",
@@ -34,13 +61,13 @@ pub async fn get_catalog(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Vec<Catalog> =
+            let rsp_value: Vec<models::Catalog> =
                 serde_json::from_slice(rsp_body).map_err(|source| get_catalog::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_catalog::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_catalog::Error::DefaultResponse {
                 status_code,
@@ -50,7 +77,7 @@ pub async fn get_catalog(
     }
 }
 pub mod get_catalog {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -75,7 +102,7 @@ pub mod get_catalog {
 pub async fn get_applied_reservation_list(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-) -> std::result::Result<AppliedReservations, get_applied_reservation_list::Error> {
+) -> std::result::Result<models::AppliedReservations, get_applied_reservation_list::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.Capacity/appliedReservations",
@@ -105,13 +132,13 @@ pub async fn get_applied_reservation_list(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AppliedReservations = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AppliedReservations = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_applied_reservation_list::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_applied_reservation_list::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_applied_reservation_list::Error::DefaultResponse {
                 status_code,
@@ -121,7 +148,7 @@ pub async fn get_applied_reservation_list(
     }
 }
 pub mod get_applied_reservation_list {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -144,8 +171,8 @@ pub mod get_applied_reservation_list {
     }
 }
 pub mod reservation_order {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ReservationOrderList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::ReservationOrderList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Capacity/reservationOrders", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -166,13 +193,13 @@ pub mod reservation_order {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReservationOrderList =
+                let rsp_value: models::ReservationOrderList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -182,7 +209,7 @@ pub mod reservation_order {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -207,7 +234,7 @@ pub mod reservation_order {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
-    ) -> std::result::Result<ReservationOrderResponse, get::Error> {
+    ) -> std::result::Result<models::ReservationOrderResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}",
@@ -232,13 +259,13 @@ pub mod reservation_order {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReservationOrderResponse =
+                let rsp_value: models::ReservationOrderResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -248,7 +275,7 @@ pub mod reservation_order {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -272,11 +299,11 @@ pub mod reservation_order {
     }
 }
 pub mod reservation {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn split(
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
-        body: &SplitRequest,
+        body: &models::SplitRequest,
     ) -> std::result::Result<split::Response, split::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -303,14 +330,14 @@ pub mod reservation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<ReservationResponse> =
+                let rsp_value: Vec<models::ReservationResponse> =
                     serde_json::from_slice(rsp_body).map_err(|source| split::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(split::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(split::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| split::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(split::Error::DefaultResponse {
                     status_code,
@@ -320,10 +347,10 @@ pub mod reservation {
         }
     }
     pub mod split {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Vec<ReservationResponse>),
+            Ok200(Vec<models::ReservationResponse>),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -350,7 +377,7 @@ pub mod reservation {
     pub async fn merge(
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
-        body: &MergeRequest,
+        body: &models::MergeRequest,
     ) -> std::result::Result<merge::Response, merge::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -377,14 +404,14 @@ pub mod reservation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<ReservationResponse> =
+                let rsp_value: Vec<models::ReservationResponse> =
                     serde_json::from_slice(rsp_body).map_err(|source| merge::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(merge::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(merge::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| merge::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(merge::Error::DefaultResponse {
                     status_code,
@@ -394,10 +421,10 @@ pub mod reservation {
         }
     }
     pub mod merge {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Vec<ReservationResponse>),
+            Ok200(Vec<models::ReservationResponse>),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -424,7 +451,7 @@ pub mod reservation {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
-    ) -> std::result::Result<ReservationList, list::Error> {
+    ) -> std::result::Result<models::ReservationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations",
@@ -449,13 +476,13 @@ pub mod reservation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReservationList =
+                let rsp_value: models::ReservationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -465,7 +492,7 @@ pub mod reservation {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -491,7 +518,7 @@ pub mod reservation {
         operation_config: &crate::OperationConfig,
         reservation_id: &str,
         reservation_order_id: &str,
-    ) -> std::result::Result<ReservationResponse, get::Error> {
+    ) -> std::result::Result<models::ReservationResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}",
@@ -517,13 +544,13 @@ pub mod reservation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReservationResponse =
+                let rsp_value: models::ReservationResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -533,7 +560,7 @@ pub mod reservation {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -559,7 +586,7 @@ pub mod reservation {
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
         reservation_id: &str,
-        parameters: &Patch,
+        parameters: &models::Patch,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -587,14 +614,14 @@ pub mod reservation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReservationResponse =
+                let rsp_value: models::ReservationResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -604,10 +631,10 @@ pub mod reservation {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ReservationResponse),
+            Ok200(models::ReservationResponse),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -635,7 +662,7 @@ pub mod reservation {
         operation_config: &crate::OperationConfig,
         reservation_id: &str,
         reservation_order_id: &str,
-    ) -> std::result::Result<ReservationList, list_revisions::Error> {
+    ) -> std::result::Result<models::ReservationList, list_revisions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/revisions",
@@ -664,13 +691,13 @@ pub mod reservation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReservationList =
+                let rsp_value: models::ReservationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_revisions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list_revisions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_revisions::Error::DefaultResponse {
                     status_code,
@@ -680,7 +707,7 @@ pub mod reservation {
         }
     }
     pub mod list_revisions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -704,8 +731,8 @@ pub mod reservation {
     }
 }
 pub mod operation {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Capacity/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -726,13 +753,13 @@ pub mod operation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -742,7 +769,7 @@ pub mod operation {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

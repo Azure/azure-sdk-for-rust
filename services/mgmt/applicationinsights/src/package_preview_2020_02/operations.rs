@@ -2,10 +2,19 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    GetTestResultFile(#[from] get_test_result_file::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/microsoft.insights/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +35,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsListResult =
+                let rsp_value: models::OperationsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -34,7 +43,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -64,7 +73,7 @@ pub async fn get_test_result_file(
     download_as: &str,
     test_successful_criteria: Option<bool>,
     continuation_token: Option<&str>,
-) -> std::result::Result<TestResultFileResponse, get_test_result_file::Error> {
+) -> std::result::Result<models::TestResultFileResponse, get_test_result_file::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/webtests/{}/getTestResultFile",
@@ -105,13 +114,13 @@ pub async fn get_test_result_file(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: TestResultFileResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::TestResultFileResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_test_result_file::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_test_result_file::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_test_result_file::Error::DefaultResponse {
                 status_code,
@@ -121,7 +130,7 @@ pub async fn get_test_result_file(
     }
 }
 pub mod get_test_result_file {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

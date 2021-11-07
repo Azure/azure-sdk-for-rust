@@ -2,15 +2,28 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Query_Get(#[from] query::get::Error),
+    #[error(transparent)]
+    Query_Execute(#[from] query::execute::Error),
+    #[error(transparent)]
+    Metadata_Get(#[from] metadata::get::Error),
+    #[error(transparent)]
+    Metadata_Post(#[from] metadata::post::Error),
+}
 pub mod query {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         workspace_id: &str,
         query: &str,
         timespan: Option<&str>,
-    ) -> std::result::Result<QueryResults, get::Error> {
+    ) -> std::result::Result<models::QueryResults, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/workspaces/{}/query", operation_config.base_path(), workspace_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -34,13 +47,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResults =
+                let rsp_value: models::QueryResults =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -50,7 +63,7 @@ pub mod query {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -75,8 +88,8 @@ pub mod query {
     pub async fn execute(
         operation_config: &crate::OperationConfig,
         workspace_id: &str,
-        body: &QueryBody,
-    ) -> std::result::Result<QueryResults, execute::Error> {
+        body: &models::QueryBody,
+    ) -> std::result::Result<models::QueryResults, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/workspaces/{}/query", operation_config.base_path(), workspace_id);
         let mut url = url::Url::parse(url_str).map_err(execute::Error::ParseUrlError)?;
@@ -100,13 +113,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResults =
+                let rsp_value: models::QueryResults =
                     serde_json::from_slice(rsp_body).map_err(|source| execute::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| execute::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(execute::Error::DefaultResponse {
                     status_code,
@@ -116,7 +129,7 @@ pub mod query {
         }
     }
     pub mod execute {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -140,8 +153,11 @@ pub mod query {
     }
 }
 pub mod metadata {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, workspace_id: &str) -> std::result::Result<MetadataResults, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        workspace_id: &str,
+    ) -> std::result::Result<models::MetadataResults, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/workspaces/{}/metadata", operation_config.base_path(), workspace_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -161,13 +177,13 @@ pub mod metadata {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataResults =
+                let rsp_value: models::MetadataResults =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -177,7 +193,7 @@ pub mod metadata {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -199,7 +215,10 @@ pub mod metadata {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn post(operation_config: &crate::OperationConfig, workspace_id: &str) -> std::result::Result<MetadataResults, post::Error> {
+    pub async fn post(
+        operation_config: &crate::OperationConfig,
+        workspace_id: &str,
+    ) -> std::result::Result<models::MetadataResults, post::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/workspaces/{}/metadata", operation_config.base_path(), workspace_id);
         let mut url = url::Url::parse(url_str).map_err(post::Error::ParseUrlError)?;
@@ -220,13 +239,13 @@ pub mod metadata {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataResults =
+                let rsp_value: models::MetadataResults =
                     serde_json::from_slice(rsp_body).map_err(|source| post::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| post::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post::Error::DefaultResponse {
                     status_code,
@@ -236,7 +255,7 @@ pub mod metadata {
         }
     }
     pub mod post {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

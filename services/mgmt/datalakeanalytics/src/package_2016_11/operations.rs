@@ -2,9 +2,76 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Accounts_List(#[from] accounts::list::Error),
+    #[error(transparent)]
+    Accounts_ListByResourceGroup(#[from] accounts::list_by_resource_group::Error),
+    #[error(transparent)]
+    Accounts_Get(#[from] accounts::get::Error),
+    #[error(transparent)]
+    Accounts_Create(#[from] accounts::create::Error),
+    #[error(transparent)]
+    Accounts_Update(#[from] accounts::update::Error),
+    #[error(transparent)]
+    Accounts_Delete(#[from] accounts::delete::Error),
+    #[error(transparent)]
+    DataLakeStoreAccounts_ListByAccount(#[from] data_lake_store_accounts::list_by_account::Error),
+    #[error(transparent)]
+    DataLakeStoreAccounts_Get(#[from] data_lake_store_accounts::get::Error),
+    #[error(transparent)]
+    DataLakeStoreAccounts_Add(#[from] data_lake_store_accounts::add::Error),
+    #[error(transparent)]
+    DataLakeStoreAccounts_Delete(#[from] data_lake_store_accounts::delete::Error),
+    #[error(transparent)]
+    StorageAccounts_ListByAccount(#[from] storage_accounts::list_by_account::Error),
+    #[error(transparent)]
+    StorageAccounts_Get(#[from] storage_accounts::get::Error),
+    #[error(transparent)]
+    StorageAccounts_Add(#[from] storage_accounts::add::Error),
+    #[error(transparent)]
+    StorageAccounts_Update(#[from] storage_accounts::update::Error),
+    #[error(transparent)]
+    StorageAccounts_Delete(#[from] storage_accounts::delete::Error),
+    #[error(transparent)]
+    StorageAccounts_ListStorageContainers(#[from] storage_accounts::list_storage_containers::Error),
+    #[error(transparent)]
+    StorageAccounts_GetStorageContainer(#[from] storage_accounts::get_storage_container::Error),
+    #[error(transparent)]
+    StorageAccounts_ListSasTokens(#[from] storage_accounts::list_sas_tokens::Error),
+    #[error(transparent)]
+    ComputePolicies_ListByAccount(#[from] compute_policies::list_by_account::Error),
+    #[error(transparent)]
+    ComputePolicies_Get(#[from] compute_policies::get::Error),
+    #[error(transparent)]
+    ComputePolicies_CreateOrUpdate(#[from] compute_policies::create_or_update::Error),
+    #[error(transparent)]
+    ComputePolicies_Update(#[from] compute_policies::update::Error),
+    #[error(transparent)]
+    ComputePolicies_Delete(#[from] compute_policies::delete::Error),
+    #[error(transparent)]
+    FirewallRules_ListByAccount(#[from] firewall_rules::list_by_account::Error),
+    #[error(transparent)]
+    FirewallRules_Get(#[from] firewall_rules::get::Error),
+    #[error(transparent)]
+    FirewallRules_CreateOrUpdate(#[from] firewall_rules::create_or_update::Error),
+    #[error(transparent)]
+    FirewallRules_Update(#[from] firewall_rules::update::Error),
+    #[error(transparent)]
+    FirewallRules_Delete(#[from] firewall_rules::delete::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Locations_GetCapability(#[from] locations::get_capability::Error),
+    #[error(transparent)]
+    Accounts_CheckNameAvailability(#[from] accounts::check_name_availability::Error),
+}
 pub mod accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -14,7 +81,7 @@ pub mod accounts {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<DataLakeAnalyticsAccountListResult, list::Error> {
+    ) -> std::result::Result<models::DataLakeAnalyticsAccountListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataLakeAnalytics/accounts",
@@ -57,13 +124,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeAnalyticsAccountListResult =
+                let rsp_value: models::DataLakeAnalyticsAccountListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -73,7 +140,7 @@ pub mod accounts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -105,7 +172,7 @@ pub mod accounts {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<DataLakeAnalyticsAccountListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DataLakeAnalyticsAccountListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts",
@@ -154,13 +221,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeAnalyticsAccountListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataLakeAnalyticsAccountListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -170,7 +237,7 @@ pub mod accounts {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -197,7 +264,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<DataLakeAnalyticsAccount, get::Error> {
+    ) -> std::result::Result<models::DataLakeAnalyticsAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}",
@@ -224,13 +291,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeAnalyticsAccount =
+                let rsp_value: models::DataLakeAnalyticsAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -240,7 +307,7 @@ pub mod accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -267,7 +334,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &CreateDataLakeAnalyticsAccountParameters,
+        parameters: &models::CreateDataLakeAnalyticsAccountParameters,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -296,19 +363,19 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeAnalyticsAccount =
+                let rsp_value: models::DataLakeAnalyticsAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeAnalyticsAccount =
+                let rsp_value: models::DataLakeAnalyticsAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -318,11 +385,11 @@ pub mod accounts {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataLakeAnalyticsAccount),
-            Created201(DataLakeAnalyticsAccount),
+            Ok200(models::DataLakeAnalyticsAccount),
+            Created201(models::DataLakeAnalyticsAccount),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -350,7 +417,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        parameters: Option<&UpdateDataLakeAnalyticsAccountParameters>,
+        parameters: Option<&models::UpdateDataLakeAnalyticsAccountParameters>,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -383,25 +450,25 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeAnalyticsAccount =
+                let rsp_value: models::DataLakeAnalyticsAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeAnalyticsAccount =
+                let rsp_value: models::DataLakeAnalyticsAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeAnalyticsAccount =
+                let rsp_value: models::DataLakeAnalyticsAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -411,12 +478,12 @@ pub mod accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataLakeAnalyticsAccount),
-            Created201(DataLakeAnalyticsAccount),
-            Accepted202(DataLakeAnalyticsAccount),
+            Ok200(models::DataLakeAnalyticsAccount),
+            Created201(models::DataLakeAnalyticsAccount),
+            Accepted202(models::DataLakeAnalyticsAccount),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -474,7 +541,7 @@ pub mod accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -484,7 +551,7 @@ pub mod accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -516,8 +583,8 @@ pub mod accounts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        parameters: &CheckNameAvailabilityParameters,
-    ) -> std::result::Result<NameAvailabilityInformation, check_name_availability::Error> {
+        parameters: &models::CheckNameAvailabilityParameters,
+    ) -> std::result::Result<models::NameAvailabilityInformation, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataLakeAnalytics/locations/{}/checkNameAvailability",
@@ -549,13 +616,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NameAvailabilityInformation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NameAvailabilityInformation = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -565,7 +632,7 @@ pub mod accounts {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -589,7 +656,7 @@ pub mod accounts {
     }
 }
 pub mod data_lake_store_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -601,7 +668,7 @@ pub mod data_lake_store_accounts {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<DataLakeStoreAccountInformationListResult, list_by_account::Error> {
+    ) -> std::result::Result<models::DataLakeStoreAccountInformationListResult, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/dataLakeStoreAccounts",
@@ -649,13 +716,13 @@ pub mod data_lake_store_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccountInformationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataLakeStoreAccountInformationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_account::Error::DefaultResponse {
                     status_code,
@@ -665,7 +732,7 @@ pub mod data_lake_store_accounts {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -693,7 +760,7 @@ pub mod data_lake_store_accounts {
         resource_group_name: &str,
         account_name: &str,
         data_lake_store_account_name: &str,
-    ) -> std::result::Result<DataLakeStoreAccountInformation, get::Error> {
+    ) -> std::result::Result<models::DataLakeStoreAccountInformation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/dataLakeStoreAccounts/{}",
@@ -721,13 +788,13 @@ pub mod data_lake_store_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccountInformation =
+                let rsp_value: models::DataLakeStoreAccountInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -737,7 +804,7 @@ pub mod data_lake_store_accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -765,7 +832,7 @@ pub mod data_lake_store_accounts {
         resource_group_name: &str,
         account_name: &str,
         data_lake_store_account_name: &str,
-        parameters: Option<&AddDataLakeStoreParameters>,
+        parameters: Option<&models::AddDataLakeStoreParameters>,
     ) -> std::result::Result<(), add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -800,7 +867,7 @@ pub mod data_lake_store_accounts {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -810,7 +877,7 @@ pub mod data_lake_store_accounts {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -868,7 +935,7 @@ pub mod data_lake_store_accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -878,7 +945,7 @@ pub mod data_lake_store_accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -907,7 +974,7 @@ pub mod data_lake_store_accounts {
     }
 }
 pub mod storage_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -919,7 +986,7 @@ pub mod storage_accounts {
         select: Option<&str>,
         orderby: Option<&str>,
         count: Option<bool>,
-    ) -> std::result::Result<StorageAccountInformationListResult, list_by_account::Error> {
+    ) -> std::result::Result<models::StorageAccountInformationListResult, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/storageAccounts",
@@ -967,13 +1034,13 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountInformationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageAccountInformationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_account::Error::DefaultResponse {
                     status_code,
@@ -983,7 +1050,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1011,7 +1078,7 @@ pub mod storage_accounts {
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
-    ) -> std::result::Result<StorageAccountInformation, get::Error> {
+    ) -> std::result::Result<models::StorageAccountInformation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/storageAccounts/{}",
@@ -1039,13 +1106,13 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountInformation =
+                let rsp_value: models::StorageAccountInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1055,7 +1122,7 @@ pub mod storage_accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1083,7 +1150,7 @@ pub mod storage_accounts {
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
-        parameters: &AddStorageAccountParameters,
+        parameters: &models::AddStorageAccountParameters,
     ) -> std::result::Result<(), add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1114,7 +1181,7 @@ pub mod storage_accounts {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -1124,7 +1191,7 @@ pub mod storage_accounts {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1152,7 +1219,7 @@ pub mod storage_accounts {
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
-        parameters: Option<&UpdateStorageAccountParameters>,
+        parameters: Option<&models::UpdateStorageAccountParameters>,
     ) -> std::result::Result<(), update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1187,7 +1254,7 @@ pub mod storage_accounts {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1197,7 +1264,7 @@ pub mod storage_accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1254,7 +1321,7 @@ pub mod storage_accounts {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1264,7 +1331,7 @@ pub mod storage_accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1292,7 +1359,7 @@ pub mod storage_accounts {
         resource_group_name: &str,
         account_name: &str,
         storage_account_name: &str,
-    ) -> std::result::Result<StorageContainerListResult, list_storage_containers::Error> {
+    ) -> std::result::Result<models::StorageContainerListResult, list_storage_containers::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/storageAccounts/{}/containers",
@@ -1325,13 +1392,13 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageContainerListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageContainerListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_storage_containers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_storage_containers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_storage_containers::Error::DefaultResponse {
                     status_code,
@@ -1341,7 +1408,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list_storage_containers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1370,7 +1437,7 @@ pub mod storage_accounts {
         account_name: &str,
         storage_account_name: &str,
         container_name: &str,
-    ) -> std::result::Result<StorageContainer, get_storage_container::Error> {
+    ) -> std::result::Result<models::StorageContainer, get_storage_container::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/storageAccounts/{}/containers/{}",
@@ -1404,13 +1471,13 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageContainer = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageContainer = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_storage_container::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_storage_container::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_storage_container::Error::DefaultResponse {
                     status_code,
@@ -1420,7 +1487,7 @@ pub mod storage_accounts {
         }
     }
     pub mod get_storage_container {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1449,7 +1516,7 @@ pub mod storage_accounts {
         account_name: &str,
         storage_account_name: &str,
         container_name: &str,
-    ) -> std::result::Result<SasTokenInformationListResult, list_sas_tokens::Error> {
+    ) -> std::result::Result<models::SasTokenInformationListResult, list_sas_tokens::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/storageAccounts/{}/containers/{}/listSasTokens" , operation_config . base_path () , subscription_id , resource_group_name , account_name , storage_account_name , container_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_sas_tokens::Error::ParseUrlError)?;
@@ -1474,13 +1541,13 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SasTokenInformationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SasTokenInformationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_sas_tokens::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_sas_tokens::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_sas_tokens::Error::DefaultResponse {
                     status_code,
@@ -1490,7 +1557,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list_sas_tokens {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1514,13 +1581,13 @@ pub mod storage_accounts {
     }
 }
 pub mod compute_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<ComputePolicyListResult, list_by_account::Error> {
+    ) -> std::result::Result<models::ComputePolicyListResult, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies",
@@ -1550,13 +1617,13 @@ pub mod compute_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputePolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ComputePolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_account::Error::DefaultResponse {
                     status_code,
@@ -1566,7 +1633,7 @@ pub mod compute_policies {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1594,7 +1661,7 @@ pub mod compute_policies {
         resource_group_name: &str,
         account_name: &str,
         compute_policy_name: &str,
-    ) -> std::result::Result<ComputePolicy, get::Error> {
+    ) -> std::result::Result<models::ComputePolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies/{}",
@@ -1622,13 +1689,13 @@ pub mod compute_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputePolicy =
+                let rsp_value: models::ComputePolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1638,7 +1705,7 @@ pub mod compute_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1666,8 +1733,8 @@ pub mod compute_policies {
         resource_group_name: &str,
         account_name: &str,
         compute_policy_name: &str,
-        parameters: &CreateOrUpdateComputePolicyParameters,
-    ) -> std::result::Result<ComputePolicy, create_or_update::Error> {
+        parameters: &models::CreateOrUpdateComputePolicyParameters,
+    ) -> std::result::Result<models::ComputePolicy, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies/{}",
@@ -1699,13 +1766,13 @@ pub mod compute_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputePolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ComputePolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1715,7 +1782,7 @@ pub mod compute_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1743,8 +1810,8 @@ pub mod compute_policies {
         resource_group_name: &str,
         account_name: &str,
         compute_policy_name: &str,
-        parameters: Option<&UpdateComputePolicyParameters>,
-    ) -> std::result::Result<ComputePolicy, update::Error> {
+        parameters: Option<&models::UpdateComputePolicyParameters>,
+    ) -> std::result::Result<models::ComputePolicy, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/computePolicies/{}",
@@ -1777,13 +1844,13 @@ pub mod compute_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputePolicy =
+                let rsp_value: models::ComputePolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1793,7 +1860,7 @@ pub mod compute_policies {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1851,7 +1918,7 @@ pub mod compute_policies {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1861,7 +1928,7 @@ pub mod compute_policies {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1890,13 +1957,13 @@ pub mod compute_policies {
     }
 }
 pub mod firewall_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<FirewallRuleListResult, list_by_account::Error> {
+    ) -> std::result::Result<models::FirewallRuleListResult, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules",
@@ -1926,13 +1993,13 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FirewallRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_account::Error::DefaultResponse {
                     status_code,
@@ -1942,7 +2009,7 @@ pub mod firewall_rules {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1970,7 +2037,7 @@ pub mod firewall_rules {
         resource_group_name: &str,
         account_name: &str,
         firewall_rule_name: &str,
-    ) -> std::result::Result<FirewallRule, get::Error> {
+    ) -> std::result::Result<models::FirewallRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules/{}",
@@ -1998,13 +2065,13 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRule =
+                let rsp_value: models::FirewallRule =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2014,7 +2081,7 @@ pub mod firewall_rules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2042,8 +2109,8 @@ pub mod firewall_rules {
         resource_group_name: &str,
         account_name: &str,
         firewall_rule_name: &str,
-        parameters: &CreateOrUpdateFirewallRuleParameters,
-    ) -> std::result::Result<FirewallRule, create_or_update::Error> {
+        parameters: &models::CreateOrUpdateFirewallRuleParameters,
+    ) -> std::result::Result<models::FirewallRule, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules/{}",
@@ -2075,13 +2142,13 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FirewallRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2091,7 +2158,7 @@ pub mod firewall_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2119,8 +2186,8 @@ pub mod firewall_rules {
         resource_group_name: &str,
         account_name: &str,
         firewall_rule_name: &str,
-        parameters: Option<&UpdateFirewallRuleParameters>,
-    ) -> std::result::Result<FirewallRule, update::Error> {
+        parameters: Option<&models::UpdateFirewallRuleParameters>,
+    ) -> std::result::Result<models::FirewallRule, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeAnalytics/accounts/{}/firewallRules/{}",
@@ -2153,13 +2220,13 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRule =
+                let rsp_value: models::FirewallRule =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2169,7 +2236,7 @@ pub mod firewall_rules {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2227,7 +2294,7 @@ pub mod firewall_rules {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2237,7 +2304,7 @@ pub mod firewall_rules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2266,8 +2333,8 @@ pub mod firewall_rules {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataLakeAnalytics/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2288,13 +2355,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2304,7 +2371,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2328,12 +2395,12 @@ pub mod operations {
     }
 }
 pub mod locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_capability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<CapabilityInformation, get_capability::Error> {
+    ) -> std::result::Result<models::CapabilityInformation, get_capability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataLakeAnalytics/locations/{}/capability",
@@ -2362,14 +2429,14 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapabilityInformation =
+                let rsp_value: models::CapabilityInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get_capability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::NOT_FOUND => Err(get_capability::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_capability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_capability::Error::DefaultResponse {
                     status_code,
@@ -2379,7 +2446,7 @@ pub mod locations {
         }
     }
     pub mod get_capability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

@@ -2,15 +2,36 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ProtectionIntent_Validate(#[from] protection_intent::validate::Error),
+    #[error(transparent)]
+    BackupStatus_Get(#[from] backup_status::get::Error),
+    #[error(transparent)]
+    FeatureSupport_Validate(#[from] feature_support::validate::Error),
+    #[error(transparent)]
+    ProtectionIntent_Get(#[from] protection_intent::get::Error),
+    #[error(transparent)]
+    ProtectionIntent_CreateOrUpdate(#[from] protection_intent::create_or_update::Error),
+    #[error(transparent)]
+    ProtectionIntent_Delete(#[from] protection_intent::delete::Error),
+    #[error(transparent)]
+    BackupProtectionIntent_List(#[from] backup_protection_intent::list::Error),
+    #[error(transparent)]
+    BackupUsageSummaries_List(#[from] backup_usage_summaries::list::Error),
+}
 pub mod protection_intent {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn validate(
         operation_config: &crate::OperationConfig,
         azure_region: &str,
         subscription_id: &str,
-        parameters: &PreValidateEnableBackupRequest,
-    ) -> std::result::Result<PreValidateEnableBackupResponse, validate::Error> {
+        parameters: &models::PreValidateEnableBackupRequest,
+    ) -> std::result::Result<models::PreValidateEnableBackupResponse, validate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/providers/Microsoft.RecoveryServices/locations/{}/backupPreValidateProtection",
@@ -40,7 +61,7 @@ pub mod protection_intent {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PreValidateEnableBackupResponse =
+                let rsp_value: models::PreValidateEnableBackupResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| validate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -54,7 +75,7 @@ pub mod protection_intent {
         }
     }
     pub mod validate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -80,7 +101,7 @@ pub mod protection_intent {
         subscription_id: &str,
         fabric_name: &str,
         intent_object_name: &str,
-    ) -> std::result::Result<ProtectionIntentResource, get::Error> {
+    ) -> std::result::Result<models::ProtectionIntentResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/backupProtectionIntent/{}" , operation_config . base_path () , subscription_id , resource_group_name , vault_name , fabric_name , intent_object_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -101,7 +122,7 @@ pub mod protection_intent {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProtectionIntentResource =
+                let rsp_value: models::ProtectionIntentResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -115,7 +136,7 @@ pub mod protection_intent {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -141,8 +162,8 @@ pub mod protection_intent {
         subscription_id: &str,
         fabric_name: &str,
         intent_object_name: &str,
-        parameters: &ProtectionIntentResource,
-    ) -> std::result::Result<ProtectionIntentResource, create_or_update::Error> {
+        parameters: &models::ProtectionIntentResource,
+    ) -> std::result::Result<models::ProtectionIntentResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/backupProtectionIntent/{}" , operation_config . base_path () , subscription_id , resource_group_name , vault_name , fabric_name , intent_object_name) ;
         let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
@@ -167,7 +188,7 @@ pub mod protection_intent {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProtectionIntentResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProtectionIntentResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -181,7 +202,7 @@ pub mod protection_intent {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -237,7 +258,7 @@ pub mod protection_intent {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -258,13 +279,13 @@ pub mod protection_intent {
     }
 }
 pub mod backup_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         azure_region: &str,
         subscription_id: &str,
-        parameters: &BackupStatusRequest,
-    ) -> std::result::Result<BackupStatusResponse, get::Error> {
+        parameters: &models::BackupStatusRequest,
+    ) -> std::result::Result<models::BackupStatusResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/providers/Microsoft.RecoveryServices/locations/{}/backupStatus",
@@ -291,7 +312,7 @@ pub mod backup_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupStatusResponse =
+                let rsp_value: models::BackupStatusResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -305,7 +326,7 @@ pub mod backup_status {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -326,13 +347,13 @@ pub mod backup_status {
     }
 }
 pub mod feature_support {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn validate(
         operation_config: &crate::OperationConfig,
         azure_region: &str,
         subscription_id: &str,
-        parameters: &FeatureSupportRequest,
-    ) -> std::result::Result<AzureVmResourceFeatureSupportResponse, validate::Error> {
+        parameters: &models::FeatureSupportRequest,
+    ) -> std::result::Result<models::AzureVmResourceFeatureSupportResponse, validate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/providers/Microsoft.RecoveryServices/locations/{}/backupValidateFeatures",
@@ -362,7 +383,7 @@ pub mod feature_support {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureVmResourceFeatureSupportResponse =
+                let rsp_value: models::AzureVmResourceFeatureSupportResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| validate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -376,7 +397,7 @@ pub mod feature_support {
         }
     }
     pub mod validate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -397,7 +418,7 @@ pub mod feature_support {
     }
 }
 pub mod backup_protection_intent {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -405,7 +426,7 @@ pub mod backup_protection_intent {
         subscription_id: &str,
         filter: Option<&str>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<ProtectionIntentResourceList, list::Error> {
+    ) -> std::result::Result<models::ProtectionIntentResourceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupProtectionIntents",
@@ -438,7 +459,7 @@ pub mod backup_protection_intent {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProtectionIntentResourceList =
+                let rsp_value: models::ProtectionIntentResourceList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -452,7 +473,7 @@ pub mod backup_protection_intent {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -473,7 +494,7 @@ pub mod backup_protection_intent {
     }
 }
 pub mod backup_usage_summaries {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -481,7 +502,7 @@ pub mod backup_usage_summaries {
         subscription_id: &str,
         filter: Option<&str>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<BackupManagementUsageList, list::Error> {
+    ) -> std::result::Result<models::BackupManagementUsageList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupUsageSummaries",
@@ -514,7 +535,7 @@ pub mod backup_usage_summaries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupManagementUsageList =
+                let rsp_value: models::BackupManagementUsageList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -528,7 +549,7 @@ pub mod backup_usage_summaries {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

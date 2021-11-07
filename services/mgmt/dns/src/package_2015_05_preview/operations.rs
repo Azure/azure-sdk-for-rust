@@ -2,9 +2,34 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    RecordSets_Get(#[from] record_sets::get::Error),
+    #[error(transparent)]
+    RecordSets_CreateOrUpdate(#[from] record_sets::create_or_update::Error),
+    #[error(transparent)]
+    RecordSets_Delete(#[from] record_sets::delete::Error),
+    #[error(transparent)]
+    RecordSets_List(#[from] record_sets::list::Error),
+    #[error(transparent)]
+    RecordSets_ListAll(#[from] record_sets::list_all::Error),
+    #[error(transparent)]
+    Zones_Get(#[from] zones::get::Error),
+    #[error(transparent)]
+    Zones_CreateOrUpdate(#[from] zones::create_or_update::Error),
+    #[error(transparent)]
+    Zones_Delete(#[from] zones::delete::Error),
+    #[error(transparent)]
+    Zones_ListZonesInResourceGroup(#[from] zones::list_zones_in_resource_group::Error),
+    #[error(transparent)]
+    Zones_ListZonesInSubscription(#[from] zones::list_zones_in_subscription::Error),
+}
 pub mod record_sets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -12,7 +37,7 @@ pub mod record_sets {
         record_type: &str,
         relative_record_set_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RecordSet, get::Error> {
+    ) -> std::result::Result<models::RecordSet, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/dnszones/{}/{}/{}",
@@ -41,13 +66,13 @@ pub mod record_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecordSet =
+                let rsp_value: models::RecordSet =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -57,7 +82,7 @@ pub mod record_sets {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -87,7 +112,7 @@ pub mod record_sets {
         relative_record_set_name: &str,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
-        parameters: &RecordSet,
+        parameters: &models::RecordSet,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -128,13 +153,13 @@ pub mod record_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecordSet = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RecordSet = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecordSet = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RecordSet = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -149,11 +174,11 @@ pub mod record_sets {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(RecordSet),
-            Created201(RecordSet),
+            Ok200(models::RecordSet),
+            Created201(models::RecordSet),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -224,7 +249,7 @@ pub mod record_sets {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -256,7 +281,7 @@ pub mod record_sets {
         top: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<RecordSetListResult, list::Error> {
+    ) -> std::result::Result<models::RecordSetListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/dnszones/{}/{}",
@@ -290,7 +315,7 @@ pub mod record_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecordSetListResult =
+                let rsp_value: models::RecordSetListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -304,7 +329,7 @@ pub mod record_sets {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -330,7 +355,7 @@ pub mod record_sets {
         top: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<RecordSetListResult, list_all::Error> {
+    ) -> std::result::Result<models::RecordSetListResult, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/dnszones/{}/recordsets",
@@ -366,7 +391,7 @@ pub mod record_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecordSetListResult =
+                let rsp_value: models::RecordSetListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -380,7 +405,7 @@ pub mod record_sets {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -401,13 +426,13 @@ pub mod record_sets {
     }
 }
 pub mod zones {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         zone_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Zone, get::Error> {
+    ) -> std::result::Result<models::Zone, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/dnszones/{}",
@@ -434,7 +459,7 @@ pub mod zones {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Zone =
+                let rsp_value: models::Zone =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -448,7 +473,7 @@ pub mod zones {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -473,7 +498,7 @@ pub mod zones {
         zone_name: &str,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
-        parameters: &Zone,
+        parameters: &models::Zone,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -512,7 +537,7 @@ pub mod zones {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Zone = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Zone = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -527,10 +552,10 @@ pub mod zones {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Zone),
+            Ok200(models::Zone),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -596,7 +621,7 @@ pub mod zones {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -621,7 +646,7 @@ pub mod zones {
         top: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ZoneListResult, list_zones_in_resource_group::Error> {
+    ) -> std::result::Result<models::ZoneListResult, list_zones_in_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/dnszones",
@@ -658,7 +683,7 @@ pub mod zones {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ZoneListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ZoneListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_zones_in_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -672,7 +697,7 @@ pub mod zones {
         }
     }
     pub mod list_zones_in_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -696,7 +721,7 @@ pub mod zones {
         top: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ZoneListResult, list_zones_in_subscription::Error> {
+    ) -> std::result::Result<models::ZoneListResult, list_zones_in_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/dnszones",
@@ -732,7 +757,7 @@ pub mod zones {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ZoneListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ZoneListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_zones_in_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -746,7 +771,7 @@ pub mod zones {
         }
     }
     pub mod list_zones_in_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

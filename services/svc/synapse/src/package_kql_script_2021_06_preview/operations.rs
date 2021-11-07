@@ -2,12 +2,27 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    KqlScripts_GetAll(#[from] kql_scripts::get_all::Error),
+    #[error(transparent)]
+    KqlScript_GetByName(#[from] kql_script::get_by_name::Error),
+    #[error(transparent)]
+    KqlScript_CreateOrUpdate(#[from] kql_script::create_or_update::Error),
+    #[error(transparent)]
+    KqlScript_DeleteByName(#[from] kql_script::delete_by_name::Error),
+    #[error(transparent)]
+    KqlScript_Rename(#[from] kql_script::rename::Error),
+}
 pub mod kql_scripts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_all(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<KqlScriptsResourceCollectionResponse, get_all::Error> {
+    ) -> std::result::Result<models::KqlScriptsResourceCollectionResponse, get_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/kqlScripts", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_all::Error::ParseUrlError)?;
@@ -31,13 +46,13 @@ pub mod kql_scripts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KqlScriptsResourceCollectionResponse =
+                let rsp_value: models::KqlScriptsResourceCollectionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract =
+                let rsp_value: models::ErrorContract =
                     serde_json::from_slice(rsp_body).map_err(|source| get_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_all::Error::DefaultResponse {
                     status_code,
@@ -47,7 +62,7 @@ pub mod kql_scripts {
         }
     }
     pub mod get_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -71,11 +86,11 @@ pub mod kql_scripts {
     }
 }
 pub mod kql_script {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_by_name(
         operation_config: &crate::OperationConfig,
         kql_script_name: &str,
-    ) -> std::result::Result<KqlScriptResource, get_by_name::Error> {
+    ) -> std::result::Result<models::KqlScriptResource, get_by_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/kqlScripts/{}", operation_config.base_path(), kql_script_name);
         let mut url = url::Url::parse(url_str).map_err(get_by_name::Error::ParseUrlError)?;
@@ -99,13 +114,13 @@ pub mod kql_script {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KqlScriptResource =
+                let rsp_value: models::KqlScriptResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract =
+                let rsp_value: models::ErrorContract =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_name::Error::DefaultResponse {
                     status_code,
@@ -115,7 +130,7 @@ pub mod kql_script {
         }
     }
     pub mod get_by_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -140,7 +155,7 @@ pub mod kql_script {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         kql_script_name: &str,
-        kql_script: &KqlScriptResource,
+        kql_script: &models::KqlScriptResource,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/kqlScripts/{}", operation_config.base_path(), kql_script_name);
@@ -166,14 +181,14 @@ pub mod kql_script {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KqlScriptResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::KqlScriptResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorContract = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -183,10 +198,10 @@ pub mod kql_script {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(KqlScriptResource),
+            Ok200(models::KqlScriptResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -240,7 +255,7 @@ pub mod kql_script {
             http::StatusCode::NO_CONTENT => Ok(delete_by_name::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract =
+                let rsp_value: models::ErrorContract =
                     serde_json::from_slice(rsp_body).map_err(|source| delete_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_by_name::Error::DefaultResponse {
                     status_code,
@@ -250,7 +265,7 @@ pub mod kql_script {
         }
     }
     pub mod delete_by_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -281,7 +296,7 @@ pub mod kql_script {
     pub async fn rename(
         operation_config: &crate::OperationConfig,
         kql_script_name: &str,
-        rename_request: &ArtifactRenameRequest,
+        rename_request: &models::ArtifactRenameRequest,
     ) -> std::result::Result<rename::Response, rename::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/kqlScripts/{}/rename", operation_config.base_path(), kql_script_name);
@@ -306,7 +321,7 @@ pub mod kql_script {
             http::StatusCode::ACCEPTED => Ok(rename::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract =
+                let rsp_value: models::ErrorContract =
                     serde_json::from_slice(rsp_body).map_err(|source| rename::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(rename::Error::DefaultResponse {
                     status_code,
@@ -316,7 +331,7 @@ pub mod kql_script {
         }
     }
     pub mod rename {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

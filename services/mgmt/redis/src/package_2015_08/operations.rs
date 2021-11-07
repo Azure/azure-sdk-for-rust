@@ -2,15 +2,36 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Redis_Get(#[from] redis::get::Error),
+    #[error(transparent)]
+    Redis_CreateOrUpdate(#[from] redis::create_or_update::Error),
+    #[error(transparent)]
+    Redis_Delete(#[from] redis::delete::Error),
+    #[error(transparent)]
+    Redis_ListByResourceGroup(#[from] redis::list_by_resource_group::Error),
+    #[error(transparent)]
+    Redis_List(#[from] redis::list::Error),
+    #[error(transparent)]
+    Redis_ListKeys(#[from] redis::list_keys::Error),
+    #[error(transparent)]
+    Redis_RegenerateKey(#[from] redis::regenerate_key::Error),
+    #[error(transparent)]
+    Redis_ForceReboot(#[from] redis::force_reboot::Error),
+}
 pub mod redis {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisResource, get::Error> {
+    ) -> std::result::Result<models::RedisResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}",
@@ -37,7 +58,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisResource =
+                let rsp_value: models::RedisResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -51,7 +72,7 @@ pub mod redis {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -74,7 +95,7 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &RedisCreateOrUpdateParameters,
+        parameters: &models::RedisCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -107,13 +128,13 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisResourceWithAccessKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisResourceWithAccessKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisResourceWithAccessKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisResourceWithAccessKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -127,11 +148,11 @@ pub mod redis {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(RedisResourceWithAccessKey),
-            Ok200(RedisResourceWithAccessKey),
+            Created201(models::RedisResourceWithAccessKey),
+            Ok200(models::RedisResourceWithAccessKey),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -194,7 +215,7 @@ pub mod redis {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -224,7 +245,7 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::RedisListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/",
@@ -255,7 +276,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RedisListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -269,7 +290,7 @@ pub mod redis {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -291,7 +312,7 @@ pub mod redis {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<RedisListResult, list::Error> {
+    ) -> std::result::Result<models::RedisListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Cache/Redis/",
@@ -316,7 +337,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisListResult =
+                let rsp_value: models::RedisListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -330,7 +351,7 @@ pub mod redis {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -354,7 +375,7 @@ pub mod redis {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RedisListKeysResult, list_keys::Error> {
+    ) -> std::result::Result<models::RedisListKeysResult, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/listKeys",
@@ -385,7 +406,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisListKeysResult =
+                let rsp_value: models::RedisListKeysResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -399,7 +420,7 @@ pub mod redis {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -422,9 +443,9 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &RedisRegenerateKeyParameters,
+        parameters: &models::RedisRegenerateKeyParameters,
         subscription_id: &str,
-    ) -> std::result::Result<RedisListKeysResult, regenerate_key::Error> {
+    ) -> std::result::Result<models::RedisListKeysResult, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/Redis/{}/regenerateKey",
@@ -455,7 +476,7 @@ pub mod redis {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RedisListKeysResult =
+                let rsp_value: models::RedisListKeysResult =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -469,7 +490,7 @@ pub mod redis {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -492,7 +513,7 @@ pub mod redis {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &RedisRebootParameters,
+        parameters: &models::RedisRebootParameters,
         subscription_id: &str,
     ) -> std::result::Result<force_reboot::Response, force_reboot::Error> {
         let http_client = operation_config.http_client();
@@ -536,7 +557,7 @@ pub mod redis {
         }
     }
     pub mod force_reboot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

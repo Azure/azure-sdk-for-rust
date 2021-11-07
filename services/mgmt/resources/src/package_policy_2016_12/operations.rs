@@ -2,14 +2,57 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    PolicyDefinitions_Get(#[from] policy_definitions::get::Error),
+    #[error(transparent)]
+    PolicyDefinitions_CreateOrUpdate(#[from] policy_definitions::create_or_update::Error),
+    #[error(transparent)]
+    PolicyDefinitions_Delete(#[from] policy_definitions::delete::Error),
+    #[error(transparent)]
+    PolicyDefinitions_GetBuiltIn(#[from] policy_definitions::get_built_in::Error),
+    #[error(transparent)]
+    PolicyDefinitions_GetAtManagementGroup(#[from] policy_definitions::get_at_management_group::Error),
+    #[error(transparent)]
+    PolicyDefinitions_CreateOrUpdateAtManagementGroup(#[from] policy_definitions::create_or_update_at_management_group::Error),
+    #[error(transparent)]
+    PolicyDefinitions_DeleteAtManagementGroup(#[from] policy_definitions::delete_at_management_group::Error),
+    #[error(transparent)]
+    PolicyDefinitions_List(#[from] policy_definitions::list::Error),
+    #[error(transparent)]
+    PolicyDefinitions_ListBuiltIn(#[from] policy_definitions::list_built_in::Error),
+    #[error(transparent)]
+    PolicyDefinitions_ListByManagementGroup(#[from] policy_definitions::list_by_management_group::Error),
+    #[error(transparent)]
+    PolicyAssignments_Get(#[from] policy_assignments::get::Error),
+    #[error(transparent)]
+    PolicyAssignments_Create(#[from] policy_assignments::create::Error),
+    #[error(transparent)]
+    PolicyAssignments_Delete(#[from] policy_assignments::delete::Error),
+    #[error(transparent)]
+    PolicyAssignments_ListForResourceGroup(#[from] policy_assignments::list_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyAssignments_ListForResource(#[from] policy_assignments::list_for_resource::Error),
+    #[error(transparent)]
+    PolicyAssignments_List(#[from] policy_assignments::list::Error),
+    #[error(transparent)]
+    PolicyAssignments_GetById(#[from] policy_assignments::get_by_id::Error),
+    #[error(transparent)]
+    PolicyAssignments_CreateById(#[from] policy_assignments::create_by_id::Error),
+    #[error(transparent)]
+    PolicyAssignments_DeleteById(#[from] policy_assignments::delete_by_id::Error),
+}
 pub mod policy_definitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         policy_definition_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PolicyDefinition, get::Error> {
+    ) -> std::result::Result<models::PolicyDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
@@ -35,7 +78,7 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition =
+                let rsp_value: models::PolicyDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -49,7 +92,7 @@ pub mod policy_definitions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -71,9 +114,9 @@ pub mod policy_definitions {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         policy_definition_name: &str,
-        parameters: &PolicyDefinition,
+        parameters: &models::PolicyDefinition,
         subscription_id: &str,
-    ) -> std::result::Result<PolicyDefinition, create_or_update::Error> {
+    ) -> std::result::Result<models::PolicyDefinition, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
@@ -103,7 +146,7 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -117,7 +160,7 @@ pub mod policy_definitions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -176,7 +219,7 @@ pub mod policy_definitions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -203,7 +246,7 @@ pub mod policy_definitions {
     pub async fn get_built_in(
         operation_config: &crate::OperationConfig,
         policy_definition_name: &str,
-    ) -> std::result::Result<PolicyDefinition, get_built_in::Error> {
+    ) -> std::result::Result<models::PolicyDefinition, get_built_in::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Authorization/policyDefinitions/{}",
@@ -231,7 +274,7 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition =
+                let rsp_value: models::PolicyDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -245,7 +288,7 @@ pub mod policy_definitions {
         }
     }
     pub mod get_built_in {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -268,7 +311,7 @@ pub mod policy_definitions {
         operation_config: &crate::OperationConfig,
         policy_definition_name: &str,
         management_group_id: &str,
-    ) -> std::result::Result<PolicyDefinition, get_at_management_group::Error> {
+    ) -> std::result::Result<models::PolicyDefinition, get_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementgroups/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
@@ -299,7 +342,7 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -313,7 +356,7 @@ pub mod policy_definitions {
         }
     }
     pub mod get_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -335,9 +378,9 @@ pub mod policy_definitions {
     pub async fn create_or_update_at_management_group(
         operation_config: &crate::OperationConfig,
         policy_definition_name: &str,
-        parameters: &PolicyDefinition,
+        parameters: &models::PolicyDefinition,
         management_group_id: &str,
-    ) -> std::result::Result<PolicyDefinition, create_or_update_at_management_group::Error> {
+    ) -> std::result::Result<models::PolicyDefinition, create_or_update_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementgroups/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
@@ -369,7 +412,7 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -383,7 +426,7 @@ pub mod policy_definitions {
         }
     }
     pub mod create_or_update_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -447,7 +490,7 @@ pub mod policy_definitions {
         }
     }
     pub mod delete_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -474,7 +517,7 @@ pub mod policy_definitions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PolicyDefinitionListResult, list::Error> {
+    ) -> std::result::Result<models::PolicyDefinitionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policyDefinitions",
@@ -499,7 +542,7 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinitionListResult =
+                let rsp_value: models::PolicyDefinitionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -513,7 +556,7 @@ pub mod policy_definitions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -534,7 +577,7 @@ pub mod policy_definitions {
     }
     pub async fn list_built_in(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<PolicyDefinitionListResult, list_built_in::Error> {
+    ) -> std::result::Result<models::PolicyDefinitionListResult, list_built_in::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Authorization/policyDefinitions",
@@ -561,7 +604,7 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinitionListResult =
+                let rsp_value: models::PolicyDefinitionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -575,7 +618,7 @@ pub mod policy_definitions {
         }
     }
     pub mod list_built_in {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -597,7 +640,7 @@ pub mod policy_definitions {
     pub async fn list_by_management_group(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
-    ) -> std::result::Result<PolicyDefinitionListResult, list_by_management_group::Error> {
+    ) -> std::result::Result<models::PolicyDefinitionListResult, list_by_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementgroups/{}/providers/Microsoft.Authorization/policyDefinitions",
@@ -627,7 +670,7 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinitionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyDefinitionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -641,7 +684,7 @@ pub mod policy_definitions {
         }
     }
     pub mod list_by_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -662,12 +705,12 @@ pub mod policy_definitions {
     }
 }
 pub mod policy_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
         policy_assignment_name: &str,
-    ) -> std::result::Result<PolicyAssignment, get::Error> {
+    ) -> std::result::Result<models::PolicyAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
@@ -693,7 +736,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
+                let rsp_value: models::PolicyAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -707,7 +750,7 @@ pub mod policy_assignments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -730,8 +773,8 @@ pub mod policy_assignments {
         operation_config: &crate::OperationConfig,
         scope: &str,
         policy_assignment_name: &str,
-        parameters: &PolicyAssignment,
-    ) -> std::result::Result<PolicyAssignment, create::Error> {
+        parameters: &models::PolicyAssignment,
+    ) -> std::result::Result<models::PolicyAssignment, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
@@ -758,7 +801,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
+                let rsp_value: models::PolicyAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -772,7 +815,7 @@ pub mod policy_assignments {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -821,7 +864,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
+                let rsp_value: models::PolicyAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -836,10 +879,10 @@ pub mod policy_assignments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PolicyAssignment),
+            Ok200(models::PolicyAssignment),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -865,7 +908,7 @@ pub mod policy_assignments {
         resource_group_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PolicyAssignmentListResult, list_for_resource_group::Error> {
+    ) -> std::result::Result<models::PolicyAssignmentListResult, list_for_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/policyAssignments",
@@ -899,7 +942,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyAssignmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -913,7 +956,7 @@ pub mod policy_assignments {
         }
     }
     pub mod list_for_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -941,7 +984,7 @@ pub mod policy_assignments {
         resource_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PolicyAssignmentListResult, list_for_resource::Error> {
+    ) -> std::result::Result<models::PolicyAssignmentListResult, list_for_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/policyAssignments",
@@ -977,7 +1020,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyAssignmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -991,7 +1034,7 @@ pub mod policy_assignments {
         }
     }
     pub mod list_for_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1014,7 +1057,7 @@ pub mod policy_assignments {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PolicyAssignmentListResult, list::Error> {
+    ) -> std::result::Result<models::PolicyAssignmentListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/policyAssignments",
@@ -1042,7 +1085,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignmentListResult =
+                let rsp_value: models::PolicyAssignmentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1056,7 +1099,7 @@ pub mod policy_assignments {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1078,7 +1121,7 @@ pub mod policy_assignments {
     pub async fn get_by_id(
         operation_config: &crate::OperationConfig,
         policy_assignment_id: &str,
-    ) -> std::result::Result<PolicyAssignment, get_by_id::Error> {
+    ) -> std::result::Result<models::PolicyAssignment, get_by_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
         let mut url = url::Url::parse(url_str).map_err(get_by_id::Error::ParseUrlError)?;
@@ -1102,7 +1145,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
+                let rsp_value: models::PolicyAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1116,7 +1159,7 @@ pub mod policy_assignments {
         }
     }
     pub mod get_by_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1138,8 +1181,8 @@ pub mod policy_assignments {
     pub async fn create_by_id(
         operation_config: &crate::OperationConfig,
         policy_assignment_id: &str,
-        parameters: &PolicyAssignment,
-    ) -> std::result::Result<PolicyAssignment, create_by_id::Error> {
+        parameters: &models::PolicyAssignment,
+    ) -> std::result::Result<models::PolicyAssignment, create_by_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
         let mut url = url::Url::parse(url_str).map_err(create_by_id::Error::ParseUrlError)?;
@@ -1164,7 +1207,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
+                let rsp_value: models::PolicyAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| create_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1178,7 +1221,7 @@ pub mod policy_assignments {
         }
     }
     pub mod create_by_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1200,7 +1243,7 @@ pub mod policy_assignments {
     pub async fn delete_by_id(
         operation_config: &crate::OperationConfig,
         policy_assignment_id: &str,
-    ) -> std::result::Result<PolicyAssignment, delete_by_id::Error> {
+    ) -> std::result::Result<models::PolicyAssignment, delete_by_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
         let mut url = url::Url::parse(url_str).map_err(delete_by_id::Error::ParseUrlError)?;
@@ -1224,7 +1267,7 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
+                let rsp_value: models::PolicyAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| delete_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1238,7 +1281,7 @@ pub mod policy_assignments {
         }
     }
     pub mod delete_by_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

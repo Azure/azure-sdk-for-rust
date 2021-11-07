@@ -2,10 +2,41 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    ManagedClusters_List(#[from] managed_clusters::list::Error),
+    #[error(transparent)]
+    ManagedClusters_ListByResourceGroup(#[from] managed_clusters::list_by_resource_group::Error),
+    #[error(transparent)]
+    ManagedClusters_GetUpgradeProfile(#[from] managed_clusters::get_upgrade_profile::Error),
+    #[error(transparent)]
+    ManagedClusters_GetAccessProfile(#[from] managed_clusters::get_access_profile::Error),
+    #[error(transparent)]
+    ManagedClusters_ListClusterAdminCredentials(#[from] managed_clusters::list_cluster_admin_credentials::Error),
+    #[error(transparent)]
+    ManagedClusters_ListClusterUserCredentials(#[from] managed_clusters::list_cluster_user_credentials::Error),
+    #[error(transparent)]
+    ManagedClusters_Get(#[from] managed_clusters::get::Error),
+    #[error(transparent)]
+    ManagedClusters_CreateOrUpdate(#[from] managed_clusters::create_or_update::Error),
+    #[error(transparent)]
+    ManagedClusters_UpdateTags(#[from] managed_clusters::update_tags::Error),
+    #[error(transparent)]
+    ManagedClusters_Delete(#[from] managed_clusters::delete::Error),
+    #[error(transparent)]
+    ManagedClusters_ResetServicePrincipalProfile(#[from] managed_clusters::reset_service_principal_profile::Error),
+    #[error(transparent)]
+    ManagedClusters_ResetAadProfile(#[from] managed_clusters::reset_aad_profile::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ContainerService/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +57,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +71,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,11 +92,11 @@ pub mod operations {
     }
 }
 pub mod managed_clusters {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedClusterListResult, list::Error> {
+    ) -> std::result::Result<models::ManagedClusterListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerService/managedClusters",
@@ -90,7 +121,7 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedClusterListResult =
+                let rsp_value: models::ManagedClusterListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -104,7 +135,7 @@ pub mod managed_clusters {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -127,7 +158,7 @@ pub mod managed_clusters {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ManagedClusterListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ManagedClusterListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/managedClusters",
@@ -158,7 +189,7 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedClusterListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedClusterListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -172,7 +203,7 @@ pub mod managed_clusters {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -196,7 +227,7 @@ pub mod managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<ManagedClusterUpgradeProfile, get_upgrade_profile::Error> {
+    ) -> std::result::Result<models::ManagedClusterUpgradeProfile, get_upgrade_profile::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/managedClusters/{}/upgradeProfiles/default",
@@ -226,7 +257,7 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedClusterUpgradeProfile = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedClusterUpgradeProfile = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_upgrade_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -240,7 +271,7 @@ pub mod managed_clusters {
         }
     }
     pub mod get_upgrade_profile {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -265,7 +296,7 @@ pub mod managed_clusters {
         resource_group_name: &str,
         resource_name: &str,
         role_name: &str,
-    ) -> std::result::Result<ManagedClusterAccessProfile, get_access_profile::Error> {
+    ) -> std::result::Result<models::ManagedClusterAccessProfile, get_access_profile::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/managedClusters/{}/accessProfiles/{}/listCredential" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , role_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_access_profile::Error::ParseUrlError)?;
@@ -290,7 +321,7 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedClusterAccessProfile = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedClusterAccessProfile = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_access_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -304,7 +335,7 @@ pub mod managed_clusters {
         }
     }
     pub mod get_access_profile {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -328,7 +359,7 @@ pub mod managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<CredentialResults, list_cluster_admin_credentials::Error> {
+    ) -> std::result::Result<models::CredentialResults, list_cluster_admin_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/managedClusters/{}/listClusterAdminCredential",
@@ -361,7 +392,7 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CredentialResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CredentialResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_cluster_admin_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -375,7 +406,7 @@ pub mod managed_clusters {
         }
     }
     pub mod list_cluster_admin_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -399,7 +430,7 @@ pub mod managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<CredentialResults, list_cluster_user_credentials::Error> {
+    ) -> std::result::Result<models::CredentialResults, list_cluster_user_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/managedClusters/{}/listClusterUserCredential",
@@ -432,7 +463,7 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CredentialResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CredentialResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_cluster_user_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -446,7 +477,7 @@ pub mod managed_clusters {
         }
     }
     pub mod list_cluster_user_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -470,7 +501,7 @@ pub mod managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<ManagedCluster, get::Error> {
+    ) -> std::result::Result<models::ManagedCluster, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/managedClusters/{}",
@@ -497,7 +528,7 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedCluster =
+                let rsp_value: models::ManagedCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -511,7 +542,7 @@ pub mod managed_clusters {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -535,7 +566,7 @@ pub mod managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &ManagedCluster,
+        parameters: &models::ManagedCluster,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -567,13 +598,13 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedCluster = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedCluster = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedCluster = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedCluster = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -587,11 +618,11 @@ pub mod managed_clusters {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedCluster),
-            Created201(ManagedCluster),
+            Ok200(models::ManagedCluster),
+            Created201(models::ManagedCluster),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -616,8 +647,8 @@ pub mod managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &TagsObject,
-    ) -> std::result::Result<ManagedCluster, update_tags::Error> {
+        parameters: &models::TagsObject,
+    ) -> std::result::Result<models::ManagedCluster, update_tags::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/managedClusters/{}",
@@ -648,7 +679,7 @@ pub mod managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedCluster =
+                let rsp_value: models::ManagedCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| update_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -662,7 +693,7 @@ pub mod managed_clusters {
         }
     }
     pub mod update_tags {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -723,7 +754,7 @@ pub mod managed_clusters {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -752,7 +783,7 @@ pub mod managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &ManagedClusterServicePrincipalProfile,
+        parameters: &models::ManagedClusterServicePrincipalProfile,
     ) -> std::result::Result<reset_service_principal_profile::Response, reset_service_principal_profile::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -788,7 +819,7 @@ pub mod managed_clusters {
             http::StatusCode::ACCEPTED => Ok(reset_service_principal_profile::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| reset_service_principal_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(reset_service_principal_profile::Error::DefaultResponse {
                     status_code,
@@ -798,7 +829,7 @@ pub mod managed_clusters {
         }
     }
     pub mod reset_service_principal_profile {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -830,7 +861,7 @@ pub mod managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &ManagedClusterAadProfile,
+        parameters: &models::ManagedClusterAadProfile,
     ) -> std::result::Result<reset_aad_profile::Response, reset_aad_profile::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -864,7 +895,7 @@ pub mod managed_clusters {
             http::StatusCode::ACCEPTED => Ok(reset_aad_profile::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| reset_aad_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(reset_aad_profile::Error::DefaultResponse {
                     status_code,
@@ -874,7 +905,7 @@ pub mod managed_clusters {
         }
     }
     pub mod reset_aad_profile {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

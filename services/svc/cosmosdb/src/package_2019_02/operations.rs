@@ -2,9 +2,20 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Service_GetProperties(#[from] service::get_properties::Error),
+    #[error(transparent)]
+    Service_SetProperties(#[from] service::set_properties::Error),
+    #[error(transparent)]
+    Service_GetStatistics(#[from] service::get_statistics::Error),
+}
 pub mod service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_properties(
         operation_config: &crate::OperationConfig,
         restype: &str,
@@ -12,7 +23,7 @@ pub mod service {
         timeout: Option<i64>,
         x_ms_version: &str,
         x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<TableServiceProperties, get_properties::Error> {
+    ) -> std::result::Result<models::TableServiceProperties, get_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/?ServiceProperties", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_properties::Error::ParseUrlError)?;
@@ -44,13 +55,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TableServiceProperties =
+                let rsp_value: models::TableServiceProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TableServiceError =
+                let rsp_value: models::TableServiceError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_properties::Error::DefaultResponse {
                     status_code,
@@ -60,7 +71,7 @@ pub mod service {
         }
     }
     pub mod get_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -86,7 +97,7 @@ pub mod service {
         operation_config: &crate::OperationConfig,
         restype: &str,
         comp: &str,
-        table_service_properties: &TableServiceProperties,
+        table_service_properties: &models::TableServiceProperties,
         timeout: Option<i64>,
         x_ms_version: &str,
         x_ms_client_request_id: Option<&str>,
@@ -124,7 +135,7 @@ pub mod service {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TableServiceError =
+                let rsp_value: models::TableServiceError =
                     serde_json::from_slice(rsp_body).map_err(|source| set_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_properties::Error::DefaultResponse {
                     status_code,
@@ -134,7 +145,7 @@ pub mod service {
         }
     }
     pub mod set_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -163,7 +174,7 @@ pub mod service {
         timeout: Option<i64>,
         x_ms_version: &str,
         x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<TableServiceStats, get_statistics::Error> {
+    ) -> std::result::Result<models::TableServiceStats, get_statistics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/?ServiceStats", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_statistics::Error::ParseUrlError)?;
@@ -195,13 +206,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TableServiceStats =
+                let rsp_value: models::TableServiceStats =
                     serde_json::from_slice(rsp_body).map_err(|source| get_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TableServiceError =
+                let rsp_value: models::TableServiceError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_statistics::Error::DefaultResponse {
                     status_code,
@@ -211,7 +222,7 @@ pub mod service {
         }
     }
     pub mod get_statistics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

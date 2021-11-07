@@ -6,24 +6,24 @@
 #[cfg(feature = "package-webservices-2017-01")]
 pub mod package_webservices_2017_01;
 #[cfg(all(feature = "package-webservices-2017-01", not(feature = "no-default-version")))]
-pub use package_webservices_2017_01::{models, operations};
+pub use package_webservices_2017_01::{models, operations, operations::Error};
 #[cfg(feature = "package-commitmentPlans-2016-05-preview")]
 pub mod package_commitmentplans_2016_05_preview;
 #[cfg(all(feature = "package-commitmentPlans-2016-05-preview", not(feature = "no-default-version")))]
-pub use package_commitmentplans_2016_05_preview::{models, operations};
+pub use package_commitmentplans_2016_05_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-workspaces-2016-04")]
 pub mod package_workspaces_2016_04;
 #[cfg(all(feature = "package-workspaces-2016-04", not(feature = "no-default-version")))]
-pub use package_workspaces_2016_04::{models, operations};
+pub use package_workspaces_2016_04::{models, operations, operations::Error};
 #[cfg(feature = "package-workspaces-2019-10")]
 pub mod package_workspaces_2019_10;
 #[cfg(all(feature = "package-workspaces-2019-10", not(feature = "no-default-version")))]
-pub use package_workspaces_2019_10::{models, operations};
+pub use package_workspaces_2019_10::{models, operations, operations::Error};
 #[cfg(feature = "package-webservices-2016-05-preview")]
 pub mod package_webservices_2016_05_preview;
 use azure_core::setters;
 #[cfg(all(feature = "package-webservices-2016-05-preview", not(feature = "no-default-version")))]
-pub use package_webservices_2016_05_preview::{models, operations};
+pub use package_webservices_2016_05_preview::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

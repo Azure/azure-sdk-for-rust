@@ -2,10 +2,157 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ApiTokens_List(#[from] api_tokens::list::Error),
+    #[error(transparent)]
+    ApiTokens_Get(#[from] api_tokens::get::Error),
+    #[error(transparent)]
+    ApiTokens_Create(#[from] api_tokens::create::Error),
+    #[error(transparent)]
+    ApiTokens_Remove(#[from] api_tokens::remove::Error),
+    #[error(transparent)]
+    ContinuousDataExports_List(#[from] continuous_data_exports::list::Error),
+    #[error(transparent)]
+    ContinuousDataExports_Get(#[from] continuous_data_exports::get::Error),
+    #[error(transparent)]
+    ContinuousDataExports_Create(#[from] continuous_data_exports::create::Error),
+    #[error(transparent)]
+    ContinuousDataExports_Update(#[from] continuous_data_exports::update::Error),
+    #[error(transparent)]
+    ContinuousDataExports_Remove(#[from] continuous_data_exports::remove::Error),
+    #[error(transparent)]
+    DeviceGroups_List(#[from] device_groups::list::Error),
+    #[error(transparent)]
+    DeviceTemplates_List(#[from] device_templates::list::Error),
+    #[error(transparent)]
+    DeviceTemplates_Get(#[from] device_templates::get::Error),
+    #[error(transparent)]
+    DeviceTemplates_Create(#[from] device_templates::create::Error),
+    #[error(transparent)]
+    DeviceTemplates_Update(#[from] device_templates::update::Error),
+    #[error(transparent)]
+    DeviceTemplates_Remove(#[from] device_templates::remove::Error),
+    #[error(transparent)]
+    DeviceTemplates_ListDevices(#[from] device_templates::list_devices::Error),
+    #[error(transparent)]
+    DeviceTemplates_GetMerged(#[from] device_templates::get_merged::Error),
+    #[error(transparent)]
+    Devices_List(#[from] devices::list::Error),
+    #[error(transparent)]
+    Devices_Get(#[from] devices::get::Error),
+    #[error(transparent)]
+    Devices_Create(#[from] devices::create::Error),
+    #[error(transparent)]
+    Devices_Update(#[from] devices::update::Error),
+    #[error(transparent)]
+    Devices_Remove(#[from] devices::remove::Error),
+    #[error(transparent)]
+    Devices_GetAttestation(#[from] devices::get_attestation::Error),
+    #[error(transparent)]
+    Devices_CreateAttestation(#[from] devices::create_attestation::Error),
+    #[error(transparent)]
+    Devices_UpdateAttestation(#[from] devices::update_attestation::Error),
+    #[error(transparent)]
+    Devices_RemoveAttestation(#[from] devices::remove_attestation::Error),
+    #[error(transparent)]
+    Devices_GetCloudProperties(#[from] devices::get_cloud_properties::Error),
+    #[error(transparent)]
+    Devices_ReplaceCloudProperties(#[from] devices::replace_cloud_properties::Error),
+    #[error(transparent)]
+    Devices_UpdateCloudProperties(#[from] devices::update_cloud_properties::Error),
+    #[error(transparent)]
+    Devices_GetCommandHistory(#[from] devices::get_command_history::Error),
+    #[error(transparent)]
+    Devices_RunCommand(#[from] devices::run_command::Error),
+    #[error(transparent)]
+    Devices_ListComponents(#[from] devices::list_components::Error),
+    #[error(transparent)]
+    Devices_GetComponentCommandHistory(#[from] devices::get_component_command_history::Error),
+    #[error(transparent)]
+    Devices_RunComponentCommand(#[from] devices::run_component_command::Error),
+    #[error(transparent)]
+    Devices_GetComponentProperties(#[from] devices::get_component_properties::Error),
+    #[error(transparent)]
+    Devices_ReplaceComponentProperties(#[from] devices::replace_component_properties::Error),
+    #[error(transparent)]
+    Devices_UpdateComponentProperties(#[from] devices::update_component_properties::Error),
+    #[error(transparent)]
+    Devices_GetComponentTelemetryValue(#[from] devices::get_component_telemetry_value::Error),
+    #[error(transparent)]
+    Devices_GetCredentials(#[from] devices::get_credentials::Error),
+    #[error(transparent)]
+    Devices_ListModules(#[from] devices::list_modules::Error),
+    #[error(transparent)]
+    Devices_GetModuleCommandHistory(#[from] devices::get_module_command_history::Error),
+    #[error(transparent)]
+    Devices_RunModuleCommand(#[from] devices::run_module_command::Error),
+    #[error(transparent)]
+    Devices_ListModuleComponents(#[from] devices::list_module_components::Error),
+    #[error(transparent)]
+    Devices_GetModuleComponentCommandHistory(#[from] devices::get_module_component_command_history::Error),
+    #[error(transparent)]
+    Devices_RunModuleComponentCommand(#[from] devices::run_module_component_command::Error),
+    #[error(transparent)]
+    Devices_GetModuleComponentProperties(#[from] devices::get_module_component_properties::Error),
+    #[error(transparent)]
+    Devices_ReplaceModuleComponentProperties(#[from] devices::replace_module_component_properties::Error),
+    #[error(transparent)]
+    Devices_UpdateModuleComponentProperties(#[from] devices::update_module_component_properties::Error),
+    #[error(transparent)]
+    Devices_GetModuleComponentTelemetryValue(#[from] devices::get_module_component_telemetry_value::Error),
+    #[error(transparent)]
+    Devices_GetModuleProperties(#[from] devices::get_module_properties::Error),
+    #[error(transparent)]
+    Devices_ReplaceModuleProperties(#[from] devices::replace_module_properties::Error),
+    #[error(transparent)]
+    Devices_UpdateModuleProperties(#[from] devices::update_module_properties::Error),
+    #[error(transparent)]
+    Devices_GetModuleTelemetryValue(#[from] devices::get_module_telemetry_value::Error),
+    #[error(transparent)]
+    Devices_GetProperties(#[from] devices::get_properties::Error),
+    #[error(transparent)]
+    Devices_ReplaceProperties(#[from] devices::replace_properties::Error),
+    #[error(transparent)]
+    Devices_UpdateProperties(#[from] devices::update_properties::Error),
+    #[error(transparent)]
+    Devices_GetTelemetryValue(#[from] devices::get_telemetry_value::Error),
+    #[error(transparent)]
+    Jobs_List(#[from] jobs::list::Error),
+    #[error(transparent)]
+    Jobs_Get(#[from] jobs::get::Error),
+    #[error(transparent)]
+    Jobs_Create(#[from] jobs::create::Error),
+    #[error(transparent)]
+    Jobs_GetDevices(#[from] jobs::get_devices::Error),
+    #[error(transparent)]
+    Jobs_Rerun(#[from] jobs::rerun::Error),
+    #[error(transparent)]
+    Jobs_Resume(#[from] jobs::resume::Error),
+    #[error(transparent)]
+    Jobs_Stop(#[from] jobs::stop::Error),
+    #[error(transparent)]
+    Roles_List(#[from] roles::list::Error),
+    #[error(transparent)]
+    Roles_Get(#[from] roles::get::Error),
+    #[error(transparent)]
+    Users_List(#[from] users::list::Error),
+    #[error(transparent)]
+    Users_Get(#[from] users::get::Error),
+    #[error(transparent)]
+    Users_Create(#[from] users::create::Error),
+    #[error(transparent)]
+    Users_Update(#[from] users::update::Error),
+    #[error(transparent)]
+    Users_Remove(#[from] users::remove::Error),
+}
 pub mod api_tokens {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ApiTokenCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::ApiTokenCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apiTokens", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +173,7 @@ pub mod api_tokens {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiTokenCollection =
+                let rsp_value: models::ApiTokenCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +187,7 @@ pub mod api_tokens {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -59,7 +206,7 @@ pub mod api_tokens {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, token_id: &str) -> std::result::Result<ApiToken, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig, token_id: &str) -> std::result::Result<models::ApiToken, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apiTokens/{}", operation_config.base_path(), token_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -80,7 +227,7 @@ pub mod api_tokens {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiToken =
+                let rsp_value: models::ApiToken =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -94,7 +241,7 @@ pub mod api_tokens {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -116,8 +263,8 @@ pub mod api_tokens {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         token_id: &str,
-        body: &ApiToken,
-    ) -> std::result::Result<ApiToken, create::Error> {
+        body: &models::ApiToken,
+    ) -> std::result::Result<models::ApiToken, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apiTokens/{}", operation_config.base_path(), token_id);
         let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
@@ -139,7 +286,7 @@ pub mod api_tokens {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiToken =
+                let rsp_value: models::ApiToken =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -153,7 +300,7 @@ pub mod api_tokens {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -202,7 +349,7 @@ pub mod api_tokens {
         }
     }
     pub mod remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -223,8 +370,10 @@ pub mod api_tokens {
     }
 }
 pub mod continuous_data_exports {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ContinuousDataExportCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::ContinuousDataExportCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/continuousDataExports", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -245,7 +394,7 @@ pub mod continuous_data_exports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContinuousDataExportCollection =
+                let rsp_value: models::ContinuousDataExportCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -259,7 +408,7 @@ pub mod continuous_data_exports {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -278,7 +427,10 @@ pub mod continuous_data_exports {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, export_id: &str) -> std::result::Result<ContinuousDataExport, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        export_id: &str,
+    ) -> std::result::Result<models::ContinuousDataExport, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/continuousDataExports/{}", operation_config.base_path(), export_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -299,7 +451,7 @@ pub mod continuous_data_exports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContinuousDataExport =
+                let rsp_value: models::ContinuousDataExport =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -313,7 +465,7 @@ pub mod continuous_data_exports {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -335,8 +487,8 @@ pub mod continuous_data_exports {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         export_id: &str,
-        body: &ContinuousDataExport,
-    ) -> std::result::Result<ContinuousDataExport, create::Error> {
+        body: &models::ContinuousDataExport,
+    ) -> std::result::Result<models::ContinuousDataExport, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/continuousDataExports/{}", operation_config.base_path(), export_id);
         let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
@@ -358,7 +510,7 @@ pub mod continuous_data_exports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContinuousDataExport =
+                let rsp_value: models::ContinuousDataExport =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -372,7 +524,7 @@ pub mod continuous_data_exports {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -395,7 +547,7 @@ pub mod continuous_data_exports {
         operation_config: &crate::OperationConfig,
         export_id: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<ContinuousDataExport, update::Error> {
+    ) -> std::result::Result<models::ContinuousDataExport, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/continuousDataExports/{}", operation_config.base_path(), export_id);
         let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
@@ -417,7 +569,7 @@ pub mod continuous_data_exports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContinuousDataExport =
+                let rsp_value: models::ContinuousDataExport =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -431,7 +583,7 @@ pub mod continuous_data_exports {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -480,7 +632,7 @@ pub mod continuous_data_exports {
         }
     }
     pub mod remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -501,8 +653,8 @@ pub mod continuous_data_exports {
     }
 }
 pub mod device_groups {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<DeviceGroupCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::DeviceGroupCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/deviceGroups", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -523,7 +675,7 @@ pub mod device_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceGroupCollection =
+                let rsp_value: models::DeviceGroupCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -537,7 +689,7 @@ pub mod device_groups {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -558,8 +710,8 @@ pub mod device_groups {
     }
 }
 pub mod device_templates {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<DeviceTemplateCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::DeviceTemplateCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/deviceTemplates", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -580,7 +732,7 @@ pub mod device_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTemplateCollection =
+                let rsp_value: models::DeviceTemplateCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -594,7 +746,7 @@ pub mod device_templates {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -616,7 +768,7 @@ pub mod device_templates {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         device_template_id: &str,
-    ) -> std::result::Result<DeviceTemplate, get::Error> {
+    ) -> std::result::Result<models::DeviceTemplate, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/deviceTemplates/{}", operation_config.base_path(), device_template_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -637,7 +789,7 @@ pub mod device_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTemplate =
+                let rsp_value: models::DeviceTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -651,7 +803,7 @@ pub mod device_templates {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -673,8 +825,8 @@ pub mod device_templates {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         device_template_id: &str,
-        body: &DeviceTemplate,
-    ) -> std::result::Result<DeviceTemplate, create::Error> {
+        body: &models::DeviceTemplate,
+    ) -> std::result::Result<models::DeviceTemplate, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/deviceTemplates/{}", operation_config.base_path(), device_template_id);
         let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
@@ -696,7 +848,7 @@ pub mod device_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTemplate =
+                let rsp_value: models::DeviceTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -710,7 +862,7 @@ pub mod device_templates {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -733,7 +885,7 @@ pub mod device_templates {
         operation_config: &crate::OperationConfig,
         device_template_id: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<DeviceTemplate, update::Error> {
+    ) -> std::result::Result<models::DeviceTemplate, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/deviceTemplates/{}", operation_config.base_path(), device_template_id);
         let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
@@ -755,7 +907,7 @@ pub mod device_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTemplate =
+                let rsp_value: models::DeviceTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -769,7 +921,7 @@ pub mod device_templates {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -818,7 +970,7 @@ pub mod device_templates {
         }
     }
     pub mod remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -840,7 +992,7 @@ pub mod device_templates {
     pub async fn list_devices(
         operation_config: &crate::OperationConfig,
         device_template_id: &str,
-    ) -> std::result::Result<DeviceCollection, list_devices::Error> {
+    ) -> std::result::Result<models::DeviceCollection, list_devices::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/deviceTemplates/{}/devices", operation_config.base_path(), device_template_id);
         let mut url = url::Url::parse(url_str).map_err(list_devices::Error::ParseUrlError)?;
@@ -864,7 +1016,7 @@ pub mod device_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCollection =
+                let rsp_value: models::DeviceCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -878,7 +1030,7 @@ pub mod device_templates {
         }
     }
     pub mod list_devices {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -900,7 +1052,7 @@ pub mod device_templates {
     pub async fn get_merged(
         operation_config: &crate::OperationConfig,
         device_template_id: &str,
-    ) -> std::result::Result<DeviceTemplate, get_merged::Error> {
+    ) -> std::result::Result<models::DeviceTemplate, get_merged::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/deviceTemplates/{}/merged", operation_config.base_path(), device_template_id);
         let mut url = url::Url::parse(url_str).map_err(get_merged::Error::ParseUrlError)?;
@@ -924,7 +1076,7 @@ pub mod device_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTemplate =
+                let rsp_value: models::DeviceTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| get_merged::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -938,7 +1090,7 @@ pub mod device_templates {
         }
     }
     pub mod get_merged {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -959,8 +1111,8 @@ pub mod device_templates {
     }
 }
 pub mod devices {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<DeviceCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::DeviceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -981,7 +1133,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCollection =
+                let rsp_value: models::DeviceCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -995,7 +1147,7 @@ pub mod devices {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1014,7 +1166,7 @@ pub mod devices {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, device_id: &str) -> std::result::Result<Device, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig, device_id: &str) -> std::result::Result<models::Device, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1035,7 +1187,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Device =
+                let rsp_value: models::Device =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1049,7 +1201,7 @@ pub mod devices {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1071,8 +1223,8 @@ pub mod devices {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-        body: &Device,
-    ) -> std::result::Result<Device, create::Error> {
+        body: &models::Device,
+    ) -> std::result::Result<models::Device, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
@@ -1094,7 +1246,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Device =
+                let rsp_value: models::Device =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1108,7 +1260,7 @@ pub mod devices {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1131,7 +1283,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<Device, update::Error> {
+    ) -> std::result::Result<models::Device, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
@@ -1153,7 +1305,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Device =
+                let rsp_value: models::Device =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1167,7 +1319,7 @@ pub mod devices {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1216,7 +1368,7 @@ pub mod devices {
         }
     }
     pub mod remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1238,7 +1390,7 @@ pub mod devices {
     pub async fn get_attestation(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-    ) -> std::result::Result<Attestation, get_attestation::Error> {
+    ) -> std::result::Result<models::Attestation, get_attestation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/attestation", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(get_attestation::Error::ParseUrlError)?;
@@ -1262,7 +1414,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Attestation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_attestation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1276,7 +1428,7 @@ pub mod devices {
         }
     }
     pub mod get_attestation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1298,8 +1450,8 @@ pub mod devices {
     pub async fn create_attestation(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-        body: &Attestation,
-    ) -> std::result::Result<Attestation, create_attestation::Error> {
+        body: &models::Attestation,
+    ) -> std::result::Result<models::Attestation, create_attestation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/attestation", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(create_attestation::Error::ParseUrlError)?;
@@ -1324,7 +1476,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Attestation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_attestation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1338,7 +1490,7 @@ pub mod devices {
         }
     }
     pub mod create_attestation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1361,7 +1513,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<Attestation, update_attestation::Error> {
+    ) -> std::result::Result<models::Attestation, update_attestation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/attestation", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(update_attestation::Error::ParseUrlError)?;
@@ -1386,7 +1538,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Attestation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_attestation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1400,7 +1552,7 @@ pub mod devices {
         }
     }
     pub mod update_attestation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1455,7 +1607,7 @@ pub mod devices {
         }
     }
     pub mod remove_attestation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1477,7 +1629,7 @@ pub mod devices {
     pub async fn get_cloud_properties(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-    ) -> std::result::Result<DeviceCloudProperties, get_cloud_properties::Error> {
+    ) -> std::result::Result<models::DeviceCloudProperties, get_cloud_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/cloudProperties", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(get_cloud_properties::Error::ParseUrlError)?;
@@ -1501,7 +1653,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCloudProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCloudProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_cloud_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1515,7 +1667,7 @@ pub mod devices {
         }
     }
     pub mod get_cloud_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1537,8 +1689,8 @@ pub mod devices {
     pub async fn replace_cloud_properties(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-        body: &DeviceCloudProperties,
-    ) -> std::result::Result<DeviceCloudProperties, replace_cloud_properties::Error> {
+        body: &models::DeviceCloudProperties,
+    ) -> std::result::Result<models::DeviceCloudProperties, replace_cloud_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/cloudProperties", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(replace_cloud_properties::Error::ParseUrlError)?;
@@ -1565,7 +1717,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCloudProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCloudProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| replace_cloud_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1579,7 +1731,7 @@ pub mod devices {
         }
     }
     pub mod replace_cloud_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1602,7 +1754,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<DeviceCloudProperties, update_cloud_properties::Error> {
+    ) -> std::result::Result<models::DeviceCloudProperties, update_cloud_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/cloudProperties", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(update_cloud_properties::Error::ParseUrlError)?;
@@ -1629,7 +1781,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCloudProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCloudProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_cloud_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1643,7 +1795,7 @@ pub mod devices {
         }
     }
     pub mod update_cloud_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1666,7 +1818,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         command_name: &str,
-    ) -> std::result::Result<DeviceCommandCollection, get_command_history::Error> {
+    ) -> std::result::Result<models::DeviceCommandCollection, get_command_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/commands/{}", operation_config.base_path(), device_id, command_name);
         let mut url = url::Url::parse(url_str).map_err(get_command_history::Error::ParseUrlError)?;
@@ -1690,7 +1842,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCommandCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCommandCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_command_history::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1704,7 +1856,7 @@ pub mod devices {
         }
     }
     pub mod get_command_history {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1727,8 +1879,8 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         command_name: &str,
-        body: &DeviceCommand,
-    ) -> std::result::Result<DeviceCommand, run_command::Error> {
+        body: &models::DeviceCommand,
+    ) -> std::result::Result<models::DeviceCommand, run_command::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/commands/{}", operation_config.base_path(), device_id, command_name);
         let mut url = url::Url::parse(url_str).map_err(run_command::Error::ParseUrlError)?;
@@ -1753,7 +1905,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCommand =
+                let rsp_value: models::DeviceCommand =
                     serde_json::from_slice(rsp_body).map_err(|source| run_command::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1767,7 +1919,7 @@ pub mod devices {
         }
     }
     pub mod run_command {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1789,7 +1941,7 @@ pub mod devices {
     pub async fn list_components(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-    ) -> std::result::Result<Collection, list_components::Error> {
+    ) -> std::result::Result<models::Collection, list_components::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/components", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(list_components::Error::ParseUrlError)?;
@@ -1813,7 +1965,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Collection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Collection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_components::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1827,7 +1979,7 @@ pub mod devices {
         }
     }
     pub mod list_components {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1851,7 +2003,7 @@ pub mod devices {
         device_id: &str,
         component_name: &str,
         command_name: &str,
-    ) -> std::result::Result<DeviceCommandCollection, get_component_command_history::Error> {
+    ) -> std::result::Result<models::DeviceCommandCollection, get_component_command_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/components/{}/commands/{}",
@@ -1883,7 +2035,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCommandCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCommandCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_component_command_history::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1897,7 +2049,7 @@ pub mod devices {
         }
     }
     pub mod get_component_command_history {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1921,8 +2073,8 @@ pub mod devices {
         device_id: &str,
         component_name: &str,
         command_name: &str,
-        body: &DeviceCommand,
-    ) -> std::result::Result<DeviceCommand, run_component_command::Error> {
+        body: &models::DeviceCommand,
+    ) -> std::result::Result<models::DeviceCommand, run_component_command::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/components/{}/commands/{}",
@@ -1955,7 +2107,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCommand = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCommand = serde_json::from_slice(rsp_body)
                     .map_err(|source| run_component_command::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1969,7 +2121,7 @@ pub mod devices {
         }
     }
     pub mod run_component_command {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1992,7 +2144,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         component_name: &str,
-    ) -> std::result::Result<DeviceProperties, get_component_properties::Error> {
+    ) -> std::result::Result<models::DeviceProperties, get_component_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/components/{}/properties",
@@ -2023,7 +2175,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_component_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2037,7 +2189,7 @@ pub mod devices {
         }
     }
     pub mod get_component_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2060,8 +2212,8 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         component_name: &str,
-        body: &DeviceProperties,
-    ) -> std::result::Result<DeviceProperties, replace_component_properties::Error> {
+        body: &models::DeviceProperties,
+    ) -> std::result::Result<models::DeviceProperties, replace_component_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/components/{}/properties",
@@ -2093,7 +2245,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| replace_component_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2107,7 +2259,7 @@ pub mod devices {
         }
     }
     pub mod replace_component_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2131,7 +2283,7 @@ pub mod devices {
         device_id: &str,
         component_name: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<DeviceProperties, update_component_properties::Error> {
+    ) -> std::result::Result<models::DeviceProperties, update_component_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/components/{}/properties",
@@ -2163,7 +2315,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_component_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2177,7 +2329,7 @@ pub mod devices {
         }
     }
     pub mod update_component_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2201,7 +2353,7 @@ pub mod devices {
         device_id: &str,
         component_name: &str,
         telemetry_name: &str,
-    ) -> std::result::Result<DeviceTelemetry, get_component_telemetry_value::Error> {
+    ) -> std::result::Result<models::DeviceTelemetry, get_component_telemetry_value::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/components/{}/telemetry/{}",
@@ -2233,7 +2385,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTelemetry = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceTelemetry = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_component_telemetry_value::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2247,7 +2399,7 @@ pub mod devices {
         }
     }
     pub mod get_component_telemetry_value {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2269,7 +2421,7 @@ pub mod devices {
     pub async fn get_credentials(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-    ) -> std::result::Result<DeviceCredentials, get_credentials::Error> {
+    ) -> std::result::Result<models::DeviceCredentials, get_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/credentials", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(get_credentials::Error::ParseUrlError)?;
@@ -2293,7 +2445,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCredentials = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCredentials = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2307,7 +2459,7 @@ pub mod devices {
         }
     }
     pub mod get_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2329,7 +2481,7 @@ pub mod devices {
     pub async fn list_modules(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-    ) -> std::result::Result<Collection, list_modules::Error> {
+    ) -> std::result::Result<models::Collection, list_modules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/modules", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(list_modules::Error::ParseUrlError)?;
@@ -2353,7 +2505,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Collection =
+                let rsp_value: models::Collection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_modules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2367,7 +2519,7 @@ pub mod devices {
         }
     }
     pub mod list_modules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2391,7 +2543,7 @@ pub mod devices {
         device_id: &str,
         module_name: &str,
         command_name: &str,
-    ) -> std::result::Result<DeviceCommandCollection, get_module_command_history::Error> {
+    ) -> std::result::Result<models::DeviceCommandCollection, get_module_command_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/commands/{}",
@@ -2423,7 +2575,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCommandCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCommandCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_module_command_history::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2437,7 +2589,7 @@ pub mod devices {
         }
     }
     pub mod get_module_command_history {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2461,8 +2613,8 @@ pub mod devices {
         device_id: &str,
         module_name: &str,
         command_name: &str,
-        body: &DeviceCommand,
-    ) -> std::result::Result<DeviceCommand, run_module_command::Error> {
+        body: &models::DeviceCommand,
+    ) -> std::result::Result<models::DeviceCommand, run_module_command::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/commands/{}",
@@ -2493,7 +2645,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCommand = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCommand = serde_json::from_slice(rsp_body)
                     .map_err(|source| run_module_command::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2507,7 +2659,7 @@ pub mod devices {
         }
     }
     pub mod run_module_command {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2530,7 +2682,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         module_name: &str,
-    ) -> std::result::Result<Collection, list_module_components::Error> {
+    ) -> std::result::Result<models::Collection, list_module_components::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/components",
@@ -2561,7 +2713,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Collection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Collection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_module_components::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2575,7 +2727,7 @@ pub mod devices {
         }
     }
     pub mod list_module_components {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2600,7 +2752,7 @@ pub mod devices {
         module_name: &str,
         component_name: &str,
         command_name: &str,
-    ) -> std::result::Result<DeviceCommandCollection, get_module_component_command_history::Error> {
+    ) -> std::result::Result<models::DeviceCommandCollection, get_module_component_command_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/components/{}/commands/{}",
@@ -2633,7 +2785,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCommandCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCommandCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_module_component_command_history::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2647,7 +2799,7 @@ pub mod devices {
         }
     }
     pub mod get_module_component_command_history {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2672,8 +2824,8 @@ pub mod devices {
         module_name: &str,
         component_name: &str,
         command_name: &str,
-        body: &DeviceCommand,
-    ) -> std::result::Result<DeviceCommand, run_module_component_command::Error> {
+        body: &models::DeviceCommand,
+    ) -> std::result::Result<models::DeviceCommand, run_module_component_command::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/components/{}/commands/{}",
@@ -2707,7 +2859,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceCommand = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceCommand = serde_json::from_slice(rsp_body)
                     .map_err(|source| run_module_component_command::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2721,7 +2873,7 @@ pub mod devices {
         }
     }
     pub mod run_module_component_command {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2745,7 +2897,7 @@ pub mod devices {
         device_id: &str,
         module_name: &str,
         component_name: &str,
-    ) -> std::result::Result<DeviceProperties, get_module_component_properties::Error> {
+    ) -> std::result::Result<models::DeviceProperties, get_module_component_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/components/{}/properties",
@@ -2777,7 +2929,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_module_component_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2791,7 +2943,7 @@ pub mod devices {
         }
     }
     pub mod get_module_component_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2815,8 +2967,8 @@ pub mod devices {
         device_id: &str,
         module_name: &str,
         component_name: &str,
-        body: &DeviceProperties,
-    ) -> std::result::Result<DeviceProperties, replace_module_component_properties::Error> {
+        body: &models::DeviceProperties,
+    ) -> std::result::Result<models::DeviceProperties, replace_module_component_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/components/{}/properties",
@@ -2849,7 +3001,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| replace_module_component_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2863,7 +3015,7 @@ pub mod devices {
         }
     }
     pub mod replace_module_component_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2888,7 +3040,7 @@ pub mod devices {
         module_name: &str,
         component_name: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<DeviceProperties, update_module_component_properties::Error> {
+    ) -> std::result::Result<models::DeviceProperties, update_module_component_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/components/{}/properties",
@@ -2921,7 +3073,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_module_component_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2935,7 +3087,7 @@ pub mod devices {
         }
     }
     pub mod update_module_component_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2960,7 +3112,7 @@ pub mod devices {
         module_name: &str,
         component_name: &str,
         telemetry_name: &str,
-    ) -> std::result::Result<DeviceTelemetry, get_module_component_telemetry_value::Error> {
+    ) -> std::result::Result<models::DeviceTelemetry, get_module_component_telemetry_value::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/components/{}/telemetry/{}",
@@ -2993,7 +3145,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTelemetry = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceTelemetry = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_module_component_telemetry_value::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3007,7 +3159,7 @@ pub mod devices {
         }
     }
     pub mod get_module_component_telemetry_value {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3030,7 +3182,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         module_name: &str,
-    ) -> std::result::Result<DeviceProperties, get_module_properties::Error> {
+    ) -> std::result::Result<models::DeviceProperties, get_module_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/properties",
@@ -3061,7 +3213,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_module_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3075,7 +3227,7 @@ pub mod devices {
         }
     }
     pub mod get_module_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3098,8 +3250,8 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         module_name: &str,
-        body: &DeviceProperties,
-    ) -> std::result::Result<DeviceProperties, replace_module_properties::Error> {
+        body: &models::DeviceProperties,
+    ) -> std::result::Result<models::DeviceProperties, replace_module_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/properties",
@@ -3131,7 +3283,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| replace_module_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3145,7 +3297,7 @@ pub mod devices {
         }
     }
     pub mod replace_module_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3169,7 +3321,7 @@ pub mod devices {
         device_id: &str,
         module_name: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<DeviceProperties, update_module_properties::Error> {
+    ) -> std::result::Result<models::DeviceProperties, update_module_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/properties",
@@ -3201,7 +3353,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_module_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3215,7 +3367,7 @@ pub mod devices {
         }
     }
     pub mod update_module_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3239,7 +3391,7 @@ pub mod devices {
         device_id: &str,
         module_name: &str,
         telemetry_name: &str,
-    ) -> std::result::Result<DeviceTelemetry, get_module_telemetry_value::Error> {
+    ) -> std::result::Result<models::DeviceTelemetry, get_module_telemetry_value::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/modules/{}/telemetry/{}",
@@ -3271,7 +3423,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTelemetry = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceTelemetry = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_module_telemetry_value::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3285,7 +3437,7 @@ pub mod devices {
         }
     }
     pub mod get_module_telemetry_value {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3307,7 +3459,7 @@ pub mod devices {
     pub async fn get_properties(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-    ) -> std::result::Result<DeviceProperties, get_properties::Error> {
+    ) -> std::result::Result<models::DeviceProperties, get_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/properties", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(get_properties::Error::ParseUrlError)?;
@@ -3331,7 +3483,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties =
+                let rsp_value: models::DeviceProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3345,7 +3497,7 @@ pub mod devices {
         }
     }
     pub mod get_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3367,8 +3519,8 @@ pub mod devices {
     pub async fn replace_properties(
         operation_config: &crate::OperationConfig,
         device_id: &str,
-        body: &DeviceProperties,
-    ) -> std::result::Result<DeviceProperties, replace_properties::Error> {
+        body: &models::DeviceProperties,
+    ) -> std::result::Result<models::DeviceProperties, replace_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/properties", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(replace_properties::Error::ParseUrlError)?;
@@ -3393,7 +3545,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| replace_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3407,7 +3559,7 @@ pub mod devices {
         }
     }
     pub mod replace_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3430,7 +3582,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<DeviceProperties, update_properties::Error> {
+    ) -> std::result::Result<models::DeviceProperties, update_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/devices/{}/properties", operation_config.base_path(), device_id);
         let mut url = url::Url::parse(url_str).map_err(update_properties::Error::ParseUrlError)?;
@@ -3455,7 +3607,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3469,7 +3621,7 @@ pub mod devices {
         }
     }
     pub mod update_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3492,7 +3644,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         device_id: &str,
         telemetry_name: &str,
-    ) -> std::result::Result<DeviceTelemetry, get_telemetry_value::Error> {
+    ) -> std::result::Result<models::DeviceTelemetry, get_telemetry_value::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/devices/{}/telemetry/{}",
@@ -3521,7 +3673,7 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeviceTelemetry = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeviceTelemetry = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_telemetry_value::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3535,7 +3687,7 @@ pub mod devices {
         }
     }
     pub mod get_telemetry_value {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3556,8 +3708,8 @@ pub mod devices {
     }
 }
 pub mod jobs {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<JobCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::JobCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -3578,7 +3730,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCollection =
+                let rsp_value: models::JobCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3592,7 +3744,7 @@ pub mod jobs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3611,7 +3763,7 @@ pub mod jobs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, job_id: &str) -> std::result::Result<Job, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig, job_id: &str) -> std::result::Result<models::Job, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}", operation_config.base_path(), job_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -3632,7 +3784,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job =
+                let rsp_value: models::Job =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3646,7 +3798,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3665,7 +3817,11 @@ pub mod jobs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn create(operation_config: &crate::OperationConfig, job_id: &str, body: &Job) -> std::result::Result<Job, create::Error> {
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        job_id: &str,
+        body: &models::Job,
+    ) -> std::result::Result<models::Job, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}", operation_config.base_path(), job_id);
         let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
@@ -3687,7 +3843,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job =
+                let rsp_value: models::Job =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3701,7 +3857,7 @@ pub mod jobs {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3723,7 +3879,7 @@ pub mod jobs {
     pub async fn get_devices(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-    ) -> std::result::Result<JobDeviceStatusCollection, get_devices::Error> {
+    ) -> std::result::Result<models::JobDeviceStatusCollection, get_devices::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}/devices", operation_config.base_path(), job_id);
         let mut url = url::Url::parse(url_str).map_err(get_devices::Error::ParseUrlError)?;
@@ -3747,7 +3903,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDeviceStatusCollection =
+                let rsp_value: models::JobDeviceStatusCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| get_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3761,7 +3917,7 @@ pub mod jobs {
         }
     }
     pub mod get_devices {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3780,7 +3936,11 @@ pub mod jobs {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn rerun(operation_config: &crate::OperationConfig, job_id: &str, rerun_id: &str) -> std::result::Result<Job, rerun::Error> {
+    pub async fn rerun(
+        operation_config: &crate::OperationConfig,
+        job_id: &str,
+        rerun_id: &str,
+    ) -> std::result::Result<models::Job, rerun::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}/rerun/{}", operation_config.base_path(), job_id, rerun_id);
         let mut url = url::Url::parse(url_str).map_err(rerun::Error::ParseUrlError)?;
@@ -3801,7 +3961,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job =
+                let rsp_value: models::Job =
                     serde_json::from_slice(rsp_body).map_err(|source| rerun::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3815,7 +3975,7 @@ pub mod jobs {
         }
     }
     pub mod rerun {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3865,7 +4025,7 @@ pub mod jobs {
         }
     }
     pub mod resume {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3915,7 +4075,7 @@ pub mod jobs {
         }
     }
     pub mod stop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3936,8 +4096,8 @@ pub mod jobs {
     }
 }
 pub mod roles {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<RoleCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::RoleCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/roles", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -3958,7 +4118,7 @@ pub mod roles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RoleCollection =
+                let rsp_value: models::RoleCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3972,7 +4132,7 @@ pub mod roles {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3991,7 +4151,7 @@ pub mod roles {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, role_id: &str) -> std::result::Result<Role, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig, role_id: &str) -> std::result::Result<models::Role, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/roles/{}", operation_config.base_path(), role_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -4012,7 +4172,7 @@ pub mod roles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Role =
+                let rsp_value: models::Role =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4026,7 +4186,7 @@ pub mod roles {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4047,8 +4207,8 @@ pub mod roles {
     }
 }
 pub mod users {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<UserCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::UserCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/users", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -4069,7 +4229,7 @@ pub mod users {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UserCollection =
+                let rsp_value: models::UserCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4083,7 +4243,7 @@ pub mod users {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4102,7 +4262,7 @@ pub mod users {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, user_id: &str) -> std::result::Result<User, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig, user_id: &str) -> std::result::Result<models::User, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/users/{}", operation_config.base_path(), user_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -4123,7 +4283,7 @@ pub mod users {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: User =
+                let rsp_value: models::User =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4137,7 +4297,7 @@ pub mod users {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4156,7 +4316,11 @@ pub mod users {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn create(operation_config: &crate::OperationConfig, user_id: &str, body: &User) -> std::result::Result<User, create::Error> {
+    pub async fn create(
+        operation_config: &crate::OperationConfig,
+        user_id: &str,
+        body: &models::User,
+    ) -> std::result::Result<models::User, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/users/{}", operation_config.base_path(), user_id);
         let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
@@ -4178,7 +4342,7 @@ pub mod users {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: User =
+                let rsp_value: models::User =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4192,7 +4356,7 @@ pub mod users {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4215,7 +4379,7 @@ pub mod users {
         operation_config: &crate::OperationConfig,
         user_id: &str,
         body: &serde_json::Value,
-    ) -> std::result::Result<User, update::Error> {
+    ) -> std::result::Result<models::User, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/users/{}", operation_config.base_path(), user_id);
         let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
@@ -4237,7 +4401,7 @@ pub mod users {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: User =
+                let rsp_value: models::User =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4251,7 +4415,7 @@ pub mod users {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4300,7 +4464,7 @@ pub mod users {
         }
     }
     pub mod remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

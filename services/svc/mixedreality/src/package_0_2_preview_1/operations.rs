@@ -2,15 +2,26 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    IngestionJob_Get(#[from] ingestion_job::get::Error),
+    #[error(transparent)]
+    IngestionJob_Create(#[from] ingestion_job::create::Error),
+    #[error(transparent)]
+    BlobUploadEndpoint_Get(#[from] blob_upload_endpoint::get::Error),
+}
 pub mod ingestion_job {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         account_id: &str,
         job_id: &str,
         x_mrc_cv: Option<&str>,
-    ) -> std::result::Result<IngestionProperties, get::Error> {
+    ) -> std::result::Result<models::IngestionProperties, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/accounts/{}/jobs/{}", operation_config.base_path(), account_id, job_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -34,13 +45,13 @@ pub mod ingestion_job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IngestionProperties =
+                let rsp_value: models::IngestionProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -50,7 +61,7 @@ pub mod ingestion_job {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -77,8 +88,8 @@ pub mod ingestion_job {
         account_id: &str,
         job_id: &str,
         x_mrc_cv: Option<&str>,
-        body: Option<&IngestionProperties>,
-    ) -> std::result::Result<IngestionProperties, create::Error> {
+        body: Option<&models::IngestionProperties>,
+    ) -> std::result::Result<models::IngestionProperties, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/accounts/{}/jobs/{}", operation_config.base_path(), account_id, job_id);
         let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
@@ -107,13 +118,13 @@ pub mod ingestion_job {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IngestionProperties =
+                let rsp_value: models::IngestionProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -123,7 +134,7 @@ pub mod ingestion_job {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -147,12 +158,12 @@ pub mod ingestion_job {
     }
 }
 pub mod blob_upload_endpoint {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         account_id: &str,
         x_mrc_cv: Option<&str>,
-    ) -> std::result::Result<UploadLocation, get::Error> {
+    ) -> std::result::Result<models::UploadLocation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/accounts/{}/blobUploadEndpoint", operation_config.base_path(), account_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -176,13 +187,13 @@ pub mod blob_upload_endpoint {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UploadLocation =
+                let rsp_value: models::UploadLocation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -192,7 +203,7 @@ pub mod blob_upload_endpoint {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

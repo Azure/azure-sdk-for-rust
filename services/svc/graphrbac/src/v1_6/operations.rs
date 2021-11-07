@@ -2,14 +2,37 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    OAuth2PermissionGrant_ListNext(#[from] o_auth2_permission_grant::list_next::Error),
+    #[error(transparent)]
+    SignedInUser_ListOwnedObjectsNext(#[from] signed_in_user::list_owned_objects_next::Error),
+    #[error(transparent)]
+    Groups_ListNext(#[from] groups::list_next::Error),
+    #[error(transparent)]
+    Groups_GetGroupMembersNext(#[from] groups::get_group_members_next::Error),
+    #[error(transparent)]
+    Applications_ListNext(#[from] applications::list_next::Error),
+    #[error(transparent)]
+    DeletedApplications_ListNext(#[from] deleted_applications::list_next::Error),
+    #[error(transparent)]
+    ServicePrincipals_ListNext(#[from] service_principals::list_next::Error),
+    #[error(transparent)]
+    Users_ListNext(#[from] users::list_next::Error),
+    #[error(transparent)]
+    Objects_GetObjectsByObjectIdsNext(#[from] objects::get_objects_by_object_ids_next::Error),
+}
 pub mod o_auth2_permission_grant {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<OAuth2PermissionGrantListResult, list_next::Error> {
+    ) -> std::result::Result<models::OAuth2PermissionGrantListResult, list_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/{}?OAuth2PermissionGrant_ListNext",
@@ -38,13 +61,13 @@ pub mod o_auth2_permission_grant {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OAuth2PermissionGrantListResult =
+                let rsp_value: models::OAuth2PermissionGrantListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphError =
+                let rsp_value: models::GraphError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_next::Error::DefaultResponse {
                     status_code,
@@ -54,7 +77,7 @@ pub mod o_auth2_permission_grant {
         }
     }
     pub mod list_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -78,12 +101,12 @@ pub mod o_auth2_permission_grant {
     }
 }
 pub mod signed_in_user {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_owned_objects_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<DirectoryObjectListResult, list_owned_objects_next::Error> {
+    ) -> std::result::Result<models::DirectoryObjectListResult, list_owned_objects_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/{}?SignedInUser_ListOwnedObjectsNext",
@@ -114,13 +137,13 @@ pub mod signed_in_user {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DirectoryObjectListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DirectoryObjectListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_owned_objects_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GraphError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_owned_objects_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_owned_objects_next::Error::DefaultResponse {
                     status_code,
@@ -130,7 +153,7 @@ pub mod signed_in_user {
         }
     }
     pub mod list_owned_objects_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -154,12 +177,12 @@ pub mod signed_in_user {
     }
 }
 pub mod groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<GroupListResult, list_next::Error> {
+    ) -> std::result::Result<models::GroupListResult, list_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/{}?Groups_ListNext", operation_config.base_path(), tenant_id, next_link);
         let mut url = url::Url::parse(url_str).map_err(list_next::Error::ParseUrlError)?;
@@ -183,13 +206,13 @@ pub mod groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GroupListResult =
+                let rsp_value: models::GroupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphError =
+                let rsp_value: models::GraphError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_next::Error::DefaultResponse {
                     status_code,
@@ -199,7 +222,7 @@ pub mod groups {
         }
     }
     pub mod list_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -225,7 +248,7 @@ pub mod groups {
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<DirectoryObjectListResult, get_group_members_next::Error> {
+    ) -> std::result::Result<models::DirectoryObjectListResult, get_group_members_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/{}?Groups_GetGroupMembersNext",
@@ -256,13 +279,13 @@ pub mod groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DirectoryObjectListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DirectoryObjectListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_group_members_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GraphError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_group_members_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_group_members_next::Error::DefaultResponse {
                     status_code,
@@ -272,7 +295,7 @@ pub mod groups {
         }
     }
     pub mod get_group_members_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -296,12 +319,12 @@ pub mod groups {
     }
 }
 pub mod applications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<ApplicationListResult, list_next::Error> {
+    ) -> std::result::Result<models::ApplicationListResult, list_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/{}?Applications_ListNext", operation_config.base_path(), tenant_id, next_link);
         let mut url = url::Url::parse(url_str).map_err(list_next::Error::ParseUrlError)?;
@@ -325,13 +348,13 @@ pub mod applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationListResult =
+                let rsp_value: models::ApplicationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphError =
+                let rsp_value: models::GraphError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_next::Error::DefaultResponse {
                     status_code,
@@ -341,7 +364,7 @@ pub mod applications {
         }
     }
     pub mod list_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -365,12 +388,12 @@ pub mod applications {
     }
 }
 pub mod deleted_applications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<ApplicationListResult, list_next::Error> {
+    ) -> std::result::Result<models::ApplicationListResult, list_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/{}?DeletedApplications_ListNext",
@@ -399,13 +422,13 @@ pub mod deleted_applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationListResult =
+                let rsp_value: models::ApplicationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphError =
+                let rsp_value: models::GraphError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_next::Error::DefaultResponse {
                     status_code,
@@ -415,7 +438,7 @@ pub mod deleted_applications {
         }
     }
     pub mod list_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -439,12 +462,12 @@ pub mod deleted_applications {
     }
 }
 pub mod service_principals {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<ServicePrincipalListResult, list_next::Error> {
+    ) -> std::result::Result<models::ServicePrincipalListResult, list_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/{}?ServicePrincipals_ListNext",
@@ -473,13 +496,13 @@ pub mod service_principals {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServicePrincipalListResult =
+                let rsp_value: models::ServicePrincipalListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphError =
+                let rsp_value: models::GraphError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_next::Error::DefaultResponse {
                     status_code,
@@ -489,7 +512,7 @@ pub mod service_principals {
         }
     }
     pub mod list_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -513,12 +536,12 @@ pub mod service_principals {
     }
 }
 pub mod users {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<UserListResult, list_next::Error> {
+    ) -> std::result::Result<models::UserListResult, list_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/{}?Users_ListNext", operation_config.base_path(), tenant_id, next_link);
         let mut url = url::Url::parse(url_str).map_err(list_next::Error::ParseUrlError)?;
@@ -542,13 +565,13 @@ pub mod users {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UserListResult =
+                let rsp_value: models::UserListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphError =
+                let rsp_value: models::GraphError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_next::Error::DefaultResponse {
                     status_code,
@@ -558,7 +581,7 @@ pub mod users {
         }
     }
     pub mod list_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -582,12 +605,12 @@ pub mod users {
     }
 }
 pub mod objects {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_objects_by_object_ids_next(
         operation_config: &crate::OperationConfig,
         next_link: &str,
         tenant_id: &str,
-    ) -> std::result::Result<DirectoryObjectListResult, get_objects_by_object_ids_next::Error> {
+    ) -> std::result::Result<models::DirectoryObjectListResult, get_objects_by_object_ids_next::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/{}?Objects_GetObjectsByObjectIdsNext",
@@ -619,7 +642,7 @@ pub mod objects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DirectoryObjectListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DirectoryObjectListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_objects_by_object_ids_next::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -633,7 +656,7 @@ pub mod objects {
         }
     }
     pub mod get_objects_by_object_ids_next {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

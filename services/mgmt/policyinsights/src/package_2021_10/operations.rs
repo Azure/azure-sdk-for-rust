@@ -2,63 +2,177 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
-pub mod data_policy_manifests {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_by_policy_mode(
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    PolicyTrackedResources_ListQueryResultsForManagementGroup(
+        #[from] policy_tracked_resources::list_query_results_for_management_group::Error,
+    ),
+    #[error(transparent)]
+    PolicyTrackedResources_ListQueryResultsForSubscription(#[from] policy_tracked_resources::list_query_results_for_subscription::Error),
+    #[error(transparent)]
+    PolicyTrackedResources_ListQueryResultsForResourceGroup(#[from] policy_tracked_resources::list_query_results_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyTrackedResources_ListQueryResultsForResource(#[from] policy_tracked_resources::list_query_results_for_resource::Error),
+    #[error(transparent)]
+    Remediations_ListDeploymentsAtManagementGroup(#[from] remediations::list_deployments_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_CancelAtManagementGroup(#[from] remediations::cancel_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_ListForManagementGroup(#[from] remediations::list_for_management_group::Error),
+    #[error(transparent)]
+    Remediations_GetAtManagementGroup(#[from] remediations::get_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_CreateOrUpdateAtManagementGroup(#[from] remediations::create_or_update_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_DeleteAtManagementGroup(#[from] remediations::delete_at_management_group::Error),
+    #[error(transparent)]
+    Remediations_ListDeploymentsAtSubscription(#[from] remediations::list_deployments_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_CancelAtSubscription(#[from] remediations::cancel_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_ListForSubscription(#[from] remediations::list_for_subscription::Error),
+    #[error(transparent)]
+    Remediations_GetAtSubscription(#[from] remediations::get_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_CreateOrUpdateAtSubscription(#[from] remediations::create_or_update_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_DeleteAtSubscription(#[from] remediations::delete_at_subscription::Error),
+    #[error(transparent)]
+    Remediations_ListDeploymentsAtResourceGroup(#[from] remediations::list_deployments_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_CancelAtResourceGroup(#[from] remediations::cancel_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_ListForResourceGroup(#[from] remediations::list_for_resource_group::Error),
+    #[error(transparent)]
+    Remediations_GetAtResourceGroup(#[from] remediations::get_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_CreateOrUpdateAtResourceGroup(#[from] remediations::create_or_update_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_DeleteAtResourceGroup(#[from] remediations::delete_at_resource_group::Error),
+    #[error(transparent)]
+    Remediations_ListDeploymentsAtResource(#[from] remediations::list_deployments_at_resource::Error),
+    #[error(transparent)]
+    Remediations_CancelAtResource(#[from] remediations::cancel_at_resource::Error),
+    #[error(transparent)]
+    Remediations_ListForResource(#[from] remediations::list_for_resource::Error),
+    #[error(transparent)]
+    Remediations_GetAtResource(#[from] remediations::get_at_resource::Error),
+    #[error(transparent)]
+    Remediations_CreateOrUpdateAtResource(#[from] remediations::create_or_update_at_resource::Error),
+    #[error(transparent)]
+    Remediations_DeleteAtResource(#[from] remediations::delete_at_resource::Error),
+    #[error(transparent)]
+    PolicyEvents_NextLink(#[from] policy_events::next_link::Error),
+    #[error(transparent)]
+    PolicyStates_NextLink(#[from] policy_states::next_link::Error),
+    #[error(transparent)]
+    PolicyMetadata_GetResource(#[from] policy_metadata::get_resource::Error),
+    #[error(transparent)]
+    PolicyMetadata_List(#[from] policy_metadata::list::Error),
+    #[error(transparent)]
+    PolicyRestrictions_CheckAtSubscriptionScope(#[from] policy_restrictions::check_at_subscription_scope::Error),
+    #[error(transparent)]
+    PolicyRestrictions_CheckAtResourceGroupScope(#[from] policy_restrictions::check_at_resource_group_scope::Error),
+    #[error(transparent)]
+    Attestations_ListForSubscription(#[from] attestations::list_for_subscription::Error),
+    #[error(transparent)]
+    Attestations_GetAtSubscription(#[from] attestations::get_at_subscription::Error),
+    #[error(transparent)]
+    Attestations_CreateOrUpdateAtSubscription(#[from] attestations::create_or_update_at_subscription::Error),
+    #[error(transparent)]
+    Attestations_DeleteAtSubscription(#[from] attestations::delete_at_subscription::Error),
+    #[error(transparent)]
+    Attestations_ListForResourceGroup(#[from] attestations::list_for_resource_group::Error),
+    #[error(transparent)]
+    Attestations_GetAtResourceGroup(#[from] attestations::get_at_resource_group::Error),
+    #[error(transparent)]
+    Attestations_CreateOrUpdateAtResourceGroup(#[from] attestations::create_or_update_at_resource_group::Error),
+    #[error(transparent)]
+    Attestations_DeleteAtResourceGroup(#[from] attestations::delete_at_resource_group::Error),
+    #[error(transparent)]
+    Attestations_ListForResource(#[from] attestations::list_for_resource::Error),
+    #[error(transparent)]
+    Attestations_GetAtResource(#[from] attestations::get_at_resource::Error),
+    #[error(transparent)]
+    Attestations_CreateOrUpdateAtResource(#[from] attestations::create_or_update_at_resource::Error),
+    #[error(transparent)]
+    Attestations_DeleteAtResource(#[from] attestations::delete_at_resource::Error),
+}
+pub mod policy_tracked_resources {
+    use super::{models, API_VERSION};
+    pub async fn list_query_results_for_management_group(
         operation_config: &crate::OperationConfig,
-        policy_mode: &str,
-    ) -> std::result::Result<DataPolicyManifest, get_by_policy_mode::Error> {
+        management_groups_namespace: &str,
+        management_group_name: &str,
+        policy_tracked_resources_resource: &str,
+        top: Option<i32>,
+        filter: Option<&str>,
+    ) -> std::result::Result<models::PolicyTrackedResourcesQueryResults, list_query_results_for_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Authorization/dataPolicyManifests/{}",
+            "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
             operation_config.base_path(),
-            policy_mode
+            management_groups_namespace,
+            management_group_name,
+            policy_tracked_resources_resource
         );
-        let mut url = url::Url::parse(url_str).map_err(get_by_policy_mode::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(list_query_results_for_management_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
+        req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(get_by_policy_mode::Error::GetTokenError)?;
+                .map_err(list_query_results_for_management_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
+        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_by_policy_mode::Error::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_query_results_for_management_group::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(get_by_policy_mode::Error::ExecuteRequestError)?;
+            .map_err(list_query_results_for_management_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataPolicyManifest = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_by_policy_mode::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_query_results_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_by_policy_mode::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_by_policy_mode::Error::DefaultResponse {
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_query_results_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_query_results_for_management_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod get_by_policy_mode {
-        use super::{models, models::*, API_VERSION};
+    pub mod list_query_results_for_management_group {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::QueryFailure,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -74,59 +188,239 @@ pub mod data_policy_manifests {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(
+    pub async fn list_query_results_for_subscription(
         operation_config: &crate::OperationConfig,
+        policy_tracked_resources_resource: &str,
+        top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<DataPolicyManifestListResult, list::Error> {
+        subscription_id: &str,
+    ) -> std::result::Result<models::PolicyTrackedResourcesQueryResults, list_query_results_for_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Authorization/dataPolicyManifests",
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
             operation_config.base_path(),
+            subscription_id,
+            policy_tracked_resources_resource
         );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(list_query_results_for_subscription::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
+        req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(list::Error::GetTokenError)?;
+                .map_err(list_query_results_for_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_query_results_for_subscription::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_query_results_for_subscription::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataPolicyManifestListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_query_results_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_query_results_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_query_results_for_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list {
-        use super::{models, models::*, API_VERSION};
+    pub mod list_query_results_for_subscription {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn list_query_results_for_resource_group(
+        operation_config: &crate::OperationConfig,
+        resource_group_name: &str,
+        policy_tracked_resources_resource: &str,
+        top: Option<i32>,
+        filter: Option<&str>,
+        subscription_id: &str,
+    ) -> std::result::Result<models::PolicyTrackedResourcesQueryResults, list_query_results_for_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            policy_tracked_resources_resource
+        );
+        let mut url = url::Url::parse(url_str).map_err(list_query_results_for_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list_query_results_for_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_query_results_for_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_query_results_for_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_query_results_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_query_results_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_query_results_for_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn list_query_results_for_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        policy_tracked_resources_resource: &str,
+        top: Option<i32>,
+        filter: Option<&str>,
+    ) -> std::result::Result<models::PolicyTrackedResourcesQueryResults, list_query_results_for_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
+            operation_config.base_path(),
+            resource_id,
+            policy_tracked_resources_resource
+        );
+        let mut url = url::Url::parse(url_str).map_err(list_query_results_for_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list_query_results_for_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_query_results_for_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_query_results_for_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::PolicyTrackedResourcesQueryResults = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_query_results_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_query_results_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_query_results_for_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -143,356 +437,73 @@ pub mod data_policy_manifests {
         }
     }
 }
-pub mod policy_assignments {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(
+pub mod remediations {
+    use super::{models, API_VERSION};
+    pub async fn list_deployments_at_management_group(
         operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_assignment_name: &str,
-    ) -> std::result::Result<PolicyAssignment, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
-            operation_config.base_path(),
-            scope,
-            policy_assignment_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create(
-        operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_assignment_name: &str,
-        parameters: &PolicyAssignment,
-    ) -> std::result::Result<PolicyAssignment, create::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
-            operation_config.base_path(),
-            scope,
-            policy_assignment_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(create::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_assignment_name: &str,
-        parameters: &PolicyAssignmentUpdate,
-    ) -> std::result::Result<PolicyAssignment, update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
-            operation_config.base_path(),
-            scope,
-            policy_assignment_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod update {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_assignment_name: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
-            operation_config.base_path(),
-            scope,
-            policy_assignment_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(delete::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(PolicyAssignment),
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn list_for_resource_group(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        filter: Option<&str>,
+        management_groups_namespace: &str,
+        management_group_id: &str,
+        remediation_name: &str,
         top: Option<i32>,
-        subscription_id: &str,
-    ) -> std::result::Result<PolicyAssignmentListResult, list_for_resource_group::Error> {
+    ) -> std::result::Result<models::RemediationDeploymentsListResult, list_deployments_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/policyAssignments",
+            "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
             operation_config.base_path(),
-            subscription_id,
-            resource_group_name
+            management_groups_namespace,
+            management_group_id,
+            remediation_name
         );
-        let mut url = url::Url::parse(url_str).map_err(list_for_resource_group::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(list_deployments_at_management_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
+        req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(list_for_resource_group::Error::GetTokenError)?;
+                .map_err(list_deployments_at_management_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
         if let Some(top) = top {
             url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(list_for_resource_group::Error::BuildRequestError)?;
+            .map_err(list_deployments_at_management_group::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(list_for_resource_group::Error::ExecuteRequestError)?;
+            .map_err(list_deployments_at_management_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignmentListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_deployments_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_for_resource_group::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_deployments_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_deployments_at_management_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list_for_resource_group {
-        use super::{models, models::*, API_VERSION};
+    pub mod list_deployments_at_management_group {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -508,78 +519,67 @@ pub mod policy_assignments {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list_for_resource(
+    pub async fn cancel_at_management_group(
         operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        resource_provider_namespace: &str,
-        parent_resource_path: &str,
-        resource_type: &str,
-        resource_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        subscription_id: &str,
-    ) -> std::result::Result<PolicyAssignmentListResult, list_for_resource::Error> {
+        management_groups_namespace: &str,
+        management_group_id: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<models::Remediation, cancel_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/policyAssignments",
+            "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
             operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            resource_provider_namespace,
-            parent_resource_path,
-            resource_type,
-            resource_name
+            management_groups_namespace,
+            management_group_id,
+            remediation_name
         );
-        let mut url = url::Url::parse(url_str).map_err(list_for_resource::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(cancel_at_management_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
+        req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(list_for_resource::Error::GetTokenError)?;
+                .map_err(cancel_at_management_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_for_resource::Error::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(cancel_at_management_group::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(list_for_resource::Error::ExecuteRequestError)?;
+            .map_err(cancel_at_management_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignmentListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| cancel_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_for_resource::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| cancel_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(cancel_at_management_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list_for_resource {
-        use super::{models, models::*, API_VERSION};
+    pub mod cancel_at_management_group {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -597,14 +597,16 @@ pub mod policy_assignments {
     }
     pub async fn list_for_management_group(
         operation_config: &crate::OperationConfig,
+        management_groups_namespace: &str,
         management_group_id: &str,
-        filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<PolicyAssignmentListResult, list_for_management_group::Error> {
+        filter: Option<&str>,
+    ) -> std::result::Result<models::RemediationListResult, list_for_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policyAssignments",
+            "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations",
             operation_config.base_path(),
+            management_groups_namespace,
             management_group_id
         );
         let mut url = url::Url::parse(url_str).map_err(list_for_management_group::Error::ParseUrlError)?;
@@ -618,11 +620,11 @@ pub mod policy_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
         if let Some(top) = top {
             url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -636,13 +638,13 @@ pub mod policy_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_for_management_group::Error::DefaultResponse {
                     status_code,
@@ -652,639 +654,13 @@ pub mod policy_assignments {
         }
     }
     pub mod list_for_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        top: Option<i32>,
-        subscription_id: &str,
-    ) -> std::result::Result<PolicyAssignmentListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policyAssignments",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignmentListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn get_by_id(
-        operation_config: &crate::OperationConfig,
-        policy_assignment_id: &str,
-    ) -> std::result::Result<PolicyAssignment, get_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
-        let mut url = url::Url::parse(url_str).map_err(get_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get_by_id {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create_by_id(
-        operation_config: &crate::OperationConfig,
-        policy_assignment_id: &str,
-        parameters: &PolicyAssignment,
-    ) -> std::result::Result<PolicyAssignment, create_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
-        let mut url = url::Url::parse(url_str).map_err(create_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_by_id::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| create_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create_by_id {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn update_by_id(
-        operation_config: &crate::OperationConfig,
-        policy_assignment_id: &str,
-        parameters: &PolicyAssignmentUpdate,
-    ) -> std::result::Result<PolicyAssignment, update_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
-        let mut url = url::Url::parse(url_str).map_err(update_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(update_by_id::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(update_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
-                    serde_json::from_slice(rsp_body).map_err(|source| update_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| update_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod update_by_id {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete_by_id(
-        operation_config: &crate::OperationConfig,
-        policy_assignment_id: &str,
-    ) -> std::result::Result<delete_by_id::Response, delete_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}", operation_config.base_path(), policy_assignment_id);
-        let mut url = url::Url::parse(url_str).map_err(delete_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyAssignment =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(delete_by_id::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::NO_CONTENT => Ok(delete_by_id::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete_by_id {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(PolicyAssignment),
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-}
-pub mod policy_definitions {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        policy_definition_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<PolicyDefinition, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            policy_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        policy_definition_name: &str,
-        parameters: &PolicyDefinition,
-        subscription_id: &str,
-    ) -> std::result::Result<PolicyDefinition, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            policy_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        policy_definition_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            policy_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug)]
-        pub enum Response {
-            NoContent204,
-            Ok200,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn get_built_in(
-        operation_config: &crate::OperationConfig,
-        policy_definition_name: &str,
-    ) -> std::result::Result<PolicyDefinition, get_built_in::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Authorization/policyDefinitions/{}",
-            operation_config.base_path(),
-            policy_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_built_in::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_built_in::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_built_in::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_built_in::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_built_in::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get_built_in {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -1302,15 +678,17 @@ pub mod policy_definitions {
     }
     pub async fn get_at_management_group(
         operation_config: &crate::OperationConfig,
-        policy_definition_name: &str,
+        management_groups_namespace: &str,
         management_group_id: &str,
-    ) -> std::result::Result<PolicyDefinition, get_at_management_group::Error> {
+        remediation_name: &str,
+    ) -> std::result::Result<models::Remediation, get_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
+            "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
             operation_config.base_path(),
+            management_groups_namespace,
             management_group_id,
-            policy_definition_name
+            remediation_name
         );
         let mut url = url::Url::parse(url_str).map_err(get_at_management_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -1335,13 +713,13 @@ pub mod policy_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_at_management_group::Error::DefaultResponse {
                     status_code,
@@ -1351,13 +729,13 @@ pub mod policy_definitions {
         }
     }
     pub mod get_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -1375,908 +753,18 @@ pub mod policy_definitions {
     }
     pub async fn create_or_update_at_management_group(
         operation_config: &crate::OperationConfig,
-        policy_definition_name: &str,
-        parameters: &PolicyDefinition,
+        management_groups_namespace: &str,
         management_group_id: &str,
-    ) -> std::result::Result<PolicyDefinition, create_or_update_at_management_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
-            operation_config.base_path(),
-            management_group_id,
-            policy_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update_at_management_group::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update_at_management_group::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update_at_management_group::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(create_or_update_at_management_group::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update_at_management_group::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinition = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update_at_management_group::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create_or_update_at_management_group {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete_at_management_group(
-        operation_config: &crate::OperationConfig,
-        policy_definition_name: &str,
-        management_group_id: &str,
-    ) -> std::result::Result<delete_at_management_group::Response, delete_at_management_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policyDefinitions/{}",
-            operation_config.base_path(),
-            management_group_id,
-            policy_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_at_management_group::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_at_management_group::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(delete_at_management_group::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_at_management_group::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(delete_at_management_group::Response::NoContent204),
-            http::StatusCode::OK => Ok(delete_at_management_group::Response::Ok200),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_at_management_group::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete_at_management_group {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug)]
-        pub enum Response {
-            NoContent204,
-            Ok200,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-    ) -> std::result::Result<PolicyDefinitionListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policyDefinitions",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinitionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn list_built_in(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        top: Option<i32>,
-    ) -> std::result::Result<PolicyDefinitionListResult, list_built_in::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Authorization/policyDefinitions",
-            operation_config.base_path(),
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_built_in::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_built_in::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_built_in::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_built_in::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinitionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_built_in::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list_built_in {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn list_by_management_group(
-        operation_config: &crate::OperationConfig,
-        management_group_id: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-    ) -> std::result::Result<PolicyDefinitionListResult, list_by_management_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policyDefinitions",
-            operation_config.base_path(),
-            management_group_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_management_group::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_management_group::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_by_management_group::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_management_group::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyDefinitionListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_management_group::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list_by_management_group {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-}
-pub mod policy_set_definitions {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        policy_set_definition_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<PolicySetDefinition, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            policy_set_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinition =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        policy_set_definition_name: &str,
-        parameters: &PolicySetDefinition,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            policy_set_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinition = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinition = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug)]
-        pub enum Response {
-            Created201(PolicySetDefinition),
-            Ok200(PolicySetDefinition),
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        policy_set_definition_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            policy_set_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug)]
-        pub enum Response {
-            NoContent204,
-            Ok200,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn get_built_in(
-        operation_config: &crate::OperationConfig,
-        policy_set_definition_name: &str,
-    ) -> std::result::Result<PolicySetDefinition, get_built_in::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-            operation_config.base_path(),
-            policy_set_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_built_in::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_built_in::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_built_in::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_built_in::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinition =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_built_in::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get_built_in {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-    ) -> std::result::Result<PolicySetDefinitionListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policySetDefinitions",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinitionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn list_built_in(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        top: Option<i32>,
-    ) -> std::result::Result<PolicySetDefinitionListResult, list_built_in::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Authorization/policySetDefinitions",
-            operation_config.base_path(),
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_built_in::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_built_in::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_built_in::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_built_in::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinitionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_built_in::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_built_in::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod list_built_in {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn get_at_management_group(
-        operation_config: &crate::OperationConfig,
-        policy_set_definition_name: &str,
-        management_group_id: &str,
-    ) -> std::result::Result<PolicySetDefinition, get_at_management_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-            operation_config.base_path(),
-            management_group_id,
-            policy_set_definition_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_at_management_group::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_at_management_group::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_at_management_group::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_at_management_group::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinition = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_at_management_group::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod get_at_management_group {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create_or_update_at_management_group(
-        operation_config: &crate::OperationConfig,
-        policy_set_definition_name: &str,
-        parameters: &PolicySetDefinition,
-        management_group_id: &str,
+        remediation_name: &str,
+        parameters: &models::Remediation,
     ) -> std::result::Result<create_or_update_at_management_group::Response, create_or_update_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
+            "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
             operation_config.base_path(),
+            management_groups_namespace,
             management_group_id,
-            policy_set_definition_name
+            remediation_name
         );
         let mut url = url::Url::parse(url_str).map_err(create_or_update_at_management_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -2300,21 +788,21 @@ pub mod policy_set_definitions {
             .await
             .map_err(create_or_update_at_management_group::Error::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinition = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update_at_management_group::Response::Created201(rsp_value))
-            }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_management_group::Response::Ok200(rsp_value))
             }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_management_group::Response::Created201(rsp_value))
+            }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_at_management_group::Error::DefaultResponse {
                     status_code,
@@ -2324,18 +812,18 @@ pub mod policy_set_definitions {
         }
     }
     pub mod create_or_update_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(PolicySetDefinition),
-            Ok200(PolicySetDefinition),
+            Ok200(models::Remediation),
+            Created201(models::Remediation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2353,15 +841,17 @@ pub mod policy_set_definitions {
     }
     pub async fn delete_at_management_group(
         operation_config: &crate::OperationConfig,
-        policy_set_definition_name: &str,
+        management_groups_namespace: &str,
         management_group_id: &str,
+        remediation_name: &str,
     ) -> std::result::Result<delete_at_management_group::Response, delete_at_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
+            "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
             operation_config.base_path(),
+            management_groups_namespace,
             management_group_id,
-            policy_set_definition_name
+            remediation_name
         );
         let mut url = url::Url::parse(url_str).map_err(delete_at_management_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -2384,11 +874,16 @@ pub mod policy_set_definitions {
             .await
             .map_err(delete_at_management_group::Error::ExecuteRequestError)?;
         match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(delete_at_management_group::Response::Ok200(rsp_value))
+            }
             http::StatusCode::NO_CONTENT => Ok(delete_at_management_group::Response::NoContent204),
-            http::StatusCode::OK => Ok(delete_at_management_group::Response::Ok200),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_at_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_at_management_group::Error::DefaultResponse {
                     status_code,
@@ -2398,18 +893,18 @@ pub mod policy_set_definitions {
         }
     }
     pub mod delete_at_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
+            Ok200(models::Remediation),
             NoContent204,
-            Ok200,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2425,70 +920,222 @@ pub mod policy_set_definitions {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list_by_management_group(
+    pub async fn list_deployments_at_subscription(
         operation_config: &crate::OperationConfig,
-        management_group_id: &str,
-        filter: Option<&str>,
+        subscription_id: &str,
+        remediation_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<PolicySetDefinitionListResult, list_by_management_group::Error> {
+    ) -> std::result::Result<models::RemediationDeploymentsListResult, list_deployments_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policySetDefinitions",
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
             operation_config.base_path(),
-            management_group_id
+            subscription_id,
+            remediation_name
         );
-        let mut url = url::Url::parse(url_str).map_err(list_by_management_group::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(list_deployments_at_subscription::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list_deployments_at_subscription::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_deployments_at_subscription::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_deployments_at_subscription::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_deployments_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_deployments_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_deployments_at_subscription::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_deployments_at_subscription {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn cancel_at_subscription(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<models::Remediation, cancel_at_subscription::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
+            operation_config.base_path(),
+            subscription_id,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(cancel_at_subscription::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(cancel_at_subscription::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(cancel_at_subscription::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(cancel_at_subscription::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| cancel_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| cancel_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(cancel_at_subscription::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod cancel_at_subscription {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn list_for_subscription(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        top: Option<i32>,
+        filter: Option<&str>,
+    ) -> std::result::Result<models::RemediationListResult, list_for_subscription::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations",
+            operation_config.base_path(),
+            subscription_id
+        );
+        let mut url = url::Url::parse(url_str).map_err(list_for_subscription::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(list_by_management_group::Error::GetTokenError)?;
+                .map_err(list_for_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
         if let Some(top) = top {
             url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(list_by_management_group::Error::BuildRequestError)?;
+            .map_err(list_for_subscription::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(list_by_management_group::Error::ExecuteRequestError)?;
+            .map_err(list_for_subscription::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicySetDefinitionListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::RemediationListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_management_group::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_for_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list_by_management_group {
-        use super::{models, models::*, API_VERSION};
+    pub mod list_for_subscription {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2504,62 +1151,62 @@ pub mod policy_set_definitions {
             GetTokenError(azure_core::Error),
         }
     }
-}
-pub mod policy_exemptions {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(
+    pub async fn get_at_subscription(
         operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_exemption_name: &str,
-    ) -> std::result::Result<PolicyExemption, get::Error> {
+        subscription_id: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<models::Remediation, get_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyExemptions/{}",
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
             operation_config.base_path(),
-            scope,
-            policy_exemption_name
+            subscription_id,
+            remediation_name
         );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(get_at_subscription::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(get::Error::GetTokenError)?;
+                .map_err(get_at_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
+        let req = req_builder.body(req_body).map_err(get_at_subscription::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(get_at_subscription::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyExemption =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_at_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod get {
-        use super::{models, models::*, API_VERSION};
+    pub mod get_at_subscription {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2575,75 +1222,77 @@ pub mod policy_exemptions {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn create_or_update(
+    pub async fn create_or_update_at_subscription(
         operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_exemption_name: &str,
-        parameters: &PolicyExemption,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
+        subscription_id: &str,
+        remediation_name: &str,
+        parameters: &models::Remediation,
+    ) -> std::result::Result<create_or_update_at_subscription::Response, create_or_update_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyExemptions/{}",
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
             operation_config.base_path(),
-            scope,
-            policy_exemption_name
+            subscription_id,
+            remediation_name
         );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(create_or_update_at_subscription::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::PUT);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(create_or_update::Error::GetTokenError)?;
+                .map_err(create_or_update_at_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
+        let req_body = azure_core::to_json(parameters).map_err(create_or_update_at_subscription::Error::SerializeError)?;
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(create_or_update_at_subscription::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
+            .map_err(create_or_update_at_subscription::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyExemption = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_subscription::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyExemption = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_subscription::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update_at_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+    pub mod create_or_update_at_subscription {
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PolicyExemption),
-            Created201(PolicyExemption),
+            Ok200(models::Remediation),
+            Created201(models::Remediation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2659,52 +1308,62 @@ pub mod policy_exemptions {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn delete(
+    pub async fn delete_at_subscription(
         operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_exemption_name: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
+        subscription_id: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<delete_at_subscription::Response, delete_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyExemptions/{}",
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
             operation_config.base_path(),
-            scope,
-            policy_exemption_name
+            subscription_id,
+            remediation_name
         );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(delete_at_subscription::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::DELETE);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(delete::Error::GetTokenError)?;
+                .map_err(delete_at_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(delete_at_subscription::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(delete_at_subscription::Error::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(delete_at_subscription::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::NO_CONTENT => Ok(delete_at_subscription::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete_at_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod delete {
-        use super::{models, models::*, API_VERSION};
+    pub mod delete_at_subscription {
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200,
+            Ok200(models::Remediation),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2712,7 +1371,7 @@ pub mod policy_exemptions {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2728,61 +1387,147 @@ pub mod policy_exemptions {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(
+    pub async fn list_deployments_at_resource_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        filter: Option<&str>,
-    ) -> std::result::Result<PolicyExemptionListResult, list::Error> {
+        resource_group_name: &str,
+        remediation_name: &str,
+        top: Option<i32>,
+    ) -> std::result::Result<models::RemediationDeploymentsListResult, list_deployments_at_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policyExemptions",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
             operation_config.base_path(),
-            subscription_id
+            subscription_id,
+            resource_group_name,
+            remediation_name
         );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(list_deployments_at_resource_group::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
+        req_builder = req_builder.method(http::Method::POST);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(list::Error::GetTokenError)?;
+                .map_err(list_deployments_at_resource_group::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_deployments_at_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_deployments_at_resource_group::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyExemptionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_deployments_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_deployments_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_deployments_at_resource_group::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list {
-        use super::{models, models::*, API_VERSION};
+    pub mod list_deployments_at_resource_group {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn cancel_at_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<models::Remediation, cancel_at_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(cancel_at_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(cancel_at_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(cancel_at_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(cancel_at_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| cancel_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| cancel_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(cancel_at_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod cancel_at_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2802,11 +1547,12 @@ pub mod policy_exemptions {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
+        top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<PolicyExemptionListResult, list_for_resource_group::Error> {
+    ) -> std::result::Result<models::RemediationListResult, list_for_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/policyExemptions",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations",
             operation_config.base_path(),
             subscription_id,
             resource_group_name
@@ -2822,6 +1568,9 @@ pub mod policy_exemptions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -2837,13 +1586,13 @@ pub mod policy_exemptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyExemptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_for_resource_group::Error::DefaultResponse {
                     status_code,
@@ -2853,13 +1602,407 @@ pub mod policy_exemptions {
         }
     }
     pub mod list_for_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn get_at_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<models::Remediation, get_at_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(get_at_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(get_at_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(get_at_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(get_at_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_at_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get_at_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn create_or_update_at_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        remediation_name: &str,
+        parameters: &models::Remediation,
+    ) -> std::result::Result<create_or_update_at_resource_group::Response, create_or_update_at_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(create_or_update_at_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(create_or_update_at_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(create_or_update_at_resource_group::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(create_or_update_at_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(create_or_update_at_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_resource_group::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_resource_group::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update_at_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create_or_update_at_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Remediation),
+            Created201(models::Remediation),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn delete_at_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<delete_at_resource_group::Response, delete_at_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(delete_at_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(delete_at_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(delete_at_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(delete_at_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(delete_at_resource_group::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::NO_CONTENT => Ok(delete_at_resource_group::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete_at_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete_at_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Remediation),
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn list_deployments_at_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        remediation_name: &str,
+        top: Option<i32>,
+    ) -> std::result::Result<models::RemediationDeploymentsListResult, list_deployments_at_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
+            operation_config.base_path(),
+            resource_id,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(list_deployments_at_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list_deployments_at_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_deployments_at_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_deployments_at_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::RemediationDeploymentsListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_deployments_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_deployments_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_deployments_at_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_deployments_at_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn cancel_at_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<models::Remediation, cancel_at_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
+            operation_config.base_path(),
+            resource_id,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(cancel_at_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(cancel_at_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(cancel_at_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(cancel_at_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| cancel_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| cancel_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(cancel_at_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod cancel_at_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2877,24 +2020,15 @@ pub mod policy_exemptions {
     }
     pub async fn list_for_resource(
         operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-        resource_group_name: &str,
-        resource_provider_namespace: &str,
-        parent_resource_path: &str,
-        resource_type: &str,
-        resource_name: &str,
+        resource_id: &str,
+        top: Option<i32>,
         filter: Option<&str>,
-    ) -> std::result::Result<PolicyExemptionListResult, list_for_resource::Error> {
+    ) -> std::result::Result<models::RemediationListResult, list_for_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/policyExemptions",
+            "{}/{}/providers/Microsoft.PolicyInsights/remediations",
             operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            resource_provider_namespace,
-            parent_resource_path,
-            resource_type,
-            resource_name
+            resource_id
         );
         let mut url = url::Url::parse(url_str).map_err(list_for_resource::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
@@ -2907,6 +2041,9 @@ pub mod policy_exemptions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("$filter", filter);
         }
@@ -2920,13 +2057,13 @@ pub mod policy_exemptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyExemptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RemediationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_for_resource::Error::DefaultResponse {
                     status_code,
@@ -2936,13 +2073,13 @@ pub mod policy_exemptions {
         }
     }
     pub mod list_for_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -2958,66 +2095,225 @@ pub mod policy_exemptions {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list_for_management_group(
+    pub async fn get_at_resource(
         operation_config: &crate::OperationConfig,
-        management_group_id: &str,
-        filter: Option<&str>,
-    ) -> std::result::Result<PolicyExemptionListResult, list_for_management_group::Error> {
+        resource_id: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<models::Remediation, get_at_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policyExemptions",
+            "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
             operation_config.base_path(),
-            management_group_id
+            resource_id,
+            remediation_name
         );
-        let mut url = url::Url::parse(url_str).map_err(list_for_management_group::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(get_at_resource::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(list_for_management_group::Error::GetTokenError)?;
+                .map_err(get_at_resource::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_for_management_group::Error::BuildRequestError)?;
+        let req = req_builder.body(req_body).map_err(get_at_resource::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(list_for_management_group::Error::ExecuteRequestError)?;
+            .map_err(get_at_resource::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyExemptionListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_for_management_group::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_at_resource::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list_for_management_group {
-        use super::{models, models::*, API_VERSION};
+    pub mod get_at_resource {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn create_or_update_at_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        remediation_name: &str,
+        parameters: &models::Remediation,
+    ) -> std::result::Result<create_or_update_at_resource::Response, create_or_update_at_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+            operation_config.base_path(),
+            resource_id,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(create_or_update_at_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(create_or_update_at_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(create_or_update_at_resource::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(create_or_update_at_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(create_or_update_at_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_resource::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_resource::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update_at_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create_or_update_at_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Remediation),
+            Created201(models::Remediation),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn delete_at_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        remediation_name: &str,
+    ) -> std::result::Result<delete_at_resource::Response, delete_at_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
+            operation_config.base_path(),
+            resource_id,
+            remediation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(delete_at_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(delete_at_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(delete_at_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(delete_at_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Remediation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(delete_at_resource::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::NO_CONTENT => Ok(delete_at_resource::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete_at_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete_at_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Remediation),
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -3034,216 +2330,208 @@ pub mod policy_exemptions {
         }
     }
 }
-pub mod policy_pricings {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(
+pub mod policy_events {
+    use super::{models, API_VERSION};
+    pub async fn next_link(
         operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_pricing_name: &str,
-    ) -> std::result::Result<PolicyPricing, get::Error> {
+        skiptoken: Option<&str>,
+        next_link: &str,
+    ) -> std::result::Result<models::PolicyEventsQueryResults, next_link::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!("{}{}?Next paging op for policy events", operation_config.base_path(), next_link);
+        let mut url = url::Url::parse(url_str).map_err(next_link::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(next_link::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(next_link::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(next_link::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::PolicyEventsQueryResults =
+                    serde_json::from_slice(rsp_body).map_err(|source| next_link::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::QueryFailure =
+                    serde_json::from_slice(rsp_body).map_err(|source| next_link::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(next_link::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod next_link {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+}
+pub mod policy_states {
+    use super::{models, API_VERSION};
+    pub async fn next_link(
+        operation_config: &crate::OperationConfig,
+        skiptoken: Option<&str>,
+        next_link: &str,
+    ) -> std::result::Result<models::PolicyStatesQueryResults, next_link::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!("{}{}?Next paging op for policy states", operation_config.base_path(), next_link);
+        let mut url = url::Url::parse(url_str).map_err(next_link::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(next_link::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(next_link::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(next_link::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::PolicyStatesQueryResults =
+                    serde_json::from_slice(rsp_body).map_err(|source| next_link::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::QueryFailure =
+                    serde_json::from_slice(rsp_body).map_err(|source| next_link::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(next_link::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod next_link {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::QueryFailure,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+}
+pub mod policy_metadata {
+    use super::{models, API_VERSION};
+    pub async fn get_resource(
+        operation_config: &crate::OperationConfig,
+        resource_name: &str,
+    ) -> std::result::Result<models::PolicyMetadata, get_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyPricings/{}",
+            "{}/providers/Microsoft.PolicyInsights/policyMetadata/{}",
             operation_config.base_path(),
-            scope,
-            policy_pricing_name
+            resource_name
         );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(get_resource::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(get::Error::GetTokenError)?;
+                .map_err(get_resource::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
+        let req = req_builder.body(req_body).map_err(get_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(get_resource::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyPricing =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::PolicyMetadata =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| get_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_resource::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod get {
-        use super::{models, models::*, API_VERSION};
+    pub mod get_resource {
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_pricing_name: &str,
-        parameters: &PolicyPricing,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyPricings/{}",
-            operation_config.base_path(),
-            scope,
-            policy_pricing_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyPricing = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyPricing = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(PolicyPricing),
-            Created201(PolicyPricing),
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
-            },
-            #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
-            #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
-            #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
-            #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
-        }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        scope: &str,
-        policy_pricing_name: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/providers/Microsoft.Authorization/policyPricings/{}",
-            operation_config.base_path(),
-            scope,
-            policy_pricing_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
-        }
-    }
-    pub mod delete {
-        use super::{models, models::*, API_VERSION};
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-            NoContent204,
-        }
-        #[derive(Debug, thiserror :: Error)]
-        pub enum Error {
-            #[error("HTTP status code {}", status_code)]
-            DefaultResponse {
-                status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -3261,14 +2549,10 @@ pub mod policy_pricings {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-    ) -> std::result::Result<PolicyPricingListResult, list::Error> {
+        top: Option<i32>,
+    ) -> std::result::Result<models::PolicyMetadataCollection, list::Error> {
         let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Authorization/policyPricings",
-            operation_config.base_path(),
-            subscription_id
-        );
+        let url_str = &format!("{}/providers/Microsoft.PolicyInsights/policyMetadata", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
@@ -3280,6 +2564,9 @@ pub mod policy_pricings {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
@@ -3287,13 +2574,13 @@ pub mod policy_pricings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyPricingListResult =
+                let rsp_value: models::PolicyMetadataCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -3303,13 +2590,13 @@ pub mod policy_pricings {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
@@ -3325,24 +2612,416 @@ pub mod policy_pricings {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list_for_management_group(
+}
+pub mod policy_restrictions {
+    use super::{models, API_VERSION};
+    pub async fn check_at_subscription_scope(
         operation_config: &crate::OperationConfig,
-        management_group_id: &str,
-    ) -> std::result::Result<PolicyPricingListResult, list_for_management_group::Error> {
+        subscription_id: &str,
+        parameters: &models::CheckRestrictionsRequest,
+    ) -> std::result::Result<models::CheckRestrictionsResult, check_at_subscription_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/policyPricings",
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
             operation_config.base_path(),
-            management_group_id
+            subscription_id
         );
-        let mut url = url::Url::parse(url_str).map_err(list_for_management_group::Error::ParseUrlError)?;
+        let mut url = url::Url::parse(url_str).map_err(check_at_subscription_scope::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(check_at_subscription_scope::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(check_at_subscription_scope::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(check_at_subscription_scope::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(check_at_subscription_scope::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::CheckRestrictionsResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| check_at_subscription_scope::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| check_at_subscription_scope::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(check_at_subscription_scope::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod check_at_subscription_scope {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn check_at_resource_group_scope(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        parameters: &models::CheckRestrictionsRequest,
+    ) -> std::result::Result<models::CheckRestrictionsResult, check_at_resource_group_scope::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/checkPolicyRestrictions",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(check_at_resource_group_scope::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::POST);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(check_at_resource_group_scope::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(check_at_resource_group_scope::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(check_at_resource_group_scope::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(check_at_resource_group_scope::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::CheckRestrictionsResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| check_at_resource_group_scope::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| check_at_resource_group_scope::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(check_at_resource_group_scope::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod check_at_resource_group_scope {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+}
+pub mod attestations {
+    use super::{models, API_VERSION};
+    pub async fn list_for_subscription(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        top: Option<i32>,
+        filter: Option<&str>,
+    ) -> std::result::Result<models::AttestationListResult, list_for_subscription::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations",
+            operation_config.base_path(),
+            subscription_id
+        );
+        let mut url = url::Url::parse(url_str).map_err(list_for_subscription::Error::ParseUrlError)?;
         let mut req_builder = http::request::Builder::new();
         req_builder = req_builder.method(http::Method::GET);
         if let Some(token_credential) = operation_config.token_credential() {
             let token_response = token_credential
                 .get_token(operation_config.token_credential_resource())
                 .await
-                .map_err(list_for_management_group::Error::GetTokenError)?;
+                .map_err(list_for_subscription::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_for_subscription::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_for_subscription::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::AttestationListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_for_subscription::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_for_subscription {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn get_at_subscription(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        attestation_name: &str,
+    ) -> std::result::Result<models::Attestation, get_at_subscription::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(get_at_subscription::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(get_at_subscription::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(get_at_subscription::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(get_at_subscription::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_at_subscription::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get_at_subscription {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn create_or_update_at_subscription(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        attestation_name: &str,
+        parameters: &models::Attestation,
+    ) -> std::result::Result<create_or_update_at_subscription::Response, create_or_update_at_subscription::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(create_or_update_at_subscription::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(create_or_update_at_subscription::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(create_or_update_at_subscription::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(create_or_update_at_subscription::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(create_or_update_at_subscription::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_subscription::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_subscription::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update_at_subscription::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create_or_update_at_subscription {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Attestation),
+            Created201(models::Attestation),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn delete_at_subscription(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        attestation_name: &str,
+    ) -> std::result::Result<delete_at_subscription::Response, delete_at_subscription::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(delete_at_subscription::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(delete_at_subscription::Error::GetTokenError)?;
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
@@ -3350,37 +3029,664 @@ pub mod policy_pricings {
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
             .body(req_body)
-            .map_err(list_for_management_group::Error::BuildRequestError)?;
+            .map_err(delete_at_subscription::Error::BuildRequestError)?;
         let rsp = http_client
             .execute_request(req)
             .await
-            .map_err(list_for_management_group::Error::ExecuteRequestError)?;
+            .map_err(delete_at_subscription::Error::ExecuteRequestError)?;
         match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PolicyPricingListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
+            http::StatusCode::OK => Ok(delete_at_subscription::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_at_subscription::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_for_management_group::Error::DefaultResponse {
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete_at_subscription::Error::DefaultResponse {
                     status_code,
                     value: rsp_value,
                 })
             }
         }
     }
-    pub mod list_for_management_group {
-        use super::{models, models::*, API_VERSION};
+    pub mod delete_at_subscription {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::CloudError,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn list_for_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        top: Option<i32>,
+        filter: Option<&str>,
+    ) -> std::result::Result<models::AttestationListResult, list_for_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(list_for_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list_for_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(list_for_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_for_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::AttestationListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_for_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_for_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn get_at_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        attestation_name: &str,
+    ) -> std::result::Result<models::Attestation, get_at_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(get_at_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(get_at_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(get_at_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(get_at_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_at_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get_at_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn create_or_update_at_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        attestation_name: &str,
+        parameters: &models::Attestation,
+    ) -> std::result::Result<create_or_update_at_resource_group::Response, create_or_update_at_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(create_or_update_at_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(create_or_update_at_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(create_or_update_at_resource_group::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(create_or_update_at_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(create_or_update_at_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_resource_group::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_resource_group::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update_at_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create_or_update_at_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Attestation),
+            Created201(models::Attestation),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn delete_at_resource_group(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+        resource_group_name: &str,
+        attestation_name: &str,
+    ) -> std::result::Result<delete_at_resource_group::Response, delete_at_resource_group::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            subscription_id,
+            resource_group_name,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(delete_at_resource_group::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(delete_at_resource_group::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(delete_at_resource_group::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(delete_at_resource_group::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete_at_resource_group::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_at_resource_group::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete_at_resource_group::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete_at_resource_group {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn list_for_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        top: Option<i32>,
+        filter: Option<&str>,
+    ) -> std::result::Result<models::AttestationListResult, list_for_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/attestations",
+            operation_config.base_path(),
+            resource_id
+        );
+        let mut url = url::Url::parse(url_str).map_err(list_for_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(list_for_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        }
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
+        }
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(list_for_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(list_for_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::AttestationListResult = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| list_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list_for_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod list_for_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn get_at_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        attestation_name: &str,
+    ) -> std::result::Result<models::Attestation, get_at_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            resource_id,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(get_at_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::GET);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(get_at_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(get_at_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(get_at_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(rsp_value)
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| get_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(get_at_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod get_at_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn create_or_update_at_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        attestation_name: &str,
+        parameters: &models::Attestation,
+    ) -> std::result::Result<create_or_update_at_resource::Response, create_or_update_at_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            resource_id,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(create_or_update_at_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::PUT);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(create_or_update_at_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        req_builder = req_builder.header("content-type", "application/json");
+        let req_body = azure_core::to_json(parameters).map_err(create_or_update_at_resource::Error::SerializeError)?;
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder
+            .body(req_body)
+            .map_err(create_or_update_at_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(create_or_update_at_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_resource::Response::Ok200(rsp_value))
+            }
+            http::StatusCode::CREATED => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Attestation = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Ok(create_or_update_at_resource::Response::Created201(rsp_value))
+            }
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| create_or_update_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(create_or_update_at_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod create_or_update_at_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Attestation),
+            Created201(models::Attestation),
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrlError(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequestError(http::Error),
+            #[error("Failed to execute request: {0}")]
+            ExecuteRequestError(azure_core::HttpError),
+            #[error("Failed to serialize request body: {0}")]
+            SerializeError(serde_json::Error),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            DeserializeError(serde_json::Error, bytes::Bytes),
+            #[error("Failed to get access token: {0}")]
+            GetTokenError(azure_core::Error),
+        }
+    }
+    pub async fn delete_at_resource(
+        operation_config: &crate::OperationConfig,
+        resource_id: &str,
+        attestation_name: &str,
+    ) -> std::result::Result<delete_at_resource::Response, delete_at_resource::Error> {
+        let http_client = operation_config.http_client();
+        let url_str = &format!(
+            "{}/{}/providers/Microsoft.PolicyInsights/attestations/{}",
+            operation_config.base_path(),
+            resource_id,
+            attestation_name
+        );
+        let mut url = url::Url::parse(url_str).map_err(delete_at_resource::Error::ParseUrlError)?;
+        let mut req_builder = http::request::Builder::new();
+        req_builder = req_builder.method(http::Method::DELETE);
+        if let Some(token_credential) = operation_config.token_credential() {
+            let token_response = token_credential
+                .get_token(operation_config.token_credential_resource())
+                .await
+                .map_err(delete_at_resource::Error::GetTokenError)?;
+            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        }
+        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+        req_builder = req_builder.uri(url.as_str());
+        let req = req_builder.body(req_body).map_err(delete_at_resource::Error::BuildRequestError)?;
+        let rsp = http_client
+            .execute_request(req)
+            .await
+            .map_err(delete_at_resource::Error::ExecuteRequestError)?;
+        match rsp.status() {
+            http::StatusCode::OK => Ok(delete_at_resource::Response::Ok200),
+            http::StatusCode::NO_CONTENT => Ok(delete_at_resource::Response::NoContent204),
+            status_code => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
+                    .map_err(|source| delete_at_resource::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(delete_at_resource::Error::DefaultResponse {
+                    status_code,
+                    value: rsp_value,
+                })
+            }
+        }
+    }
+    pub mod delete_at_resource {
+        use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200,
+            NoContent204,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),

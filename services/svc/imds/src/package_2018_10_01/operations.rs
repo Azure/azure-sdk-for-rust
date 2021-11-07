@@ -2,13 +2,26 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Instances_GetMetadata(#[from] instances::get_metadata::Error),
+    #[error(transparent)]
+    Attested_GetDocument(#[from] attested::get_document::Error),
+    #[error(transparent)]
+    Identity_GetToken(#[from] identity::get_token::Error),
+    #[error(transparent)]
+    Identity_GetInfo(#[from] identity::get_info::Error),
+}
 pub mod instances {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_metadata(
         operation_config: &crate::OperationConfig,
         metadata: &str,
-    ) -> std::result::Result<Instance, get_metadata::Error> {
+    ) -> std::result::Result<models::Instance, get_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/instance", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_metadata::Error::ParseUrlError)?;
@@ -33,55 +46,55 @@ pub mod instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Instance =
+                let rsp_value: models::Instance =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::BAD_REQUEST => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::BadRequest400 { value: rsp_value })
             }
             http::StatusCode::FORBIDDEN => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::Forbidden403 { value: rsp_value })
             }
             http::StatusCode::NOT_FOUND => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::NotFound404 { value: rsp_value })
             }
             http::StatusCode::METHOD_NOT_ALLOWED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::MethodNotAllowed405 { value: rsp_value })
             }
             http::StatusCode::TOO_MANY_REQUESTS => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::TooManyRequests429 { value: rsp_value })
             }
             http::StatusCode::SERVICE_UNAVAILABLE => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::ServiceUnavailable503 { value: rsp_value })
             }
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::InternalServerError500 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::DefaultResponse {
                     status_code,
@@ -91,7 +104,7 @@ pub mod instances {
         }
     }
     pub mod get_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -129,12 +142,12 @@ pub mod instances {
     }
 }
 pub mod attested {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_document(
         operation_config: &crate::OperationConfig,
         nonce: Option<&str>,
         metadata: &str,
-    ) -> std::result::Result<AttestedData, get_document::Error> {
+    ) -> std::result::Result<models::AttestedData, get_document::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/attested/document", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_document::Error::ParseUrlError)?;
@@ -162,55 +175,55 @@ pub mod attested {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestedData =
+                let rsp_value: models::AttestedData =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::BAD_REQUEST => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_document::Error::BadRequest400 { value: rsp_value })
             }
             http::StatusCode::FORBIDDEN => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_document::Error::Forbidden403 { value: rsp_value })
             }
             http::StatusCode::NOT_FOUND => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_document::Error::NotFound404 { value: rsp_value })
             }
             http::StatusCode::METHOD_NOT_ALLOWED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_document::Error::MethodNotAllowed405 { value: rsp_value })
             }
             http::StatusCode::TOO_MANY_REQUESTS => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_document::Error::TooManyRequests429 { value: rsp_value })
             }
             http::StatusCode::SERVICE_UNAVAILABLE => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_document::Error::ServiceUnavailable503 { value: rsp_value })
             }
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_document::Error::InternalServerError500 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_document::Error::DefaultResponse {
                     status_code,
@@ -220,7 +233,7 @@ pub mod attested {
         }
     }
     pub mod get_document {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -258,7 +271,7 @@ pub mod attested {
     }
 }
 pub mod identity {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_token(
         operation_config: &crate::OperationConfig,
         metadata: &str,
@@ -268,7 +281,7 @@ pub mod identity {
         msi_res_id: Option<&str>,
         authority: Option<&str>,
         bypass_cache: Option<&str>,
-    ) -> std::result::Result<IdentityTokenResponse, get_token::Error> {
+    ) -> std::result::Result<models::IdentityTokenResponse, get_token::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/identity/oauth2/token", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_token::Error::ParseUrlError)?;
@@ -309,43 +322,43 @@ pub mod identity {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityTokenResponse =
+                let rsp_value: models::IdentityTokenResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::BAD_REQUEST => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_token::Error::BadRequest400 { value: rsp_value })
             }
             http::StatusCode::NOT_FOUND => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_token::Error::NotFound404 { value: rsp_value })
             }
             http::StatusCode::METHOD_NOT_ALLOWED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_token::Error::MethodNotAllowed405 { value: rsp_value })
             }
             http::StatusCode::TOO_MANY_REQUESTS => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_token::Error::TooManyRequests429 { value: rsp_value })
             }
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_token::Error::InternalServerError500 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_token::Error::DefaultResponse {
                     status_code,
@@ -355,7 +368,7 @@ pub mod identity {
         }
     }
     pub mod get_token {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -390,7 +403,7 @@ pub mod identity {
     pub async fn get_info(
         operation_config: &crate::OperationConfig,
         metadata: &str,
-    ) -> std::result::Result<IdentityInfoResponse, get_info::Error> {
+    ) -> std::result::Result<models::IdentityInfoResponse, get_info::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/identity/info", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_info::Error::ParseUrlError)?;
@@ -415,43 +428,43 @@ pub mod identity {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityInfoResponse =
+                let rsp_value: models::IdentityInfoResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::BAD_REQUEST => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_info::Error::BadRequest400 { value: rsp_value })
             }
             http::StatusCode::NOT_FOUND => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_info::Error::NotFound404 { value: rsp_value })
             }
             http::StatusCode::METHOD_NOT_ALLOWED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_info::Error::MethodNotAllowed405 { value: rsp_value })
             }
             http::StatusCode::TOO_MANY_REQUESTS => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_info::Error::TooManyRequests429 { value: rsp_value })
             }
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_info::Error::InternalServerError500 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentityErrorResponse =
+                let rsp_value: models::IdentityErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_info::Error::DefaultResponse {
                     status_code,
@@ -461,7 +474,7 @@ pub mod identity {
         }
     }
     pub mod get_info {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

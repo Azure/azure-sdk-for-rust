@@ -2,12 +2,25 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Catalog_GrantAcl(#[from] catalog::grant_acl::Error),
+    #[error(transparent)]
+    Catalog_GrantAclToDatabase(#[from] catalog::grant_acl_to_database::Error),
+    #[error(transparent)]
+    Catalog_RevokeAcl(#[from] catalog::revoke_acl::Error),
+    #[error(transparent)]
+    Catalog_RevokeAclFromDatabase(#[from] catalog::revoke_acl_from_database::Error),
+}
 pub mod catalog {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn grant_acl(
         operation_config: &crate::OperationConfig,
-        parameters: &AclCreateOrUpdateParameters,
+        parameters: &models::AclCreateOrUpdateParameters,
         op: &str,
     ) -> std::result::Result<(), grant_acl::Error> {
         let http_client = operation_config.http_client();
@@ -44,7 +57,7 @@ pub mod catalog {
         }
     }
     pub mod grant_acl {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -66,7 +79,7 @@ pub mod catalog {
     pub async fn grant_acl_to_database(
         operation_config: &crate::OperationConfig,
         database_name: &str,
-        parameters: &AclCreateOrUpdateParameters,
+        parameters: &models::AclCreateOrUpdateParameters,
         op: &str,
     ) -> std::result::Result<(), grant_acl_to_database::Error> {
         let http_client = operation_config.http_client();
@@ -109,7 +122,7 @@ pub mod catalog {
         }
     }
     pub mod grant_acl_to_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -130,7 +143,7 @@ pub mod catalog {
     }
     pub async fn revoke_acl(
         operation_config: &crate::OperationConfig,
-        parameters: &AclDeleteParameters,
+        parameters: &models::AclDeleteParameters,
         op: &str,
     ) -> std::result::Result<(), revoke_acl::Error> {
         let http_client = operation_config.http_client();
@@ -167,7 +180,7 @@ pub mod catalog {
         }
     }
     pub mod revoke_acl {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -189,7 +202,7 @@ pub mod catalog {
     pub async fn revoke_acl_from_database(
         operation_config: &crate::OperationConfig,
         database_name: &str,
-        parameters: &AclDeleteParameters,
+        parameters: &models::AclDeleteParameters,
         op: &str,
     ) -> std::result::Result<(), revoke_acl_from_database::Error> {
         let http_client = operation_config.http_client();
@@ -232,7 +245,7 @@ pub mod catalog {
         }
     }
     pub mod revoke_acl_from_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

@@ -2,10 +2,39 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    CustomResourceProvider_Get(#[from] custom_resource_provider::get::Error),
+    #[error(transparent)]
+    CustomResourceProvider_CreateOrUpdate(#[from] custom_resource_provider::create_or_update::Error),
+    #[error(transparent)]
+    CustomResourceProvider_Update(#[from] custom_resource_provider::update::Error),
+    #[error(transparent)]
+    CustomResourceProvider_Delete(#[from] custom_resource_provider::delete::Error),
+    #[error(transparent)]
+    CustomResourceProvider_ListByResourceGroup(#[from] custom_resource_provider::list_by_resource_group::Error),
+    #[error(transparent)]
+    CustomResourceProvider_ListBySubscription(#[from] custom_resource_provider::list_by_subscription::Error),
+    #[error(transparent)]
+    Associations_Get(#[from] associations::get::Error),
+    #[error(transparent)]
+    Associations_CreateOrUpdate(#[from] associations::create_or_update::Error),
+    #[error(transparent)]
+    Associations_Delete(#[from] associations::delete::Error),
+    #[error(transparent)]
+    Associations_ListAll(#[from] associations::list_all::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ResourceProviderOperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::ResourceProviderOperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.CustomProviders/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +55,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceProviderOperationList =
+                let rsp_value: models::ResourceProviderOperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +71,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,13 +95,13 @@ pub mod operations {
     }
 }
 pub mod custom_resource_provider {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_provider_name: &str,
-    ) -> std::result::Result<CustomRpManifest, get::Error> {
+    ) -> std::result::Result<models::CustomRpManifest, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomProviders/resourceProviders/{}",
@@ -99,13 +128,13 @@ pub mod custom_resource_provider {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomRpManifest =
+                let rsp_value: models::CustomRpManifest =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -115,7 +144,7 @@ pub mod custom_resource_provider {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -142,7 +171,7 @@ pub mod custom_resource_provider {
         subscription_id: &str,
         resource_group_name: &str,
         resource_provider_name: &str,
-        resource_provider: &CustomRpManifest,
+        resource_provider: &models::CustomRpManifest,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -174,19 +203,19 @@ pub mod custom_resource_provider {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomRpManifest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomRpManifest = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomRpManifest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomRpManifest = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -196,11 +225,11 @@ pub mod custom_resource_provider {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(CustomRpManifest),
-            Ok200(CustomRpManifest),
+            Created201(models::CustomRpManifest),
+            Ok200(models::CustomRpManifest),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -228,8 +257,8 @@ pub mod custom_resource_provider {
         subscription_id: &str,
         resource_group_name: &str,
         resource_provider_name: &str,
-        patchable_resource: &ResourceProvidersUpdate,
-    ) -> std::result::Result<CustomRpManifest, update::Error> {
+        patchable_resource: &models::ResourceProvidersUpdate,
+    ) -> std::result::Result<models::CustomRpManifest, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomProviders/resourceProviders/{}",
@@ -257,13 +286,13 @@ pub mod custom_resource_provider {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomRpManifest =
+                let rsp_value: models::CustomRpManifest =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -273,7 +302,7 @@ pub mod custom_resource_provider {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -330,7 +359,7 @@ pub mod custom_resource_provider {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -340,7 +369,7 @@ pub mod custom_resource_provider {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -372,7 +401,7 @@ pub mod custom_resource_provider {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ListByCustomRpManifest, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ListByCustomRpManifest, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomProviders/resourceProviders",
@@ -403,13 +432,13 @@ pub mod custom_resource_provider {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListByCustomRpManifest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListByCustomRpManifest = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -419,7 +448,7 @@ pub mod custom_resource_provider {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -444,7 +473,7 @@ pub mod custom_resource_provider {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ListByCustomRpManifest, list_by_subscription::Error> {
+    ) -> std::result::Result<models::ListByCustomRpManifest, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.CustomProviders/resourceProviders",
@@ -472,13 +501,13 @@ pub mod custom_resource_provider {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListByCustomRpManifest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListByCustomRpManifest = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -488,7 +517,7 @@ pub mod custom_resource_provider {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -512,12 +541,12 @@ pub mod custom_resource_provider {
     }
 }
 pub mod associations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
         association_name: &str,
-    ) -> std::result::Result<Association, get::Error> {
+    ) -> std::result::Result<models::Association, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.CustomProviders/associations/{}",
@@ -543,13 +572,13 @@ pub mod associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Association =
+                let rsp_value: models::Association =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -559,7 +588,7 @@ pub mod associations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -585,7 +614,7 @@ pub mod associations {
         operation_config: &crate::OperationConfig,
         scope: &str,
         association_name: &str,
-        association: &Association,
+        association: &models::Association,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -616,19 +645,19 @@ pub mod associations {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Association = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Association = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Association = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Association = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -638,11 +667,11 @@ pub mod associations {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Association),
-            Ok200(Association),
+            Created201(models::Association),
+            Ok200(models::Association),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -698,7 +727,7 @@ pub mod associations {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -708,7 +737,7 @@ pub mod associations {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -739,7 +768,7 @@ pub mod associations {
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         scope: &str,
-    ) -> std::result::Result<AssociationsList, list_all::Error> {
+    ) -> std::result::Result<models::AssociationsList, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.CustomProviders/associations",
@@ -767,13 +796,13 @@ pub mod associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AssociationsList =
+                let rsp_value: models::AssociationsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_all::Error::DefaultResponse {
                     status_code,
@@ -783,7 +812,7 @@ pub mod associations {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

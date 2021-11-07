@@ -2,13 +2,52 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ContainerGroups_List(#[from] container_groups::list::Error),
+    #[error(transparent)]
+    ContainerGroups_ListByResourceGroup(#[from] container_groups::list_by_resource_group::Error),
+    #[error(transparent)]
+    ContainerGroups_Get(#[from] container_groups::get::Error),
+    #[error(transparent)]
+    ContainerGroups_CreateOrUpdate(#[from] container_groups::create_or_update::Error),
+    #[error(transparent)]
+    ContainerGroups_Update(#[from] container_groups::update::Error),
+    #[error(transparent)]
+    ContainerGroups_Delete(#[from] container_groups::delete::Error),
+    #[error(transparent)]
+    ContainerGroups_Restart(#[from] container_groups::restart::Error),
+    #[error(transparent)]
+    ContainerGroups_Stop(#[from] container_groups::stop::Error),
+    #[error(transparent)]
+    ContainerGroups_Start(#[from] container_groups::start::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Location_ListUsage(#[from] location::list_usage::Error),
+    #[error(transparent)]
+    Containers_ListLogs(#[from] containers::list_logs::Error),
+    #[error(transparent)]
+    Containers_ExecuteCommand(#[from] containers::execute_command::Error),
+    #[error(transparent)]
+    Containers_Attach(#[from] containers::attach::Error),
+    #[error(transparent)]
+    Location_ListCachedImages(#[from] location::list_cached_images::Error),
+    #[error(transparent)]
+    Location_ListCapabilities(#[from] location::list_capabilities::Error),
+    #[error(transparent)]
+    ContainerGroups_GetOutboundNetworkDependenciesEndpoints(#[from] container_groups::get_outbound_network_dependencies_endpoints::Error),
+}
 pub mod container_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ContainerGroupListResult, list::Error> {
+    ) -> std::result::Result<models::ContainerGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerInstance/containerGroups",
@@ -33,13 +72,13 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroupListResult =
+                let rsp_value: models::ContainerGroupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -49,7 +88,7 @@ pub mod container_groups {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -75,7 +114,7 @@ pub mod container_groups {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ContainerGroupListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ContainerGroupListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups",
@@ -106,13 +145,13 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -122,7 +161,7 @@ pub mod container_groups {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -149,7 +188,7 @@ pub mod container_groups {
         subscription_id: &str,
         resource_group_name: &str,
         container_group_name: &str,
-    ) -> std::result::Result<ContainerGroup, get::Error> {
+    ) -> std::result::Result<models::ContainerGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}",
@@ -176,13 +215,13 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup =
+                let rsp_value: models::ContainerGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -192,7 +231,7 @@ pub mod container_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -219,7 +258,7 @@ pub mod container_groups {
         subscription_id: &str,
         resource_group_name: &str,
         container_group_name: &str,
-        container_group: &ContainerGroup,
+        container_group: &models::ContainerGroup,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -251,19 +290,19 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -273,11 +312,11 @@ pub mod container_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ContainerGroup),
-            Created201(ContainerGroup),
+            Ok200(models::ContainerGroup),
+            Created201(models::ContainerGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -305,8 +344,8 @@ pub mod container_groups {
         subscription_id: &str,
         resource_group_name: &str,
         container_group_name: &str,
-        resource: &Resource,
-    ) -> std::result::Result<ContainerGroup, update::Error> {
+        resource: &models::Resource,
+    ) -> std::result::Result<models::ContainerGroup, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}",
@@ -334,13 +373,13 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup =
+                let rsp_value: models::ContainerGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -350,7 +389,7 @@ pub mod container_groups {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -404,7 +443,7 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup =
+                let rsp_value: models::ContainerGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -412,7 +451,7 @@ pub mod container_groups {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -422,10 +461,10 @@ pub mod container_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ContainerGroup),
+            Ok200(models::ContainerGroup),
             Accepted202,
             NoContent204,
         }
@@ -487,7 +526,7 @@ pub mod container_groups {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| restart::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(restart::Error::DefaultResponse {
                     status_code,
@@ -497,7 +536,7 @@ pub mod container_groups {
         }
     }
     pub mod restart {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -553,7 +592,7 @@ pub mod container_groups {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop::Error::DefaultResponse {
                     status_code,
@@ -563,7 +602,7 @@ pub mod container_groups {
         }
     }
     pub mod stop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -619,7 +658,7 @@ pub mod container_groups {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start::Error::DefaultResponse {
                     status_code,
@@ -629,7 +668,7 @@ pub mod container_groups {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -656,7 +695,7 @@ pub mod container_groups {
         subscription_id: &str,
         resource_group_name: &str,
         container_group_name: &str,
-    ) -> std::result::Result<NetworkDependenciesResponse, get_outbound_network_dependencies_endpoints::Error> {
+    ) -> std::result::Result<models::NetworkDependenciesResponse, get_outbound_network_dependencies_endpoints::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}/outboundNetworkDependenciesEndpoints" , operation_config . base_path () , subscription_id , resource_group_name , container_group_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_outbound_network_dependencies_endpoints::Error::ParseUrlError)?;
@@ -682,13 +721,13 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkDependenciesResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NetworkDependenciesResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_outbound_network_dependencies_endpoints::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_outbound_network_dependencies_endpoints::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_outbound_network_dependencies_endpoints::Error::DefaultResponse {
                     status_code,
@@ -698,7 +737,7 @@ pub mod container_groups {
         }
     }
     pub mod get_outbound_network_dependencies_endpoints {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -722,8 +761,8 @@ pub mod container_groups {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ContainerInstance/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -744,13 +783,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -760,7 +799,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -784,12 +823,12 @@ pub mod operations {
     }
 }
 pub mod location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_usage(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<UsageListResult, list_usage::Error> {
+    ) -> std::result::Result<models::UsageListResult, list_usage::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerInstance/locations/{}/usages",
@@ -818,13 +857,13 @@ pub mod location {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsageListResult =
+                let rsp_value: models::UsageListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usage::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usage::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_usage::Error::DefaultResponse {
                     status_code,
@@ -834,7 +873,7 @@ pub mod location {
         }
     }
     pub mod list_usage {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -860,7 +899,7 @@ pub mod location {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<CachedImagesListResult, list_cached_images::Error> {
+    ) -> std::result::Result<models::CachedImagesListResult, list_cached_images::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerInstance/locations/{}/cachedImages",
@@ -889,13 +928,13 @@ pub mod location {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CachedImagesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CachedImagesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_cached_images::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_cached_images::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_cached_images::Error::DefaultResponse {
                     status_code,
@@ -905,7 +944,7 @@ pub mod location {
         }
     }
     pub mod list_cached_images {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -931,7 +970,7 @@ pub mod location {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<CapabilitiesListResult, list_capabilities::Error> {
+    ) -> std::result::Result<models::CapabilitiesListResult, list_capabilities::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerInstance/locations/{}/capabilities",
@@ -960,13 +999,13 @@ pub mod location {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapabilitiesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CapabilitiesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_capabilities::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_capabilities::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_capabilities::Error::DefaultResponse {
                     status_code,
@@ -976,7 +1015,7 @@ pub mod location {
         }
     }
     pub mod list_capabilities {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1000,7 +1039,7 @@ pub mod location {
     }
 }
 pub mod containers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_logs(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1009,7 +1048,7 @@ pub mod containers {
         container_name: &str,
         tail: Option<i32>,
         timestamps: Option<bool>,
-    ) -> std::result::Result<Logs, list_logs::Error> {
+    ) -> std::result::Result<models::Logs, list_logs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}/containers/{}/logs",
@@ -1046,13 +1085,13 @@ pub mod containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Logs =
+                let rsp_value: models::Logs =
                     serde_json::from_slice(rsp_body).map_err(|source| list_logs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_logs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_logs::Error::DefaultResponse {
                     status_code,
@@ -1062,7 +1101,7 @@ pub mod containers {
         }
     }
     pub mod list_logs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1090,8 +1129,8 @@ pub mod containers {
         resource_group_name: &str,
         container_group_name: &str,
         container_name: &str,
-        container_exec_request: &ContainerExecRequest,
-    ) -> std::result::Result<ContainerExecResponse, execute_command::Error> {
+        container_exec_request: &models::ContainerExecRequest,
+    ) -> std::result::Result<models::ContainerExecResponse, execute_command::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}/containers/{}/exec",
@@ -1123,13 +1162,13 @@ pub mod containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerExecResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerExecResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| execute_command::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| execute_command::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(execute_command::Error::DefaultResponse {
                     status_code,
@@ -1139,7 +1178,7 @@ pub mod containers {
         }
     }
     pub mod execute_command {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1167,7 +1206,7 @@ pub mod containers {
         resource_group_name: &str,
         container_group_name: &str,
         container_name: &str,
-    ) -> std::result::Result<ContainerAttachResponse, attach::Error> {
+    ) -> std::result::Result<models::ContainerAttachResponse, attach::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}/containers/{}/attach",
@@ -1196,13 +1235,13 @@ pub mod containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerAttachResponse =
+                let rsp_value: models::ContainerAttachResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| attach::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| attach::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(attach::Error::DefaultResponse {
                     status_code,
@@ -1212,7 +1251,7 @@ pub mod containers {
         }
     }
     pub mod attach {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

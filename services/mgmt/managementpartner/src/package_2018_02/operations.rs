@@ -2,10 +2,30 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Partner_Get(#[from] partner::get::Error),
+    #[error(transparent)]
+    Partner_Create(#[from] partner::create::Error),
+    #[error(transparent)]
+    Partner_Update(#[from] partner::update::Error),
+    #[error(transparent)]
+    Partner_Delete(#[from] partner::delete::Error),
+    #[error(transparent)]
+    Operation_List(#[from] operation::list::Error),
+    #[error(transparent)]
+    Partners_Get(#[from] partners::get::Error),
+}
 pub mod partner {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, partner_id: &str) -> std::result::Result<PartnerResponse, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        partner_id: &str,
+    ) -> std::result::Result<models::PartnerResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ManagementPartner/partners/{}",
@@ -30,13 +50,13 @@ pub mod partner {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartnerResponse =
+                let rsp_value: models::PartnerResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -46,7 +66,7 @@ pub mod partner {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -71,7 +91,7 @@ pub mod partner {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         partner_id: &str,
-    ) -> std::result::Result<PartnerResponse, create::Error> {
+    ) -> std::result::Result<models::PartnerResponse, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ManagementPartner/partners/{}",
@@ -96,13 +116,13 @@ pub mod partner {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartnerResponse =
+                let rsp_value: models::PartnerResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -112,7 +132,7 @@ pub mod partner {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -137,7 +157,7 @@ pub mod partner {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         partner_id: &str,
-    ) -> std::result::Result<PartnerResponse, update::Error> {
+    ) -> std::result::Result<models::PartnerResponse, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ManagementPartner/partners/{}",
@@ -162,13 +182,13 @@ pub mod partner {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartnerResponse =
+                let rsp_value: models::PartnerResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -178,7 +198,7 @@ pub mod partner {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -226,7 +246,7 @@ pub mod partner {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -236,7 +256,7 @@ pub mod partner {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -260,8 +280,8 @@ pub mod partner {
     }
 }
 pub mod operation {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ManagementPartner/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -282,13 +302,13 @@ pub mod operation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -298,7 +318,7 @@ pub mod operation {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -322,8 +342,8 @@ pub mod operation {
     }
 }
 pub mod partners {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<PartnerResponse, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<models::PartnerResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ManagementPartner/partners", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -344,13 +364,13 @@ pub mod partners {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartnerResponse =
+                let rsp_value: models::PartnerResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -360,7 +380,7 @@ pub mod partners {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

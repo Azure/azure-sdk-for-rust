@@ -2,14 +2,27 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ManagementGroupDiagnosticSettings_Get(#[from] management_group_diagnostic_settings::get::Error),
+    #[error(transparent)]
+    ManagementGroupDiagnosticSettings_CreateOrUpdate(#[from] management_group_diagnostic_settings::create_or_update::Error),
+    #[error(transparent)]
+    ManagementGroupDiagnosticSettings_Delete(#[from] management_group_diagnostic_settings::delete::Error),
+    #[error(transparent)]
+    ManagementGroupDiagnosticSettings_List(#[from] management_group_diagnostic_settings::list::Error),
+}
 pub mod management_group_diagnostic_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
         name: &str,
-    ) -> std::result::Result<ManagementGroupDiagnosticSettingsResource, get::Error> {
+    ) -> std::result::Result<models::ManagementGroupDiagnosticSettingsResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/microsoft.management/managementGroups/{}/providers/microsoft.insights/diagnosticSettings/{}",
@@ -35,13 +48,13 @@ pub mod management_group_diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementGroupDiagnosticSettingsResource =
+                let rsp_value: models::ManagementGroupDiagnosticSettingsResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -51,7 +64,7 @@ pub mod management_group_diagnostic_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -76,9 +89,9 @@ pub mod management_group_diagnostic_settings {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
-        parameters: &ManagementGroupDiagnosticSettingsResource,
+        parameters: &models::ManagementGroupDiagnosticSettingsResource,
         name: &str,
-    ) -> std::result::Result<ManagementGroupDiagnosticSettingsResource, create_or_update::Error> {
+    ) -> std::result::Result<models::ManagementGroupDiagnosticSettingsResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/microsoft.management/managementGroups/{}/providers/microsoft.insights/diagnosticSettings/{}",
@@ -108,13 +121,13 @@ pub mod management_group_diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementGroupDiagnosticSettingsResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementGroupDiagnosticSettingsResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -124,7 +137,7 @@ pub mod management_group_diagnostic_settings {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -178,7 +191,7 @@ pub mod management_group_diagnostic_settings {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -188,7 +201,7 @@ pub mod management_group_diagnostic_settings {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -218,7 +231,7 @@ pub mod management_group_diagnostic_settings {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
-    ) -> std::result::Result<ManagementGroupDiagnosticSettingsResourceCollection, list::Error> {
+    ) -> std::result::Result<models::ManagementGroupDiagnosticSettingsResourceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/microsoft.management/managementGroups/{}/providers/microsoft.insights/diagnosticSettings",
@@ -243,13 +256,13 @@ pub mod management_group_diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementGroupDiagnosticSettingsResourceCollection =
+                let rsp_value: models::ManagementGroupDiagnosticSettingsResourceCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -259,7 +272,7 @@ pub mod management_group_diagnostic_settings {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

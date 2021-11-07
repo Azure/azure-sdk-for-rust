@@ -2,10 +2,41 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    QueryPacks_List(#[from] query_packs::list::Error),
+    #[error(transparent)]
+    QueryPacks_ListByResourceGroup(#[from] query_packs::list_by_resource_group::Error),
+    #[error(transparent)]
+    QueryPacks_Get(#[from] query_packs::get::Error),
+    #[error(transparent)]
+    QueryPacks_CreateOrUpdate(#[from] query_packs::create_or_update::Error),
+    #[error(transparent)]
+    QueryPacks_UpdateTags(#[from] query_packs::update_tags::Error),
+    #[error(transparent)]
+    QueryPacks_Delete(#[from] query_packs::delete::Error),
+    #[error(transparent)]
+    Queries_List(#[from] queries::list::Error),
+    #[error(transparent)]
+    Queries_Search(#[from] queries::search::Error),
+    #[error(transparent)]
+    Queries_Get(#[from] queries::get::Error),
+    #[error(transparent)]
+    Queries_Put(#[from] queries::put::Error),
+    #[error(transparent)]
+    Queries_Update(#[from] queries::update::Error),
+    #[error(transparent)]
+    Queries_Delete(#[from] queries::delete::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.OperationalInsights/operations",
@@ -29,13 +60,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -45,7 +76,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -69,11 +100,11 @@ pub mod operations {
     }
 }
 pub mod query_packs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<LogAnalyticsQueryPackListResult, list::Error> {
+    ) -> std::result::Result<models::LogAnalyticsQueryPackListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.OperationalInsights/queryPacks",
@@ -98,13 +129,13 @@ pub mod query_packs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPackListResult =
+                let rsp_value: models::LogAnalyticsQueryPackListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -114,7 +145,7 @@ pub mod query_packs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -140,7 +171,7 @@ pub mod query_packs {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LogAnalyticsQueryPackListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::LogAnalyticsQueryPackListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks",
@@ -171,13 +202,13 @@ pub mod query_packs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPackListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LogAnalyticsQueryPackListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -187,7 +218,7 @@ pub mod query_packs {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -214,7 +245,7 @@ pub mod query_packs {
         resource_group_name: &str,
         subscription_id: &str,
         query_pack_name: &str,
-    ) -> std::result::Result<LogAnalyticsQueryPack, get::Error> {
+    ) -> std::result::Result<models::LogAnalyticsQueryPack, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}",
@@ -241,13 +272,13 @@ pub mod query_packs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPack =
+                let rsp_value: models::LogAnalyticsQueryPack =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -257,7 +288,7 @@ pub mod query_packs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -284,8 +315,8 @@ pub mod query_packs {
         resource_group_name: &str,
         subscription_id: &str,
         query_pack_name: &str,
-        log_analytics_query_pack_payload: &LogAnalyticsQueryPack,
-    ) -> std::result::Result<LogAnalyticsQueryPack, create_or_update::Error> {
+        log_analytics_query_pack_payload: &models::LogAnalyticsQueryPack,
+    ) -> std::result::Result<models::LogAnalyticsQueryPack, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}",
@@ -316,13 +347,13 @@ pub mod query_packs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPack = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LogAnalyticsQueryPack = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -332,7 +363,7 @@ pub mod query_packs {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -359,8 +390,8 @@ pub mod query_packs {
         resource_group_name: &str,
         subscription_id: &str,
         query_pack_name: &str,
-        query_pack_tags: &TagsResource,
-    ) -> std::result::Result<LogAnalyticsQueryPack, update_tags::Error> {
+        query_pack_tags: &models::TagsResource,
+    ) -> std::result::Result<models::LogAnalyticsQueryPack, update_tags::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}",
@@ -391,13 +422,13 @@ pub mod query_packs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPack =
+                let rsp_value: models::LogAnalyticsQueryPack =
                     serde_json::from_slice(rsp_body).map_err(|source| update_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_tags::Error::DefaultResponse {
                     status_code,
@@ -407,7 +438,7 @@ pub mod query_packs {
         }
     }
     pub mod update_tags {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -463,7 +494,7 @@ pub mod query_packs {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -473,7 +504,7 @@ pub mod query_packs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -502,7 +533,7 @@ pub mod query_packs {
     }
 }
 pub mod queries {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -511,7 +542,7 @@ pub mod queries {
         top: Option<i64>,
         include_body: Option<bool>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<LogAnalyticsQueryPackQueryListResult, list::Error> {
+    ) -> std::result::Result<models::LogAnalyticsQueryPackQueryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries",
@@ -547,13 +578,13 @@ pub mod queries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPackQueryListResult =
+                let rsp_value: models::LogAnalyticsQueryPackQueryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -563,7 +594,7 @@ pub mod queries {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -593,8 +624,8 @@ pub mod queries {
         top: Option<i64>,
         include_body: Option<bool>,
         skip_token: Option<&str>,
-        query_search_properties: &LogAnalyticsQueryPackQuerySearchProperties,
-    ) -> std::result::Result<LogAnalyticsQueryPackQueryListResult, search::Error> {
+        query_search_properties: &models::LogAnalyticsQueryPackQuerySearchProperties,
+    ) -> std::result::Result<models::LogAnalyticsQueryPackQueryListResult, search::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/search",
@@ -631,13 +662,13 @@ pub mod queries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPackQueryListResult =
+                let rsp_value: models::LogAnalyticsQueryPackQueryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| search::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| search::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(search::Error::DefaultResponse {
                     status_code,
@@ -647,7 +678,7 @@ pub mod queries {
         }
     }
     pub mod search {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -675,7 +706,7 @@ pub mod queries {
         resource_group_name: &str,
         query_pack_name: &str,
         id: &str,
-    ) -> std::result::Result<LogAnalyticsQueryPackQuery, get::Error> {
+    ) -> std::result::Result<models::LogAnalyticsQueryPackQuery, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/{}",
@@ -703,13 +734,13 @@ pub mod queries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPackQuery =
+                let rsp_value: models::LogAnalyticsQueryPackQuery =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -719,7 +750,7 @@ pub mod queries {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -747,8 +778,8 @@ pub mod queries {
         resource_group_name: &str,
         query_pack_name: &str,
         id: &str,
-        query_payload: &LogAnalyticsQueryPackQuery,
-    ) -> std::result::Result<LogAnalyticsQueryPackQuery, put::Error> {
+        query_payload: &models::LogAnalyticsQueryPackQuery,
+    ) -> std::result::Result<models::LogAnalyticsQueryPackQuery, put::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/{}",
@@ -777,13 +808,13 @@ pub mod queries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPackQuery =
+                let rsp_value: models::LogAnalyticsQueryPackQuery =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(put::Error::DefaultResponse {
                     status_code,
@@ -793,7 +824,7 @@ pub mod queries {
         }
     }
     pub mod put {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -821,8 +852,8 @@ pub mod queries {
         resource_group_name: &str,
         query_pack_name: &str,
         id: &str,
-        query_payload: &LogAnalyticsQueryPackQuery,
-    ) -> std::result::Result<LogAnalyticsQueryPackQuery, update::Error> {
+        query_payload: &models::LogAnalyticsQueryPackQuery,
+    ) -> std::result::Result<models::LogAnalyticsQueryPackQuery, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/{}",
@@ -851,13 +882,13 @@ pub mod queries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogAnalyticsQueryPackQuery =
+                let rsp_value: models::LogAnalyticsQueryPackQuery =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -867,7 +898,7 @@ pub mod queries {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -925,7 +956,7 @@ pub mod queries {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -935,7 +966,7 @@ pub mod queries {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

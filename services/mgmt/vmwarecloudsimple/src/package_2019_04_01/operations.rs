@@ -2,10 +2,85 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    DedicatedCloudNodes_ListBySubscription(#[from] dedicated_cloud_nodes::list_by_subscription::Error),
+    #[error(transparent)]
+    DedicatedCloudServices_ListBySubscription(#[from] dedicated_cloud_services::list_by_subscription::Error),
+    #[error(transparent)]
+    SkusAvailability_List(#[from] skus_availability::list::Error),
+    #[error(transparent)]
+    Operations_Get(#[from] operations::get::Error),
+    #[error(transparent)]
+    PrivateClouds_List(#[from] private_clouds::list::Error),
+    #[error(transparent)]
+    PrivateClouds_Get(#[from] private_clouds::get::Error),
+    #[error(transparent)]
+    CustomizationPolicies_List(#[from] customization_policies::list::Error),
+    #[error(transparent)]
+    CustomizationPolicies_Get(#[from] customization_policies::get::Error),
+    #[error(transparent)]
+    ResourcePools_List(#[from] resource_pools::list::Error),
+    #[error(transparent)]
+    ResourcePools_Get(#[from] resource_pools::get::Error),
+    #[error(transparent)]
+    VirtualMachineTemplates_List(#[from] virtual_machine_templates::list::Error),
+    #[error(transparent)]
+    VirtualMachineTemplates_Get(#[from] virtual_machine_templates::get::Error),
+    #[error(transparent)]
+    VirtualNetworks_List(#[from] virtual_networks::list::Error),
+    #[error(transparent)]
+    VirtualNetworks_Get(#[from] virtual_networks::get::Error),
+    #[error(transparent)]
+    Usages_List(#[from] usages::list::Error),
+    #[error(transparent)]
+    VirtualMachines_ListBySubscription(#[from] virtual_machines::list_by_subscription::Error),
+    #[error(transparent)]
+    DedicatedCloudNodes_ListByResourceGroup(#[from] dedicated_cloud_nodes::list_by_resource_group::Error),
+    #[error(transparent)]
+    DedicatedCloudNodes_Get(#[from] dedicated_cloud_nodes::get::Error),
+    #[error(transparent)]
+    DedicatedCloudNodes_CreateOrUpdate(#[from] dedicated_cloud_nodes::create_or_update::Error),
+    #[error(transparent)]
+    DedicatedCloudNodes_Update(#[from] dedicated_cloud_nodes::update::Error),
+    #[error(transparent)]
+    DedicatedCloudNodes_Delete(#[from] dedicated_cloud_nodes::delete::Error),
+    #[error(transparent)]
+    DedicatedCloudServices_ListByResourceGroup(#[from] dedicated_cloud_services::list_by_resource_group::Error),
+    #[error(transparent)]
+    DedicatedCloudServices_Get(#[from] dedicated_cloud_services::get::Error),
+    #[error(transparent)]
+    DedicatedCloudServices_CreateOrUpdate(#[from] dedicated_cloud_services::create_or_update::Error),
+    #[error(transparent)]
+    DedicatedCloudServices_Update(#[from] dedicated_cloud_services::update::Error),
+    #[error(transparent)]
+    DedicatedCloudServices_Delete(#[from] dedicated_cloud_services::delete::Error),
+    #[error(transparent)]
+    VirtualMachines_ListByResourceGroup(#[from] virtual_machines::list_by_resource_group::Error),
+    #[error(transparent)]
+    VirtualMachines_Get(#[from] virtual_machines::get::Error),
+    #[error(transparent)]
+    VirtualMachines_CreateOrUpdate(#[from] virtual_machines::create_or_update::Error),
+    #[error(transparent)]
+    VirtualMachines_Update(#[from] virtual_machines::update::Error),
+    #[error(transparent)]
+    VirtualMachines_Delete(#[from] virtual_machines::delete::Error),
+    #[error(transparent)]
+    VirtualMachines_Start(#[from] virtual_machines::start::Error),
+    #[error(transparent)]
+    VirtualMachines_Stop(#[from] virtual_machines::stop::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<AvailableOperationsListResponse, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::AvailableOperationsListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.VMwareCloudSimple/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +101,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailableOperationsListResponse =
+                let rsp_value: models::AvailableOperationsListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +117,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -98,7 +173,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResource =
+                let rsp_value: models::OperationResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Ok200(rsp_value))
             }
@@ -106,7 +181,7 @@ pub mod operations {
             http::StatusCode::NO_CONTENT => Ok(get::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -116,10 +191,10 @@ pub mod operations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationResource),
+            Ok200(models::OperationResource),
             Accepted202,
             NoContent204,
         }
@@ -146,14 +221,14 @@ pub mod operations {
     }
 }
 pub mod dedicated_cloud_nodes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<DedicatedCloudNodeListResponse, list_by_subscription::Error> {
+    ) -> std::result::Result<models::DedicatedCloudNodeListResponse, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes",
@@ -190,13 +265,13 @@ pub mod dedicated_cloud_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudNodeListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DedicatedCloudNodeListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -206,7 +281,7 @@ pub mod dedicated_cloud_nodes {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -235,7 +310,7 @@ pub mod dedicated_cloud_nodes {
         filter: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<DedicatedCloudNodeListResponse, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DedicatedCloudNodeListResponse, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes",
@@ -275,13 +350,13 @@ pub mod dedicated_cloud_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudNodeListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DedicatedCloudNodeListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -291,7 +366,7 @@ pub mod dedicated_cloud_nodes {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -318,7 +393,7 @@ pub mod dedicated_cloud_nodes {
         subscription_id: &str,
         resource_group_name: &str,
         dedicated_cloud_node_name: &str,
-    ) -> std::result::Result<DedicatedCloudNode, get::Error> {
+    ) -> std::result::Result<models::DedicatedCloudNode, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
@@ -345,13 +420,13 @@ pub mod dedicated_cloud_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudNode =
+                let rsp_value: models::DedicatedCloudNode =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -361,7 +436,7 @@ pub mod dedicated_cloud_nodes {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -389,8 +464,8 @@ pub mod dedicated_cloud_nodes {
         resource_group_name: &str,
         referer: &str,
         dedicated_cloud_node_name: &str,
-        dedicated_cloud_node_request: &DedicatedCloudNode,
-    ) -> std::result::Result<DedicatedCloudNode, create_or_update::Error> {
+        dedicated_cloud_node_request: &models::DedicatedCloudNode,
+    ) -> std::result::Result<models::DedicatedCloudNode, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
@@ -422,13 +497,13 @@ pub mod dedicated_cloud_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudNode = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DedicatedCloudNode = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -438,7 +513,7 @@ pub mod dedicated_cloud_nodes {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -465,8 +540,8 @@ pub mod dedicated_cloud_nodes {
         subscription_id: &str,
         resource_group_name: &str,
         dedicated_cloud_node_name: &str,
-        dedicated_cloud_node_request: &PatchPayload,
-    ) -> std::result::Result<DedicatedCloudNode, update::Error> {
+        dedicated_cloud_node_request: &models::PatchPayload,
+    ) -> std::result::Result<models::DedicatedCloudNode, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
@@ -494,13 +569,13 @@ pub mod dedicated_cloud_nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudNode =
+                let rsp_value: models::DedicatedCloudNode =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -510,7 +585,7 @@ pub mod dedicated_cloud_nodes {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -565,7 +640,7 @@ pub mod dedicated_cloud_nodes {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -575,7 +650,7 @@ pub mod dedicated_cloud_nodes {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -599,14 +674,14 @@ pub mod dedicated_cloud_nodes {
     }
 }
 pub mod dedicated_cloud_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<DedicatedCloudServiceListResponse, list_by_subscription::Error> {
+    ) -> std::result::Result<models::DedicatedCloudServiceListResponse, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices",
@@ -643,13 +718,13 @@ pub mod dedicated_cloud_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudServiceListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DedicatedCloudServiceListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -659,7 +734,7 @@ pub mod dedicated_cloud_services {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -688,7 +763,7 @@ pub mod dedicated_cloud_services {
         filter: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<DedicatedCloudServiceListResponse, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DedicatedCloudServiceListResponse, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices",
@@ -728,13 +803,13 @@ pub mod dedicated_cloud_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudServiceListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DedicatedCloudServiceListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -744,7 +819,7 @@ pub mod dedicated_cloud_services {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -771,7 +846,7 @@ pub mod dedicated_cloud_services {
         subscription_id: &str,
         resource_group_name: &str,
         dedicated_cloud_service_name: &str,
-    ) -> std::result::Result<DedicatedCloudService, get::Error> {
+    ) -> std::result::Result<models::DedicatedCloudService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
@@ -798,13 +873,13 @@ pub mod dedicated_cloud_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudService =
+                let rsp_value: models::DedicatedCloudService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -814,7 +889,7 @@ pub mod dedicated_cloud_services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -841,8 +916,8 @@ pub mod dedicated_cloud_services {
         subscription_id: &str,
         resource_group_name: &str,
         dedicated_cloud_service_name: &str,
-        dedicated_cloud_service_request: &DedicatedCloudService,
-    ) -> std::result::Result<DedicatedCloudService, create_or_update::Error> {
+        dedicated_cloud_service_request: &models::DedicatedCloudService,
+    ) -> std::result::Result<models::DedicatedCloudService, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
@@ -873,13 +948,13 @@ pub mod dedicated_cloud_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DedicatedCloudService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -889,7 +964,7 @@ pub mod dedicated_cloud_services {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -916,8 +991,8 @@ pub mod dedicated_cloud_services {
         subscription_id: &str,
         resource_group_name: &str,
         dedicated_cloud_service_name: &str,
-        dedicated_cloud_service_request: &PatchPayload,
-    ) -> std::result::Result<DedicatedCloudService, update::Error> {
+        dedicated_cloud_service_request: &models::PatchPayload,
+    ) -> std::result::Result<models::DedicatedCloudService, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
@@ -945,13 +1020,13 @@ pub mod dedicated_cloud_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCloudService =
+                let rsp_value: models::DedicatedCloudService =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -961,7 +1036,7 @@ pub mod dedicated_cloud_services {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1016,7 +1091,7 @@ pub mod dedicated_cloud_services {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1026,7 +1101,7 @@ pub mod dedicated_cloud_services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1050,13 +1125,13 @@ pub mod dedicated_cloud_services {
     }
 }
 pub mod skus_availability {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         region_id: &str,
         sku_id: Option<&str>,
-    ) -> std::result::Result<SkuAvailabilityListResponse, list::Error> {
+    ) -> std::result::Result<models::SkuAvailabilityListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/availabilities",
@@ -1085,13 +1160,13 @@ pub mod skus_availability {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SkuAvailabilityListResponse =
+                let rsp_value: models::SkuAvailabilityListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1101,7 +1176,7 @@ pub mod skus_availability {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1125,12 +1200,12 @@ pub mod skus_availability {
     }
 }
 pub mod private_clouds {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         region_id: &str,
-    ) -> std::result::Result<PrivateCloudList, list::Error> {
+    ) -> std::result::Result<models::PrivateCloudList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds",
@@ -1156,13 +1231,13 @@ pub mod private_clouds {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateCloudList =
+                let rsp_value: models::PrivateCloudList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1172,7 +1247,7 @@ pub mod private_clouds {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1199,7 +1274,7 @@ pub mod private_clouds {
         subscription_id: &str,
         pc_name: &str,
         region_id: &str,
-    ) -> std::result::Result<PrivateCloud, get::Error> {
+    ) -> std::result::Result<models::PrivateCloud, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}",
@@ -1226,13 +1301,13 @@ pub mod private_clouds {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateCloud =
+                let rsp_value: models::PrivateCloud =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1242,7 +1317,7 @@ pub mod private_clouds {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1266,14 +1341,14 @@ pub mod private_clouds {
     }
 }
 pub mod customization_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         region_id: &str,
         pc_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<CustomizationPoliciesListResponse, list::Error> {
+    ) -> std::result::Result<models::CustomizationPoliciesListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/customizationPolicies",
@@ -1303,13 +1378,13 @@ pub mod customization_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomizationPoliciesListResponse =
+                let rsp_value: models::CustomizationPoliciesListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1319,7 +1394,7 @@ pub mod customization_policies {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1347,7 +1422,7 @@ pub mod customization_policies {
         region_id: &str,
         pc_name: &str,
         customization_policy_name: &str,
-    ) -> std::result::Result<CustomizationPolicy, get::Error> {
+    ) -> std::result::Result<models::CustomizationPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/customizationPolicies/{}",
@@ -1375,13 +1450,13 @@ pub mod customization_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomizationPolicy =
+                let rsp_value: models::CustomizationPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1391,7 +1466,7 @@ pub mod customization_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1415,13 +1490,13 @@ pub mod customization_policies {
     }
 }
 pub mod resource_pools {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         region_id: &str,
         pc_name: &str,
-    ) -> std::result::Result<ResourcePoolsListResponse, list::Error> {
+    ) -> std::result::Result<models::ResourcePoolsListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/resourcePools",
@@ -1448,13 +1523,13 @@ pub mod resource_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourcePoolsListResponse =
+                let rsp_value: models::ResourcePoolsListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1464,7 +1539,7 @@ pub mod resource_pools {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1492,7 +1567,7 @@ pub mod resource_pools {
         region_id: &str,
         pc_name: &str,
         resource_pool_name: &str,
-    ) -> std::result::Result<ResourcePool, get::Error> {
+    ) -> std::result::Result<models::ResourcePool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/resourcePools/{}",
@@ -1520,13 +1595,13 @@ pub mod resource_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourcePool =
+                let rsp_value: models::ResourcePool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1536,7 +1611,7 @@ pub mod resource_pools {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1560,14 +1635,14 @@ pub mod resource_pools {
     }
 }
 pub mod virtual_machine_templates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         pc_name: &str,
         region_id: &str,
         resource_pool_name: &str,
-    ) -> std::result::Result<VirtualMachineTemplateListResponse, list::Error> {
+    ) -> std::result::Result<models::VirtualMachineTemplateListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates",
@@ -1595,13 +1670,13 @@ pub mod virtual_machine_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualMachineTemplateListResponse =
+                let rsp_value: models::VirtualMachineTemplateListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1611,7 +1686,7 @@ pub mod virtual_machine_templates {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1639,7 +1714,7 @@ pub mod virtual_machine_templates {
         region_id: &str,
         pc_name: &str,
         virtual_machine_template_name: &str,
-    ) -> std::result::Result<VirtualMachineTemplate, get::Error> {
+    ) -> std::result::Result<models::VirtualMachineTemplate, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates/{}",
@@ -1667,13 +1742,13 @@ pub mod virtual_machine_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualMachineTemplate =
+                let rsp_value: models::VirtualMachineTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1683,7 +1758,7 @@ pub mod virtual_machine_templates {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1707,14 +1782,14 @@ pub mod virtual_machine_templates {
     }
 }
 pub mod virtual_networks {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         region_id: &str,
         pc_name: &str,
         resource_pool_name: &str,
-    ) -> std::result::Result<VirtualNetworkListResponse, list::Error> {
+    ) -> std::result::Result<models::VirtualNetworkListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualNetworks",
@@ -1742,13 +1817,13 @@ pub mod virtual_networks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualNetworkListResponse =
+                let rsp_value: models::VirtualNetworkListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1758,7 +1833,7 @@ pub mod virtual_networks {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1786,7 +1861,7 @@ pub mod virtual_networks {
         region_id: &str,
         pc_name: &str,
         virtual_network_name: &str,
-    ) -> std::result::Result<VirtualNetwork, get::Error> {
+    ) -> std::result::Result<models::VirtualNetwork, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualNetworks/{}",
@@ -1814,13 +1889,13 @@ pub mod virtual_networks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualNetwork =
+                let rsp_value: models::VirtualNetwork =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1830,7 +1905,7 @@ pub mod virtual_networks {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1854,13 +1929,13 @@ pub mod virtual_networks {
     }
 }
 pub mod usages {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         region_id: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<UsageListResponse, list::Error> {
+    ) -> std::result::Result<models::UsageListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/usages",
@@ -1889,13 +1964,13 @@ pub mod usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsageListResponse =
+                let rsp_value: models::UsageListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1905,7 +1980,7 @@ pub mod usages {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1929,14 +2004,14 @@ pub mod usages {
     }
 }
 pub mod virtual_machines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<VirtualMachineListResponse, list_by_subscription::Error> {
+    ) -> std::result::Result<models::VirtualMachineListResponse, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines",
@@ -1973,13 +2048,13 @@ pub mod virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualMachineListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VirtualMachineListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -1989,7 +2064,7 @@ pub mod virtual_machines {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2018,7 +2093,7 @@ pub mod virtual_machines {
         filter: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<VirtualMachineListResponse, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::VirtualMachineListResponse, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines",
@@ -2058,13 +2133,13 @@ pub mod virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualMachineListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VirtualMachineListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -2074,7 +2149,7 @@ pub mod virtual_machines {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2101,7 +2176,7 @@ pub mod virtual_machines {
         subscription_id: &str,
         resource_group_name: &str,
         virtual_machine_name: &str,
-    ) -> std::result::Result<VirtualMachine, get::Error> {
+    ) -> std::result::Result<models::VirtualMachine, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
@@ -2128,13 +2203,13 @@ pub mod virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualMachine =
+                let rsp_value: models::VirtualMachine =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2144,7 +2219,7 @@ pub mod virtual_machines {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2172,7 +2247,7 @@ pub mod virtual_machines {
         resource_group_name: &str,
         referer: &str,
         virtual_machine_name: &str,
-        virtual_machine_request: &VirtualMachine,
+        virtual_machine_request: &models::VirtualMachine,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2205,19 +2280,19 @@ pub mod virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualMachine = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VirtualMachine = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualMachine = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VirtualMachine = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsrpError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2227,11 +2302,11 @@ pub mod virtual_machines {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VirtualMachine),
-            Created201(VirtualMachine),
+            Ok200(models::VirtualMachine),
+            Created201(models::VirtualMachine),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2259,8 +2334,8 @@ pub mod virtual_machines {
         subscription_id: &str,
         resource_group_name: &str,
         virtual_machine_name: &str,
-        virtual_machine_request: &PatchPayload,
-    ) -> std::result::Result<VirtualMachine, update::Error> {
+        virtual_machine_request: &models::PatchPayload,
+    ) -> std::result::Result<models::VirtualMachine, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
@@ -2288,13 +2363,13 @@ pub mod virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualMachine =
+                let rsp_value: models::VirtualMachine =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2304,7 +2379,7 @@ pub mod virtual_machines {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2362,7 +2437,7 @@ pub mod virtual_machines {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2372,7 +2447,7 @@ pub mod virtual_machines {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -2436,7 +2511,7 @@ pub mod virtual_machines {
             http::StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start::Error::DefaultResponse {
                     status_code,
@@ -2446,7 +2521,7 @@ pub mod virtual_machines {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2479,7 +2554,7 @@ pub mod virtual_machines {
         resource_group_name: &str,
         referer: &str,
         virtual_machine_name: &str,
-        m: Option<&VirtualMachineStopMode>,
+        m: Option<&models::VirtualMachineStopMode>,
         mode: Option<&str>,
     ) -> std::result::Result<stop::Response, stop::Error> {
         let http_client = operation_config.http_client();
@@ -2519,7 +2594,7 @@ pub mod virtual_machines {
             http::StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsrpError =
+                let rsp_value: models::CsrpError =
                     serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop::Error::DefaultResponse {
                     status_code,
@@ -2529,7 +2604,7 @@ pub mod virtual_machines {
         }
     }
     pub mod stop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

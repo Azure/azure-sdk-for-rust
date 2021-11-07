@@ -2,16 +2,29 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ComponentLinkedStorageAccounts_Get(#[from] component_linked_storage_accounts::get::Error),
+    #[error(transparent)]
+    ComponentLinkedStorageAccounts_CreateAndUpdate(#[from] component_linked_storage_accounts::create_and_update::Error),
+    #[error(transparent)]
+    ComponentLinkedStorageAccounts_Update(#[from] component_linked_storage_accounts::update::Error),
+    #[error(transparent)]
+    ComponentLinkedStorageAccounts_Delete(#[from] component_linked_storage_accounts::delete::Error),
+}
 pub mod component_linked_storage_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
         resource_name: &str,
         storage_type: &str,
-    ) -> std::result::Result<ComponentLinkedStorageAccounts, get::Error> {
+    ) -> std::result::Result<models::ComponentLinkedStorageAccounts, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/components/{}/linkedStorageAccounts/{}",
@@ -39,13 +52,13 @@ pub mod component_linked_storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComponentLinkedStorageAccounts =
+                let rsp_value: models::ComponentLinkedStorageAccounts =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseLinkedStorage =
+                let rsp_value: models::ErrorResponseLinkedStorage =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -55,7 +68,7 @@ pub mod component_linked_storage_accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -83,8 +96,8 @@ pub mod component_linked_storage_accounts {
         subscription_id: &str,
         resource_name: &str,
         storage_type: &str,
-        linked_storage_accounts_properties: &ComponentLinkedStorageAccounts,
-    ) -> std::result::Result<ComponentLinkedStorageAccounts, create_and_update::Error> {
+        linked_storage_accounts_properties: &models::ComponentLinkedStorageAccounts,
+    ) -> std::result::Result<models::ComponentLinkedStorageAccounts, create_and_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/components/{}/linkedStorageAccounts/{}",
@@ -116,13 +129,13 @@ pub mod component_linked_storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComponentLinkedStorageAccounts = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ComponentLinkedStorageAccounts = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_and_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseLinkedStorage = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponseLinkedStorage = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_and_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_and_update::Error::DefaultResponse {
                     status_code,
@@ -132,7 +145,7 @@ pub mod component_linked_storage_accounts {
         }
     }
     pub mod create_and_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -160,8 +173,8 @@ pub mod component_linked_storage_accounts {
         subscription_id: &str,
         resource_name: &str,
         storage_type: &str,
-        linked_storage_accounts_properties: &ComponentLinkedStorageAccountsPatch,
-    ) -> std::result::Result<ComponentLinkedStorageAccounts, update::Error> {
+        linked_storage_accounts_properties: &models::ComponentLinkedStorageAccountsPatch,
+    ) -> std::result::Result<models::ComponentLinkedStorageAccounts, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/components/{}/linkedStorageAccounts/{}",
@@ -190,13 +203,13 @@ pub mod component_linked_storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComponentLinkedStorageAccounts =
+                let rsp_value: models::ComponentLinkedStorageAccounts =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseLinkedStorage =
+                let rsp_value: models::ErrorResponseLinkedStorage =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -206,7 +219,7 @@ pub mod component_linked_storage_accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -264,7 +277,7 @@ pub mod component_linked_storage_accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseLinkedStorage =
+                let rsp_value: models::ErrorResponseLinkedStorage =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -274,7 +287,7 @@ pub mod component_linked_storage_accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

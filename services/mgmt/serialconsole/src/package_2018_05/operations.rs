@@ -2,10 +2,35 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ListOperations(#[from] list_operations::Error),
+    #[error(transparent)]
+    GetConsoleStatus(#[from] get_console_status::Error),
+    #[error(transparent)]
+    DisableConsole(#[from] disable_console::Error),
+    #[error(transparent)]
+    EnableConsole(#[from] enable_console::Error),
+    #[error(transparent)]
+    SerialPorts_List(#[from] serial_ports::list::Error),
+    #[error(transparent)]
+    SerialPorts_Get(#[from] serial_ports::get::Error),
+    #[error(transparent)]
+    SerialPorts_Create(#[from] serial_ports::create::Error),
+    #[error(transparent)]
+    SerialPorts_Delete(#[from] serial_ports::delete::Error),
+    #[error(transparent)]
+    SerialPorts_ListBySubscriptions(#[from] serial_ports::list_by_subscriptions::Error),
+    #[error(transparent)]
+    SerialPorts_Connect(#[from] serial_ports::connect::Error),
+}
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<SerialConsoleOperations, list_operations::Error> {
+) -> std::result::Result<models::SerialConsoleOperations, list_operations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.SerialConsole/operations", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(list_operations::Error::ParseUrlError)?;
@@ -29,7 +54,7 @@ pub async fn list_operations(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SerialConsoleOperations =
+            let rsp_value: models::SerialConsoleOperations =
                 serde_json::from_slice(rsp_body).map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
@@ -43,7 +68,7 @@ pub async fn list_operations(
     }
 }
 pub mod list_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Unexpected HTTP status code {}", status_code)]
@@ -66,7 +91,7 @@ pub async fn get_console_status(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     default: &str,
-) -> std::result::Result<SerialConsoleStatus, get_console_status::Error> {
+) -> std::result::Result<models::SerialConsoleStatus, get_console_status::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}",
@@ -95,13 +120,13 @@ pub async fn get_console_status(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SerialConsoleStatus =
+            let rsp_value: models::SerialConsoleStatus =
                 serde_json::from_slice(rsp_body).map_err(|source| get_console_status::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => {
             let rsp_body = rsp.body();
-            let rsp_value: GetSerialConsoleSubscriptionNotFound =
+            let rsp_value: models::GetSerialConsoleSubscriptionNotFound =
                 serde_json::from_slice(rsp_body).map_err(|source| get_console_status::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_console_status::Error::NotFound404 { value: rsp_value })
         }
@@ -115,7 +140,7 @@ pub async fn get_console_status(
     }
 }
 pub mod get_console_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -142,7 +167,7 @@ pub async fn disable_console(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     default: &str,
-) -> std::result::Result<DisableSerialConsoleResult, disable_console::Error> {
+) -> std::result::Result<models::DisableSerialConsoleResult, disable_console::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/disableConsole",
@@ -172,13 +197,13 @@ pub async fn disable_console(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DisableSerialConsoleResult =
+            let rsp_value: models::DisableSerialConsoleResult =
                 serde_json::from_slice(rsp_body).map_err(|source| disable_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => {
             let rsp_body = rsp.body();
-            let rsp_value: GetSerialConsoleSubscriptionNotFound =
+            let rsp_value: models::GetSerialConsoleSubscriptionNotFound =
                 serde_json::from_slice(rsp_body).map_err(|source| disable_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(disable_console::Error::NotFound404 { value: rsp_value })
         }
@@ -192,7 +217,7 @@ pub async fn disable_console(
     }
 }
 pub mod disable_console {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -219,7 +244,7 @@ pub async fn enable_console(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     default: &str,
-) -> std::result::Result<EnableSerialConsoleResult, enable_console::Error> {
+) -> std::result::Result<models::EnableSerialConsoleResult, enable_console::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/enableConsole",
@@ -249,13 +274,13 @@ pub async fn enable_console(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: EnableSerialConsoleResult =
+            let rsp_value: models::EnableSerialConsoleResult =
                 serde_json::from_slice(rsp_body).map_err(|source| enable_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         http::StatusCode::NOT_FOUND => {
             let rsp_body = rsp.body();
-            let rsp_value: GetSerialConsoleSubscriptionNotFound =
+            let rsp_value: models::GetSerialConsoleSubscriptionNotFound =
                 serde_json::from_slice(rsp_body).map_err(|source| enable_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(enable_console::Error::NotFound404 { value: rsp_value })
         }
@@ -269,7 +294,7 @@ pub async fn enable_console(
     }
 }
 pub mod enable_console {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -293,7 +318,7 @@ pub mod enable_console {
     }
 }
 pub mod serial_ports {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -301,7 +326,7 @@ pub mod serial_ports {
         parent_resource_type: &str,
         parent_resource: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SerialPortListResult, list::Error> {
+    ) -> std::result::Result<models::SerialPortListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts",
@@ -330,13 +355,13 @@ pub mod serial_ports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SerialPortListResult =
+                let rsp_value: models::SerialPortListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -346,7 +371,7 @@ pub mod serial_ports {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -376,7 +401,7 @@ pub mod serial_ports {
         parent_resource: &str,
         serial_port: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SerialPort, get::Error> {
+    ) -> std::result::Result<models::SerialPort, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
@@ -406,13 +431,13 @@ pub mod serial_ports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SerialPort =
+                let rsp_value: models::SerialPort =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -422,7 +447,7 @@ pub mod serial_ports {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -451,9 +476,9 @@ pub mod serial_ports {
         parent_resource_type: &str,
         parent_resource: &str,
         serial_port: &str,
-        parameters: &SerialPort,
+        parameters: &models::SerialPort,
         subscription_id: &str,
-    ) -> std::result::Result<SerialPort, create::Error> {
+    ) -> std::result::Result<models::SerialPort, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}",
@@ -484,13 +509,13 @@ pub mod serial_ports {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SerialPort =
+                let rsp_value: models::SerialPort =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -500,7 +525,7 @@ pub mod serial_ports {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -562,7 +587,7 @@ pub mod serial_ports {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -572,7 +597,7 @@ pub mod serial_ports {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -602,7 +627,7 @@ pub mod serial_ports {
     pub async fn list_by_subscriptions(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<SerialPortListResult, list_by_subscriptions::Error> {
+    ) -> std::result::Result<models::SerialPortListResult, list_by_subscriptions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SerialConsole/serialPorts",
@@ -631,13 +656,13 @@ pub mod serial_ports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SerialPortListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SerialPortListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscriptions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscriptions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscriptions::Error::DefaultResponse {
                     status_code,
@@ -647,7 +672,7 @@ pub mod serial_ports {
         }
     }
     pub mod list_by_subscriptions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -677,7 +702,7 @@ pub mod serial_ports {
         parent_resource: &str,
         serial_port: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SerialPortConnectResult, connect::Error> {
+    ) -> std::result::Result<models::SerialPortConnectResult, connect::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/providers/Microsoft.SerialConsole/serialPorts/{}/connect",
@@ -711,13 +736,13 @@ pub mod serial_ports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SerialPortConnectResult =
+                let rsp_value: models::SerialPortConnectResult =
                     serde_json::from_slice(rsp_body).map_err(|source| connect::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| connect::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(connect::Error::DefaultResponse {
                     status_code,
@@ -727,7 +752,7 @@ pub mod serial_ports {
         }
     }
     pub mod connect {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

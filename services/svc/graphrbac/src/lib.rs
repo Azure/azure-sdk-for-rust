@@ -7,7 +7,7 @@
 pub mod v1_6;
 use azure_core::setters;
 #[cfg(all(feature = "1.6", not(feature = "no-default-version")))]
-pub use v1_6::{models, operations};
+pub use v1_6::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

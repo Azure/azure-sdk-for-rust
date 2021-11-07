@@ -33,10 +33,8 @@ pub struct CustomAssessmentAutomationProperties {
     pub supported_cloud: Option<custom_assessment_automation_properties::SupportedCloud>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<custom_assessment_automation_properties::Severity>,
-    #[serde(rename = "userImpact", default, skip_serializing_if = "Option::is_none")]
-    pub user_impact: Option<custom_assessment_automation_properties::UserImpact>,
-    #[serde(rename = "implementationEffort", default, skip_serializing_if = "Option::is_none")]
-    pub implementation_effort: Option<custom_assessment_automation_properties::ImplementationEffort>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
@@ -57,18 +55,6 @@ pub mod custom_assessment_automation_properties {
         Medium,
         Low,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum UserImpact {
-        High,
-        Moderate,
-        Low,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ImplementationEffort {
-        High,
-        Moderate,
-        Low,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomAssessmentAutomationRequestProperties {
@@ -78,10 +64,8 @@ pub struct CustomAssessmentAutomationRequestProperties {
     pub supported_cloud: Option<custom_assessment_automation_request_properties::SupportedCloud>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<custom_assessment_automation_request_properties::Severity>,
-    #[serde(rename = "userImpact", default, skip_serializing_if = "Option::is_none")]
-    pub user_impact: Option<custom_assessment_automation_request_properties::UserImpact>,
-    #[serde(rename = "implementationEffort", default, skip_serializing_if = "Option::is_none")]
-    pub implementation_effort: Option<custom_assessment_automation_request_properties::ImplementationEffort>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
@@ -98,18 +82,6 @@ pub mod custom_assessment_automation_request_properties {
     pub enum Severity {
         High,
         Medium,
-        Low,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum UserImpact {
-        High,
-        Moderate,
-        Low,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ImplementationEffort {
-        High,
-        Moderate,
         Low,
     }
 }

@@ -2,16 +2,55 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    StorageInsights_Get(#[from] storage_insights::get::Error),
+    #[error(transparent)]
+    StorageInsights_CreateOrUpdate(#[from] storage_insights::create_or_update::Error),
+    #[error(transparent)]
+    StorageInsights_Delete(#[from] storage_insights::delete::Error),
+    #[error(transparent)]
+    StorageInsights_ListByWorkspace(#[from] storage_insights::list_by_workspace::Error),
+    #[error(transparent)]
+    Workspaces_ListLinkTargets(#[from] workspaces::list_link_targets::Error),
+    #[error(transparent)]
+    SavedSearches_Get(#[from] saved_searches::get::Error),
+    #[error(transparent)]
+    SavedSearches_CreateOrUpdate(#[from] saved_searches::create_or_update::Error),
+    #[error(transparent)]
+    SavedSearches_Delete(#[from] saved_searches::delete::Error),
+    #[error(transparent)]
+    SavedSearches_ListByWorkspace(#[from] saved_searches::list_by_workspace::Error),
+    #[error(transparent)]
+    Workspaces_GetSchema(#[from] workspaces::get_schema::Error),
+    #[error(transparent)]
+    Workspaces_Purge(#[from] workspaces::purge::Error),
+    #[error(transparent)]
+    Workspaces_GetPurgeStatus(#[from] workspaces::get_purge_status::Error),
+    #[error(transparent)]
+    Workspaces_ListKeys(#[from] workspaces::list_keys::Error),
+    #[error(transparent)]
+    Workspaces_RegenerateSharedKeys(#[from] workspaces::regenerate_shared_keys::Error),
+    #[error(transparent)]
+    Workspaces_DeleteGateways(#[from] workspaces::delete_gateways::Error),
+    #[error(transparent)]
+    Workspaces_AvailableServiceTiers(#[from] workspaces::available_service_tiers::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod storage_insights {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         storage_insight_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StorageInsight, get::Error> {
+    ) -> std::result::Result<models::StorageInsight, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/storageInsightConfigs/{}",
@@ -39,7 +78,7 @@ pub mod storage_insights {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageInsight =
+                let rsp_value: models::StorageInsight =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -53,7 +92,7 @@ pub mod storage_insights {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -77,7 +116,7 @@ pub mod storage_insights {
         resource_group_name: &str,
         workspace_name: &str,
         storage_insight_name: &str,
-        parameters: &StorageInsight,
+        parameters: &models::StorageInsight,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -111,13 +150,13 @@ pub mod storage_insights {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageInsight = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageInsight = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageInsight = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageInsight = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -131,11 +170,11 @@ pub mod storage_insights {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(StorageInsight),
-            Ok200(StorageInsight),
+            Created201(models::StorageInsight),
+            Ok200(models::StorageInsight),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -199,7 +238,7 @@ pub mod storage_insights {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -228,7 +267,7 @@ pub mod storage_insights {
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StorageInsightListResult, list_by_workspace::Error> {
+    ) -> std::result::Result<models::StorageInsightListResult, list_by_workspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/storageInsightConfigs",
@@ -258,7 +297,7 @@ pub mod storage_insights {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageInsightListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageInsightListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -272,7 +311,7 @@ pub mod storage_insights {
         }
     }
     pub mod list_by_workspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -293,11 +332,11 @@ pub mod storage_insights {
     }
 }
 pub mod workspaces {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_link_targets(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<Vec<LinkTarget>, list_link_targets::Error> {
+    ) -> std::result::Result<Vec<models::LinkTarget>, list_link_targets::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.OperationalInsights/linkTargets",
@@ -325,7 +364,7 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<LinkTarget> = serde_json::from_slice(rsp_body)
+                let rsp_value: Vec<models::LinkTarget> = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_link_targets::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -339,7 +378,7 @@ pub mod workspaces {
         }
     }
     pub mod list_link_targets {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -363,7 +402,7 @@ pub mod workspaces {
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SearchGetSchemaResponse, get_schema::Error> {
+    ) -> std::result::Result<models::SearchGetSchemaResponse, get_schema::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/schema",
@@ -394,7 +433,7 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SearchGetSchemaResponse =
+                let rsp_value: models::SearchGetSchemaResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_schema::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -408,7 +447,7 @@ pub mod workspaces {
         }
     }
     pub mod get_schema {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -432,8 +471,8 @@ pub mod workspaces {
         resource_group_name: &str,
         subscription_id: &str,
         workspace_name: &str,
-        body: &WorkspacePurgeBody,
-    ) -> std::result::Result<WorkspacePurgeResponse, purge::Error> {
+        body: &models::WorkspacePurgeBody,
+    ) -> std::result::Result<models::WorkspacePurgeResponse, purge::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/purge",
@@ -461,7 +500,7 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspacePurgeResponse =
+                let rsp_value: models::WorkspacePurgeResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| purge::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -475,7 +514,7 @@ pub mod workspaces {
         }
     }
     pub mod purge {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -500,7 +539,7 @@ pub mod workspaces {
         subscription_id: &str,
         workspace_name: &str,
         purge_id: &str,
-    ) -> std::result::Result<WorkspacePurgeStatusResponse, get_purge_status::Error> {
+    ) -> std::result::Result<models::WorkspacePurgeStatusResponse, get_purge_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/operations/{}",
@@ -531,7 +570,7 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspacePurgeStatusResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkspacePurgeStatusResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_purge_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -545,7 +584,7 @@ pub mod workspaces {
         }
     }
     pub mod get_purge_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -569,7 +608,7 @@ pub mod workspaces {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<SharedKeys, list_keys::Error> {
+    ) -> std::result::Result<models::SharedKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/listKeys",
@@ -600,7 +639,7 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedKeys =
+                let rsp_value: models::SharedKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -614,7 +653,7 @@ pub mod workspaces {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -638,7 +677,7 @@ pub mod workspaces {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<SharedKeys, regenerate_shared_keys::Error> {
+    ) -> std::result::Result<models::SharedKeys, regenerate_shared_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/regenerateSharedKey",
@@ -671,7 +710,7 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_shared_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -685,7 +724,7 @@ pub mod workspaces {
         }
     }
     pub mod regenerate_shared_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -750,7 +789,7 @@ pub mod workspaces {
         }
     }
     pub mod delete_gateways {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -774,7 +813,7 @@ pub mod workspaces {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<Vec<AvailableServiceTier>, available_service_tiers::Error> {
+    ) -> std::result::Result<Vec<models::AvailableServiceTier>, available_service_tiers::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/availableServiceTiers",
@@ -806,7 +845,7 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<AvailableServiceTier> = serde_json::from_slice(rsp_body)
+                let rsp_value: Vec<models::AvailableServiceTier> = serde_json::from_slice(rsp_body)
                     .map_err(|source| available_service_tiers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -820,7 +859,7 @@ pub mod workspaces {
         }
     }
     pub mod available_service_tiers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -841,14 +880,14 @@ pub mod workspaces {
     }
 }
 pub mod saved_searches {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
         saved_search_id: &str,
-    ) -> std::result::Result<SavedSearch, get::Error> {
+    ) -> std::result::Result<models::SavedSearch, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/savedSearches/{}",
@@ -876,7 +915,7 @@ pub mod saved_searches {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SavedSearch =
+                let rsp_value: models::SavedSearch =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -890,7 +929,7 @@ pub mod saved_searches {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -915,8 +954,8 @@ pub mod saved_searches {
         resource_group_name: &str,
         workspace_name: &str,
         saved_search_id: &str,
-        parameters: &SavedSearch,
-    ) -> std::result::Result<SavedSearch, create_or_update::Error> {
+        parameters: &models::SavedSearch,
+    ) -> std::result::Result<models::SavedSearch, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/savedSearches/{}",
@@ -948,7 +987,7 @@ pub mod saved_searches {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SavedSearch = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SavedSearch = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -962,7 +1001,7 @@ pub mod saved_searches {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1024,7 +1063,7 @@ pub mod saved_searches {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1048,7 +1087,7 @@ pub mod saved_searches {
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SavedSearchesListResult, list_by_workspace::Error> {
+    ) -> std::result::Result<models::SavedSearchesListResult, list_by_workspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/savedSearches",
@@ -1078,7 +1117,7 @@ pub mod saved_searches {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SavedSearchesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SavedSearchesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1092,7 +1131,7 @@ pub mod saved_searches {
         }
     }
     pub mod list_by_workspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1113,8 +1152,8 @@ pub mod saved_searches {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.OperationalInsights/operations",
@@ -1138,7 +1177,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1152,7 +1191,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

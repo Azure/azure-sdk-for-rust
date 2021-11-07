@@ -2,14 +2,27 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Metrics_List(#[from] metrics::list::Error),
+    #[error(transparent)]
+    ServiceDiagnosticSettings_Get(#[from] service_diagnostic_settings::get::Error),
+    #[error(transparent)]
+    ServiceDiagnosticSettings_CreateOrUpdate(#[from] service_diagnostic_settings::create_or_update::Error),
+    #[error(transparent)]
+    ServiceDiagnosticSettings_Update(#[from] service_diagnostic_settings::update::Error),
+}
 pub mod metrics {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<MetricCollection, list::Error> {
+    ) -> std::result::Result<models::MetricCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/microsoft.insights/metrics",
@@ -37,13 +50,13 @@ pub mod metrics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricCollection =
+                let rsp_value: models::MetricCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -53,7 +66,7 @@ pub mod metrics {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -77,11 +90,11 @@ pub mod metrics {
     }
 }
 pub mod service_diagnostic_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-    ) -> std::result::Result<ServiceDiagnosticSettingsResource, get::Error> {
+    ) -> std::result::Result<models::ServiceDiagnosticSettingsResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/microsoft.insights/diagnosticSettings/service",
@@ -106,13 +119,13 @@ pub mod service_diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceDiagnosticSettingsResource =
+                let rsp_value: models::ServiceDiagnosticSettingsResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -122,7 +135,7 @@ pub mod service_diagnostic_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -147,8 +160,8 @@ pub mod service_diagnostic_settings {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-        parameters: &ServiceDiagnosticSettingsResource,
-    ) -> std::result::Result<ServiceDiagnosticSettingsResource, create_or_update::Error> {
+        parameters: &models::ServiceDiagnosticSettingsResource,
+    ) -> std::result::Result<models::ServiceDiagnosticSettingsResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/microsoft.insights/diagnosticSettings/service",
@@ -177,7 +190,7 @@ pub mod service_diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceDiagnosticSettingsResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServiceDiagnosticSettingsResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -191,7 +204,7 @@ pub mod service_diagnostic_settings {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -213,8 +226,8 @@ pub mod service_diagnostic_settings {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-        service_diagnostic_settings_resource: &ServiceDiagnosticSettingsResourcePatch,
-    ) -> std::result::Result<ServiceDiagnosticSettingsResource, update::Error> {
+        service_diagnostic_settings_resource: &models::ServiceDiagnosticSettingsResourcePatch,
+    ) -> std::result::Result<models::ServiceDiagnosticSettingsResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/microsoft.insights/diagnosticSettings/service",
@@ -240,13 +253,13 @@ pub mod service_diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceDiagnosticSettingsResource =
+                let rsp_value: models::ServiceDiagnosticSettingsResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -256,7 +269,7 @@ pub mod service_diagnostic_settings {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

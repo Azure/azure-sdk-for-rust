@@ -2,10 +2,43 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Services_List(#[from] services::list::Error),
+    #[error(transparent)]
+    Services_Get(#[from] services::get::Error),
+    #[error(transparent)]
+    ProblemClassifications_List(#[from] problem_classifications::list::Error),
+    #[error(transparent)]
+    ProblemClassifications_Get(#[from] problem_classifications::get::Error),
+    #[error(transparent)]
+    SupportTickets_CheckNameAvailability(#[from] support_tickets::check_name_availability::Error),
+    #[error(transparent)]
+    SupportTickets_List(#[from] support_tickets::list::Error),
+    #[error(transparent)]
+    SupportTickets_Get(#[from] support_tickets::get::Error),
+    #[error(transparent)]
+    SupportTickets_Create(#[from] support_tickets::create::Error),
+    #[error(transparent)]
+    SupportTickets_Update(#[from] support_tickets::update::Error),
+    #[error(transparent)]
+    Communications_CheckNameAvailability(#[from] communications::check_name_availability::Error),
+    #[error(transparent)]
+    Communications_List(#[from] communications::list::Error),
+    #[error(transparent)]
+    Communications_Get(#[from] communications::get::Error),
+    #[error(transparent)]
+    Communications_Create(#[from] communications::create::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Support/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +59,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsListResult =
+                let rsp_value: models::OperationsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +75,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,8 +99,8 @@ pub mod operations {
     }
 }
 pub mod services {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ServicesListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::ServicesListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Support/services", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -88,13 +121,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServicesListResult =
+                let rsp_value: models::ServicesListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -104,7 +137,7 @@ pub mod services {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -126,7 +159,7 @@ pub mod services {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, service_name: &str) -> std::result::Result<Service, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig, service_name: &str) -> std::result::Result<models::Service, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Support/services/{}",
@@ -151,13 +184,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Service =
+                let rsp_value: models::Service =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -167,7 +200,7 @@ pub mod services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -191,11 +224,11 @@ pub mod services {
     }
 }
 pub mod problem_classifications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-    ) -> std::result::Result<ProblemClassificationsListResult, list::Error> {
+    ) -> std::result::Result<models::ProblemClassificationsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Support/services/{}/problemClassifications",
@@ -220,13 +253,13 @@ pub mod problem_classifications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProblemClassificationsListResult =
+                let rsp_value: models::ProblemClassificationsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -236,7 +269,7 @@ pub mod problem_classifications {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -262,7 +295,7 @@ pub mod problem_classifications {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         problem_classification_name: &str,
-    ) -> std::result::Result<ProblemClassification, get::Error> {
+    ) -> std::result::Result<models::ProblemClassification, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Support/services/{}/problemClassifications/{}",
@@ -288,13 +321,13 @@ pub mod problem_classifications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProblemClassification =
+                let rsp_value: models::ProblemClassification =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -304,7 +337,7 @@ pub mod problem_classifications {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -328,12 +361,12 @@ pub mod problem_classifications {
     }
 }
 pub mod support_tickets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
-        check_name_availability_input: &CheckNameAvailabilityInput,
+        check_name_availability_input: &models::CheckNameAvailabilityInput,
         subscription_id: &str,
-    ) -> std::result::Result<CheckNameAvailabilityOutput, check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckNameAvailabilityOutput, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/checkNameAvailability",
@@ -364,13 +397,13 @@ pub mod support_tickets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExceptionResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -380,7 +413,7 @@ pub mod support_tickets {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -407,7 +440,7 @@ pub mod support_tickets {
         top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SupportTicketsListResult, list::Error> {
+    ) -> std::result::Result<models::SupportTicketsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets",
@@ -438,13 +471,13 @@ pub mod support_tickets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SupportTicketsListResult =
+                let rsp_value: models::SupportTicketsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -454,7 +487,7 @@ pub mod support_tickets {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -480,7 +513,7 @@ pub mod support_tickets {
         operation_config: &crate::OperationConfig,
         support_ticket_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SupportTicketDetails, get::Error> {
+    ) -> std::result::Result<models::SupportTicketDetails, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}",
@@ -506,13 +539,13 @@ pub mod support_tickets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SupportTicketDetails =
+                let rsp_value: models::SupportTicketDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -522,7 +555,7 @@ pub mod support_tickets {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -547,7 +580,7 @@ pub mod support_tickets {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         support_ticket_name: &str,
-        create_support_ticket_parameters: &SupportTicketDetails,
+        create_support_ticket_parameters: &models::SupportTicketDetails,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -576,14 +609,14 @@ pub mod support_tickets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SupportTicketDetails =
+                let rsp_value: models::SupportTicketDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -593,10 +626,10 @@ pub mod support_tickets {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SupportTicketDetails),
+            Ok200(models::SupportTicketDetails),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -623,9 +656,9 @@ pub mod support_tickets {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         support_ticket_name: &str,
-        update_support_ticket: &UpdateSupportTicket,
+        update_support_ticket: &models::UpdateSupportTicket,
         subscription_id: &str,
-    ) -> std::result::Result<SupportTicketDetails, update::Error> {
+    ) -> std::result::Result<models::SupportTicketDetails, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}",
@@ -652,13 +685,13 @@ pub mod support_tickets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SupportTicketDetails =
+                let rsp_value: models::SupportTicketDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -668,7 +701,7 @@ pub mod support_tickets {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -692,13 +725,13 @@ pub mod support_tickets {
     }
 }
 pub mod communications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         support_ticket_name: &str,
-        check_name_availability_input: &CheckNameAvailabilityInput,
+        check_name_availability_input: &models::CheckNameAvailabilityInput,
         subscription_id: &str,
-    ) -> std::result::Result<CheckNameAvailabilityOutput, check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckNameAvailabilityOutput, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}/checkNameAvailability",
@@ -730,13 +763,13 @@ pub mod communications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExceptionResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -746,7 +779,7 @@ pub mod communications {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -774,7 +807,7 @@ pub mod communications {
         top: Option<i32>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<CommunicationsListResult, list::Error> {
+    ) -> std::result::Result<models::CommunicationsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}/communications",
@@ -806,13 +839,13 @@ pub mod communications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationsListResult =
+                let rsp_value: models::CommunicationsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -822,7 +855,7 @@ pub mod communications {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -849,7 +882,7 @@ pub mod communications {
         support_ticket_name: &str,
         communication_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<CommunicationDetails, get::Error> {
+    ) -> std::result::Result<models::CommunicationDetails, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Support/supportTickets/{}/communications/{}",
@@ -876,13 +909,13 @@ pub mod communications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationDetails =
+                let rsp_value: models::CommunicationDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -892,7 +925,7 @@ pub mod communications {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -918,7 +951,7 @@ pub mod communications {
         operation_config: &crate::OperationConfig,
         support_ticket_name: &str,
         communication_name: &str,
-        create_communication_parameters: &CommunicationDetails,
+        create_communication_parameters: &models::CommunicationDetails,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -948,14 +981,14 @@ pub mod communications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationDetails =
+                let rsp_value: models::CommunicationDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExceptionResponse =
+                let rsp_value: models::ExceptionResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -965,10 +998,10 @@ pub mod communications {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CommunicationDetails),
+            Ok200(models::CommunicationDetails),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]

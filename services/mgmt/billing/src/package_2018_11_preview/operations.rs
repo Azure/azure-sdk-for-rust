@@ -2,13 +2,188 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    BillingAccounts_List(#[from] billing_accounts::list::Error),
+    #[error(transparent)]
+    BillingAccounts_Get(#[from] billing_accounts::get::Error),
+    #[error(transparent)]
+    BillingAccounts_Update(#[from] billing_accounts::update::Error),
+    #[error(transparent)]
+    PaymentMethods_ListByBillingAccountName(#[from] payment_methods::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    Addresses_Validate(#[from] addresses::validate::Error),
+    #[error(transparent)]
+    AvailableBalances_GetByBillingProfile(#[from] available_balances::get_by_billing_profile::Error),
+    #[error(transparent)]
+    PaymentMethods_ListByBillingProfileName(#[from] payment_methods::list_by_billing_profile_name::Error),
+    #[error(transparent)]
+    BillingProfiles_ListByBillingAccountName(#[from] billing_profiles::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    BillingProfiles_Create(#[from] billing_profiles::create::Error),
+    #[error(transparent)]
+    BillingProfiles_Get(#[from] billing_profiles::get::Error),
+    #[error(transparent)]
+    BillingProfiles_Update(#[from] billing_profiles::update::Error),
+    #[error(transparent)]
+    Customers_ListByBillingAccountName(#[from] customers::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    Customers_Get(#[from] customers::get::Error),
+    #[error(transparent)]
+    InvoiceSections_ListByBillingAccountName(#[from] invoice_sections::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    InvoiceSections_Create(#[from] invoice_sections::create::Error),
+    #[error(transparent)]
+    InvoiceSections_ListByBillingProfileName(#[from] invoice_sections::list_by_billing_profile_name::Error),
+    #[error(transparent)]
+    InvoiceSections_ListByCreateSubscriptionPermission(#[from] invoice_sections::list_by_create_subscription_permission::Error),
+    #[error(transparent)]
+    InvoiceSections_Get(#[from] invoice_sections::get::Error),
+    #[error(transparent)]
+    InvoiceSections_Update(#[from] invoice_sections::update::Error),
+    #[error(transparent)]
+    Departments_ListByBillingAccountName(#[from] departments::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    Departments_Get(#[from] departments::get::Error),
+    #[error(transparent)]
+    EnrollmentAccounts_ListByBillingAccountName(#[from] enrollment_accounts::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    EnrollmentAccounts_GetByEnrollmentAccountId(#[from] enrollment_accounts::get_by_enrollment_account_id::Error),
+    #[error(transparent)]
+    Invoices_ListByBillingAccountName(#[from] invoices::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    PriceSheet_Download(#[from] price_sheet::download::Error),
+    #[error(transparent)]
+    Invoices_ListByBillingProfile(#[from] invoices::list_by_billing_profile::Error),
+    #[error(transparent)]
+    Invoices_Get(#[from] invoices::get::Error),
+    #[error(transparent)]
+    BillingSubscriptions_ListByBillingAccountName(#[from] billing_subscriptions::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    BillingSubscriptions_ListByBillingProfileName(#[from] billing_subscriptions::list_by_billing_profile_name::Error),
+    #[error(transparent)]
+    BillingSubscriptions_ListByCustomerName(#[from] billing_subscriptions::list_by_customer_name::Error),
+    #[error(transparent)]
+    BillingSubscriptions_GetByCustomerName(#[from] billing_subscriptions::get_by_customer_name::Error),
+    #[error(transparent)]
+    BillingSubscriptions_ListByInvoiceSectionName(#[from] billing_subscriptions::list_by_invoice_section_name::Error),
+    #[error(transparent)]
+    BillingSubscriptions_Get(#[from] billing_subscriptions::get::Error),
+    #[error(transparent)]
+    BillingSubscriptions_Transfer(#[from] billing_subscriptions::transfer::Error),
+    #[error(transparent)]
+    BillingSubscriptions_ValidateTransfer(#[from] billing_subscriptions::validate_transfer::Error),
+    #[error(transparent)]
+    Products_ListByBillingAccountName(#[from] products::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    Products_ListByInvoiceSectionName(#[from] products::list_by_invoice_section_name::Error),
+    #[error(transparent)]
+    Products_Get(#[from] products::get::Error),
+    #[error(transparent)]
+    Products_Transfer(#[from] products::transfer::Error),
+    #[error(transparent)]
+    Products_ValidateTransfer(#[from] products::validate_transfer::Error),
+    #[error(transparent)]
+    Transactions_ListByBillingAccountName(#[from] transactions::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    Transactions_ListByBillingProfileName(#[from] transactions::list_by_billing_profile_name::Error),
+    #[error(transparent)]
+    Transactions_ListByCustomerName(#[from] transactions::list_by_customer_name::Error),
+    #[error(transparent)]
+    Transactions_ListByInvoiceSectionName(#[from] transactions::list_by_invoice_section_name::Error),
+    #[error(transparent)]
+    Policies_GetByBillingProfileName(#[from] policies::get_by_billing_profile_name::Error),
+    #[error(transparent)]
+    Policies_Update(#[from] policies::update::Error),
+    #[error(transparent)]
+    BillingProperty_Get(#[from] billing_property::get::Error),
+    #[error(transparent)]
+    Products_UpdateAutoRenewByBillingAccountName(#[from] products::update_auto_renew_by_billing_account_name::Error),
+    #[error(transparent)]
+    Products_UpdateAutoRenewByInvoiceSectionName(#[from] products::update_auto_renew_by_invoice_section_name::Error),
+    #[error(transparent)]
+    InvoiceSections_ElevateToBillingProfile(#[from] invoice_sections::elevate_to_billing_profile::Error),
+    #[error(transparent)]
+    Transfers_Initiate(#[from] transfers::initiate::Error),
+    #[error(transparent)]
+    Transfers_Get(#[from] transfers::get::Error),
+    #[error(transparent)]
+    Transfers_Cancel(#[from] transfers::cancel::Error),
+    #[error(transparent)]
+    Transfers_List(#[from] transfers::list::Error),
+    #[error(transparent)]
+    RecipientTransfers_Accept(#[from] recipient_transfers::accept::Error),
+    #[error(transparent)]
+    RecipientTransfers_Decline(#[from] recipient_transfers::decline::Error),
+    #[error(transparent)]
+    RecipientTransfers_Get(#[from] recipient_transfers::get::Error),
+    #[error(transparent)]
+    RecipientTransfers_List(#[from] recipient_transfers::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    BillingPermissions_ListByBillingAccount(#[from] billing_permissions::list_by_billing_account::Error),
+    #[error(transparent)]
+    BillingPermissions_ListByCustomers(#[from] billing_permissions::list_by_customers::Error),
+    #[error(transparent)]
+    BillingPermissions_ListByInvoiceSections(#[from] billing_permissions::list_by_invoice_sections::Error),
+    #[error(transparent)]
+    BillingPermissions_ListByBillingProfile(#[from] billing_permissions::list_by_billing_profile::Error),
+    #[error(transparent)]
+    BillingRoleDefinitions_GetByBillingAccountName(#[from] billing_role_definitions::get_by_billing_account_name::Error),
+    #[error(transparent)]
+    BillingRoleDefinitions_GetByInvoiceSectionName(#[from] billing_role_definitions::get_by_invoice_section_name::Error),
+    #[error(transparent)]
+    BillingRoleDefinitions_GetByBillingProfileName(#[from] billing_role_definitions::get_by_billing_profile_name::Error),
+    #[error(transparent)]
+    BillingRoleDefinitions_ListByBillingAccountName(#[from] billing_role_definitions::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    BillingRoleDefinitions_ListByInvoiceSectionName(#[from] billing_role_definitions::list_by_invoice_section_name::Error),
+    #[error(transparent)]
+    BillingRoleDefinitions_ListByBillingProfileName(#[from] billing_role_definitions::list_by_billing_profile_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_GetByBillingAccount(#[from] billing_role_assignments::get_by_billing_account::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_DeleteByBillingAccountName(#[from] billing_role_assignments::delete_by_billing_account_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_GetByInvoiceSectionName(#[from] billing_role_assignments::get_by_invoice_section_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_DeleteByInvoiceSectionName(#[from] billing_role_assignments::delete_by_invoice_section_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_GetByBillingProfileName(#[from] billing_role_assignments::get_by_billing_profile_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_DeleteByBillingProfileName(#[from] billing_role_assignments::delete_by_billing_profile_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_ListByBillingAccountName(#[from] billing_role_assignments::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_AddByBillingAccountName(#[from] billing_role_assignments::add_by_billing_account_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_ListByInvoiceSectionName(#[from] billing_role_assignments::list_by_invoice_section_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_AddByInvoiceSectionName(#[from] billing_role_assignments::add_by_invoice_section_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_ListByBillingProfileName(#[from] billing_role_assignments::list_by_billing_profile_name::Error),
+    #[error(transparent)]
+    BillingRoleAssignments_AddByBillingProfileName(#[from] billing_role_assignments::add_by_billing_profile_name::Error),
+    #[error(transparent)]
+    Agreements_ListByBillingAccountName(#[from] agreements::list_by_billing_account_name::Error),
+    #[error(transparent)]
+    Agreements_Get(#[from] agreements::get::Error),
+    #[error(transparent)]
+    LineOfCredits_Get(#[from] line_of_credits::get::Error),
+    #[error(transparent)]
+    LineOfCredits_Update(#[from] line_of_credits::update::Error),
+}
 pub mod billing_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         expand: Option<&str>,
-    ) -> std::result::Result<BillingAccountListResult, list::Error> {
+    ) -> std::result::Result<models::BillingAccountListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Billing/billingAccounts", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -32,13 +207,13 @@ pub mod billing_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingAccountListResult =
+                let rsp_value: models::BillingAccountListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -48,7 +223,7 @@ pub mod billing_accounts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -74,7 +249,7 @@ pub mod billing_accounts {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<BillingAccount, get::Error> {
+    ) -> std::result::Result<models::BillingAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}",
@@ -102,13 +277,13 @@ pub mod billing_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingAccount =
+                let rsp_value: models::BillingAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -118,7 +293,7 @@ pub mod billing_accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -143,7 +318,7 @@ pub mod billing_accounts {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-        parameters: &BillingAccountUpdateProperties,
+        parameters: &models::BillingAccountUpdateProperties,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -170,14 +345,14 @@ pub mod billing_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingAccount =
+                let rsp_value: models::BillingAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -187,10 +362,10 @@ pub mod billing_accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BillingAccount),
+            Ok200(models::BillingAccount),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -216,11 +391,11 @@ pub mod billing_accounts {
     }
 }
 pub mod payment_methods {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-    ) -> std::result::Result<PaymentMethodsListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::PaymentMethodsListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/paymentMethods",
@@ -250,13 +425,13 @@ pub mod payment_methods {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PaymentMethodsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PaymentMethodsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -266,7 +441,7 @@ pub mod payment_methods {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -292,7 +467,7 @@ pub mod payment_methods {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> std::result::Result<PaymentMethodsListResult, list_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::PaymentMethodsListResult, list_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/paymentMethods",
@@ -323,13 +498,13 @@ pub mod payment_methods {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PaymentMethodsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PaymentMethodsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -339,7 +514,7 @@ pub mod payment_methods {
         }
     }
     pub mod list_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -363,11 +538,11 @@ pub mod payment_methods {
     }
 }
 pub mod addresses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn validate(
         operation_config: &crate::OperationConfig,
-        address: &Address,
-    ) -> std::result::Result<ValidateAddressResponse, validate::Error> {
+        address: &models::Address,
+    ) -> std::result::Result<models::ValidateAddressResponse, validate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Billing/validateAddress", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(validate::Error::ParseUrlError)?;
@@ -392,13 +567,13 @@ pub mod addresses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ValidateAddressResponse =
+                let rsp_value: models::ValidateAddressResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| validate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| validate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate::Error::DefaultResponse {
                     status_code,
@@ -408,7 +583,7 @@ pub mod addresses {
         }
     }
     pub mod validate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -432,12 +607,12 @@ pub mod addresses {
     }
 }
 pub mod available_balances {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_by_billing_profile(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> std::result::Result<AvailableBalance, get_by_billing_profile::Error> {
+    ) -> std::result::Result<models::AvailableBalance, get_by_billing_profile::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/availableBalance/default",
@@ -468,13 +643,13 @@ pub mod available_balances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailableBalance = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailableBalance = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_billing_profile::Error::DefaultResponse {
                     status_code,
@@ -484,7 +659,7 @@ pub mod available_balances {
         }
     }
     pub mod get_by_billing_profile {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -508,12 +683,12 @@ pub mod available_balances {
     }
 }
 pub mod billing_profiles {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<BillingProfileListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::BillingProfileListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles",
@@ -546,13 +721,13 @@ pub mod billing_profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingProfileListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingProfileListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -562,7 +737,7 @@ pub mod billing_profiles {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -587,7 +762,7 @@ pub mod billing_profiles {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-        parameters: &BillingProfileCreationParameters,
+        parameters: &models::BillingProfileCreationParameters,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -614,14 +789,14 @@ pub mod billing_profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingProfile =
+                let rsp_value: models::BillingProfile =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -631,10 +806,10 @@ pub mod billing_profiles {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BillingProfile),
+            Ok200(models::BillingProfile),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -663,7 +838,7 @@ pub mod billing_profiles {
         billing_account_name: &str,
         billing_profile_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<BillingProfile, get::Error> {
+    ) -> std::result::Result<models::BillingProfile, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}",
@@ -692,13 +867,13 @@ pub mod billing_profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingProfile =
+                let rsp_value: models::BillingProfile =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -708,7 +883,7 @@ pub mod billing_profiles {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -734,7 +909,7 @@ pub mod billing_profiles {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-        parameters: &BillingProfile,
+        parameters: &models::BillingProfile,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -762,14 +937,14 @@ pub mod billing_profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingProfile =
+                let rsp_value: models::BillingProfile =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -779,10 +954,10 @@ pub mod billing_profiles {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BillingProfile),
+            Ok200(models::BillingProfile),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -808,13 +983,13 @@ pub mod billing_profiles {
     }
 }
 pub mod customers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         filter: Option<&str>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<CustomerListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::CustomerListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers",
@@ -850,13 +1025,13 @@ pub mod customers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomerListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomerListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -866,7 +1041,7 @@ pub mod customers {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -893,7 +1068,7 @@ pub mod customers {
         billing_account_name: &str,
         customer_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<Customer, get::Error> {
+    ) -> std::result::Result<models::Customer, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}",
@@ -922,13 +1097,13 @@ pub mod customers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Customer =
+                let rsp_value: models::Customer =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -938,7 +1113,7 @@ pub mod customers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -962,12 +1137,12 @@ pub mod customers {
     }
 }
 pub mod invoice_sections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<InvoiceSectionListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::InvoiceSectionListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections",
@@ -1000,13 +1175,13 @@ pub mod invoice_sections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceSectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InvoiceSectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -1016,7 +1191,7 @@ pub mod invoice_sections {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1041,7 +1216,7 @@ pub mod invoice_sections {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-        parameters: &InvoiceSectionCreationRequest,
+        parameters: &models::InvoiceSectionCreationRequest,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1068,14 +1243,14 @@ pub mod invoice_sections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceSection =
+                let rsp_value: models::InvoiceSection =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1085,10 +1260,10 @@ pub mod invoice_sections {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(InvoiceSection),
+            Ok200(models::InvoiceSection),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1116,7 +1291,7 @@ pub mod invoice_sections {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> std::result::Result<InvoiceSectionListResult, list_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::InvoiceSectionListResult, list_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoiceSections",
@@ -1147,13 +1322,13 @@ pub mod invoice_sections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceSectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InvoiceSectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -1163,7 +1338,7 @@ pub mod invoice_sections {
         }
     }
     pub mod list_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1189,7 +1364,7 @@ pub mod invoice_sections {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<InvoiceSectionListResult, list_by_create_subscription_permission::Error> {
+    ) -> std::result::Result<models::InvoiceSectionListResult, list_by_create_subscription_permission::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/listInvoiceSectionsWithCreateSubscriptionPermission",
@@ -1222,13 +1397,13 @@ pub mod invoice_sections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceSectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InvoiceSectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_create_subscription_permission::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_create_subscription_permission::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_create_subscription_permission::Error::DefaultResponse {
                     status_code,
@@ -1238,7 +1413,7 @@ pub mod invoice_sections {
         }
     }
     pub mod list_by_create_subscription_permission {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1265,7 +1440,7 @@ pub mod invoice_sections {
         billing_account_name: &str,
         invoice_section_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<InvoiceSection, get::Error> {
+    ) -> std::result::Result<models::InvoiceSection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}",
@@ -1294,13 +1469,13 @@ pub mod invoice_sections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceSection =
+                let rsp_value: models::InvoiceSection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1310,7 +1485,7 @@ pub mod invoice_sections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1336,7 +1511,7 @@ pub mod invoice_sections {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         invoice_section_name: &str,
-        parameters: &InvoiceSection,
+        parameters: &models::InvoiceSection,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1364,14 +1539,14 @@ pub mod invoice_sections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceSection =
+                let rsp_value: models::InvoiceSection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1381,10 +1556,10 @@ pub mod invoice_sections {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(InvoiceSection),
+            Ok200(models::InvoiceSection),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1444,7 +1619,7 @@ pub mod invoice_sections {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| elevate_to_billing_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(elevate_to_billing_profile::Error::DefaultResponse {
                     status_code,
@@ -1454,7 +1629,7 @@ pub mod invoice_sections {
         }
     }
     pub mod elevate_to_billing_profile {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1478,13 +1653,13 @@ pub mod invoice_sections {
     }
 }
 pub mod departments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<DepartmentListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::DepartmentListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/departments",
@@ -1520,13 +1695,13 @@ pub mod departments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DepartmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DepartmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -1536,7 +1711,7 @@ pub mod departments {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1564,7 +1739,7 @@ pub mod departments {
         department_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<Department, get::Error> {
+    ) -> std::result::Result<models::Department, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/departments/{}",
@@ -1596,13 +1771,13 @@ pub mod departments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Department =
+                let rsp_value: models::Department =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1612,7 +1787,7 @@ pub mod departments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1636,13 +1811,13 @@ pub mod departments {
     }
 }
 pub mod enrollment_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<EnrollmentAccountListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::EnrollmentAccountListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/enrollmentAccounts",
@@ -1678,13 +1853,13 @@ pub mod enrollment_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnrollmentAccountListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EnrollmentAccountListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -1694,7 +1869,7 @@ pub mod enrollment_accounts {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1722,7 +1897,7 @@ pub mod enrollment_accounts {
         enrollment_account_name: &str,
         expand: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<EnrollmentAccount, get_by_enrollment_account_id::Error> {
+    ) -> std::result::Result<models::EnrollmentAccount, get_by_enrollment_account_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/enrollmentAccounts/{}",
@@ -1759,13 +1934,13 @@ pub mod enrollment_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EnrollmentAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EnrollmentAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_enrollment_account_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_enrollment_account_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_enrollment_account_id::Error::DefaultResponse {
                     status_code,
@@ -1775,7 +1950,7 @@ pub mod enrollment_accounts {
         }
     }
     pub mod get_by_enrollment_account_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1799,13 +1974,13 @@ pub mod enrollment_accounts {
     }
 }
 pub mod invoices {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         period_start_date: &str,
         period_end_date: &str,
-    ) -> std::result::Result<InvoiceListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::InvoiceListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoices",
@@ -1837,13 +2012,13 @@ pub mod invoices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InvoiceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -1853,7 +2028,7 @@ pub mod invoices {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1881,7 +2056,7 @@ pub mod invoices {
         billing_profile_name: &str,
         period_start_date: &str,
         period_end_date: &str,
-    ) -> std::result::Result<InvoiceListResult, list_by_billing_profile::Error> {
+    ) -> std::result::Result<models::InvoiceListResult, list_by_billing_profile::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoices",
@@ -1914,13 +2089,13 @@ pub mod invoices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InvoiceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_profile::Error::DefaultResponse {
                     status_code,
@@ -1930,7 +2105,7 @@ pub mod invoices {
         }
     }
     pub mod list_by_billing_profile {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1957,7 +2132,7 @@ pub mod invoices {
         billing_account_name: &str,
         billing_profile_name: &str,
         invoice_name: &str,
-    ) -> std::result::Result<InvoiceSummary, get::Error> {
+    ) -> std::result::Result<models::InvoiceSummary, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/invoices/{}",
@@ -1984,13 +2159,13 @@ pub mod invoices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvoiceSummary =
+                let rsp_value: models::InvoiceSummary =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2000,7 +2175,7 @@ pub mod invoices {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2024,7 +2199,7 @@ pub mod invoices {
     }
 }
 pub mod price_sheet {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn download(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
@@ -2060,13 +2235,13 @@ pub mod price_sheet {
             http::StatusCode::ACCEPTED => Ok(download::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DownloadUrl =
+                let rsp_value: models::DownloadUrl =
                     serde_json::from_slice(rsp_body).map_err(|source| download::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(download::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| download::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(download::Error::DefaultResponse {
                     status_code,
@@ -2076,11 +2251,11 @@ pub mod price_sheet {
         }
     }
     pub mod download {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(DownloadUrl),
+            Ok200(models::DownloadUrl),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2105,11 +2280,11 @@ pub mod price_sheet {
     }
 }
 pub mod billing_subscriptions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-    ) -> std::result::Result<BillingSubscriptionsListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::BillingSubscriptionsListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingSubscriptions",
@@ -2139,13 +2314,13 @@ pub mod billing_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -2155,7 +2330,7 @@ pub mod billing_subscriptions {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2181,7 +2356,7 @@ pub mod billing_subscriptions {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> std::result::Result<BillingSubscriptionsListResult, list_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::BillingSubscriptionsListResult, list_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/billingSubscriptions",
@@ -2212,13 +2387,13 @@ pub mod billing_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -2228,7 +2403,7 @@ pub mod billing_subscriptions {
         }
     }
     pub mod list_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2254,7 +2429,7 @@ pub mod billing_subscriptions {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         customer_name: &str,
-    ) -> std::result::Result<BillingSubscriptionsListResult, list_by_customer_name::Error> {
+    ) -> std::result::Result<models::BillingSubscriptionsListResult, list_by_customer_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/billingSubscriptions",
@@ -2285,13 +2460,13 @@ pub mod billing_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_customer_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_customer_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_customer_name::Error::DefaultResponse {
                     status_code,
@@ -2301,7 +2476,7 @@ pub mod billing_subscriptions {
         }
     }
     pub mod list_by_customer_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2328,7 +2503,7 @@ pub mod billing_subscriptions {
         billing_account_name: &str,
         customer_name: &str,
         billing_subscription_name: &str,
-    ) -> std::result::Result<BillingSubscriptionSummary, get_by_customer_name::Error> {
+    ) -> std::result::Result<models::BillingSubscriptionSummary, get_by_customer_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/billingSubscriptions/{}",
@@ -2358,13 +2533,13 @@ pub mod billing_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingSubscriptionSummary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingSubscriptionSummary = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_customer_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_customer_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_customer_name::Error::DefaultResponse {
                     status_code,
@@ -2374,7 +2549,7 @@ pub mod billing_subscriptions {
         }
     }
     pub mod get_by_customer_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2400,7 +2575,7 @@ pub mod billing_subscriptions {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         invoice_section_name: &str,
-    ) -> std::result::Result<BillingSubscriptionsListResult, list_by_invoice_section_name::Error> {
+    ) -> std::result::Result<models::BillingSubscriptionsListResult, list_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/billingSubscriptions",
@@ -2431,13 +2606,13 @@ pub mod billing_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -2447,7 +2622,7 @@ pub mod billing_subscriptions {
         }
     }
     pub mod list_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2474,7 +2649,7 @@ pub mod billing_subscriptions {
         billing_account_name: &str,
         invoice_section_name: &str,
         billing_subscription_name: &str,
-    ) -> std::result::Result<BillingSubscriptionSummary, get::Error> {
+    ) -> std::result::Result<models::BillingSubscriptionSummary, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/billingSubscriptions/{}",
@@ -2501,13 +2676,13 @@ pub mod billing_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingSubscriptionSummary =
+                let rsp_value: models::BillingSubscriptionSummary =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2517,7 +2692,7 @@ pub mod billing_subscriptions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2544,7 +2719,7 @@ pub mod billing_subscriptions {
         billing_account_name: &str,
         invoice_section_name: &str,
         billing_subscription_name: &str,
-        parameters: &TransferBillingSubscriptionRequestProperties,
+        parameters: &models::TransferBillingSubscriptionRequestProperties,
     ) -> std::result::Result<transfer::Response, transfer::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2575,14 +2750,14 @@ pub mod billing_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransferBillingSubscriptionResult =
+                let rsp_value: models::TransferBillingSubscriptionResult =
                     serde_json::from_slice(rsp_body).map_err(|source| transfer::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(transfer::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(transfer::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| transfer::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(transfer::Error::DefaultResponse {
                     status_code,
@@ -2592,10 +2767,10 @@ pub mod billing_subscriptions {
         }
     }
     pub mod transfer {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(TransferBillingSubscriptionResult),
+            Ok200(models::TransferBillingSubscriptionResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2624,8 +2799,8 @@ pub mod billing_subscriptions {
         billing_account_name: &str,
         invoice_section_name: &str,
         billing_subscription_name: &str,
-        parameters: &TransferBillingSubscriptionRequestProperties,
-    ) -> std::result::Result<ValidateSubscriptionTransferEligibilityResult, validate_transfer::Error> {
+        parameters: &models::TransferBillingSubscriptionRequestProperties,
+    ) -> std::result::Result<models::ValidateSubscriptionTransferEligibilityResult, validate_transfer::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/billingSubscriptions/{}/validateTransferEligibility",
@@ -2655,13 +2830,13 @@ pub mod billing_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ValidateSubscriptionTransferEligibilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ValidateSubscriptionTransferEligibilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_transfer::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_transfer::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate_transfer::Error::DefaultResponse {
                     status_code,
@@ -2671,7 +2846,7 @@ pub mod billing_subscriptions {
         }
     }
     pub mod validate_transfer {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2695,12 +2870,12 @@ pub mod billing_subscriptions {
     }
 }
 pub mod products {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<ProductsListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::ProductsListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/products",
@@ -2733,13 +2908,13 @@ pub mod products {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProductsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProductsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -2749,7 +2924,7 @@ pub mod products {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2776,7 +2951,7 @@ pub mod products {
         billing_account_name: &str,
         invoice_section_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<ProductsListResult, list_by_invoice_section_name::Error> {
+    ) -> std::result::Result<models::ProductsListResult, list_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/products",
@@ -2810,13 +2985,13 @@ pub mod products {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProductsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProductsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -2826,7 +3001,7 @@ pub mod products {
         }
     }
     pub mod list_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2853,7 +3028,7 @@ pub mod products {
         billing_account_name: &str,
         invoice_section_name: &str,
         product_name: &str,
-    ) -> std::result::Result<ProductSummary, get::Error> {
+    ) -> std::result::Result<models::ProductSummary, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/products/{}",
@@ -2880,13 +3055,13 @@ pub mod products {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProductSummary =
+                let rsp_value: models::ProductSummary =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2896,7 +3071,7 @@ pub mod products {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2923,7 +3098,7 @@ pub mod products {
         billing_account_name: &str,
         invoice_section_name: &str,
         product_name: &str,
-        parameters: &TransferProductRequestProperties,
+        parameters: &models::TransferProductRequestProperties,
     ) -> std::result::Result<transfer::Response, transfer::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2955,14 +3130,14 @@ pub mod products {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProductSummary =
+                let rsp_value: models::ProductSummary =
                     serde_json::from_slice(rsp_body).map_err(|source| transfer::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(transfer::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(transfer::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| transfer::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(transfer::Error::DefaultResponse {
                     status_code,
@@ -2972,10 +3147,10 @@ pub mod products {
         }
     }
     pub mod transfer {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ProductSummary),
+            Ok200(models::ProductSummary),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -3004,8 +3179,8 @@ pub mod products {
         billing_account_name: &str,
         invoice_section_name: &str,
         product_name: &str,
-        parameters: &TransferProductRequestProperties,
-    ) -> std::result::Result<ValidateProductTransferEligibilityResult, validate_transfer::Error> {
+        parameters: &models::TransferProductRequestProperties,
+    ) -> std::result::Result<models::ValidateProductTransferEligibilityResult, validate_transfer::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/products/{}/validateTransferEligibility",
@@ -3035,13 +3210,13 @@ pub mod products {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ValidateProductTransferEligibilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ValidateProductTransferEligibilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_transfer::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_transfer::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate_transfer::Error::DefaultResponse {
                     status_code,
@@ -3051,7 +3226,7 @@ pub mod products {
         }
     }
     pub mod validate_transfer {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3077,8 +3252,8 @@ pub mod products {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         product_name: &str,
-        body: &UpdateAutoRenewRequest,
-    ) -> std::result::Result<UpdateAutoRenewOperationSummary, update_auto_renew_by_billing_account_name::Error> {
+        body: &models::UpdateAutoRenewRequest,
+    ) -> std::result::Result<models::UpdateAutoRenewOperationSummary, update_auto_renew_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/products/{}/updateAutoRenew",
@@ -3110,13 +3285,13 @@ pub mod products {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UpdateAutoRenewOperationSummary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UpdateAutoRenewOperationSummary = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_auto_renew_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_auto_renew_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_auto_renew_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -3126,7 +3301,7 @@ pub mod products {
         }
     }
     pub mod update_auto_renew_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3153,8 +3328,8 @@ pub mod products {
         billing_account_name: &str,
         invoice_section_name: &str,
         product_name: &str,
-        body: &UpdateAutoRenewRequest,
-    ) -> std::result::Result<UpdateAutoRenewOperationSummary, update_auto_renew_by_invoice_section_name::Error> {
+        body: &models::UpdateAutoRenewRequest,
+    ) -> std::result::Result<models::UpdateAutoRenewOperationSummary, update_auto_renew_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/products/{}/updateAutoRenew",
@@ -3187,13 +3362,13 @@ pub mod products {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UpdateAutoRenewOperationSummary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UpdateAutoRenewOperationSummary = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_auto_renew_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_auto_renew_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_auto_renew_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -3203,7 +3378,7 @@ pub mod products {
         }
     }
     pub mod update_auto_renew_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3227,14 +3402,14 @@ pub mod products {
     }
 }
 pub mod transactions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         start_date: &str,
         end_date: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<TransactionsListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::TransactionsListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/transactions",
@@ -3269,13 +3444,13 @@ pub mod transactions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TransactionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -3285,7 +3460,7 @@ pub mod transactions {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3314,7 +3489,7 @@ pub mod transactions {
         start_date: &str,
         end_date: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<TransactionsListResult, list_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::TransactionsListResult, list_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/transactions",
@@ -3350,13 +3525,13 @@ pub mod transactions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TransactionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -3366,7 +3541,7 @@ pub mod transactions {
         }
     }
     pub mod list_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3395,7 +3570,7 @@ pub mod transactions {
         start_date: &str,
         end_date: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<TransactionsListResult, list_by_customer_name::Error> {
+    ) -> std::result::Result<models::TransactionsListResult, list_by_customer_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/transactions",
@@ -3431,13 +3606,13 @@ pub mod transactions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TransactionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_customer_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_customer_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_customer_name::Error::DefaultResponse {
                     status_code,
@@ -3447,7 +3622,7 @@ pub mod transactions {
         }
     }
     pub mod list_by_customer_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3476,7 +3651,7 @@ pub mod transactions {
         start_date: &str,
         end_date: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<TransactionsListResult, list_by_invoice_section_name::Error> {
+    ) -> std::result::Result<models::TransactionsListResult, list_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/transactions",
@@ -3512,13 +3687,13 @@ pub mod transactions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TransactionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -3528,7 +3703,7 @@ pub mod transactions {
         }
     }
     pub mod list_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3552,12 +3727,12 @@ pub mod transactions {
     }
 }
 pub mod policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_by_billing_profile_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> std::result::Result<Policy, get_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::Policy, get_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/policies/default",
@@ -3588,13 +3763,13 @@ pub mod policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Policy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Policy = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -3604,7 +3779,7 @@ pub mod policies {
         }
     }
     pub mod get_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3630,8 +3805,8 @@ pub mod policies {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-        parameters: &Policy,
-    ) -> std::result::Result<Policy, update::Error> {
+        parameters: &models::Policy,
+    ) -> std::result::Result<models::Policy, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/policies/default",
@@ -3658,13 +3833,13 @@ pub mod policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Policy =
+                let rsp_value: models::Policy =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -3674,7 +3849,7 @@ pub mod policies {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3698,8 +3873,11 @@ pub mod policies {
     }
 }
 pub mod billing_property {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<BillingProperty, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<models::BillingProperty, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingProperty",
@@ -3724,13 +3902,13 @@ pub mod billing_property {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingProperty =
+                let rsp_value: models::BillingProperty =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3740,7 +3918,7 @@ pub mod billing_property {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3764,13 +3942,13 @@ pub mod billing_property {
     }
 }
 pub mod transfers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn initiate(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         invoice_section_name: &str,
-        body: &InitiateTransferRequest,
-    ) -> std::result::Result<TransferDetails, initiate::Error> {
+        body: &models::InitiateTransferRequest,
+    ) -> std::result::Result<models::TransferDetails, initiate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/initiateTransfer",
@@ -3799,13 +3977,13 @@ pub mod transfers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransferDetails =
+                let rsp_value: models::TransferDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| initiate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| initiate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(initiate::Error::DefaultResponse {
                     status_code,
@@ -3815,7 +3993,7 @@ pub mod transfers {
         }
     }
     pub mod initiate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3842,7 +4020,7 @@ pub mod transfers {
         billing_account_name: &str,
         invoice_section_name: &str,
         transfer_name: &str,
-    ) -> std::result::Result<TransferDetails, get::Error> {
+    ) -> std::result::Result<models::TransferDetails, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/transfers/{}",
@@ -3868,13 +4046,13 @@ pub mod transfers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransferDetails =
+                let rsp_value: models::TransferDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3884,7 +4062,7 @@ pub mod transfers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3911,7 +4089,7 @@ pub mod transfers {
         billing_account_name: &str,
         invoice_section_name: &str,
         transfer_name: &str,
-    ) -> std::result::Result<TransferDetails, cancel::Error> {
+    ) -> std::result::Result<models::TransferDetails, cancel::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/transfers/{}",
@@ -3937,13 +4115,13 @@ pub mod transfers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransferDetails =
+                let rsp_value: models::TransferDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel::Error::DefaultResponse {
                     status_code,
@@ -3953,7 +4131,7 @@ pub mod transfers {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3979,7 +4157,7 @@ pub mod transfers {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         invoice_section_name: &str,
-    ) -> std::result::Result<TransferDetailsListResult, list::Error> {
+    ) -> std::result::Result<models::TransferDetailsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/transfers",
@@ -4004,13 +4182,13 @@ pub mod transfers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransferDetailsListResult =
+                let rsp_value: models::TransferDetailsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -4020,7 +4198,7 @@ pub mod transfers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4044,12 +4222,12 @@ pub mod transfers {
     }
 }
 pub mod recipient_transfers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn accept(
         operation_config: &crate::OperationConfig,
         transfer_name: &str,
-        body: &AcceptTransferRequest,
-    ) -> std::result::Result<RecipientTransferDetails, accept::Error> {
+        body: &models::AcceptTransferRequest,
+    ) -> std::result::Result<models::RecipientTransferDetails, accept::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/transfers/{}/acceptTransfer",
@@ -4074,13 +4252,13 @@ pub mod recipient_transfers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecipientTransferDetails =
+                let rsp_value: models::RecipientTransferDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| accept::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| accept::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(accept::Error::DefaultResponse {
                     status_code,
@@ -4090,7 +4268,7 @@ pub mod recipient_transfers {
         }
     }
     pub mod accept {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4115,7 +4293,7 @@ pub mod recipient_transfers {
     pub async fn decline(
         operation_config: &crate::OperationConfig,
         transfer_name: &str,
-    ) -> std::result::Result<RecipientTransferDetails, decline::Error> {
+    ) -> std::result::Result<models::RecipientTransferDetails, decline::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/transfers/{}/declineTransfer",
@@ -4143,13 +4321,13 @@ pub mod recipient_transfers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecipientTransferDetails =
+                let rsp_value: models::RecipientTransferDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| decline::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| decline::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(decline::Error::DefaultResponse {
                     status_code,
@@ -4159,7 +4337,7 @@ pub mod recipient_transfers {
         }
     }
     pub mod decline {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4184,7 +4362,7 @@ pub mod recipient_transfers {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         transfer_name: &str,
-    ) -> std::result::Result<RecipientTransferDetails, get::Error> {
+    ) -> std::result::Result<models::RecipientTransferDetails, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/transfers/{}/",
@@ -4208,13 +4386,13 @@ pub mod recipient_transfers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecipientTransferDetails =
+                let rsp_value: models::RecipientTransferDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4224,7 +4402,7 @@ pub mod recipient_transfers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4246,7 +4424,9 @@ pub mod recipient_transfers {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<RecipientTransferDetailsListResult, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::RecipientTransferDetailsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Billing/transfers", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -4266,13 +4446,13 @@ pub mod recipient_transfers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecipientTransferDetailsListResult =
+                let rsp_value: models::RecipientTransferDetailsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -4282,7 +4462,7 @@ pub mod recipient_transfers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4306,8 +4486,8 @@ pub mod recipient_transfers {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Billing/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -4328,13 +4508,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -4344,7 +4524,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4368,11 +4548,11 @@ pub mod operations {
     }
 }
 pub mod billing_permissions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-    ) -> std::result::Result<BillingPermissionsListResult, list_by_billing_account::Error> {
+    ) -> std::result::Result<models::BillingPermissionsListResult, list_by_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPermissions",
@@ -4402,13 +4582,13 @@ pub mod billing_permissions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingPermissionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingPermissionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account::Error::DefaultResponse {
                     status_code,
@@ -4418,7 +4598,7 @@ pub mod billing_permissions {
         }
     }
     pub mod list_by_billing_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4444,7 +4624,7 @@ pub mod billing_permissions {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         customer_name: &str,
-    ) -> std::result::Result<BillingPermissionsListResult, list_by_customers::Error> {
+    ) -> std::result::Result<models::BillingPermissionsListResult, list_by_customers::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/customers/{}/providers/Microsoft.Billing/billingPermissions",
@@ -4473,13 +4653,13 @@ pub mod billing_permissions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingPermissionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingPermissionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_customers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_customers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_customers::Error::DefaultResponse {
                     status_code,
@@ -4489,7 +4669,7 @@ pub mod billing_permissions {
         }
     }
     pub mod list_by_customers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4515,7 +4695,7 @@ pub mod billing_permissions {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         invoice_section_name: &str,
-    ) -> std::result::Result<BillingPermissionsListResult, list_by_invoice_sections::Error> {
+    ) -> std::result::Result<models::BillingPermissionsListResult, list_by_invoice_sections::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Billing/billingPermissions",
@@ -4546,13 +4726,13 @@ pub mod billing_permissions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingPermissionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingPermissionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_sections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_sections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_invoice_sections::Error::DefaultResponse {
                     status_code,
@@ -4562,7 +4742,7 @@ pub mod billing_permissions {
         }
     }
     pub mod list_by_invoice_sections {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4588,7 +4768,7 @@ pub mod billing_permissions {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> std::result::Result<BillingPermissionsListResult, list_by_billing_profile::Error> {
+    ) -> std::result::Result<models::BillingPermissionsListResult, list_by_billing_profile::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Billing/billingPermissions",
@@ -4619,13 +4799,13 @@ pub mod billing_permissions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingPermissionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingPermissionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_profile::Error::DefaultResponse {
                     status_code,
@@ -4635,7 +4815,7 @@ pub mod billing_permissions {
         }
     }
     pub mod list_by_billing_profile {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4659,12 +4839,12 @@ pub mod billing_permissions {
     }
 }
 pub mod billing_role_definitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_role_definition_name: &str,
-    ) -> std::result::Result<BillingRoleDefinition, get_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::BillingRoleDefinition, get_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingRoleDefinitions/{}",
@@ -4695,13 +4875,13 @@ pub mod billing_role_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -4711,7 +4891,7 @@ pub mod billing_role_definitions {
         }
     }
     pub mod get_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4738,7 +4918,7 @@ pub mod billing_role_definitions {
         billing_account_name: &str,
         invoice_section_name: &str,
         billing_role_definition_name: &str,
-    ) -> std::result::Result<BillingRoleDefinition, get_by_invoice_section_name::Error> {
+    ) -> std::result::Result<models::BillingRoleDefinition, get_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Billing/billingRoleDefinitions/{}",
@@ -4770,13 +4950,13 @@ pub mod billing_role_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -4786,7 +4966,7 @@ pub mod billing_role_definitions {
         }
     }
     pub mod get_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4813,7 +4993,7 @@ pub mod billing_role_definitions {
         billing_account_name: &str,
         billing_profile_name: &str,
         billing_role_definition_name: &str,
-    ) -> std::result::Result<BillingRoleDefinition, get_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::BillingRoleDefinition, get_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Billing/billingRoleDefinitions/{}",
@@ -4845,13 +5025,13 @@ pub mod billing_role_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -4861,7 +5041,7 @@ pub mod billing_role_definitions {
         }
     }
     pub mod get_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4886,7 +5066,7 @@ pub mod billing_role_definitions {
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-    ) -> std::result::Result<BillingRoleDefinitionListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::BillingRoleDefinitionListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingRoleDefinitions",
@@ -4916,13 +5096,13 @@ pub mod billing_role_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleDefinitionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleDefinitionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -4932,7 +5112,7 @@ pub mod billing_role_definitions {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4958,7 +5138,7 @@ pub mod billing_role_definitions {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         invoice_section_name: &str,
-    ) -> std::result::Result<BillingRoleDefinitionListResult, list_by_invoice_section_name::Error> {
+    ) -> std::result::Result<models::BillingRoleDefinitionListResult, list_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Billing/billingRoleDefinitions",
@@ -4989,13 +5169,13 @@ pub mod billing_role_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleDefinitionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleDefinitionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -5005,7 +5185,7 @@ pub mod billing_role_definitions {
         }
     }
     pub mod list_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5031,7 +5211,7 @@ pub mod billing_role_definitions {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> std::result::Result<BillingRoleDefinitionListResult, list_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::BillingRoleDefinitionListResult, list_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Billing/billingRoleDefinitions",
@@ -5062,13 +5242,13 @@ pub mod billing_role_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleDefinitionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleDefinitionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -5078,7 +5258,7 @@ pub mod billing_role_definitions {
         }
     }
     pub mod list_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5102,12 +5282,12 @@ pub mod billing_role_definitions {
     }
 }
 pub mod billing_role_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_role_assignment_name: &str,
-    ) -> std::result::Result<BillingRoleAssignment, get_by_billing_account::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignment, get_by_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingRoleAssignments/{}",
@@ -5138,13 +5318,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_billing_account::Error::DefaultResponse {
                     status_code,
@@ -5154,7 +5334,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod get_by_billing_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5180,7 +5360,7 @@ pub mod billing_role_assignments {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_role_assignment_name: &str,
-    ) -> std::result::Result<BillingRoleAssignment, delete_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignment, delete_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingRoleAssignments/{}",
@@ -5211,13 +5391,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -5227,7 +5407,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod delete_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5254,7 +5434,7 @@ pub mod billing_role_assignments {
         billing_account_name: &str,
         invoice_section_name: &str,
         billing_role_assignment_name: &str,
-    ) -> std::result::Result<BillingRoleAssignment, get_by_invoice_section_name::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignment, get_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Billing/billingRoleAssignments/{}",
@@ -5286,13 +5466,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -5302,7 +5482,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod get_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5329,7 +5509,7 @@ pub mod billing_role_assignments {
         billing_account_name: &str,
         invoice_section_name: &str,
         billing_role_assignment_name: &str,
-    ) -> std::result::Result<BillingRoleAssignment, delete_by_invoice_section_name::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignment, delete_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Billing/billingRoleAssignments/{}",
@@ -5361,13 +5541,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -5377,7 +5557,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod delete_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5404,7 +5584,7 @@ pub mod billing_role_assignments {
         billing_account_name: &str,
         billing_profile_name: &str,
         billing_role_assignment_name: &str,
-    ) -> std::result::Result<BillingRoleAssignment, get_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignment, get_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Billing/billingRoleAssignments/{}",
@@ -5436,13 +5616,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -5452,7 +5632,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod get_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5479,7 +5659,7 @@ pub mod billing_role_assignments {
         billing_account_name: &str,
         billing_profile_name: &str,
         billing_role_assignment_name: &str,
-    ) -> std::result::Result<BillingRoleAssignment, delete_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignment, delete_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Billing/billingRoleAssignments/{}",
@@ -5511,13 +5691,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -5527,7 +5707,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod delete_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5552,7 +5732,7 @@ pub mod billing_role_assignments {
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-    ) -> std::result::Result<BillingRoleAssignmentListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignmentListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingRoleAssignments",
@@ -5582,13 +5762,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -5598,7 +5778,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5623,8 +5803,8 @@ pub mod billing_role_assignments {
     pub async fn add_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
-        parameters: &BillingRoleAssignmentPayload,
-    ) -> std::result::Result<BillingRoleAssignmentListResult, add_by_billing_account_name::Error> {
+        parameters: &models::BillingRoleAssignmentPayload,
+    ) -> std::result::Result<models::BillingRoleAssignmentListResult, add_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/createBillingRoleAssignment",
@@ -5655,13 +5835,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -5671,7 +5851,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod add_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5697,7 +5877,7 @@ pub mod billing_role_assignments {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         invoice_section_name: &str,
-    ) -> std::result::Result<BillingRoleAssignmentListResult, list_by_invoice_section_name::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignmentListResult, list_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Billing/billingRoleAssignments",
@@ -5728,13 +5908,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -5744,7 +5924,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod list_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5770,8 +5950,8 @@ pub mod billing_role_assignments {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         invoice_section_name: &str,
-        parameters: &BillingRoleAssignmentPayload,
-    ) -> std::result::Result<BillingRoleAssignmentListResult, add_by_invoice_section_name::Error> {
+        parameters: &models::BillingRoleAssignmentPayload,
+    ) -> std::result::Result<models::BillingRoleAssignmentListResult, add_by_invoice_section_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/invoiceSections/{}/providers/Microsoft.Billing/createBillingRoleAssignment",
@@ -5803,13 +5983,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_by_invoice_section_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_by_invoice_section_name::Error::DefaultResponse {
                     status_code,
@@ -5819,7 +5999,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod add_by_invoice_section_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5845,7 +6025,7 @@ pub mod billing_role_assignments {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-    ) -> std::result::Result<BillingRoleAssignmentListResult, list_by_billing_profile_name::Error> {
+    ) -> std::result::Result<models::BillingRoleAssignmentListResult, list_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Billing/billingRoleAssignments",
@@ -5876,13 +6056,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -5892,7 +6072,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod list_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5918,8 +6098,8 @@ pub mod billing_role_assignments {
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         billing_profile_name: &str,
-        parameters: &BillingRoleAssignmentPayload,
-    ) -> std::result::Result<BillingRoleAssignmentListResult, add_by_billing_profile_name::Error> {
+        parameters: &models::BillingRoleAssignmentPayload,
+    ) -> std::result::Result<models::BillingRoleAssignmentListResult, add_by_billing_profile_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.Billing/createBillingRoleAssignment",
@@ -5951,13 +6131,13 @@ pub mod billing_role_assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingRoleAssignmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_by_billing_profile_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_by_billing_profile_name::Error::DefaultResponse {
                     status_code,
@@ -5967,7 +6147,7 @@ pub mod billing_role_assignments {
         }
     }
     pub mod add_by_billing_profile_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5991,12 +6171,12 @@ pub mod billing_role_assignments {
     }
 }
 pub mod agreements {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account_name(
         operation_config: &crate::OperationConfig,
         billing_account_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<AgreementListResult, list_by_billing_account_name::Error> {
+    ) -> std::result::Result<models::AgreementListResult, list_by_billing_account_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/agreements",
@@ -6029,13 +6209,13 @@ pub mod agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AgreementListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AgreementListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account_name::Error::DefaultResponse {
                     status_code,
@@ -6045,7 +6225,7 @@ pub mod agreements {
         }
     }
     pub mod list_by_billing_account_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6072,7 +6252,7 @@ pub mod agreements {
         billing_account_name: &str,
         agreement_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<Agreement, get::Error> {
+    ) -> std::result::Result<models::Agreement, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/agreements/{}",
@@ -6101,13 +6281,13 @@ pub mod agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Agreement =
+                let rsp_value: models::Agreement =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -6117,7 +6297,7 @@ pub mod agreements {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6141,8 +6321,11 @@ pub mod agreements {
     }
 }
 pub mod line_of_credits {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<LineOfCredit, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<models::LineOfCredit, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Billing/billingAccounts/default/lineOfCredit/default",
@@ -6167,13 +6350,13 @@ pub mod line_of_credits {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LineOfCredit =
+                let rsp_value: models::LineOfCredit =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -6183,7 +6366,7 @@ pub mod line_of_credits {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6208,7 +6391,7 @@ pub mod line_of_credits {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        parameters: &LineOfCredit,
+        parameters: &models::LineOfCredit,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6235,14 +6418,14 @@ pub mod line_of_credits {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LineOfCredit =
+                let rsp_value: models::LineOfCredit =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -6252,10 +6435,10 @@ pub mod line_of_credits {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(LineOfCredit),
+            Ok200(models::LineOfCredit),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]

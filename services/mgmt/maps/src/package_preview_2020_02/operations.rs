@@ -2,15 +2,58 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Accounts_Get(#[from] accounts::get::Error),
+    #[error(transparent)]
+    Accounts_CreateOrUpdate(#[from] accounts::create_or_update::Error),
+    #[error(transparent)]
+    Accounts_Update(#[from] accounts::update::Error),
+    #[error(transparent)]
+    Accounts_Delete(#[from] accounts::delete::Error),
+    #[error(transparent)]
+    Accounts_ListByResourceGroup(#[from] accounts::list_by_resource_group::Error),
+    #[error(transparent)]
+    Accounts_ListBySubscription(#[from] accounts::list_by_subscription::Error),
+    #[error(transparent)]
+    Accounts_ListKeys(#[from] accounts::list_keys::Error),
+    #[error(transparent)]
+    Accounts_RegenerateKeys(#[from] accounts::regenerate_keys::Error),
+    #[error(transparent)]
+    Maps_ListOperations(#[from] maps::list_operations::Error),
+    #[error(transparent)]
+    PrivateAtlases_Get(#[from] private_atlases::get::Error),
+    #[error(transparent)]
+    PrivateAtlases_CreateOrUpdate(#[from] private_atlases::create_or_update::Error),
+    #[error(transparent)]
+    PrivateAtlases_Update(#[from] private_atlases::update::Error),
+    #[error(transparent)]
+    PrivateAtlases_Delete(#[from] private_atlases::delete::Error),
+    #[error(transparent)]
+    PrivateAtlases_ListByAccount(#[from] private_atlases::list_by_account::Error),
+    #[error(transparent)]
+    Creators_ListByAccount(#[from] creators::list_by_account::Error),
+    #[error(transparent)]
+    Creators_Get(#[from] creators::get::Error),
+    #[error(transparent)]
+    Creators_CreateOrUpdate(#[from] creators::create_or_update::Error),
+    #[error(transparent)]
+    Creators_Update(#[from] creators::update::Error),
+    #[error(transparent)]
+    Creators_Delete(#[from] creators::delete::Error),
+}
 pub mod accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<MapsAccount, get::Error> {
+    ) -> std::result::Result<models::MapsAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}",
@@ -37,13 +80,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsAccount =
+                let rsp_value: models::MapsAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +96,7 @@ pub mod accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,7 +123,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        maps_account_create_parameters: &MapsAccountCreateParameters,
+        maps_account_create_parameters: &models::MapsAccountCreateParameters,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -112,19 +155,19 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MapsAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MapsAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -134,11 +177,11 @@ pub mod accounts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(MapsAccount),
-            Created201(MapsAccount),
+            Ok200(models::MapsAccount),
+            Created201(models::MapsAccount),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -166,8 +209,8 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        maps_account_update_parameters: &MapsAccountUpdateParameters,
-    ) -> std::result::Result<MapsAccount, update::Error> {
+        maps_account_update_parameters: &models::MapsAccountUpdateParameters,
+    ) -> std::result::Result<models::MapsAccount, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}",
@@ -195,13 +238,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsAccount =
+                let rsp_value: models::MapsAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -211,7 +254,7 @@ pub mod accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -267,7 +310,7 @@ pub mod accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -277,7 +320,7 @@ pub mod accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -308,7 +351,7 @@ pub mod accounts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<MapsAccounts, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::MapsAccounts, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts",
@@ -339,13 +382,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsAccounts = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MapsAccounts = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -355,7 +398,7 @@ pub mod accounts {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -380,7 +423,7 @@ pub mod accounts {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<MapsAccounts, list_by_subscription::Error> {
+    ) -> std::result::Result<models::MapsAccounts, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Maps/accounts",
@@ -408,13 +451,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsAccounts = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MapsAccounts = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -424,7 +467,7 @@ pub mod accounts {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -451,7 +494,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<MapsAccountKeys, list_keys::Error> {
+    ) -> std::result::Result<models::MapsAccountKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}/listKeys",
@@ -482,13 +525,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsAccountKeys =
+                let rsp_value: models::MapsAccountKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_keys::Error::DefaultResponse {
                     status_code,
@@ -498,7 +541,7 @@ pub mod accounts {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -525,8 +568,8 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        key_specification: &MapsKeySpecification,
-    ) -> std::result::Result<MapsAccountKeys, regenerate_keys::Error> {
+        key_specification: &models::MapsKeySpecification,
+    ) -> std::result::Result<models::MapsAccountKeys, regenerate_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}/regenerateKey",
@@ -557,13 +600,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsAccountKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MapsAccountKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_keys::Error::DefaultResponse {
                     status_code,
@@ -573,7 +616,7 @@ pub mod accounts {
         }
     }
     pub mod regenerate_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -597,8 +640,10 @@ pub mod accounts {
     }
 }
 pub mod maps {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list_operations(operation_config: &crate::OperationConfig) -> std::result::Result<MapsOperations, list_operations::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list_operations(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::MapsOperations, list_operations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Maps/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_operations::Error::ParseUrlError)?;
@@ -622,13 +667,13 @@ pub mod maps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MapsOperations = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MapsOperations = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_operations::Error::DefaultResponse {
                     status_code,
@@ -638,7 +683,7 @@ pub mod maps {
         }
     }
     pub mod list_operations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -662,14 +707,14 @@ pub mod maps {
     }
 }
 pub mod private_atlases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         private_atlas_name: &str,
-    ) -> std::result::Result<PrivateAtlas, get::Error> {
+    ) -> std::result::Result<models::PrivateAtlas, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}/privateAtlases/{}",
@@ -697,13 +742,13 @@ pub mod private_atlases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateAtlas =
+                let rsp_value: models::PrivateAtlas =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -713,7 +758,7 @@ pub mod private_atlases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -741,7 +786,7 @@ pub mod private_atlases {
         resource_group_name: &str,
         account_name: &str,
         private_atlas_name: &str,
-        private_atlas_create_parameters: &PrivateAtlasCreateParameters,
+        private_atlas_create_parameters: &models::PrivateAtlasCreateParameters,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -774,19 +819,19 @@ pub mod private_atlases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateAtlas = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateAtlas = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateAtlas = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateAtlas = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -796,11 +841,11 @@ pub mod private_atlases {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateAtlas),
-            Created201(PrivateAtlas),
+            Ok200(models::PrivateAtlas),
+            Created201(models::PrivateAtlas),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -829,8 +874,8 @@ pub mod private_atlases {
         resource_group_name: &str,
         account_name: &str,
         private_atlas_name: &str,
-        private_atlas_update_parameters: &PrivateAtlasUpdateParameters,
-    ) -> std::result::Result<PrivateAtlas, update::Error> {
+        private_atlas_update_parameters: &models::PrivateAtlasUpdateParameters,
+    ) -> std::result::Result<models::PrivateAtlas, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}/privateAtlases/{}",
@@ -859,13 +904,13 @@ pub mod private_atlases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateAtlas =
+                let rsp_value: models::PrivateAtlas =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -875,7 +920,7 @@ pub mod private_atlases {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -933,7 +978,7 @@ pub mod private_atlases {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -943,7 +988,7 @@ pub mod private_atlases {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -975,7 +1020,7 @@ pub mod private_atlases {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<PrivateAtlasList, list_by_account::Error> {
+    ) -> std::result::Result<models::PrivateAtlasList, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}/privateAtlases",
@@ -1005,13 +1050,13 @@ pub mod private_atlases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateAtlasList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateAtlasList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_account::Error::DefaultResponse {
                     status_code,
@@ -1021,7 +1066,7 @@ pub mod private_atlases {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1045,13 +1090,13 @@ pub mod private_atlases {
     }
 }
 pub mod creators {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<CreatorList, list_by_account::Error> {
+    ) -> std::result::Result<models::CreatorList, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}/creators",
@@ -1081,13 +1126,13 @@ pub mod creators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CreatorList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CreatorList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_account::Error::DefaultResponse {
                     status_code,
@@ -1097,7 +1142,7 @@ pub mod creators {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1125,7 +1170,7 @@ pub mod creators {
         resource_group_name: &str,
         account_name: &str,
         creator_name: &str,
-    ) -> std::result::Result<Creator, get::Error> {
+    ) -> std::result::Result<models::Creator, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}/creators/{}",
@@ -1153,13 +1198,13 @@ pub mod creators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Creator =
+                let rsp_value: models::Creator =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1169,7 +1214,7 @@ pub mod creators {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1197,7 +1242,7 @@ pub mod creators {
         resource_group_name: &str,
         account_name: &str,
         creator_name: &str,
-        creator_create_parameters: &CreatorCreateParameters,
+        creator_create_parameters: &models::CreatorCreateParameters,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1230,19 +1275,19 @@ pub mod creators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Creator = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Creator = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Creator = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Creator = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1252,11 +1297,11 @@ pub mod creators {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Creator),
-            Created201(Creator),
+            Ok200(models::Creator),
+            Created201(models::Creator),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1285,8 +1330,8 @@ pub mod creators {
         resource_group_name: &str,
         account_name: &str,
         creator_name: &str,
-        creator_update_parameters: &CreatorUpdateParameters,
-    ) -> std::result::Result<Creator, update::Error> {
+        creator_update_parameters: &models::CreatorUpdateParameters,
+    ) -> std::result::Result<models::Creator, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Maps/accounts/{}/creators/{}",
@@ -1315,13 +1360,13 @@ pub mod creators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Creator =
+                let rsp_value: models::Creator =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1331,7 +1376,7 @@ pub mod creators {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1389,7 +1434,7 @@ pub mod creators {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1399,7 +1444,7 @@ pub mod creators {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

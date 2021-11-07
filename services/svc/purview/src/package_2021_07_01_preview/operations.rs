@@ -2,10 +2,23 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    MetadataRoles_List(#[from] metadata_roles::list::Error),
+    #[error(transparent)]
+    MetadataPolicy_ListAll(#[from] metadata_policy::list_all::Error),
+    #[error(transparent)]
+    MetadataPolicy_Get(#[from] metadata_policy::get::Error),
+    #[error(transparent)]
+    MetadataPolicy_Update(#[from] metadata_policy::update::Error),
+}
 pub mod metadata_roles {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<MetadataRoleList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::MetadataRoleList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/metadataRoles", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +39,13 @@ pub mod metadata_roles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataRoleList =
+                let rsp_value: models::MetadataRoleList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseModel =
+                let rsp_value: models::ErrorResponseModel =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +55,7 @@ pub mod metadata_roles {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,11 +79,11 @@ pub mod metadata_roles {
     }
 }
 pub mod metadata_policy {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         collection_name: Option<&str>,
-    ) -> std::result::Result<MetadataPolicyList, list_all::Error> {
+    ) -> std::result::Result<models::MetadataPolicyList, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/metadataPolicies", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_all::Error::ParseUrlError)?;
@@ -97,13 +110,13 @@ pub mod metadata_policy {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataPolicyList =
+                let rsp_value: models::MetadataPolicyList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseModel =
+                let rsp_value: models::ErrorResponseModel =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_all::Error::DefaultResponse {
                     status_code,
@@ -113,7 +126,7 @@ pub mod metadata_policy {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -135,7 +148,10 @@ pub mod metadata_policy {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, policy_id: &str) -> std::result::Result<MetadataPolicy, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        policy_id: &str,
+    ) -> std::result::Result<models::MetadataPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/metadataPolicies/{}", operation_config.base_path(), policy_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -156,13 +172,13 @@ pub mod metadata_policy {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataPolicy =
+                let rsp_value: models::MetadataPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseModel =
+                let rsp_value: models::ErrorResponseModel =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -172,7 +188,7 @@ pub mod metadata_policy {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -197,8 +213,8 @@ pub mod metadata_policy {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         policy_id: &str,
-        body: Option<&MetadataPolicy>,
-    ) -> std::result::Result<MetadataPolicy, update::Error> {
+        body: Option<&models::MetadataPolicy>,
+    ) -> std::result::Result<models::MetadataPolicy, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/metadataPolicies/{}", operation_config.base_path(), policy_id);
         let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
@@ -224,13 +240,13 @@ pub mod metadata_policy {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataPolicy =
+                let rsp_value: models::MetadataPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponseModel =
+                let rsp_value: models::ErrorResponseModel =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -240,7 +256,7 @@ pub mod metadata_policy {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

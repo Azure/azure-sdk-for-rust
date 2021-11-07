@@ -2,15 +2,46 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Query_GetAvailability(#[from] query::get_availability::Error),
+    #[error(transparent)]
+    Query_GetEventSchema(#[from] query::get_event_schema::Error),
+    #[error(transparent)]
+    ModelSettings_Get(#[from] model_settings::get::Error),
+    #[error(transparent)]
+    ModelSettings_Update(#[from] model_settings::update::Error),
+    #[error(transparent)]
+    Query_Execute(#[from] query::execute::Error),
+    #[error(transparent)]
+    TimeSeriesInstances_List(#[from] time_series_instances::list::Error),
+    #[error(transparent)]
+    TimeSeriesInstances_ExecuteBatch(#[from] time_series_instances::execute_batch::Error),
+    #[error(transparent)]
+    TimeSeriesInstances_Suggest(#[from] time_series_instances::suggest::Error),
+    #[error(transparent)]
+    TimeSeriesInstances_Search(#[from] time_series_instances::search::Error),
+    #[error(transparent)]
+    TimeSeriesTypes_List(#[from] time_series_types::list::Error),
+    #[error(transparent)]
+    TimeSeriesTypes_ExecuteBatch(#[from] time_series_types::execute_batch::Error),
+    #[error(transparent)]
+    TimeSeriesHierarchies_List(#[from] time_series_hierarchies::list::Error),
+    #[error(transparent)]
+    TimeSeriesHierarchies_ExecuteBatch(#[from] time_series_hierarchies::execute_batch::Error),
+}
 pub mod query {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_availability(
         operation_config: &crate::OperationConfig,
         store_type: Option<&str>,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<AvailabilityResponse, get_availability::Error> {
+    ) -> std::result::Result<models::AvailabilityResponse, get_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/availability", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_availability::Error::ParseUrlError)?;
@@ -43,13 +74,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailabilityResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TsiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_availability::Error::DefaultResponse {
                     status_code,
@@ -59,7 +90,7 @@ pub mod query {
         }
     }
     pub mod get_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -84,10 +115,10 @@ pub mod query {
     pub async fn get_event_schema(
         operation_config: &crate::OperationConfig,
         store_type: Option<&str>,
-        parameters: &GetEventSchemaRequest,
+        parameters: &models::GetEventSchemaRequest,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<EventSchema, get_event_schema::Error> {
+    ) -> std::result::Result<models::EventSchema, get_event_schema::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/eventSchema", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_event_schema::Error::ParseUrlError)?;
@@ -121,13 +152,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSchema = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSchema = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_event_schema::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TsiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_event_schema::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_event_schema::Error::DefaultResponse {
                     status_code,
@@ -137,7 +168,7 @@ pub mod query {
         }
     }
     pub mod get_event_schema {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -163,10 +194,10 @@ pub mod query {
         operation_config: &crate::OperationConfig,
         store_type: Option<&str>,
         x_ms_continuation: Option<&str>,
-        parameters: &QueryRequest,
+        parameters: &models::QueryRequest,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<QueryResultPage, execute::Error> {
+    ) -> std::result::Result<models::QueryResultPage, execute::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/query", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(execute::Error::ParseUrlError)?;
@@ -203,13 +234,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResultPage =
+                let rsp_value: models::QueryResultPage =
                     serde_json::from_slice(rsp_body).map_err(|source| execute::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| execute::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(execute::Error::DefaultResponse {
                     status_code,
@@ -219,7 +250,7 @@ pub mod query {
         }
     }
     pub mod execute {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -243,12 +274,12 @@ pub mod query {
     }
 }
 pub mod model_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<ModelSettingsResponse, get::Error> {
+    ) -> std::result::Result<models::ModelSettingsResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/modelSettings", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -275,13 +306,13 @@ pub mod model_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ModelSettingsResponse =
+                let rsp_value: models::ModelSettingsResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -291,7 +322,7 @@ pub mod model_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -315,10 +346,10 @@ pub mod model_settings {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        parameters: &UpdateModelSettingsRequest,
+        parameters: &models::UpdateModelSettingsRequest,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<ModelSettingsResponse, update::Error> {
+    ) -> std::result::Result<models::ModelSettingsResponse, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/modelSettings", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
@@ -346,13 +377,13 @@ pub mod model_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ModelSettingsResponse =
+                let rsp_value: models::ModelSettingsResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -362,7 +393,7 @@ pub mod model_settings {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -386,13 +417,13 @@ pub mod model_settings {
     }
 }
 pub mod time_series_instances {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         x_ms_continuation: Option<&str>,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<GetInstancesPage, list::Error> {
+    ) -> std::result::Result<models::GetInstancesPage, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/instances", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -422,13 +453,13 @@ pub mod time_series_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GetInstancesPage =
+                let rsp_value: models::GetInstancesPage =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -438,7 +469,7 @@ pub mod time_series_instances {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -462,10 +493,10 @@ pub mod time_series_instances {
     }
     pub async fn execute_batch(
         operation_config: &crate::OperationConfig,
-        parameters: &InstancesBatchRequest,
+        parameters: &models::InstancesBatchRequest,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<InstancesBatchResponse, execute_batch::Error> {
+    ) -> std::result::Result<models::InstancesBatchResponse, execute_batch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/instances/$batch", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(execute_batch::Error::ParseUrlError)?;
@@ -496,13 +527,13 @@ pub mod time_series_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstancesBatchResponse =
+                let rsp_value: models::InstancesBatchResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| execute_batch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| execute_batch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(execute_batch::Error::DefaultResponse {
                     status_code,
@@ -512,7 +543,7 @@ pub mod time_series_instances {
         }
     }
     pub mod execute_batch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -536,10 +567,10 @@ pub mod time_series_instances {
     }
     pub async fn suggest(
         operation_config: &crate::OperationConfig,
-        parameters: &InstancesSuggestRequest,
+        parameters: &models::InstancesSuggestRequest,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<InstancesSuggestResponse, suggest::Error> {
+    ) -> std::result::Result<models::InstancesSuggestResponse, suggest::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/instances/suggest", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(suggest::Error::ParseUrlError)?;
@@ -570,13 +601,13 @@ pub mod time_series_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstancesSuggestResponse =
+                let rsp_value: models::InstancesSuggestResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| suggest::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| suggest::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(suggest::Error::DefaultResponse {
                     status_code,
@@ -586,7 +617,7 @@ pub mod time_series_instances {
         }
     }
     pub mod suggest {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -611,10 +642,10 @@ pub mod time_series_instances {
     pub async fn search(
         operation_config: &crate::OperationConfig,
         x_ms_continuation: Option<&str>,
-        parameters: &SearchInstancesRequest,
+        parameters: &models::SearchInstancesRequest,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<SearchInstancesResponsePage, search::Error> {
+    ) -> std::result::Result<models::SearchInstancesResponsePage, search::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/instances/search", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(search::Error::ParseUrlError)?;
@@ -645,13 +676,13 @@ pub mod time_series_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SearchInstancesResponsePage =
+                let rsp_value: models::SearchInstancesResponsePage =
                     serde_json::from_slice(rsp_body).map_err(|source| search::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| search::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(search::Error::DefaultResponse {
                     status_code,
@@ -661,7 +692,7 @@ pub mod time_series_instances {
         }
     }
     pub mod search {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -685,13 +716,13 @@ pub mod time_series_instances {
     }
 }
 pub mod time_series_types {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         x_ms_continuation: Option<&str>,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<GetTypesPage, list::Error> {
+    ) -> std::result::Result<models::GetTypesPage, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/types", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -721,13 +752,13 @@ pub mod time_series_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GetTypesPage =
+                let rsp_value: models::GetTypesPage =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -737,7 +768,7 @@ pub mod time_series_types {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -761,10 +792,10 @@ pub mod time_series_types {
     }
     pub async fn execute_batch(
         operation_config: &crate::OperationConfig,
-        parameters: &TypesBatchRequest,
+        parameters: &models::TypesBatchRequest,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<TypesBatchResponse, execute_batch::Error> {
+    ) -> std::result::Result<models::TypesBatchResponse, execute_batch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/types/$batch", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(execute_batch::Error::ParseUrlError)?;
@@ -795,13 +826,13 @@ pub mod time_series_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TypesBatchResponse =
+                let rsp_value: models::TypesBatchResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| execute_batch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| execute_batch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(execute_batch::Error::DefaultResponse {
                     status_code,
@@ -811,7 +842,7 @@ pub mod time_series_types {
         }
     }
     pub mod execute_batch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -835,13 +866,13 @@ pub mod time_series_types {
     }
 }
 pub mod time_series_hierarchies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         x_ms_continuation: Option<&str>,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<GetHierarchiesPage, list::Error> {
+    ) -> std::result::Result<models::GetHierarchiesPage, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/hierarchies", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -871,13 +902,13 @@ pub mod time_series_hierarchies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GetHierarchiesPage =
+                let rsp_value: models::GetHierarchiesPage =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -887,7 +918,7 @@ pub mod time_series_hierarchies {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -911,10 +942,10 @@ pub mod time_series_hierarchies {
     }
     pub async fn execute_batch(
         operation_config: &crate::OperationConfig,
-        parameters: &HierarchiesBatchRequest,
+        parameters: &models::HierarchiesBatchRequest,
         x_ms_client_request_id: Option<&str>,
         x_ms_client_session_id: Option<&str>,
-    ) -> std::result::Result<HierarchiesBatchResponse, execute_batch::Error> {
+    ) -> std::result::Result<models::HierarchiesBatchResponse, execute_batch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/timeseries/hierarchies/$batch", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(execute_batch::Error::ParseUrlError)?;
@@ -945,13 +976,13 @@ pub mod time_series_hierarchies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HierarchiesBatchResponse =
+                let rsp_value: models::HierarchiesBatchResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| execute_batch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TsiError =
+                let rsp_value: models::TsiError =
                     serde_json::from_slice(rsp_body).map_err(|source| execute_batch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(execute_batch::Error::DefaultResponse {
                     status_code,
@@ -961,7 +992,7 @@ pub mod time_series_hierarchies {
         }
     }
     pub mod execute_batch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

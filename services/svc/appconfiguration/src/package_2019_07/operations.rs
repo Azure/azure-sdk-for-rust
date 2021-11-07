@@ -2,14 +2,47 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    GetKeys(#[from] get_keys::Error),
+    #[error(transparent)]
+    CheckKeys(#[from] check_keys::Error),
+    #[error(transparent)]
+    GetKeyValues(#[from] get_key_values::Error),
+    #[error(transparent)]
+    CheckKeyValues(#[from] check_key_values::Error),
+    #[error(transparent)]
+    GetKeyValue(#[from] get_key_value::Error),
+    #[error(transparent)]
+    PutKeyValue(#[from] put_key_value::Error),
+    #[error(transparent)]
+    DeleteKeyValue(#[from] delete_key_value::Error),
+    #[error(transparent)]
+    CheckKeyValue(#[from] check_key_value::Error),
+    #[error(transparent)]
+    GetLabels(#[from] get_labels::Error),
+    #[error(transparent)]
+    CheckLabels(#[from] check_labels::Error),
+    #[error(transparent)]
+    PutLock(#[from] put_lock::Error),
+    #[error(transparent)]
+    DeleteLock(#[from] delete_lock::Error),
+    #[error(transparent)]
+    GetRevisions(#[from] get_revisions::Error),
+    #[error(transparent)]
+    CheckRevisions(#[from] check_revisions::Error),
+}
 pub async fn get_keys(
     operation_config: &crate::OperationConfig,
     name: Option<&str>,
     sync_token: Option<&str>,
     after: Option<&str>,
     accept_datetime: Option<&str>,
-) -> std::result::Result<KeyListResult, get_keys::Error> {
+) -> std::result::Result<models::KeyListResult, get_keys::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_keys::Error::ParseUrlError)?;
@@ -45,13 +78,13 @@ pub async fn get_keys(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyListResult =
+            let rsp_value: models::KeyListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_keys::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_keys::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_keys::Error::DefaultResponse {
                 status_code,
@@ -61,7 +94,7 @@ pub async fn get_keys(
     }
 }
 pub mod get_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -128,7 +161,7 @@ pub async fn check_keys(
     }
 }
 pub mod check_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -155,7 +188,7 @@ pub async fn get_key_values(
     after: Option<&str>,
     accept_datetime: Option<&str>,
     select: &[&str],
-) -> std::result::Result<KeyValueListResult, get_key_values::Error> {
+) -> std::result::Result<models::KeyValueListResult, get_key_values::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_key_values::Error::ParseUrlError)?;
@@ -194,13 +227,13 @@ pub async fn get_key_values(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyValueListResult =
+            let rsp_value: models::KeyValueListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_key_values::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_key_values::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_key_values::Error::DefaultResponse {
                 status_code,
@@ -210,7 +243,7 @@ pub async fn get_key_values(
     }
 }
 pub mod get_key_values {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -282,7 +315,7 @@ pub async fn check_key_values(
     }
 }
 pub mod check_key_values {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -310,7 +343,7 @@ pub async fn get_key_value(
     if_match: Option<&str>,
     if_none_match: Option<&str>,
     select: &[&str],
-) -> std::result::Result<KeyValue, get_key_value::Error> {
+) -> std::result::Result<models::KeyValue, get_key_value::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
     let mut url = url::Url::parse(url_str).map_err(get_key_value::Error::ParseUrlError)?;
@@ -349,13 +382,13 @@ pub async fn get_key_value(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyValue =
+            let rsp_value: models::KeyValue =
                 serde_json::from_slice(rsp_body).map_err(|source| get_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_key_value::Error::DefaultResponse {
                 status_code,
@@ -365,7 +398,7 @@ pub async fn get_key_value(
     }
 }
 pub mod get_key_value {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -391,11 +424,11 @@ pub async fn put_key_value(
     operation_config: &crate::OperationConfig,
     key: &str,
     label: Option<&str>,
-    entity: Option<&KeyValue>,
+    entity: Option<&models::KeyValue>,
     sync_token: Option<&str>,
     if_match: Option<&str>,
     if_none_match: Option<&str>,
-) -> std::result::Result<KeyValue, put_key_value::Error> {
+) -> std::result::Result<models::KeyValue, put_key_value::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
     let mut url = url::Url::parse(url_str).map_err(put_key_value::Error::ParseUrlError)?;
@@ -436,13 +469,13 @@ pub async fn put_key_value(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyValue =
+            let rsp_value: models::KeyValue =
                 serde_json::from_slice(rsp_body).map_err(|source| put_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| put_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_key_value::Error::DefaultResponse {
                 status_code,
@@ -452,7 +485,7 @@ pub async fn put_key_value(
     }
 }
 pub mod put_key_value {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -513,14 +546,14 @@ pub async fn delete_key_value(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyValue =
+            let rsp_value: models::KeyValue =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(delete_key_value::Response::Ok200(rsp_value))
         }
         http::StatusCode::NO_CONTENT => Ok(delete_key_value::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_key_value::Error::DefaultResponse {
                 status_code,
@@ -530,10 +563,10 @@ pub async fn delete_key_value(
     }
 }
 pub mod delete_key_value {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
-        Ok200(KeyValue),
+        Ok200(models::KeyValue),
         NoContent204,
     }
     #[derive(Debug, thiserror :: Error)]
@@ -608,7 +641,7 @@ pub async fn check_key_value(
     }
 }
 pub mod check_key_value {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -634,7 +667,7 @@ pub async fn get_labels(
     after: Option<&str>,
     accept_datetime: Option<&str>,
     select: &[&str],
-) -> std::result::Result<LabelListResult, get_labels::Error> {
+) -> std::result::Result<models::LabelListResult, get_labels::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/labels", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_labels::Error::ParseUrlError)?;
@@ -670,13 +703,13 @@ pub async fn get_labels(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: LabelListResult =
+            let rsp_value: models::LabelListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_labels::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_labels::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_labels::Error::DefaultResponse {
                 status_code,
@@ -686,7 +719,7 @@ pub async fn get_labels(
     }
 }
 pub mod get_labels {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -754,7 +787,7 @@ pub async fn check_labels(
     }
 }
 pub mod check_labels {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -780,7 +813,7 @@ pub async fn put_lock(
     sync_token: Option<&str>,
     if_match: Option<&str>,
     if_none_match: Option<&str>,
-) -> std::result::Result<KeyValue, put_lock::Error> {
+) -> std::result::Result<models::KeyValue, put_lock::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/locks/{}", operation_config.base_path(), key);
     let mut url = url::Url::parse(url_str).map_err(put_lock::Error::ParseUrlError)?;
@@ -816,13 +849,13 @@ pub async fn put_lock(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyValue =
+            let rsp_value: models::KeyValue =
                 serde_json::from_slice(rsp_body).map_err(|source| put_lock::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| put_lock::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_lock::Error::DefaultResponse {
                 status_code,
@@ -832,7 +865,7 @@ pub async fn put_lock(
     }
 }
 pub mod put_lock {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -861,7 +894,7 @@ pub async fn delete_lock(
     sync_token: Option<&str>,
     if_match: Option<&str>,
     if_none_match: Option<&str>,
-) -> std::result::Result<KeyValue, delete_lock::Error> {
+) -> std::result::Result<models::KeyValue, delete_lock::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/locks/{}", operation_config.base_path(), key);
     let mut url = url::Url::parse(url_str).map_err(delete_lock::Error::ParseUrlError)?;
@@ -897,13 +930,13 @@ pub async fn delete_lock(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyValue =
+            let rsp_value: models::KeyValue =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_lock::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_lock::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_lock::Error::DefaultResponse {
                 status_code,
@@ -913,7 +946,7 @@ pub async fn delete_lock(
     }
 }
 pub mod delete_lock {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -943,7 +976,7 @@ pub async fn get_revisions(
     after: Option<&str>,
     accept_datetime: Option<&str>,
     select: &[&str],
-) -> std::result::Result<KeyValueListResult, get_revisions::Error> {
+) -> std::result::Result<models::KeyValueListResult, get_revisions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/revisions", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_revisions::Error::ParseUrlError)?;
@@ -982,13 +1015,13 @@ pub async fn get_revisions(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyValueListResult =
+            let rsp_value: models::KeyValueListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_revisions::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_revisions::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_revisions::Error::DefaultResponse {
                 status_code,
@@ -998,7 +1031,7 @@ pub async fn get_revisions(
     }
 }
 pub mod get_revisions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1070,7 +1103,7 @@ pub async fn check_revisions(
     }
 }
 pub mod check_revisions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

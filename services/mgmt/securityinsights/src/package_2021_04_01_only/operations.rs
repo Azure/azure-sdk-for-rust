@@ -2,9 +2,80 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Incidents_List(#[from] incidents::list::Error),
+    #[error(transparent)]
+    Incidents_Get(#[from] incidents::get::Error),
+    #[error(transparent)]
+    Incidents_CreateOrUpdate(#[from] incidents::create_or_update::Error),
+    #[error(transparent)]
+    Incidents_Delete(#[from] incidents::delete::Error),
+    #[error(transparent)]
+    Incidents_ListOfAlerts(#[from] incidents::list_of_alerts::Error),
+    #[error(transparent)]
+    Incidents_ListOfBookmarks(#[from] incidents::list_of_bookmarks::Error),
+    #[error(transparent)]
+    IncidentComments_ListByIncident(#[from] incident_comments::list_by_incident::Error),
+    #[error(transparent)]
+    IncidentComments_Get(#[from] incident_comments::get::Error),
+    #[error(transparent)]
+    IncidentComments_CreateComment(#[from] incident_comments::create_comment::Error),
+    #[error(transparent)]
+    IncidentComments_DeleteComment(#[from] incident_comments::delete_comment::Error),
+    #[error(transparent)]
+    Incidents_ListOfEntities(#[from] incidents::list_of_entities::Error),
+    #[error(transparent)]
+    IncidentRelations_List(#[from] incident_relations::list::Error),
+    #[error(transparent)]
+    IncidentRelations_GetRelation(#[from] incident_relations::get_relation::Error),
+    #[error(transparent)]
+    IncidentRelations_CreateOrUpdateRelation(#[from] incident_relations::create_or_update_relation::Error),
+    #[error(transparent)]
+    IncidentRelations_DeleteRelation(#[from] incident_relations::delete_relation::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Watchlists_List(#[from] watchlists::list::Error),
+    #[error(transparent)]
+    Watchlists_Get(#[from] watchlists::get::Error),
+    #[error(transparent)]
+    Watchlists_CreateOrUpdate(#[from] watchlists::create_or_update::Error),
+    #[error(transparent)]
+    Watchlists_Delete(#[from] watchlists::delete::Error),
+    #[error(transparent)]
+    WatchlistItems_List(#[from] watchlist_items::list::Error),
+    #[error(transparent)]
+    WatchlistItems_Get(#[from] watchlist_items::get::Error),
+    #[error(transparent)]
+    WatchlistItems_CreateOrUpdate(#[from] watchlist_items::create_or_update::Error),
+    #[error(transparent)]
+    WatchlistItems_Delete(#[from] watchlist_items::delete::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicator_CreateIndicator(#[from] threat_intelligence_indicator::create_indicator::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicators_List(#[from] threat_intelligence_indicators::list::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicator_Get(#[from] threat_intelligence_indicator::get::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicator_Create(#[from] threat_intelligence_indicator::create::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicator_Delete(#[from] threat_intelligence_indicator::delete::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicator_QueryIndicators(#[from] threat_intelligence_indicator::query_indicators::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicatorMetrics_List(#[from] threat_intelligence_indicator_metrics::list::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicator_AppendTags(#[from] threat_intelligence_indicator::append_tags::Error),
+    #[error(transparent)]
+    ThreatIntelligenceIndicator_ReplaceTags(#[from] threat_intelligence_indicator::replace_tags::Error),
+}
 pub mod incidents {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -14,7 +85,7 @@ pub mod incidents {
         orderby: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<IncidentList, list::Error> {
+    ) -> std::result::Result<models::IncidentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -47,13 +118,13 @@ pub mod incidents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentList =
+                let rsp_value: models::IncidentList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -63,7 +134,7 @@ pub mod incidents {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -91,7 +162,7 @@ pub mod incidents {
         resource_group_name: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> std::result::Result<Incident, get::Error> {
+    ) -> std::result::Result<models::Incident, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -112,13 +183,13 @@ pub mod incidents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Incident =
+                let rsp_value: models::Incident =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -128,7 +199,7 @@ pub mod incidents {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -156,7 +227,7 @@ pub mod incidents {
         resource_group_name: &str,
         workspace_name: &str,
         incident_id: &str,
-        incident: &Incident,
+        incident: &models::Incident,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id) ;
@@ -182,19 +253,19 @@ pub mod incidents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Incident = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Incident = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Incident = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Incident = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -204,11 +275,11 @@ pub mod incidents {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Incident),
-            Created201(Incident),
+            Ok200(models::Incident),
+            Created201(models::Incident),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -260,7 +331,7 @@ pub mod incidents {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -270,7 +341,7 @@ pub mod incidents {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -303,7 +374,7 @@ pub mod incidents {
         resource_group_name: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> std::result::Result<IncidentAlertList, list_of_alerts::Error> {
+    ) -> std::result::Result<models::IncidentAlertList, list_of_alerts::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/alerts" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id) ;
         let mut url = url::Url::parse(url_str).map_err(list_of_alerts::Error::ParseUrlError)?;
@@ -328,13 +399,13 @@ pub mod incidents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentAlertList =
+                let rsp_value: models::IncidentAlertList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_of_alerts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_of_alerts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_of_alerts::Error::DefaultResponse {
                     status_code,
@@ -344,7 +415,7 @@ pub mod incidents {
         }
     }
     pub mod list_of_alerts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -372,7 +443,7 @@ pub mod incidents {
         resource_group_name: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> std::result::Result<IncidentBookmarkList, list_of_bookmarks::Error> {
+    ) -> std::result::Result<models::IncidentBookmarkList, list_of_bookmarks::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/bookmarks" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id) ;
         let mut url = url::Url::parse(url_str).map_err(list_of_bookmarks::Error::ParseUrlError)?;
@@ -397,13 +468,13 @@ pub mod incidents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentBookmarkList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IncidentBookmarkList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_of_bookmarks::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_of_bookmarks::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_of_bookmarks::Error::DefaultResponse {
                     status_code,
@@ -413,7 +484,7 @@ pub mod incidents {
         }
     }
     pub mod list_of_bookmarks {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -441,7 +512,7 @@ pub mod incidents {
         resource_group_name: &str,
         workspace_name: &str,
         incident_id: &str,
-    ) -> std::result::Result<IncidentEntitiesResponse, list_of_entities::Error> {
+    ) -> std::result::Result<models::IncidentEntitiesResponse, list_of_entities::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/entities" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id) ;
         let mut url = url::Url::parse(url_str).map_err(list_of_entities::Error::ParseUrlError)?;
@@ -466,13 +537,13 @@ pub mod incidents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentEntitiesResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IncidentEntitiesResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_of_entities::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_of_entities::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_of_entities::Error::DefaultResponse {
                     status_code,
@@ -482,7 +553,7 @@ pub mod incidents {
         }
     }
     pub mod list_of_entities {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -506,7 +577,7 @@ pub mod incidents {
     }
 }
 pub mod incident_comments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_incident(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -517,7 +588,7 @@ pub mod incident_comments {
         orderby: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<IncidentCommentList, list_by_incident::Error> {
+    ) -> std::result::Result<models::IncidentCommentList, list_by_incident::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_incident::Error::ParseUrlError)?;
@@ -553,13 +624,13 @@ pub mod incident_comments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentCommentList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IncidentCommentList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_incident::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_incident::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_incident::Error::DefaultResponse {
                     status_code,
@@ -569,7 +640,7 @@ pub mod incident_comments {
         }
     }
     pub mod list_by_incident {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -598,7 +669,7 @@ pub mod incident_comments {
         workspace_name: &str,
         incident_id: &str,
         incident_comment_id: &str,
-    ) -> std::result::Result<IncidentComment, get::Error> {
+    ) -> std::result::Result<models::IncidentComment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id , incident_comment_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -619,13 +690,13 @@ pub mod incident_comments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentComment =
+                let rsp_value: models::IncidentComment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -635,7 +706,7 @@ pub mod incident_comments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -664,7 +735,7 @@ pub mod incident_comments {
         workspace_name: &str,
         incident_id: &str,
         incident_comment_id: &str,
-        incident_comment: &IncidentComment,
+        incident_comment: &models::IncidentComment,
     ) -> std::result::Result<create_comment::Response, create_comment::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id , incident_comment_id) ;
@@ -690,19 +761,19 @@ pub mod incident_comments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentComment =
+                let rsp_value: models::IncidentComment =
                     serde_json::from_slice(rsp_body).map_err(|source| create_comment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_comment::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IncidentComment =
+                let rsp_value: models::IncidentComment =
                     serde_json::from_slice(rsp_body).map_err(|source| create_comment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_comment::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create_comment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_comment::Error::DefaultResponse {
                     status_code,
@@ -712,11 +783,11 @@ pub mod incident_comments {
         }
     }
     pub mod create_comment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IncidentComment),
-            Created201(IncidentComment),
+            Ok200(models::IncidentComment),
+            Created201(models::IncidentComment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -772,7 +843,7 @@ pub mod incident_comments {
             http::StatusCode::NO_CONTENT => Ok(delete_comment::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete_comment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_comment::Error::DefaultResponse {
                     status_code,
@@ -782,7 +853,7 @@ pub mod incident_comments {
         }
     }
     pub mod delete_comment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -811,7 +882,7 @@ pub mod incident_comments {
     }
 }
 pub mod incident_relations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -822,7 +893,7 @@ pub mod incident_relations {
         orderby: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<RelationList, list::Error> {
+    ) -> std::result::Result<models::RelationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -855,13 +926,13 @@ pub mod incident_relations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelationList =
+                let rsp_value: models::RelationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -871,7 +942,7 @@ pub mod incident_relations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -900,7 +971,7 @@ pub mod incident_relations {
         workspace_name: &str,
         incident_id: &str,
         relation_name: &str,
-    ) -> std::result::Result<Relation, get_relation::Error> {
+    ) -> std::result::Result<models::Relation, get_relation::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id , relation_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_relation::Error::ParseUrlError)?;
@@ -924,13 +995,13 @@ pub mod incident_relations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Relation =
+                let rsp_value: models::Relation =
                     serde_json::from_slice(rsp_body).map_err(|source| get_relation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_relation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_relation::Error::DefaultResponse {
                     status_code,
@@ -940,7 +1011,7 @@ pub mod incident_relations {
         }
     }
     pub mod get_relation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -969,7 +1040,7 @@ pub mod incident_relations {
         workspace_name: &str,
         incident_id: &str,
         relation_name: &str,
-        relation: &Relation,
+        relation: &models::Relation,
     ) -> std::result::Result<create_or_update_relation::Response, create_or_update_relation::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , incident_id , relation_name) ;
@@ -997,19 +1068,19 @@ pub mod incident_relations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Relation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Relation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_relation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_relation::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Relation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Relation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_relation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_relation::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_relation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_relation::Error::DefaultResponse {
                     status_code,
@@ -1019,11 +1090,11 @@ pub mod incident_relations {
         }
     }
     pub mod create_or_update_relation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Relation),
-            Created201(Relation),
+            Ok200(models::Relation),
+            Created201(models::Relation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1079,7 +1150,7 @@ pub mod incident_relations {
             http::StatusCode::NO_CONTENT => Ok(delete_relation::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_relation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_relation::Error::DefaultResponse {
                     status_code,
@@ -1089,7 +1160,7 @@ pub mod incident_relations {
         }
     }
     pub mod delete_relation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1118,8 +1189,8 @@ pub mod incident_relations {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.SecurityInsights/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1140,13 +1211,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsList =
+                let rsp_value: models::OperationsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1156,7 +1227,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1180,7 +1251,7 @@ pub mod operations {
     }
 }
 pub mod watchlists {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1188,7 +1259,7 @@ pub mod watchlists {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<WatchlistList, list::Error> {
+    ) -> std::result::Result<models::WatchlistList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists",
@@ -1219,13 +1290,13 @@ pub mod watchlists {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WatchlistList =
+                let rsp_value: models::WatchlistList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1235,7 +1306,7 @@ pub mod watchlists {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1264,7 +1335,7 @@ pub mod watchlists {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         watchlist_alias: &str,
-    ) -> std::result::Result<Watchlist, get::Error> {
+    ) -> std::result::Result<models::Watchlist, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}",
@@ -1293,13 +1364,13 @@ pub mod watchlists {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Watchlist =
+                let rsp_value: models::Watchlist =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1309,7 +1380,7 @@ pub mod watchlists {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1338,7 +1409,7 @@ pub mod watchlists {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         watchlist_alias: &str,
-        watchlist: &Watchlist,
+        watchlist: &models::Watchlist,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1372,19 +1443,19 @@ pub mod watchlists {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Watchlist = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Watchlist = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Watchlist = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Watchlist = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1394,11 +1465,11 @@ pub mod watchlists {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Watchlist),
-            Created201(Watchlist),
+            Ok200(models::Watchlist),
+            Created201(models::Watchlist),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1459,7 +1530,7 @@ pub mod watchlists {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1469,7 +1540,7 @@ pub mod watchlists {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1498,7 +1569,7 @@ pub mod watchlists {
     }
 }
 pub mod watchlist_items {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1507,7 +1578,7 @@ pub mod watchlist_items {
         workspace_name: &str,
         watchlist_alias: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<WatchlistItemList, list::Error> {
+    ) -> std::result::Result<models::WatchlistItemList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , watchlist_alias) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1531,13 +1602,13 @@ pub mod watchlist_items {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WatchlistItemList =
+                let rsp_value: models::WatchlistItemList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1547,7 +1618,7 @@ pub mod watchlist_items {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1577,7 +1648,7 @@ pub mod watchlist_items {
         workspace_name: &str,
         watchlist_alias: &str,
         watchlist_item_id: &str,
-    ) -> std::result::Result<WatchlistItem, get::Error> {
+    ) -> std::result::Result<models::WatchlistItem, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , watchlist_alias , watchlist_item_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1598,13 +1669,13 @@ pub mod watchlist_items {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WatchlistItem =
+                let rsp_value: models::WatchlistItem =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1614,7 +1685,7 @@ pub mod watchlist_items {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1644,7 +1715,7 @@ pub mod watchlist_items {
         workspace_name: &str,
         watchlist_alias: &str,
         watchlist_item_id: &str,
-        watchlist_item: &WatchlistItem,
+        watchlist_item: &models::WatchlistItem,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , watchlist_alias , watchlist_item_id) ;
@@ -1670,19 +1741,19 @@ pub mod watchlist_items {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WatchlistItem = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WatchlistItem = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: WatchlistItem = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WatchlistItem = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1692,11 +1763,11 @@ pub mod watchlist_items {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(WatchlistItem),
-            Created201(WatchlistItem),
+            Ok200(models::WatchlistItem),
+            Created201(models::WatchlistItem),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1750,7 +1821,7 @@ pub mod watchlist_items {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1760,7 +1831,7 @@ pub mod watchlist_items {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1789,14 +1860,14 @@ pub mod watchlist_items {
     }
 }
 pub mod threat_intelligence_indicator {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn create_indicator(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-        threat_intelligence_properties: &ThreatIntelligenceIndicatorModelForRequestBody,
+        threat_intelligence_properties: &models::ThreatIntelligenceIndicatorModelForRequestBody,
     ) -> std::result::Result<create_indicator::Response, create_indicator::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/createIndicator" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
@@ -1822,19 +1893,19 @@ pub mod threat_intelligence_indicator {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceInformation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ThreatIntelligenceInformation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_indicator::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_indicator::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceInformation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ThreatIntelligenceInformation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_indicator::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_indicator::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_indicator::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_indicator::Error::DefaultResponse {
                     status_code,
@@ -1844,11 +1915,11 @@ pub mod threat_intelligence_indicator {
         }
     }
     pub mod create_indicator {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ThreatIntelligenceInformation),
-            Created201(ThreatIntelligenceInformation),
+            Ok200(models::ThreatIntelligenceInformation),
+            Created201(models::ThreatIntelligenceInformation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1878,7 +1949,7 @@ pub mod threat_intelligence_indicator {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-    ) -> std::result::Result<ThreatIntelligenceInformation, get::Error> {
+    ) -> std::result::Result<models::ThreatIntelligenceInformation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1899,13 +1970,13 @@ pub mod threat_intelligence_indicator {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceInformation =
+                let rsp_value: models::ThreatIntelligenceInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1915,7 +1986,7 @@ pub mod threat_intelligence_indicator {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1944,7 +2015,7 @@ pub mod threat_intelligence_indicator {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-        threat_intelligence_properties: &ThreatIntelligenceIndicatorModelForRequestBody,
+        threat_intelligence_properties: &models::ThreatIntelligenceIndicatorModelForRequestBody,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
@@ -1967,19 +2038,19 @@ pub mod threat_intelligence_indicator {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceInformation =
+                let rsp_value: models::ThreatIntelligenceInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceInformation =
+                let rsp_value: models::ThreatIntelligenceInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1989,11 +2060,11 @@ pub mod threat_intelligence_indicator {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ThreatIntelligenceInformation),
-            Created201(ThreatIntelligenceInformation),
+            Ok200(models::ThreatIntelligenceInformation),
+            Created201(models::ThreatIntelligenceInformation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2046,7 +2117,7 @@ pub mod threat_intelligence_indicator {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2056,7 +2127,7 @@ pub mod threat_intelligence_indicator {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2089,8 +2160,8 @@ pub mod threat_intelligence_indicator {
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-        threat_intelligence_filtering_criteria: &ThreatIntelligenceFilteringCriteria,
-    ) -> std::result::Result<ThreatIntelligenceInformationList, query_indicators::Error> {
+        threat_intelligence_filtering_criteria: &models::ThreatIntelligenceFilteringCriteria,
+    ) -> std::result::Result<models::ThreatIntelligenceInformationList, query_indicators::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/queryIndicators" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut url = url::Url::parse(url_str).map_err(query_indicators::Error::ParseUrlError)?;
@@ -2115,13 +2186,13 @@ pub mod threat_intelligence_indicator {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceInformationList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ThreatIntelligenceInformationList = serde_json::from_slice(rsp_body)
                     .map_err(|source| query_indicators::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| query_indicators::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(query_indicators::Error::DefaultResponse {
                     status_code,
@@ -2131,7 +2202,7 @@ pub mod threat_intelligence_indicator {
         }
     }
     pub mod query_indicators {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2160,7 +2231,7 @@ pub mod threat_intelligence_indicator {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-        threat_intelligence_append_tags: &ThreatIntelligenceAppendTags,
+        threat_intelligence_append_tags: &models::ThreatIntelligenceAppendTags,
     ) -> std::result::Result<(), append_tags::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/appendTags" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
@@ -2187,7 +2258,7 @@ pub mod threat_intelligence_indicator {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| append_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(append_tags::Error::DefaultResponse {
                     status_code,
@@ -2197,7 +2268,7 @@ pub mod threat_intelligence_indicator {
         }
     }
     pub mod append_tags {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2226,8 +2297,8 @@ pub mod threat_intelligence_indicator {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         name: &str,
-        threat_intelligence_replace_tags: &ThreatIntelligenceIndicatorModelForRequestBody,
-    ) -> std::result::Result<ThreatIntelligenceInformation, replace_tags::Error> {
+        threat_intelligence_replace_tags: &models::ThreatIntelligenceIndicatorModelForRequestBody,
+    ) -> std::result::Result<models::ThreatIntelligenceInformation, replace_tags::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/replaceTags" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name , name) ;
         let mut url = url::Url::parse(url_str).map_err(replace_tags::Error::ParseUrlError)?;
@@ -2252,13 +2323,13 @@ pub mod threat_intelligence_indicator {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceInformation =
+                let rsp_value: models::ThreatIntelligenceInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| replace_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| replace_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(replace_tags::Error::DefaultResponse {
                     status_code,
@@ -2268,7 +2339,7 @@ pub mod threat_intelligence_indicator {
         }
     }
     pub mod replace_tags {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2292,7 +2363,7 @@ pub mod threat_intelligence_indicator {
     }
 }
 pub mod threat_intelligence_indicators {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2303,7 +2374,7 @@ pub mod threat_intelligence_indicators {
         top: Option<i32>,
         skip_token: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<ThreatIntelligenceInformationList, list::Error> {
+    ) -> std::result::Result<models::ThreatIntelligenceInformationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2336,13 +2407,13 @@ pub mod threat_intelligence_indicators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceInformationList =
+                let rsp_value: models::ThreatIntelligenceInformationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2352,7 +2423,7 @@ pub mod threat_intelligence_indicators {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2376,14 +2447,14 @@ pub mod threat_intelligence_indicators {
     }
 }
 pub mod threat_intelligence_indicator_metrics {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-    ) -> std::result::Result<ThreatIntelligenceMetricsList, list::Error> {
+    ) -> std::result::Result<models::ThreatIntelligenceMetricsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/metrics" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2404,13 +2475,13 @@ pub mod threat_intelligence_indicator_metrics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ThreatIntelligenceMetricsList =
+                let rsp_value: models::ThreatIntelligenceMetricsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2420,7 +2491,7 @@ pub mod threat_intelligence_indicator_metrics {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

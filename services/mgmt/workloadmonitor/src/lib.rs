@@ -6,12 +6,12 @@
 #[cfg(feature = "package-2018-08-31-preview")]
 pub mod package_2018_08_31_preview;
 #[cfg(all(feature = "package-2018-08-31-preview", not(feature = "no-default-version")))]
-pub use package_2018_08_31_preview::{models, operations};
+pub use package_2018_08_31_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-01-13-preview")]
 pub mod package_2020_01_13_preview;
 use azure_core::setters;
 #[cfg(all(feature = "package-2020-01-13-preview", not(feature = "no-default-version")))]
-pub use package_2020_01_13_preview::{models, operations};
+pub use package_2020_01_13_preview::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

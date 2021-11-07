@@ -2,10 +2,81 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Skus_List(#[from] skus::list::Error),
+    #[error(transparent)]
+    StorageAccounts_CheckNameAvailability(#[from] storage_accounts::check_name_availability::Error),
+    #[error(transparent)]
+    StorageAccounts_GetProperties(#[from] storage_accounts::get_properties::Error),
+    #[error(transparent)]
+    StorageAccounts_Create(#[from] storage_accounts::create::Error),
+    #[error(transparent)]
+    StorageAccounts_Update(#[from] storage_accounts::update::Error),
+    #[error(transparent)]
+    StorageAccounts_Delete(#[from] storage_accounts::delete::Error),
+    #[error(transparent)]
+    StorageAccounts_List(#[from] storage_accounts::list::Error),
+    #[error(transparent)]
+    StorageAccounts_ListByResourceGroup(#[from] storage_accounts::list_by_resource_group::Error),
+    #[error(transparent)]
+    StorageAccounts_ListKeys(#[from] storage_accounts::list_keys::Error),
+    #[error(transparent)]
+    StorageAccounts_RegenerateKey(#[from] storage_accounts::regenerate_key::Error),
+    #[error(transparent)]
+    Usages_ListByLocation(#[from] usages::list_by_location::Error),
+    #[error(transparent)]
+    StorageAccounts_ListAccountSas(#[from] storage_accounts::list_account_sas::Error),
+    #[error(transparent)]
+    StorageAccounts_ListServiceSas(#[from] storage_accounts::list_service_sas::Error),
+    #[error(transparent)]
+    StorageAccounts_Failover(#[from] storage_accounts::failover::Error),
+    #[error(transparent)]
+    BlobServices_GetServiceProperties(#[from] blob_services::get_service_properties::Error),
+    #[error(transparent)]
+    BlobServices_SetServiceProperties(#[from] blob_services::set_service_properties::Error),
+    #[error(transparent)]
+    BlobContainers_List(#[from] blob_containers::list::Error),
+    #[error(transparent)]
+    BlobContainers_Get(#[from] blob_containers::get::Error),
+    #[error(transparent)]
+    BlobContainers_Create(#[from] blob_containers::create::Error),
+    #[error(transparent)]
+    BlobContainers_Update(#[from] blob_containers::update::Error),
+    #[error(transparent)]
+    BlobContainers_Delete(#[from] blob_containers::delete::Error),
+    #[error(transparent)]
+    BlobContainers_SetLegalHold(#[from] blob_containers::set_legal_hold::Error),
+    #[error(transparent)]
+    BlobContainers_ClearLegalHold(#[from] blob_containers::clear_legal_hold::Error),
+    #[error(transparent)]
+    BlobContainers_GetImmutabilityPolicy(#[from] blob_containers::get_immutability_policy::Error),
+    #[error(transparent)]
+    BlobContainers_CreateOrUpdateImmutabilityPolicy(#[from] blob_containers::create_or_update_immutability_policy::Error),
+    #[error(transparent)]
+    BlobContainers_DeleteImmutabilityPolicy(#[from] blob_containers::delete_immutability_policy::Error),
+    #[error(transparent)]
+    BlobContainers_LockImmutabilityPolicy(#[from] blob_containers::lock_immutability_policy::Error),
+    #[error(transparent)]
+    BlobContainers_ExtendImmutabilityPolicy(#[from] blob_containers::extend_immutability_policy::Error),
+    #[error(transparent)]
+    BlobContainers_Lease(#[from] blob_containers::lease::Error),
+    #[error(transparent)]
+    ManagementPolicies_Get(#[from] management_policies::get::Error),
+    #[error(transparent)]
+    ManagementPolicies_CreateOrUpdate(#[from] management_policies::create_or_update::Error),
+    #[error(transparent)]
+    ManagementPolicies_Delete(#[from] management_policies::delete::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Storage/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +97,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +111,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,11 +132,11 @@ pub mod operations {
     }
 }
 pub mod skus {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<StorageSkuListResult, list::Error> {
+    ) -> std::result::Result<models::StorageSkuListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/skus",
@@ -90,7 +161,7 @@ pub mod skus {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSkuListResult =
+                let rsp_value: models::StorageSkuListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -104,7 +175,7 @@ pub mod skus {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -125,12 +196,12 @@ pub mod skus {
     }
 }
 pub mod storage_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
-        account_name: &StorageAccountCheckNameAvailabilityParameters,
+        account_name: &models::StorageAccountCheckNameAvailabilityParameters,
         subscription_id: &str,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/checkNameAvailability",
@@ -161,7 +232,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -175,7 +246,7 @@ pub mod storage_accounts {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -200,7 +271,7 @@ pub mod storage_accounts {
         account_name: &str,
         subscription_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<StorageAccount, get_properties::Error> {
+    ) -> std::result::Result<models::StorageAccount, get_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
@@ -233,7 +304,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccount =
+                let rsp_value: models::StorageAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -247,7 +318,7 @@ pub mod storage_accounts {
         }
     }
     pub mod get_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -270,7 +341,7 @@ pub mod storage_accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &StorageAccountCreateParameters,
+        parameters: &models::StorageAccountCreateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -300,7 +371,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccount =
+                let rsp_value: models::StorageAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
@@ -315,10 +386,10 @@ pub mod storage_accounts {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(StorageAccount),
+            Ok200(models::StorageAccount),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -343,9 +414,9 @@ pub mod storage_accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &StorageAccountUpdateParameters,
+        parameters: &models::StorageAccountUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<StorageAccount, update::Error> {
+    ) -> std::result::Result<models::StorageAccount, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}",
@@ -373,7 +444,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccount =
+                let rsp_value: models::StorageAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -387,7 +458,7 @@ pub mod storage_accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -448,7 +519,7 @@ pub mod storage_accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -475,7 +546,7 @@ pub mod storage_accounts {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<StorageAccountListResult, list::Error> {
+    ) -> std::result::Result<models::StorageAccountListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/storageAccounts",
@@ -500,7 +571,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountListResult =
+                let rsp_value: models::StorageAccountListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -514,7 +585,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -537,7 +608,7 @@ pub mod storage_accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StorageAccountListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::StorageAccountListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts",
@@ -568,7 +639,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageAccountListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -582,7 +653,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -606,7 +677,7 @@ pub mod storage_accounts {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StorageAccountListKeysResult, list_keys::Error> {
+    ) -> std::result::Result<models::StorageAccountListKeysResult, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/listKeys",
@@ -637,7 +708,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountListKeysResult =
+                let rsp_value: models::StorageAccountListKeysResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -651,7 +722,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -674,9 +745,9 @@ pub mod storage_accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        regenerate_key: &StorageAccountRegenerateKeyParameters,
+        regenerate_key: &models::StorageAccountRegenerateKeyParameters,
         subscription_id: &str,
-    ) -> std::result::Result<StorageAccountListKeysResult, regenerate_key::Error> {
+    ) -> std::result::Result<models::StorageAccountListKeysResult, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/regenerateKey",
@@ -707,7 +778,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountListKeysResult =
+                let rsp_value: models::StorageAccountListKeysResult =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -721,7 +792,7 @@ pub mod storage_accounts {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -744,9 +815,9 @@ pub mod storage_accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &AccountSasParameters,
+        parameters: &models::AccountSasParameters,
         subscription_id: &str,
-    ) -> std::result::Result<ListAccountSasResponse, list_account_sas::Error> {
+    ) -> std::result::Result<models::ListAccountSasResponse, list_account_sas::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListAccountSas",
@@ -777,7 +848,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListAccountSasResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListAccountSasResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_account_sas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -791,7 +862,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list_account_sas {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -814,9 +885,9 @@ pub mod storage_accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &ServiceSasParameters,
+        parameters: &models::ServiceSasParameters,
         subscription_id: &str,
-    ) -> std::result::Result<ListServiceSasResponse, list_service_sas::Error> {
+    ) -> std::result::Result<models::ListServiceSasResponse, list_service_sas::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/ListServiceSas",
@@ -847,7 +918,7 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListServiceSasResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListServiceSasResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_service_sas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -861,7 +932,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list_service_sas {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -926,7 +997,7 @@ pub mod storage_accounts {
         }
     }
     pub mod failover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -952,12 +1023,12 @@ pub mod storage_accounts {
     }
 }
 pub mod usages {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_location(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<UsageListResult, list_by_location::Error> {
+    ) -> std::result::Result<models::UsageListResult, list_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Storage/locations/{}/usages",
@@ -986,7 +1057,7 @@ pub mod usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsageListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UsageListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1000,7 +1071,7 @@ pub mod usages {
         }
     }
     pub mod list_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1021,14 +1092,14 @@ pub mod usages {
     }
 }
 pub mod blob_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_service_properties(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
         blob_services_name: &str,
-    ) -> std::result::Result<BlobServiceProperties, get_service_properties::Error> {
+    ) -> std::result::Result<models::BlobServiceProperties, get_service_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/{}",
@@ -1061,7 +1132,7 @@ pub mod blob_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlobServiceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BlobServiceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_service_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1075,7 +1146,7 @@ pub mod blob_services {
         }
     }
     pub mod get_service_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1100,8 +1171,8 @@ pub mod blob_services {
         account_name: &str,
         subscription_id: &str,
         blob_services_name: &str,
-        parameters: &BlobServiceProperties,
-    ) -> std::result::Result<BlobServiceProperties, set_service_properties::Error> {
+        parameters: &models::BlobServiceProperties,
+    ) -> std::result::Result<models::BlobServiceProperties, set_service_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/{}",
@@ -1135,7 +1206,7 @@ pub mod blob_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlobServiceProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BlobServiceProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| set_service_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1149,7 +1220,7 @@ pub mod blob_services {
         }
     }
     pub mod set_service_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1170,13 +1241,13 @@ pub mod blob_services {
     }
 }
 pub mod blob_containers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ListContainerItems, list::Error> {
+    ) -> std::result::Result<models::ListContainerItems, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers",
@@ -1203,7 +1274,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListContainerItems =
+                let rsp_value: models::ListContainerItems =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1217,7 +1288,7 @@ pub mod blob_containers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1242,7 +1313,7 @@ pub mod blob_containers {
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BlobContainer, get::Error> {
+    ) -> std::result::Result<models::BlobContainer, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
@@ -1270,7 +1341,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlobContainer =
+                let rsp_value: models::BlobContainer =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1284,7 +1355,7 @@ pub mod blob_containers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1308,9 +1379,9 @@ pub mod blob_containers {
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
-        blob_container: &BlobContainer,
+        blob_container: &models::BlobContainer,
         subscription_id: &str,
-    ) -> std::result::Result<BlobContainer, create::Error> {
+    ) -> std::result::Result<models::BlobContainer, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
@@ -1339,7 +1410,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlobContainer =
+                let rsp_value: models::BlobContainer =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1353,7 +1424,7 @@ pub mod blob_containers {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1377,9 +1448,9 @@ pub mod blob_containers {
         resource_group_name: &str,
         account_name: &str,
         container_name: &str,
-        blob_container: &BlobContainer,
+        blob_container: &models::BlobContainer,
         subscription_id: &str,
-    ) -> std::result::Result<BlobContainer, update::Error> {
+    ) -> std::result::Result<models::BlobContainer, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}",
@@ -1408,7 +1479,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BlobContainer =
+                let rsp_value: models::BlobContainer =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1422,7 +1493,7 @@ pub mod blob_containers {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1485,7 +1556,7 @@ pub mod blob_containers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1515,8 +1586,8 @@ pub mod blob_containers {
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
-        legal_hold: &LegalHold,
-    ) -> std::result::Result<LegalHold, set_legal_hold::Error> {
+        legal_hold: &models::LegalHold,
+    ) -> std::result::Result<models::LegalHold, set_legal_hold::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/setLegalHold" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name) ;
         let mut url = url::Url::parse(url_str).map_err(set_legal_hold::Error::ParseUrlError)?;
@@ -1541,7 +1612,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LegalHold =
+                let rsp_value: models::LegalHold =
                     serde_json::from_slice(rsp_body).map_err(|source| set_legal_hold::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1555,7 +1626,7 @@ pub mod blob_containers {
         }
     }
     pub mod set_legal_hold {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1580,8 +1651,8 @@ pub mod blob_containers {
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
-        legal_hold: &LegalHold,
-    ) -> std::result::Result<LegalHold, clear_legal_hold::Error> {
+        legal_hold: &models::LegalHold,
+    ) -> std::result::Result<models::LegalHold, clear_legal_hold::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/clearLegalHold" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name) ;
         let mut url = url::Url::parse(url_str).map_err(clear_legal_hold::Error::ParseUrlError)?;
@@ -1606,7 +1677,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LegalHold = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LegalHold = serde_json::from_slice(rsp_body)
                     .map_err(|source| clear_legal_hold::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1620,7 +1691,7 @@ pub mod blob_containers {
         }
     }
     pub mod clear_legal_hold {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1647,7 +1718,7 @@ pub mod blob_containers {
         immutability_policy_name: &str,
         subscription_id: &str,
         if_match: Option<&str>,
-    ) -> std::result::Result<ImmutabilityPolicy, get_immutability_policy::Error> {
+    ) -> std::result::Result<models::ImmutabilityPolicy, get_immutability_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_immutability_policy::Error::ParseUrlError)?;
@@ -1676,7 +1747,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImmutabilityPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImmutabilityPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_immutability_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1690,7 +1761,7 @@ pub mod blob_containers {
         }
     }
     pub mod get_immutability_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1716,9 +1787,9 @@ pub mod blob_containers {
         container_name: &str,
         immutability_policy_name: &str,
         subscription_id: &str,
-        parameters: Option<&ImmutabilityPolicy>,
+        parameters: Option<&models::ImmutabilityPolicy>,
         if_match: Option<&str>,
-    ) -> std::result::Result<ImmutabilityPolicy, create_or_update_immutability_policy::Error> {
+    ) -> std::result::Result<models::ImmutabilityPolicy, create_or_update_immutability_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut url = url::Url::parse(url_str).map_err(create_or_update_immutability_policy::Error::ParseUrlError)?;
@@ -1752,7 +1823,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImmutabilityPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImmutabilityPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_immutability_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1766,7 +1837,7 @@ pub mod blob_containers {
         }
     }
     pub mod create_or_update_immutability_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1793,7 +1864,7 @@ pub mod blob_containers {
         immutability_policy_name: &str,
         subscription_id: &str,
         if_match: &str,
-    ) -> std::result::Result<ImmutabilityPolicy, delete_immutability_policy::Error> {
+    ) -> std::result::Result<models::ImmutabilityPolicy, delete_immutability_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name , immutability_policy_name) ;
         let mut url = url::Url::parse(url_str).map_err(delete_immutability_policy::Error::ParseUrlError)?;
@@ -1820,7 +1891,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImmutabilityPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImmutabilityPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_immutability_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1834,7 +1905,7 @@ pub mod blob_containers {
         }
     }
     pub mod delete_immutability_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1860,7 +1931,7 @@ pub mod blob_containers {
         container_name: &str,
         subscription_id: &str,
         if_match: &str,
-    ) -> std::result::Result<ImmutabilityPolicy, lock_immutability_policy::Error> {
+    ) -> std::result::Result<models::ImmutabilityPolicy, lock_immutability_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/lock" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name) ;
         let mut url = url::Url::parse(url_str).map_err(lock_immutability_policy::Error::ParseUrlError)?;
@@ -1888,7 +1959,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImmutabilityPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImmutabilityPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| lock_immutability_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1902,7 +1973,7 @@ pub mod blob_containers {
         }
     }
     pub mod lock_immutability_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1927,9 +1998,9 @@ pub mod blob_containers {
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
-        parameters: Option<&ImmutabilityPolicy>,
+        parameters: Option<&models::ImmutabilityPolicy>,
         if_match: &str,
-    ) -> std::result::Result<ImmutabilityPolicy, extend_immutability_policy::Error> {
+    ) -> std::result::Result<models::ImmutabilityPolicy, extend_immutability_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/immutabilityPolicies/default/extend" , operation_config . base_path () , subscription_id , resource_group_name , account_name , container_name) ;
         let mut url = url::Url::parse(url_str).map_err(extend_immutability_policy::Error::ParseUrlError)?;
@@ -1961,7 +2032,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImmutabilityPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImmutabilityPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| extend_immutability_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1975,7 +2046,7 @@ pub mod blob_containers {
         }
     }
     pub mod extend_immutability_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2000,8 +2071,8 @@ pub mod blob_containers {
         account_name: &str,
         container_name: &str,
         subscription_id: &str,
-        parameters: Option<&LeaseContainerRequest>,
-    ) -> std::result::Result<LeaseContainerResponse, lease::Error> {
+        parameters: Option<&models::LeaseContainerRequest>,
+    ) -> std::result::Result<models::LeaseContainerResponse, lease::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Storage/storageAccounts/{}/blobServices/default/containers/{}/lease",
@@ -2034,7 +2105,7 @@ pub mod blob_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LeaseContainerResponse =
+                let rsp_value: models::LeaseContainerResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| lease::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2048,7 +2119,7 @@ pub mod blob_containers {
         }
     }
     pub mod lease {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2069,14 +2140,14 @@ pub mod blob_containers {
     }
 }
 pub mod management_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
         management_policy_name: &str,
-    ) -> std::result::Result<StorageAccountManagementPolicies, get::Error> {
+    ) -> std::result::Result<models::StorageAccountManagementPolicies, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
@@ -2104,7 +2175,7 @@ pub mod management_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountManagementPolicies =
+                let rsp_value: models::StorageAccountManagementPolicies =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2118,7 +2189,7 @@ pub mod management_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2143,8 +2214,8 @@ pub mod management_policies {
         account_name: &str,
         subscription_id: &str,
         management_policy_name: &str,
-        properties: &ManagementPoliciesRulesSetParameter,
-    ) -> std::result::Result<StorageAccountManagementPolicies, create_or_update::Error> {
+        properties: &models::ManagementPoliciesRulesSetParameter,
+    ) -> std::result::Result<models::StorageAccountManagementPolicies, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/managementPolicies/{}",
@@ -2176,7 +2247,7 @@ pub mod management_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountManagementPolicies = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageAccountManagementPolicies = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2190,7 +2261,7 @@ pub mod management_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2253,7 +2324,7 @@ pub mod management_policies {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

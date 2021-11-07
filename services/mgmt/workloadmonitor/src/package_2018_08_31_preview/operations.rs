@@ -2,9 +2,40 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Monitors_ListByResource(#[from] monitors::list_by_resource::Error),
+    #[error(transparent)]
+    Monitors_Get(#[from] monitors::get::Error),
+    #[error(transparent)]
+    Monitors_Update(#[from] monitors::update::Error),
+    #[error(transparent)]
+    Components_ListByResource(#[from] components::list_by_resource::Error),
+    #[error(transparent)]
+    Components_Get(#[from] components::get::Error),
+    #[error(transparent)]
+    MonitorInstances_ListByResource(#[from] monitor_instances::list_by_resource::Error),
+    #[error(transparent)]
+    MonitorInstances_Get(#[from] monitor_instances::get::Error),
+    #[error(transparent)]
+    NotificationSettings_ListByResource(#[from] notification_settings::list_by_resource::Error),
+    #[error(transparent)]
+    NotificationSettings_Get(#[from] notification_settings::get::Error),
+    #[error(transparent)]
+    NotificationSettings_Update(#[from] notification_settings::update::Error),
+    #[error(transparent)]
+    ComponentsSummary_List(#[from] components_summary::list::Error),
+    #[error(transparent)]
+    MonitorInstancesSummary_List(#[from] monitor_instances_summary::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod monitors {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -14,7 +45,7 @@ pub mod monitors {
         resource_name: &str,
         filter: Option<&str>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<MonitorsCollection, list_by_resource::Error> {
+    ) -> std::result::Result<models::MonitorsCollection, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors",
@@ -52,13 +83,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitorsCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MonitorsCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource::Error::DefaultResponse {
                     status_code,
@@ -68,7 +99,7 @@ pub mod monitors {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -98,7 +129,7 @@ pub mod monitors {
         resource_type: &str,
         resource_name: &str,
         monitor_id: &str,
-    ) -> std::result::Result<Monitor, get::Error> {
+    ) -> std::result::Result<models::Monitor, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
@@ -128,13 +159,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Monitor =
+                let rsp_value: models::Monitor =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -144,7 +175,7 @@ pub mod monitors {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -174,8 +205,8 @@ pub mod monitors {
         resource_type: &str,
         resource_name: &str,
         monitor_id: &str,
-        body: &Monitor,
-    ) -> std::result::Result<Monitor, update::Error> {
+        body: &models::Monitor,
+    ) -> std::result::Result<models::Monitor, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
@@ -206,13 +237,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Monitor =
+                let rsp_value: models::Monitor =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -222,7 +253,7 @@ pub mod monitors {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -246,7 +277,7 @@ pub mod monitors {
     }
 }
 pub mod components {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -261,7 +292,7 @@ pub mod components {
         expand: Option<&str>,
         top: Option<&str>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<ComponentsCollection, list_by_resource::Error> {
+    ) -> std::result::Result<models::ComponentsCollection, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/components",
@@ -314,13 +345,13 @@ pub mod components {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComponentsCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ComponentsCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource::Error::DefaultResponse {
                     status_code,
@@ -330,7 +361,7 @@ pub mod components {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -362,7 +393,7 @@ pub mod components {
         component_id: &str,
         select: Option<&str>,
         expand: Option<&str>,
-    ) -> std::result::Result<Component, get::Error> {
+    ) -> std::result::Result<models::Component, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/components/{}",
@@ -398,13 +429,13 @@ pub mod components {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Component =
+                let rsp_value: models::Component =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -414,7 +445,7 @@ pub mod components {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -438,7 +469,7 @@ pub mod components {
     }
 }
 pub mod monitor_instances {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -453,7 +484,7 @@ pub mod monitor_instances {
         expand: Option<&str>,
         top: Option<&str>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<MonitorInstancesCollection, list_by_resource::Error> {
+    ) -> std::result::Result<models::MonitorInstancesCollection, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitorInstances",
@@ -506,13 +537,13 @@ pub mod monitor_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitorInstancesCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MonitorInstancesCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource::Error::DefaultResponse {
                     status_code,
@@ -522,7 +553,7 @@ pub mod monitor_instances {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -554,7 +585,7 @@ pub mod monitor_instances {
         monitor_instance_id: &str,
         select: Option<&str>,
         expand: Option<&str>,
-    ) -> std::result::Result<MonitorInstance, get::Error> {
+    ) -> std::result::Result<models::MonitorInstance, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitorInstances/{}",
@@ -590,13 +621,13 @@ pub mod monitor_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitorInstance =
+                let rsp_value: models::MonitorInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -606,7 +637,7 @@ pub mod monitor_instances {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -630,7 +661,7 @@ pub mod monitor_instances {
     }
 }
 pub mod notification_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -639,7 +670,7 @@ pub mod notification_settings {
         resource_type: &str,
         resource_name: &str,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<NotificationSettingsCollection, list_by_resource::Error> {
+    ) -> std::result::Result<models::NotificationSettingsCollection, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings",
@@ -674,13 +705,13 @@ pub mod notification_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationSettingsCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NotificationSettingsCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource::Error::DefaultResponse {
                     status_code,
@@ -690,7 +721,7 @@ pub mod notification_settings {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -720,7 +751,7 @@ pub mod notification_settings {
         resource_type: &str,
         resource_name: &str,
         notification_setting_name: &str,
-    ) -> std::result::Result<NotificationSetting, get::Error> {
+    ) -> std::result::Result<models::NotificationSetting, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings/{}",
@@ -750,13 +781,13 @@ pub mod notification_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationSetting =
+                let rsp_value: models::NotificationSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -766,7 +797,7 @@ pub mod notification_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -796,8 +827,8 @@ pub mod notification_settings {
         resource_type: &str,
         resource_name: &str,
         notification_setting_name: &str,
-        body: &NotificationSetting,
-    ) -> std::result::Result<NotificationSetting, update::Error> {
+        body: &models::NotificationSetting,
+    ) -> std::result::Result<models::NotificationSetting, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/notificationSettings/{}",
@@ -828,13 +859,13 @@ pub mod notification_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationSetting =
+                let rsp_value: models::NotificationSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -844,7 +875,7 @@ pub mod notification_settings {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -868,7 +899,7 @@ pub mod notification_settings {
     }
 }
 pub mod components_summary {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -879,7 +910,7 @@ pub mod components_summary {
         expand: Option<&str>,
         top: Option<&str>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<ComponentsCollection, list::Error> {
+    ) -> std::result::Result<models::ComponentsCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.WorkloadMonitor/componentsSummary",
@@ -925,13 +956,13 @@ pub mod components_summary {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComponentsCollection =
+                let rsp_value: models::ComponentsCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -941,7 +972,7 @@ pub mod components_summary {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -965,7 +996,7 @@ pub mod components_summary {
     }
 }
 pub mod monitor_instances_summary {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -976,7 +1007,7 @@ pub mod monitor_instances_summary {
         expand: Option<&str>,
         top: Option<&str>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<MonitorInstancesCollection, list::Error> {
+    ) -> std::result::Result<models::MonitorInstancesCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.WorkloadMonitor/monitorInstancesSummary",
@@ -1022,13 +1053,13 @@ pub mod monitor_instances_summary {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitorInstancesCollection =
+                let rsp_value: models::MonitorInstancesCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1038,7 +1069,7 @@ pub mod monitor_instances_summary {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1062,11 +1093,11 @@ pub mod monitor_instances_summary {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<OperationListResult, list::Error> {
+    ) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.WorkloadMonitor/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1090,7 +1121,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1104,7 +1135,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

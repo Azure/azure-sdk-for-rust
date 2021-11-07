@@ -2,15 +2,74 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Clusters_Get(#[from] clusters::get::Error),
+    #[error(transparent)]
+    Clusters_CreateOrUpdate(#[from] clusters::create_or_update::Error),
+    #[error(transparent)]
+    Clusters_Update(#[from] clusters::update::Error),
+    #[error(transparent)]
+    Clusters_Delete(#[from] clusters::delete::Error),
+    #[error(transparent)]
+    Clusters_Stop(#[from] clusters::stop::Error),
+    #[error(transparent)]
+    Clusters_Start(#[from] clusters::start::Error),
+    #[error(transparent)]
+    Clusters_ListByResourceGroup(#[from] clusters::list_by_resource_group::Error),
+    #[error(transparent)]
+    Clusters_List(#[from] clusters::list::Error),
+    #[error(transparent)]
+    Clusters_ListSkus(#[from] clusters::list_skus::Error),
+    #[error(transparent)]
+    Clusters_CheckNameAvailability(#[from] clusters::check_name_availability::Error),
+    #[error(transparent)]
+    Databases_CheckNameAvailability(#[from] databases::check_name_availability::Error),
+    #[error(transparent)]
+    Clusters_ListSkusByResource(#[from] clusters::list_skus_by_resource::Error),
+    #[error(transparent)]
+    Databases_ListByCluster(#[from] databases::list_by_cluster::Error),
+    #[error(transparent)]
+    Databases_Get(#[from] databases::get::Error),
+    #[error(transparent)]
+    Databases_CreateOrUpdate(#[from] databases::create_or_update::Error),
+    #[error(transparent)]
+    Databases_Update(#[from] databases::update::Error),
+    #[error(transparent)]
+    Databases_Delete(#[from] databases::delete::Error),
+    #[error(transparent)]
+    Databases_ListPrincipals(#[from] databases::list_principals::Error),
+    #[error(transparent)]
+    Databases_AddPrincipals(#[from] databases::add_principals::Error),
+    #[error(transparent)]
+    Databases_RemovePrincipals(#[from] databases::remove_principals::Error),
+    #[error(transparent)]
+    EventHubConnections_ListByDatabase(#[from] event_hub_connections::list_by_database::Error),
+    #[error(transparent)]
+    EventHubConnections_EventhubConnectionValidation(#[from] event_hub_connections::eventhub_connection_validation::Error),
+    #[error(transparent)]
+    EventHubConnections_Get(#[from] event_hub_connections::get::Error),
+    #[error(transparent)]
+    EventHubConnections_CreateOrUpdate(#[from] event_hub_connections::create_or_update::Error),
+    #[error(transparent)]
+    EventHubConnections_Update(#[from] event_hub_connections::update::Error),
+    #[error(transparent)]
+    EventHubConnections_Delete(#[from] event_hub_connections::delete::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod clusters {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         cluster_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Cluster, get::Error> {
+    ) -> std::result::Result<models::Cluster, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}",
@@ -37,13 +96,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Cluster =
+                let rsp_value: models::Cluster =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +112,7 @@ pub mod clusters {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -79,7 +138,7 @@ pub mod clusters {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &Cluster,
+        parameters: &models::Cluster,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -112,19 +171,19 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Cluster = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Cluster = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Cluster = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Cluster = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -134,11 +193,11 @@ pub mod clusters {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Cluster),
-            Created201(Cluster),
+            Ok200(models::Cluster),
+            Created201(models::Cluster),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -165,7 +224,7 @@ pub mod clusters {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &ClusterUpdate,
+        parameters: &models::ClusterUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -195,19 +254,19 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Cluster =
+                let rsp_value: models::Cluster =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Cluster =
+                let rsp_value: models::Cluster =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -217,11 +276,11 @@ pub mod clusters {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Cluster),
-            Created201(Cluster),
+            Ok200(models::Cluster),
+            Created201(models::Cluster),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -279,7 +338,7 @@ pub mod clusters {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -289,7 +348,7 @@ pub mod clusters {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -352,7 +411,7 @@ pub mod clusters {
             http::StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop::Error::DefaultResponse {
                     status_code,
@@ -362,7 +421,7 @@ pub mod clusters {
         }
     }
     pub mod stop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -424,7 +483,7 @@ pub mod clusters {
             http::StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start::Error::DefaultResponse {
                     status_code,
@@ -434,7 +493,7 @@ pub mod clusters {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -465,7 +524,7 @@ pub mod clusters {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ClusterListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ClusterListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters",
@@ -496,13 +555,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ClusterListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -512,7 +571,7 @@ pub mod clusters {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -537,7 +596,7 @@ pub mod clusters {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ClusterListResult, list::Error> {
+    ) -> std::result::Result<models::ClusterListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Kusto/clusters",
@@ -562,13 +621,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterListResult =
+                let rsp_value: models::ClusterListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -578,7 +637,7 @@ pub mod clusters {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -603,7 +662,7 @@ pub mod clusters {
     pub async fn list_skus(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ListSkusResult, list_skus::Error> {
+    ) -> std::result::Result<models::ListSkusResult, list_skus::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Kusto/skus",
@@ -631,13 +690,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListSkusResult =
+                let rsp_value: models::ListSkusResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_skus::Error::DefaultResponse {
                     status_code,
@@ -647,7 +706,7 @@ pub mod clusters {
         }
     }
     pub mod list_skus {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -673,8 +732,8 @@ pub mod clusters {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        cluster_name: &ClusterCheckNameRequest,
-    ) -> std::result::Result<CheckNameResult, check_name_availability::Error> {
+        cluster_name: &models::ClusterCheckNameRequest,
+    ) -> std::result::Result<models::CheckNameResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Kusto/locations/{}/checkNameAvailability",
@@ -706,13 +765,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -722,7 +781,7 @@ pub mod clusters {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -749,7 +808,7 @@ pub mod clusters {
         resource_group_name: &str,
         cluster_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ListResourceSkusResult, list_skus_by_resource::Error> {
+    ) -> std::result::Result<models::ListResourceSkusResult, list_skus_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/skus",
@@ -781,13 +840,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListResourceSkusResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListResourceSkusResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_skus_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_skus_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_skus_by_resource::Error::DefaultResponse {
                     status_code,
@@ -797,7 +856,7 @@ pub mod clusters {
         }
     }
     pub mod list_skus_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -821,14 +880,14 @@ pub mod clusters {
     }
 }
 pub mod databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         cluster_name: &str,
         subscription_id: &str,
-        database_name: &DatabaseCheckNameRequest,
-    ) -> std::result::Result<CheckNameResult, check_name_availability::Error> {
+        database_name: &models::DatabaseCheckNameRequest,
+    ) -> std::result::Result<models::CheckNameResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/checkNameAvailability",
@@ -861,13 +920,13 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -877,7 +936,7 @@ pub mod databases {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -904,7 +963,7 @@ pub mod databases {
         resource_group_name: &str,
         cluster_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseListResult, list_by_cluster::Error> {
+    ) -> std::result::Result<models::DatabaseListResult, list_by_cluster::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases",
@@ -934,13 +993,13 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_cluster::Error::DefaultResponse {
                     status_code,
@@ -950,7 +1009,7 @@ pub mod databases {
         }
     }
     pub mod list_by_cluster {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -978,7 +1037,7 @@ pub mod databases {
         cluster_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Database, get::Error> {
+    ) -> std::result::Result<models::Database, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}",
@@ -1006,13 +1065,13 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1022,7 +1081,7 @@ pub mod databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1049,7 +1108,7 @@ pub mod databases {
         resource_group_name: &str,
         cluster_name: &str,
         database_name: &str,
-        parameters: &Database,
+        parameters: &models::Database,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1083,20 +1142,20 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Database = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Database = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1106,11 +1165,11 @@ pub mod databases {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Database),
-            Created201(Database),
+            Ok200(models::Database),
+            Created201(models::Database),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1139,7 +1198,7 @@ pub mod databases {
         resource_group_name: &str,
         cluster_name: &str,
         database_name: &str,
-        parameters: &DatabaseUpdate,
+        parameters: &models::DatabaseUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -1170,20 +1229,20 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1193,11 +1252,11 @@ pub mod databases {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Database),
-            Created201(Database),
+            Ok200(models::Database),
+            Created201(models::Database),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1258,7 +1317,7 @@ pub mod databases {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1268,7 +1327,7 @@ pub mod databases {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1302,7 +1361,7 @@ pub mod databases {
         cluster_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabasePrincipalListResult, list_principals::Error> {
+    ) -> std::result::Result<models::DatabasePrincipalListResult, list_principals::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/listPrincipals",
@@ -1334,13 +1393,13 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabasePrincipalListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabasePrincipalListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_principals::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_principals::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_principals::Error::DefaultResponse {
                     status_code,
@@ -1350,7 +1409,7 @@ pub mod databases {
         }
     }
     pub mod list_principals {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1378,8 +1437,8 @@ pub mod databases {
         cluster_name: &str,
         database_name: &str,
         subscription_id: &str,
-        database_principals_to_add: &DatabasePrincipalListRequest,
-    ) -> std::result::Result<DatabasePrincipalListResult, add_principals::Error> {
+        database_principals_to_add: &models::DatabasePrincipalListRequest,
+    ) -> std::result::Result<models::DatabasePrincipalListResult, add_principals::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/addPrincipals",
@@ -1411,13 +1470,13 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabasePrincipalListResult =
+                let rsp_value: models::DatabasePrincipalListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| add_principals::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| add_principals::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_principals::Error::DefaultResponse {
                     status_code,
@@ -1427,7 +1486,7 @@ pub mod databases {
         }
     }
     pub mod add_principals {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1455,8 +1514,8 @@ pub mod databases {
         cluster_name: &str,
         database_name: &str,
         subscription_id: &str,
-        database_principals_to_remove: &DatabasePrincipalListRequest,
-    ) -> std::result::Result<DatabasePrincipalListResult, remove_principals::Error> {
+        database_principals_to_remove: &models::DatabasePrincipalListRequest,
+    ) -> std::result::Result<models::DatabasePrincipalListResult, remove_principals::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/removePrincipals",
@@ -1488,13 +1547,13 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabasePrincipalListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabasePrincipalListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| remove_principals::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| remove_principals::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(remove_principals::Error::DefaultResponse {
                     status_code,
@@ -1504,7 +1563,7 @@ pub mod databases {
         }
     }
     pub mod remove_principals {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1528,14 +1587,14 @@ pub mod databases {
     }
 }
 pub mod event_hub_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_database(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         cluster_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<EventHubConnectionListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::EventHubConnectionListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/eventhubconnections",
@@ -1566,13 +1625,13 @@ pub mod event_hub_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventHubConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_database::Error::DefaultResponse {
                     status_code,
@@ -1582,7 +1641,7 @@ pub mod event_hub_connections {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1610,8 +1669,8 @@ pub mod event_hub_connections {
         cluster_name: &str,
         database_name: &str,
         subscription_id: &str,
-        parameters: &EventHubConnectionValidation,
-    ) -> std::result::Result<EventHubConnectionValidationListResult, eventhub_connection_validation::Error> {
+        parameters: &models::EventHubConnectionValidation,
+    ) -> std::result::Result<models::EventHubConnectionValidationListResult, eventhub_connection_validation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/eventhubConnectionValidation",
@@ -1645,7 +1704,7 @@ pub mod event_hub_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConnectionValidationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventHubConnectionValidationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| eventhub_connection_validation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1659,7 +1718,7 @@ pub mod event_hub_connections {
         }
     }
     pub mod eventhub_connection_validation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1685,7 +1744,7 @@ pub mod event_hub_connections {
         database_name: &str,
         event_hub_connection_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<EventHubConnection, get::Error> {
+    ) -> std::result::Result<models::EventHubConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Kusto/clusters/{}/databases/{}/eventhubconnections/{}",
@@ -1714,13 +1773,13 @@ pub mod event_hub_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConnection =
+                let rsp_value: models::EventHubConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1730,7 +1789,7 @@ pub mod event_hub_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1758,7 +1817,7 @@ pub mod event_hub_connections {
         cluster_name: &str,
         database_name: &str,
         event_hub_connection_name: &str,
-        parameters: &EventHubConnection,
+        parameters: &models::EventHubConnection,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1793,20 +1852,20 @@ pub mod event_hub_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventHubConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventHubConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1816,11 +1875,11 @@ pub mod event_hub_connections {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(EventHubConnection),
-            Created201(EventHubConnection),
+            Ok200(models::EventHubConnection),
+            Created201(models::EventHubConnection),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1850,7 +1909,7 @@ pub mod event_hub_connections {
         cluster_name: &str,
         database_name: &str,
         event_hub_connection_name: &str,
-        parameters: &EventHubConnectionUpdate,
+        parameters: &models::EventHubConnectionUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -1882,20 +1941,20 @@ pub mod event_hub_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConnection =
+                let rsp_value: models::EventHubConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConnection =
+                let rsp_value: models::EventHubConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1905,11 +1964,11 @@ pub mod event_hub_connections {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(EventHubConnection),
-            Created201(EventHubConnection),
+            Ok200(models::EventHubConnection),
+            Created201(models::EventHubConnection),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1972,7 +2031,7 @@ pub mod event_hub_connections {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1982,7 +2041,7 @@ pub mod event_hub_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2012,8 +2071,8 @@ pub mod event_hub_connections {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Kusto/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2034,13 +2093,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2050,7 +2109,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
