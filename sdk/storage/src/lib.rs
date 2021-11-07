@@ -15,8 +15,6 @@ pub use self::core::{Error, Result};
 
 #[cfg(feature = "account")]
 pub mod account;
-// #[cfg(feature = "blob")]
-// pub mod blob;
 pub mod core;
 #[cfg(feature = "data_lake")]
 pub mod data_lake;
