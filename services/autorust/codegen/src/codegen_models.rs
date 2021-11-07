@@ -51,8 +51,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     }
 
     // any referenced schemas from other files
-    for (doc_file, doc) in cg.spec.input_docs() {
-        for reference in openapi::get_api_schema_references(doc) {
+    for (doc_file, api) in cg.spec.input_docs() {
+        for reference in openapi::get_api_schema_references(doc_file, api) {
             add_schema_refs(cg, &mut all_schemas, doc_file, reference)?;
         }
     }

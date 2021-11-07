@@ -83,6 +83,8 @@ pub enum Error {
     PropertyName(#[source] crate::identifier::Error),
     #[error("creating name for module: {0}")]
     ModuleName(#[source] crate::identifier::Error),
+    #[error("creating name for enum variant: {0}")]
+    EnumVariantName(#[source] crate::identifier::Error),
     #[error("creating name for enum {property}: {source}")]
     EnumName {
         source: crate::identifier::Error,
