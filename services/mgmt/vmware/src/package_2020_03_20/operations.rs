@@ -3,6 +3,57 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, models::*, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Locations_CheckTrialAvailability(#[from] locations::check_trial_availability::Error),
+    #[error(transparent)]
+    Locations_CheckQuotaAvailability(#[from] locations::check_quota_availability::Error),
+    #[error(transparent)]
+    PrivateClouds_List(#[from] private_clouds::list::Error),
+    #[error(transparent)]
+    PrivateClouds_ListInSubscription(#[from] private_clouds::list_in_subscription::Error),
+    #[error(transparent)]
+    PrivateClouds_Get(#[from] private_clouds::get::Error),
+    #[error(transparent)]
+    PrivateClouds_CreateOrUpdate(#[from] private_clouds::create_or_update::Error),
+    #[error(transparent)]
+    PrivateClouds_Update(#[from] private_clouds::update::Error),
+    #[error(transparent)]
+    PrivateClouds_Delete(#[from] private_clouds::delete::Error),
+    #[error(transparent)]
+    Clusters_List(#[from] clusters::list::Error),
+    #[error(transparent)]
+    Clusters_Get(#[from] clusters::get::Error),
+    #[error(transparent)]
+    Clusters_CreateOrUpdate(#[from] clusters::create_or_update::Error),
+    #[error(transparent)]
+    Clusters_Update(#[from] clusters::update::Error),
+    #[error(transparent)]
+    Clusters_Delete(#[from] clusters::delete::Error),
+    #[error(transparent)]
+    PrivateClouds_ListAdminCredentials(#[from] private_clouds::list_admin_credentials::Error),
+    #[error(transparent)]
+    HcxEnterpriseSites_List(#[from] hcx_enterprise_sites::list::Error),
+    #[error(transparent)]
+    HcxEnterpriseSites_Get(#[from] hcx_enterprise_sites::get::Error),
+    #[error(transparent)]
+    HcxEnterpriseSites_CreateOrUpdate(#[from] hcx_enterprise_sites::create_or_update::Error),
+    #[error(transparent)]
+    HcxEnterpriseSites_Delete(#[from] hcx_enterprise_sites::delete::Error),
+    #[error(transparent)]
+    Authorizations_List(#[from] authorizations::list::Error),
+    #[error(transparent)]
+    Authorizations_Get(#[from] authorizations::get::Error),
+    #[error(transparent)]
+    Authorizations_CreateOrUpdate(#[from] authorizations::create_or_update::Error),
+    #[error(transparent)]
+    Authorizations_Delete(#[from] authorizations::delete::Error),
+}
 pub mod operations {
     use super::{models, models::*, API_VERSION};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {

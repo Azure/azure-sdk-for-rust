@@ -3,6 +3,145 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, models::*, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Locations_CheckTrialAvailability(#[from] locations::check_trial_availability::Error),
+    #[error(transparent)]
+    Locations_CheckQuotaAvailability(#[from] locations::check_quota_availability::Error),
+    #[error(transparent)]
+    PrivateClouds_List(#[from] private_clouds::list::Error),
+    #[error(transparent)]
+    PrivateClouds_ListInSubscription(#[from] private_clouds::list_in_subscription::Error),
+    #[error(transparent)]
+    PrivateClouds_Get(#[from] private_clouds::get::Error),
+    #[error(transparent)]
+    PrivateClouds_CreateOrUpdate(#[from] private_clouds::create_or_update::Error),
+    #[error(transparent)]
+    PrivateClouds_Update(#[from] private_clouds::update::Error),
+    #[error(transparent)]
+    PrivateClouds_Delete(#[from] private_clouds::delete::Error),
+    #[error(transparent)]
+    PrivateClouds_RotateVcenterPassword(#[from] private_clouds::rotate_vcenter_password::Error),
+    #[error(transparent)]
+    PrivateClouds_RotateNsxtPassword(#[from] private_clouds::rotate_nsxt_password::Error),
+    #[error(transparent)]
+    Clusters_List(#[from] clusters::list::Error),
+    #[error(transparent)]
+    Clusters_Get(#[from] clusters::get::Error),
+    #[error(transparent)]
+    Clusters_CreateOrUpdate(#[from] clusters::create_or_update::Error),
+    #[error(transparent)]
+    Clusters_Update(#[from] clusters::update::Error),
+    #[error(transparent)]
+    Clusters_Delete(#[from] clusters::delete::Error),
+    #[error(transparent)]
+    PrivateClouds_ListAdminCredentials(#[from] private_clouds::list_admin_credentials::Error),
+    #[error(transparent)]
+    HcxEnterpriseSites_List(#[from] hcx_enterprise_sites::list::Error),
+    #[error(transparent)]
+    HcxEnterpriseSites_Get(#[from] hcx_enterprise_sites::get::Error),
+    #[error(transparent)]
+    HcxEnterpriseSites_CreateOrUpdate(#[from] hcx_enterprise_sites::create_or_update::Error),
+    #[error(transparent)]
+    HcxEnterpriseSites_Delete(#[from] hcx_enterprise_sites::delete::Error),
+    #[error(transparent)]
+    Authorizations_List(#[from] authorizations::list::Error),
+    #[error(transparent)]
+    Authorizations_Get(#[from] authorizations::get::Error),
+    #[error(transparent)]
+    Authorizations_CreateOrUpdate(#[from] authorizations::create_or_update::Error),
+    #[error(transparent)]
+    Authorizations_Delete(#[from] authorizations::delete::Error),
+    #[error(transparent)]
+    GlobalReachConnections_List(#[from] global_reach_connections::list::Error),
+    #[error(transparent)]
+    GlobalReachConnections_Get(#[from] global_reach_connections::get::Error),
+    #[error(transparent)]
+    GlobalReachConnections_CreateOrUpdate(#[from] global_reach_connections::create_or_update::Error),
+    #[error(transparent)]
+    GlobalReachConnections_Delete(#[from] global_reach_connections::delete::Error),
+    #[error(transparent)]
+    WorkloadNetworks_ListSegments(#[from] workload_networks::list_segments::Error),
+    #[error(transparent)]
+    WorkloadNetworks_GetSegment(#[from] workload_networks::get_segment::Error),
+    #[error(transparent)]
+    WorkloadNetworks_CreateSegments(#[from] workload_networks::create_segments::Error),
+    #[error(transparent)]
+    WorkloadNetworks_UpdateSegments(#[from] workload_networks::update_segments::Error),
+    #[error(transparent)]
+    WorkloadNetworks_DeleteSegment(#[from] workload_networks::delete_segment::Error),
+    #[error(transparent)]
+    WorkloadNetworks_ListDhcp(#[from] workload_networks::list_dhcp::Error),
+    #[error(transparent)]
+    WorkloadNetworks_GetDhcp(#[from] workload_networks::get_dhcp::Error),
+    #[error(transparent)]
+    WorkloadNetworks_CreateDhcp(#[from] workload_networks::create_dhcp::Error),
+    #[error(transparent)]
+    WorkloadNetworks_UpdateDhcp(#[from] workload_networks::update_dhcp::Error),
+    #[error(transparent)]
+    WorkloadNetworks_DeleteDhcp(#[from] workload_networks::delete_dhcp::Error),
+    #[error(transparent)]
+    WorkloadNetworks_ListGateways(#[from] workload_networks::list_gateways::Error),
+    #[error(transparent)]
+    WorkloadNetworks_GetGateway(#[from] workload_networks::get_gateway::Error),
+    #[error(transparent)]
+    WorkloadNetworks_ListPortMirroring(#[from] workload_networks::list_port_mirroring::Error),
+    #[error(transparent)]
+    WorkloadNetworks_GetPortMirroring(#[from] workload_networks::get_port_mirroring::Error),
+    #[error(transparent)]
+    WorkloadNetworks_CreatePortMirroring(#[from] workload_networks::create_port_mirroring::Error),
+    #[error(transparent)]
+    WorkloadNetworks_UpdatePortMirroring(#[from] workload_networks::update_port_mirroring::Error),
+    #[error(transparent)]
+    WorkloadNetworks_DeletePortMirroring(#[from] workload_networks::delete_port_mirroring::Error),
+    #[error(transparent)]
+    WorkloadNetworks_ListVmGroups(#[from] workload_networks::list_vm_groups::Error),
+    #[error(transparent)]
+    WorkloadNetworks_GetVmGroup(#[from] workload_networks::get_vm_group::Error),
+    #[error(transparent)]
+    WorkloadNetworks_CreateVmGroup(#[from] workload_networks::create_vm_group::Error),
+    #[error(transparent)]
+    WorkloadNetworks_UpdateVmGroup(#[from] workload_networks::update_vm_group::Error),
+    #[error(transparent)]
+    WorkloadNetworks_DeleteVmGroup(#[from] workload_networks::delete_vm_group::Error),
+    #[error(transparent)]
+    WorkloadNetworks_ListVirtualMachines(#[from] workload_networks::list_virtual_machines::Error),
+    #[error(transparent)]
+    WorkloadNetworks_GetVirtualMachine(#[from] workload_networks::get_virtual_machine::Error),
+    #[error(transparent)]
+    WorkloadNetworks_ListDnsServices(#[from] workload_networks::list_dns_services::Error),
+    #[error(transparent)]
+    WorkloadNetworks_GetDnsService(#[from] workload_networks::get_dns_service::Error),
+    #[error(transparent)]
+    WorkloadNetworks_CreateDnsService(#[from] workload_networks::create_dns_service::Error),
+    #[error(transparent)]
+    WorkloadNetworks_UpdateDnsService(#[from] workload_networks::update_dns_service::Error),
+    #[error(transparent)]
+    WorkloadNetworks_DeleteDnsService(#[from] workload_networks::delete_dns_service::Error),
+    #[error(transparent)]
+    WorkloadNetworks_ListDnsZones(#[from] workload_networks::list_dns_zones::Error),
+    #[error(transparent)]
+    WorkloadNetworks_GetDnsZone(#[from] workload_networks::get_dns_zone::Error),
+    #[error(transparent)]
+    WorkloadNetworks_CreateDnsZone(#[from] workload_networks::create_dns_zone::Error),
+    #[error(transparent)]
+    WorkloadNetworks_UpdateDnsZone(#[from] workload_networks::update_dns_zone::Error),
+    #[error(transparent)]
+    WorkloadNetworks_DeleteDnsZone(#[from] workload_networks::delete_dns_zone::Error),
+    #[error(transparent)]
+    Addons_List(#[from] addons::list::Error),
+    #[error(transparent)]
+    Addons_Get(#[from] addons::get::Error),
+    #[error(transparent)]
+    Addons_CreateOrUpdate(#[from] addons::create_or_update::Error),
+    #[error(transparent)]
+    Addons_Delete(#[from] addons::delete::Error),
+}
 pub mod operations {
     use super::{models, models::*, API_VERSION};
     pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
