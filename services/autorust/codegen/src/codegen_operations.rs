@@ -332,7 +332,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
         for (status_code, rsp) in &success_responses {
             let tp = create_response_type(rsp)?;
             let tp = match tp {
-                Some(tp) => quote! { (#tp) },
+                Some(tp) => quote! { (models::#tp) },
                 None => quote! {},
             };
             let enum_type_name = get_response_type_ident(status_code)?;
@@ -507,7 +507,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
             }
         }
         pub mod #fname {
-            use super::{API_VERSION, models, models::*};
+            use super::{API_VERSION, models};
 
             #response_enum
 
@@ -539,7 +539,7 @@ fn create_rsp_value(tp: Option<&TokenStream>, fname: &TokenStream) -> TokenStrea
         }
     } else {
         quote! {
-            let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+            let rsp_value: models::#tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
         }
     }
 }
@@ -572,7 +572,7 @@ fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
     } else if let Some(schema) = &param.schema {
         get_type_name_for_schema_ref(schema, AsReference::True)?
     } else {
-        eprintln!("WARN unkown param type for {}", &param.name);
+        eprintln!("WARN unknown param type for {}", &param.name);
         quote! { &serde_json::Value }
     };
     Ok(require(is_required || is_array, tp))
