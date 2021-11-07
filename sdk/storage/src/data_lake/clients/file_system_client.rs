@@ -3,9 +3,9 @@ use crate::data_lake::operations::*;
 use crate::data_lake::requests::*;
 use crate::{data_lake::clients::DataLakeClient, Properties};
 use azure_core::pipeline::Pipeline;
+use azure_core::prelude::IfMatchCondition;
 use azure_core::{Context, HttpClient, PipelineContext};
 use bytes::Bytes;
-
 use std::sync::Arc;
 use url::Url;
 
@@ -68,6 +68,26 @@ impl FileSystemClient {
         path_name: &str,
         options: FileCreateOptions<'_>,
     ) -> Result<FileCreateResponse, crate::Error> {
+        let mut request = self.prepare_file_create_request(path_name);
+        let contents = DataLakeContext {};
+        let mut pipeline_context = PipelineContext::new(ctx, contents);
+
+        options.decorate_request(&mut request)?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+
+        Ok(FileCreateResponse::try_from(response).await?)
+    }
+
+    pub async fn create_file_if_not_exists(
+        &self,
+        ctx: Context,
+        path_name: &str,
+    ) -> Result<FileCreateResponse, crate::Error> {
+        let options = FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
+
         let mut request = self.prepare_file_create_request(path_name);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);

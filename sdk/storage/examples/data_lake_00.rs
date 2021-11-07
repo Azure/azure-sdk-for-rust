@@ -1,4 +1,3 @@
-use azure_core::prelude::IfMatchCondition;
 use azure_core::prelude::*;
 use azure_identity::token_credentials::DefaultAzureCredential;
 use azure_identity::token_credentials::TokenCredential;
@@ -72,29 +71,27 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let file_name = "example-file.txt";
 
-    println!("creating path '{}'...", file_name);
-    let create_path_response = file_system
+    println!("creating file '{}'...", file_name);
+    let create_file_response = file_system
         .create_file(Context::default(), file_name, FileCreateOptions::default())
         .await?;
-    println!("create path response == {:?}", create_path_response);
+    println!("create file response == {:?}", create_file_response);
     println!();
 
-    println!("creating path '{}' (overwrite)...", file_name);
-    let create_path_response = file_system
+    println!("creating file '{}' (overwrite)...", file_name);
+    let create_file_response = file_system
         .create_file(Context::default(), file_name, FileCreateOptions::default())
         .await?;
-    println!("create path response == {:?}", create_path_response);
+    println!("create file response == {:?}", create_file_response);
     println!();
 
-    println!("creating path '{}' (do not overwrite)...", file_name);
-    let do_not_overwrite =
-        FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
-    let create_path_result = file_system
-        .create_file(Context::default(), file_name, do_not_overwrite)
+    println!("creating file '{}' if not exists...", file_name);
+    let create_file_if_not_exists_result = file_system
+        .create_file_if_not_exists(Context::default(), file_name)
         .await;
     println!(
-        "create path result (should fail) == {:?}",
-        create_path_result
+        "create file result (should fail) == {:?}",
+        create_file_if_not_exists_result
     );
     println!();
 

@@ -92,12 +92,10 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .create_file(Context::default(), file_name, FileCreateOptions::default())
         .await?;
 
-    let do_not_overwrite =
-        FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
-    let create_path_result = file_system_client
-        .create_file(Context::default(), file_name, do_not_overwrite) // Add method create_file_if_not_exists
+    let create_file_if_not_exists_result = file_system_client
+        .create_file_if_not_exists(Context::default(), file_name)
         .await;
-    assert!(create_path_result.is_err());
+    assert!(create_file_if_not_exists_result.is_err());
 
     fs_properties.insert("ModifiedBy", "Iota");
     file_system_client
