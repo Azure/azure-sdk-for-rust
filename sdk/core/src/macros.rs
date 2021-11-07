@@ -102,7 +102,7 @@ macro_rules! create_enum {
         }
 
         impl<'de> serde::Deserialize<'de> for $name {
-            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
             where
                 D: serde::Deserializer<'de>,
             {
@@ -118,7 +118,7 @@ macro_rules! create_enum {
         }
 
         impl serde::Serialize for $name {
-            fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+            fn serialize<S>(&self, s: S) -> ::core::result::Result<S::Ok, S::Error>
             where S: serde::Serializer {
                 return s.serialize_str(&self.to_string())
             }

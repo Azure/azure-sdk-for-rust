@@ -1,0 +1,38 @@
+[package]
+name = "azure_storage_blobs"
+version = "0.1.0"
+description = "Rust wrappers around Microsoft Azure Storage Blobs REST APIs"
+readme = "README.md"
+authors = ["Microsoft Corp."]
+license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_storage_blobs"
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+categories = ["api-bindings"]
+edition = "2018"
+
+[dependencies]
+azure_core = { path = "../core", version = "0.1.0" }
+azure_storage = { path = "../storage", version = "0.1.0" }
+base64 = "0.13"
+bytes = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+http = "0.2"
+log = "0.4"
+md5 = "0.7"
+RustyXML = "0.3"
+serde = { version = "1.0" }
+serde_derive = "1.0"
+serde_json = "1.0"
+serde-xml-rs = "0.4"
+uuid = { version = "0.8", features = ["v4"] }
+url = "2.2"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
+env_logger = "0.8"
+azure_identity = { path = "../identity" }
+reqwest = "0.11"
+
