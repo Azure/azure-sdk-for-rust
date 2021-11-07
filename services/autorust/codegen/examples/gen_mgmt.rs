@@ -15,7 +15,6 @@ const SKIP_SERVICES: &[&str] = &[
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
     "marketplace",
     "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
-    "powerplatform", // https://github.com/Azure/azure-rest-api-specs/pull/11580 incorrect ref & duplicate Operations_List
     "service-map",   // Ident "Ref:machine"
     "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
