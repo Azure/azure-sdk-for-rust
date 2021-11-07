@@ -20,7 +20,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let http_client = new_http_client();
 
     let queue = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-        .as_storage_client()
         .as_queue_client(queue_name);
 
     trace!("putting message");

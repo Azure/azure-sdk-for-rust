@@ -1,4 +1,5 @@
 use azure_core::prelude::*;
+use azure_messaging_queues::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -14,23 +15,23 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let http_client = new_http_client();
 
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-    let storage_client = storage_account_client.as_storage_client();
+    let queue_service =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_queue_service_client();
 
     println!("getting service stats");
-    let response = storage_client.get_queue_service_stats().execute().await?;
+    let response = queue_service.get_queue_service_stats().execute().await?;
     println!("get_queue_service_properties.response == {:#?}", response);
 
     println!("getting service properties");
-    let response = storage_client
+    let response = queue_service
         .get_queue_service_properties()
         .execute()
         .await?;
     println!("get_queue_service_stats.response == {:#?}", response);
 
     println!("enumerating queues starting with a");
-    let response = storage_client
+    let response = queue_service
         .list_queues()
         .prefix("a")
         .include_metadata(true)
@@ -41,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("streaming queues");
     let mut stream = Box::pin(
-        storage_client
+        queue_service
             .list_queues()
             .max_results(NonZeroU32::new(3u32).unwrap())
             .stream(),

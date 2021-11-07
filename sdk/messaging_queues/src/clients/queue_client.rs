@@ -1,5 +1,5 @@
 use crate::requests::*;
-use azure_storage::core::clients::StorageClient;
+use azure_storage::core::clients::{AsStorageClient, StorageAccountClient, StorageClient};
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -10,6 +10,12 @@ pub trait AsQueueClient<QN: Into<String>> {
 impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageClient> {
     fn as_queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
         QueueClient::new(self.clone(), queue_name.into())
+    }
+}
+
+impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageAccountClient> {
+    fn as_queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
+        self.as_storage_client().as_queue_client(queue_name)
     }
 }
 

@@ -130,9 +130,9 @@ required-features=["blob"]
 [[example]]
 name="stream_blob_01"
 required-features=["blob"]
-[[example]]
-name="list_queues"
-required-features=["queue"]
+# [[example]]
+# name="list_queues"
+# required-features=["queue"]
 # [[example]]
 # name="queue_create"
 # required-features=["queue"]

@@ -1,7 +1,7 @@
-use crate::core::prelude::*;
-use crate::queue::responses::*;
+use crate::responses::*;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+use azure_storage::core::prelude::*;
 use http::method::Method;
 use http::status::StatusCode;
 use std::convert::TryInto;

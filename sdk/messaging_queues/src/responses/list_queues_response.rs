@@ -1,6 +1,6 @@
-use crate::xml::read_xml;
 use azure_core::headers::CommonStorageResponseHeaders;
 use azure_core::prelude::*;
+use azure_storage::xml::read_xml;
 use bytes::Bytes;
 use http::response::Response;
 use std::convert::TryInto;

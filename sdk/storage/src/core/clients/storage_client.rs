@@ -93,30 +93,6 @@ impl StorageClient {
         crate::container::requests::ListContainersBuilder::new(self)
     }
 
-    #[cfg(feature = "queue")]
-    pub fn list_queues(&self) -> crate::queue::requests::ListQueuesBuilder {
-        crate::queue::requests::ListQueuesBuilder::new(self)
-    }
-
-    #[cfg(feature = "queue")]
-    pub fn get_queue_service_properties(
-        &self,
-    ) -> crate::queue::requests::GetQueueServicePropertiesBuilder {
-        crate::queue::requests::GetQueueServicePropertiesBuilder::new(self)
-    }
-
-    #[cfg(feature = "queue")]
-    pub fn set_queue_service_properties(
-        &self,
-    ) -> crate::queue::requests::SetQueueServicePropertiesBuilder {
-        crate::queue::requests::SetQueueServicePropertiesBuilder::new(self)
-    }
-
-    #[cfg(feature = "queue")]
-    pub fn get_queue_service_stats(&self) -> crate::queue::requests::GetQueueServiceStatsBuilder {
-        crate::queue::requests::GetQueueServiceStatsBuilder::new(self)
-    }
-
     #[allow(dead_code)]
     pub fn prepare_request(
         &self,

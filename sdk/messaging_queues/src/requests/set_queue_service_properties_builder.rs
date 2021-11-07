@@ -1,8 +1,8 @@
-use crate::core::clients::StorageClient;
-use crate::queue::responses::*;
-use crate::queue::QueueServiceProperties;
+use crate::responses::*;
+use crate::QueueServiceProperties;
 use azure_core::headers::add_optional_header;
 use azure_core::prelude::*;
+use azure_storage::core::clients::StorageClient;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
