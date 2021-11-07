@@ -133,21 +133,21 @@ required-features=["blob"]
 [[example]]
 name="list_queues"
 required-features=["queue"]
-[[example]]
-name="queue_create"
-required-features=["queue"]
-[[example]]
-name="get_messages"
-required-features=["queue"]
-[[example]]
-name="peek_messages"
-required-features=["queue"]
-[[example]]
-name="delete_message"
-required-features=["queue"]
-[[example]]
-name="put_message"
-required-features=["queue"]
+# [[example]]
+# name="queue_create"
+# required-features=["queue"]
+# [[example]]
+# name="get_messages"
+# required-features=["queue"]
+# [[example]]
+# name="peek_messages"
+# required-features=["queue"]
+# [[example]]
+# name="delete_message"
+# required-features=["queue"]
+# [[example]]
+# name="put_message"
+# required-features=["queue"]
 [[example]]
 name="data_lake_00"
 required-features=["data_lake"]

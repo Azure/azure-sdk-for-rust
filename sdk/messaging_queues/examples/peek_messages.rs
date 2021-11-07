@@ -1,10 +1,9 @@
 #[macro_use]
 extern crate log;
 use azure_core::prelude::*;
+use azure_messaging_queues::prelude::*;
 use azure_storage::core::prelude::*;
-use azure_storage::queue::prelude::*;
 use std::error::Error;
-use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -23,33 +22,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client()
         .as_queue_client(queue_name);
+    println!("{:#?}", queue);
 
-    trace!("getting messages");
+    trace!("peeking messages");
 
-    let get_response = queue
-        .get_messages()
+    let response = queue
+        .peek_messages()
         .number_of_messages(2)
-        .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .execute()
         .await?;
 
-    println!("get_response == {:#?}", get_response);
-
-    if get_response.messages.is_empty() {
-        println!("no message to delete");
-    } else {
-        for message_to_delete in get_response.messages {
-            println!("deleting message {:?}", message_to_delete);
-
-            let delete_response = queue
-                .as_pop_receipt_client(message_to_delete)
-                .delete()
-                .execute()
-                .await?;
-
-            println!("delete_response == {:#?}", delete_response);
-        }
-    }
+    println!("response == {:#?}", response);
 
     Ok(())
 }
