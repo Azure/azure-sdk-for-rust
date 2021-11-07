@@ -21,11 +21,11 @@ use azure_core::headers::{
 use azure_core::parsing::from_azure_time;
 use azure_core::{Etag, LeaseDuration, LeaseState, LeaseStatus};
 use azure_storage::core::util::HeaderMapExt;
-use azure_storage::core::{
+use azure_storage::headers::CONTENT_CRC64;
+use azure_storage::{
     headers::{CONTENT_MD5, COPY_ID},
     ConsistencyCRC64, ConsistencyMD5,
 };
-use azure_storage::headers::CONTENT_CRC64;
 use azure_storage::{CopyId, CopyProgress};
 use chrono::{DateTime, Utc};
 use http::header;
