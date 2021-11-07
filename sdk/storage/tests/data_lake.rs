@@ -82,18 +82,18 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         "did not find expected property value for: AddedVia"
     );
 
-    let file_name = "e2etest-file.txt";
+    let file_path = "some/path/e2etest-file.txt";
 
     file_system_client
-        .create_file(Context::default(), file_name, FileCreateOptions::default())
+        .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
 
     file_system_client
-        .create_file(Context::default(), file_name, FileCreateOptions::default())
+        .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
 
     let create_file_if_not_exists_result = file_system_client
-        .create_file_if_not_exists(Context::default(), file_name)
+        .create_file_if_not_exists(Context::default(), file_path)
         .await;
     assert!(create_file_if_not_exists_result.is_err());
 
@@ -102,7 +102,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     file_system_client
         .append_to_file(
             Context::default(),
-            file_name,
+            file_path,
             bytes,
             0,
             FileAppendOptions::default(),
@@ -112,7 +112,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     file_system_client
         .flush_file(
             Context::default(),
-            file_name,
+            file_path,
             file_length,
             FileFlushOptions::default(),
         )

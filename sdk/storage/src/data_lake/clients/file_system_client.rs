@@ -65,10 +65,10 @@ impl FileSystemClient {
     pub async fn create_file(
         &self,
         ctx: Context,
-        file_name: &str,
+        file_path: &str,
         options: FileCreateOptions<'_>,
     ) -> Result<FileCreateResponse, crate::Error> {
-        let mut request = self.prepare_file_create_request(file_name);
+        let mut request = self.prepare_file_create_request(file_path);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -84,11 +84,11 @@ impl FileSystemClient {
     pub async fn create_file_if_not_exists(
         &self,
         ctx: Context,
-        file_name: &str,
+        file_path: &str,
     ) -> Result<FileCreateResponse, crate::Error> {
         let options = FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
 
-        let mut request = self.prepare_file_create_request(file_name);
+        let mut request = self.prepare_file_create_request(file_path);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -104,12 +104,12 @@ impl FileSystemClient {
     pub async fn append_to_file(
         &self,
         ctx: Context,
-        file_name: &str,
+        file_path: &str,
         bytes: Bytes,
         position: i64,
         options: FileAppendOptions<'_>,
     ) -> Result<FileAppendResponse, crate::Error> {
-        let mut request = self.prepare_file_append_request(file_name, position);
+        let mut request = self.prepare_file_append_request(file_path, position);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -125,11 +125,11 @@ impl FileSystemClient {
     pub async fn flush_file(
         &self,
         ctx: Context,
-        file_name: &str,
+        file_path: &str,
         position: i64,
         options: FileFlushOptions<'_>,
     ) -> Result<FileFlushResponse, crate::Error> {
-        let mut request = self.prepare_file_flush_request(file_name, position);
+        let mut request = self.prepare_file_flush_request(file_path, position);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -162,8 +162,8 @@ impl FileSystemClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 
-    pub(crate) fn prepare_file_create_request(&self, path_name: &str) -> azure_core::Request {
-        let uri = format!("{}/{}?resource=file", self.url(), path_name);
+    pub(crate) fn prepare_file_create_request(&self, file_path: &str) -> azure_core::Request {
+        let uri = format!("{}/{}?resource=file", self.url(), file_path);
         http::request::Request::put(uri)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
@@ -172,13 +172,13 @@ impl FileSystemClient {
 
     pub(crate) fn prepare_file_append_request(
         &self,
-        path_name: &str,
+        file_path: &str,
         position: i64,
     ) -> azure_core::Request {
         let uri = format!(
             "{}/{}?action=append&position={}",
             self.url(),
-            path_name,
+            file_path,
             position
         );
         http::request::Request::patch(uri)
@@ -190,13 +190,13 @@ impl FileSystemClient {
     // TODO: take close as param
     pub(crate) fn prepare_file_flush_request(
         &self,
-        path_name: &str,
+        file_path: &str,
         position: i64,
     ) -> azure_core::Request {
         let uri = format!(
             "{}/{}?action=flush&position={}&close=true",
             self.url(),
-            path_name,
+            file_path,
             position
         );
         http::request::Request::patch(uri)

@@ -69,29 +69,29 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     println!();
 
-    let file_name = "example-file.txt";
+    let file_path = "some/path/example-file.txt";
 
-    println!("creating file '{}'...", file_name);
+    println!("creating file '{}'...", file_path);
     let create_file_response = file_system
-        .create_file(Context::default(), file_name, FileCreateOptions::default())
+        .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}", create_file_response);
     println!();
 
-    println!("creating file '{}' (overwrite)...", file_name);
+    println!("creating file '{}' (overwrite)...", file_path);
     let create_file_response = file_system
-        .create_file(Context::default(), file_name, FileCreateOptions::default())
+        .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}", create_file_response);
     println!();
 
-    println!("appending to file '{}'...", file_name);
+    println!("appending to file '{}'...", file_path);
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
     let append_to_file_response = file_system
         .append_to_file(
             Context::default(),
-            file_name,
+            file_path,
             bytes,
             0,
             FileAppendOptions::default(),
@@ -100,11 +100,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("append to file response == {:?}", append_to_file_response);
     println!();
 
-    println!("flushing file '{}'...", file_name);
+    println!("flushing file '{}'...", file_path);
     let flush_file_response = file_system
         .flush_file(
             Context::default(),
-            file_name,
+            file_path,
             file_length,
             FileFlushOptions::default(),
         )
@@ -112,9 +112,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("flush file response == {:?}", flush_file_response);
     println!();
 
-    println!("creating file '{}' if not exists...", file_name);
+    println!("creating file '{}' if not exists...", file_path);
     let create_file_if_not_exists_result = file_system
-        .create_file_if_not_exists(Context::default(), file_name)
+        .create_file_if_not_exists(Context::default(), file_path)
         .await;
     println!(
         "create file result (should fail) == {:?}",
