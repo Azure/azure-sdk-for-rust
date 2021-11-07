@@ -19,11 +19,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let http_client = new_http_client();
 
-    let queue = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-        .as_queue_client(queue_name);
+    let storage_account =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+
+    let queue = storage_account.as_queue_client(queue_name);
 
     trace!("putting message");
-
     let response = queue
         .put_message()
         .client_request_id("optional correlation token")

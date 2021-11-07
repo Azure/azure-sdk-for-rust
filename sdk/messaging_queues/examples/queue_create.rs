@@ -20,9 +20,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let http_client = new_http_client();
 
-    let storage_account_client =
+    let storage_account =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-    let queue = storage_account_client.as_queue_client(queue_name);
+
+    let queue = storage_account.as_queue_client(queue_name);
 
     trace!("creating queue");
 
