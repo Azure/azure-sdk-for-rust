@@ -65,10 +65,10 @@ impl FileSystemClient {
     pub async fn create_file(
         &self,
         ctx: Context,
-        path_name: &str,
+        file_name: &str,
         options: FileCreateOptions<'_>,
     ) -> Result<FileCreateResponse, crate::Error> {
-        let mut request = self.prepare_file_create_request(path_name);
+        let mut request = self.prepare_file_create_request(file_name);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -84,11 +84,11 @@ impl FileSystemClient {
     pub async fn create_file_if_not_exists(
         &self,
         ctx: Context,
-        path_name: &str,
+        file_name: &str,
     ) -> Result<FileCreateResponse, crate::Error> {
         let options = FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
 
-        let mut request = self.prepare_file_create_request(path_name);
+        let mut request = self.prepare_file_create_request(file_name);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -104,10 +104,10 @@ impl FileSystemClient {
     pub async fn append_to_file(
         &self,
         ctx: Context,
-        path_name: &str,
+        file_name: &str,
         options: FileAppendOptions<'_>,
     ) -> Result<FileAppendResponse, crate::Error> {
-        let mut request = self.prepare_file_append_request(path_name);
+        let mut request = self.prepare_file_append_request(file_name);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
