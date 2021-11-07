@@ -87,6 +87,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("appending to file '{}'...", file_name);
     let bytes = bytes::Bytes::from("some data");
+    let file_length = bytes.len() as i64;
     let append_to_file_response = file_system
         .append_to_file(
             Context::default(),
@@ -96,6 +97,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         )
         .await?;
     println!("append to file response == {:?}", append_to_file_response);
+    println!();
+
+    println!("flushing file '{}'...", file_name);
+    let flush_file_response = file_system
+        .flush_file(
+            Context::default(),
+            file_name,
+            file_length,
+            FileFlushOptions::default(),
+        )
+        .await?;
+    println!("flush file response == {:?}", flush_file_response);
     println!();
 
     println!("creating file '{}' if not exists...", file_name);

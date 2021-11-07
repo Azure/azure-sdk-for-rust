@@ -98,12 +98,22 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     assert!(create_file_if_not_exists_result.is_err());
 
     let bytes = bytes::Bytes::from("some data");
+    let file_length = bytes.len() as i64;
     file_system_client
         .append_to_file(
             Context::default(),
             file_name,
             bytes,
             FileAppendOptions::default(),
+        )
+        .await?;
+
+    file_system_client
+        .flush_file(
+            Context::default(),
+            file_name,
+            file_length,
+            FileFlushOptions::default(),
         )
         .await?;
 
