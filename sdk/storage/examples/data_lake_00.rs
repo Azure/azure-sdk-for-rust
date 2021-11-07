@@ -93,6 +93,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             Context::default(),
             file_name,
             bytes,
+            0,
             FileAppendOptions::default(),
         )
         .await?;

@@ -104,6 +104,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
             Context::default(),
             file_name,
             bytes,
+            0,
             FileAppendOptions::default(),
         )
         .await?;
