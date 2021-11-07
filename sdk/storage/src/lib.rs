@@ -24,8 +24,6 @@ pub mod table;
 pub use crate::core::*;
 #[cfg(feature = "account")]
 pub use account::*;
-// #[cfg(feature = "blob")]
-// pub use blob::*;
 #[cfg(feature = "data_lake")]
 pub use data_lake::*;
 #[cfg(feature = "table")]
