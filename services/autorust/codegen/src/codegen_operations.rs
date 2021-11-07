@@ -1,8 +1,5 @@
 use crate::{
-    codegen::{
-        create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, require, AsReference,
-        Error,
-    },
+    codegen::{create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, require, Error},
     codegen::{parse_params, PARAM_RE},
     identifier::ident,
     spec::{WebOperation, WebVerb},
@@ -45,7 +42,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use super::{API_VERSION, models, models::*};
+        use super::{API_VERSION, models};
     });
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
@@ -93,7 +90,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use super::{API_VERSION, models, models::*};
+                        use super::{API_VERSION, models};
 
                         #module
                     }
@@ -332,7 +329,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
         for (status_code, rsp) in &success_responses {
             let tp = create_response_type(rsp)?;
             let tp = match tp {
-                Some(tp) => quote! { (models::#tp) },
+                Some(tp) => quote! { (#tp) },
                 None => quote! {},
             };
             let enum_type_name = get_response_type_ident(status_code)?;
@@ -350,7 +347,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
     for (status_code, rsp) in &error_responses {
         let tp = create_response_type(rsp)?;
         let tp = match tp {
-            Some(tp) => quote! { value: models::#tp, },
+            Some(tp) => quote! { value: #tp, },
             None => quote! {},
         };
         let response_type = &get_response_type_name(status_code)?;
@@ -539,7 +536,7 @@ fn create_rsp_value(tp: Option<&TokenStream>, fname: &TokenStream) -> TokenStrea
         }
     } else {
         quote! {
-            let rsp_value: models::#tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+            let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
         }
     }
 }
@@ -568,9 +565,9 @@ fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
     let is_required = param.required.unwrap_or(false);
     let is_array = is_array(&param.common);
     let tp = if let Some(_param_type) = &param.common.type_ {
-        get_type_name_for_schema(&param.common, AsReference::True)?
+        get_type_name_for_schema(&param.common)?.to_token_stream(true, true)?
     } else if let Some(schema) = &param.schema {
-        get_type_name_for_schema_ref(schema, AsReference::True)?
+        get_type_name_for_schema_ref(schema)?.to_token_stream(true, true)?
     } else {
         eprintln!("WARN unknown param type for {}", &param.name);
         quote! { &serde_json::Value }
@@ -580,7 +577,7 @@ fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
 
 fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
     if let Some(schema) = &rsp.schema {
-        Ok(Some(get_type_name_for_schema_ref(schema, AsReference::False)?))
+        Ok(Some(get_type_name_for_schema_ref(schema)?.to_token_stream(false, true)?))
     } else {
         Ok(None)
     }

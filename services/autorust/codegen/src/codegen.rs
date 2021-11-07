@@ -119,13 +119,6 @@ pub enum Error {
     StatusCode(#[from] crate::status_codes::Error),
 }
 
-/// Whether or not to pass a type is a reference.
-#[derive(Copy, Clone)]
-pub enum AsReference {
-    True,
-    False,
-}
-
 pub fn is_vec(ts: &TokenStream) -> bool {
     ts.to_string().starts_with("Vec <")
 }
@@ -183,70 +176,104 @@ pub fn enum_values_as_strings(values: &[Value]) -> Vec<&str> {
         .collect()
 }
 
-pub fn get_type_name_for_schema(schema: &SchemaCommon, as_ref: AsReference) -> Result<TokenStream, Error> {
-    if let Some(schema_type) = &schema.type_ {
+pub enum TypeName {
+    Reference(String),
+    Array(Box<TypeName>),
+    Value,
+    Bytes,
+    Int32,
+    Int64,
+    Float32,
+    Float64,
+    Boolean,
+    String,
+}
+
+impl TypeName {
+    pub fn to_token_stream(&self, as_ref: bool, qualify_models: bool) -> Result<TokenStream, Error> {
+        Ok(match self {
+            TypeName::Reference(name) => {
+                let idt = ident(&name.to_camel_case()).map_err(Error::TypeNameForSchemaRef)?;
+                let idt = if qualify_models {
+                    quote! { models::#idt }
+                } else {
+                    idt
+                };
+                match as_ref {
+                    true => quote! { &#idt },
+                    false => idt,
+                }
+            }
+            TypeName::Array(vec_items_typ) => {
+                let vec_items_typ = vec_items_typ.to_token_stream(as_ref, qualify_models)?;
+                match as_ref {
+                    true => quote! { &[#vec_items_typ] },
+                    false => quote! { Vec<#vec_items_typ> },
+                }
+            }
+            TypeName::Value => match as_ref {
+                true => quote! { &serde_json::Value },
+                false => quote! { serde_json::Value },
+            },
+            TypeName::Bytes => quote! { bytes::Bytes },
+            TypeName::Int32 => quote! { i32 },
+            TypeName::Int64 => quote! { i64 },
+            TypeName::Float32 => quote! { f32 },
+            TypeName::Float64 => quote! { f64 },
+            TypeName::Boolean => quote! { bool },
+            TypeName::String => match as_ref {
+                true => quote! { &str },
+                false => quote! { String },
+            },
+        })
+    }
+}
+
+pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName, Error> {
+    Ok(if let Some(schema_type) = &schema.type_ {
         let format = schema.format.as_deref();
-        let ts = match schema_type {
+        match schema_type {
             DataType::Array => {
                 let items = get_schema_array_items(schema)?;
-                let vec_items_typ = get_type_name_for_schema_ref(items, as_ref)?;
-                match as_ref {
-                    AsReference::True => quote! { &[#vec_items_typ] },
-                    AsReference::False => quote! { Vec<#vec_items_typ> },
-                }
+                let vec_items_typ = get_type_name_for_schema_ref(items)?;
+                TypeName::Array(Box::new(vec_items_typ))
             }
             DataType::Integer => {
                 if format == Some("int32") {
-                    quote! { i32 }
+                    TypeName::Int32
                 } else {
-                    quote! { i64 }
+                    TypeName::Int64
                 }
             }
             DataType::Number => {
                 if format == Some("float") {
-                    quote! { f32 }
+                    TypeName::Float32
                 } else {
-                    quote! { f64 }
+                    TypeName::Float64
                 }
             }
-            DataType::String => match as_ref {
-                AsReference::True => quote! { &str },
-                AsReference::False => quote! { String },
-            },
-            DataType::Boolean => quote! { bool },
-            DataType::Object => match as_ref {
-                AsReference::True => quote! { &serde_json::Value },
-                AsReference::False => quote! { serde_json::Value },
-            },
-            DataType::File => {
-                quote! { bytes::Bytes }
-            }
-        };
-        Ok(ts)
+            DataType::String => TypeName::String,
+            DataType::Boolean => TypeName::Boolean,
+            DataType::Object => TypeName::Value,
+            DataType::File => TypeName::Bytes,
+        }
     } else {
         // eprintln!(
         //     "WARN unknown type in get_type_name_for_schema, description {:?}",
         //     schema.description
         // );
-        match as_ref {
-            AsReference::True => Ok(quote! { &serde_json::Value }),
-            AsReference::False => Ok(quote! { serde_json::Value }),
-        }
-    }
+        TypeName::Value
+    })
 }
 
-pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>, as_ref: AsReference) -> Result<TokenStream, Error> {
-    match schema {
+pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>) -> Result<TypeName, Error> {
+    Ok(match schema {
         ReferenceOr::Reference { reference, .. } => {
-            let name = &reference.name.as_ref().ok_or(Error::NoNameForRef)?;
-            let idt = ident(&name.to_camel_case()).map_err(Error::TypeNameForSchemaRef)?;
-            match as_ref {
-                AsReference::True => Ok(quote! { &#idt }),
-                AsReference::False => Ok(quote! { #idt }),
-            }
+            let name = reference.name.as_ref().ok_or(Error::NoNameForRef)?;
+            TypeName::Reference(name.to_owned())
         }
-        ReferenceOr::Item(schema) => get_type_name_for_schema(&schema.common, as_ref),
-    }
+        ReferenceOr::Item(schema) => get_type_name_for_schema(&schema.common)?,
+    })
 }
 
 pub fn create_mod(api_version: &str) -> TokenStream {
