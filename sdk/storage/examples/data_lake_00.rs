@@ -85,6 +85,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file response == {:?}", create_file_response);
     println!();
 
+    println!("appending to file '{}'...", file_name);
+    let bytes = bytes::Bytes::from("some data");
+    let append_to_file_response = file_system
+        .append_to_file(
+            Context::default(),
+            file_name,
+            bytes,
+            FileAppendOptions::default(),
+        )
+        .await?;
+    println!("append to file response == {:?}", append_to_file_response);
+    println!();
+
     println!("creating file '{}' if not exists...", file_name);
     let create_file_if_not_exists_result = file_system
         .create_file_if_not_exists(Context::default(), file_name)

@@ -105,13 +105,14 @@ impl FileSystemClient {
         &self,
         ctx: Context,
         file_name: &str,
+        bytes: Bytes,
         options: FileAppendOptions<'_>,
     ) -> Result<FileAppendResponse, crate::Error> {
         let mut request = self.prepare_file_append_request(file_name);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
-        options.decorate_request(&mut request, bytes::Bytes::new())?;
+        options.decorate_request(&mut request, bytes)?;
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
@@ -149,7 +150,7 @@ impl FileSystemClient {
     }
 
     pub(crate) fn prepare_file_append_request(&self, path_name: &str) -> azure_core::Request {
-        let uri = format!("{}/{}?action=append", self.url(), path_name);
+        let uri = format!("{}/{}?action=append&position=0", self.url(), path_name); // TODO: take position as param
         http::request::Request::patch(uri)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()

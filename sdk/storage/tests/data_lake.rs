@@ -97,6 +97,16 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         .await;
     assert!(create_file_if_not_exists_result.is_err());
 
+    let bytes = bytes::Bytes::from("some data");
+    file_system_client
+        .append_to_file(
+            Context::default(),
+            file_name,
+            bytes,
+            FileAppendOptions::default(),
+        )
+        .await?;
+
     fs_properties.insert("ModifiedBy", "Iota");
     file_system_client
         .set_properties(Some(&fs_properties))
