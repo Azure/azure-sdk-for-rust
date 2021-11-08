@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
     let now = Utc::now();
-    let file_system_name = format!("azurerustsdk-datalake-example-{}", now.timestamp());
+    let file_system_name = format!("azurerustsdk-datalake-example00-{}", now.timestamp());
 
     let http_client = new_http_client();
 
@@ -69,76 +69,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     println!();
 
-    let file_path = "some/path/example-file.txt";
-
-    println!("creating file '{}'...", file_path);
-    let create_file_response = file_system
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
-    println!("create file response == {:?}", create_file_response);
-    println!();
-
-    println!("creating file '{}' (overwrite)...", file_path);
-    let create_file_response = file_system
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
-    println!("create file response == {:?}", create_file_response);
-    println!();
-
-    println!("creating file '{}' if not exists...", file_path);
-    let create_file_if_not_exists_result = file_system
-        .create_file_if_not_exists(Context::default(), file_path)
-        .await;
-    println!(
-        "create file result (should fail) == {:?}",
-        create_file_if_not_exists_result
-    );
-    println!();
-
-    println!("appending to file '{}'...", file_path);
-    let bytes = bytes::Bytes::from("some data");
-    let file_length = bytes.len() as i64;
-    let append_to_file_response = file_system
-        .append_to_file(
-            Context::default(),
-            file_path,
-            bytes,
-            0,
-            FileAppendOptions::default(),
-        )
-        .await?;
-    println!("append to file response == {:?}", append_to_file_response);
-    println!();
-
-    println!("flushing file '{}'...", file_path);
-    let flush_file_response = file_system
-        .flush_file(
-            Context::default(),
-            file_path,
-            file_length,
-            true,
-            FileFlushOptions::default(),
-        )
-        .await?;
-    println!("flush file response == {:?}", flush_file_response);
-    println!();
-
-    let destination_file_path = "some/path/example-file-renamed.txt";
-    println!(
-        "renaming file '{}' to '{}'...",
-        file_path, destination_file_path
-    );
-    let rename_file_response = file_system
-        .rename_file(
-            Context::default(),
-            file_path,
-            destination_file_path,
-            FileRenameOptions::default(),
-        )
-        .await?;
-    println!("rename file response == {:?}", rename_file_response);
-    println!();
-
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
     let set_fs_props_response = file_system
@@ -164,7 +94,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("delete file system response == {:?}", delete_fs_response);
     println!();
 
-    println!("data lake example done.");
+    println!("data lake example 00 done.");
 
     Ok(())
 }
