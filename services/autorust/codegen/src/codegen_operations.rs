@@ -283,7 +283,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
                 }
             }
             ParameterType::FormData => {
-                // form data not yet supported
+                unimplemented!("form data not yet supported");
                 // https://github.com/Azure/azure-sdk-for-rust/issues/500
                 // if required {
                 //     ts_request_builder.extend(quote! {
