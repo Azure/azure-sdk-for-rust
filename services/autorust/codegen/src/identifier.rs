@@ -1,4 +1,4 @@
-use heck::CamelCase;
+use heck::{CamelCase, SnakeCase};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
@@ -21,6 +21,24 @@ impl CamelCaseIdent for str {
             // heck::CamelCase::to_camel_case will remove underscores
             txt = txt.to_camel_case();
         }
+        let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
+            source,
+            text: self.to_owned(),
+        })?;
+        Ok(idt.into_token_stream())
+    }
+}
+
+pub trait SnakeCaseIdent: ToOwned {
+    fn to_snake_case_ident(&self) -> Result<TokenStream, Error>;
+}
+
+impl SnakeCaseIdent for str {
+    fn to_snake_case_ident(&self) -> Result<TokenStream, Error> {
+        let mut txt = replace_first(self, true);
+        txt = replace_special_chars(&txt);
+        txt = txt.to_snake_case();
+        txt = suffix_keyword(&txt);
         let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
             source,
             text: self.to_owned(),
@@ -52,6 +70,7 @@ fn replace_special_chars(text: &str) -> String {
     txt = txt.replace("-", "_");
     txt = txt.replace("/", "_");
     txt = txt.replace("*", "_");
+    txt = txt.replace(":", "_");
     txt
 }
 
@@ -100,6 +119,7 @@ fn is_keyword(word: &str) -> bool {
         "abstract"
             | "alignof"
             | "as"
+            | "async"
             | "become"
             | "box"
             | "break"
@@ -247,6 +267,18 @@ mod tests {
     #[test]
     fn test_1_0() -> Result<(), Error> {
         assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N1_0");
+        Ok(())
+    }
+
+    #[test]
+    fn test_async() -> Result<(), Error> {
+        assert_eq!("Async".to_snake_case_ident()?.to_string(), "async_");
+        Ok(())
+    }
+
+    #[test]
+    fn test_attr_qualified_name() -> Result<(), Error> {
+        assert_eq!("attr:qualifiedName".to_snake_case_ident()?.to_string(), "attr_qualified_name");
         Ok(())
     }
 }
