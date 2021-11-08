@@ -997,7 +997,7 @@ pub mod supported_runtime_version {
     pub enum Platform {
         Java,
         #[serde(rename = ".NET Core")]
-        U2eNetCore,
+        NetCore,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
