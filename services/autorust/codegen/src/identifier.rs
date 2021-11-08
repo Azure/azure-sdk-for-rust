@@ -304,5 +304,4 @@ mod tests {
         assert_eq!("_10minutely".to_camel_case_ident()?.to_string(), "N10minutely");
         Ok(())
     }
-
 }
