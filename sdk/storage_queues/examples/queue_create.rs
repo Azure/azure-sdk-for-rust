@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate log;
 use azure_core::prelude::*;
-use azure_messaging_queues::prelude::*;
 use azure_storage::core::prelude::*;
+use azure_storage_queues::prelude::*;
 use chrono::{Duration, Utc};
 use std::error::Error;
 

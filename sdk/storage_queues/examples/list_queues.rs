@@ -1,6 +1,6 @@
 use azure_core::prelude::*;
-use azure_messaging_queues::prelude::*;
 use azure_storage::core::prelude::*;
+use azure_storage_queues::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;

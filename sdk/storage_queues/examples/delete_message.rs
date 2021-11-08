@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate log;
 use azure_core::prelude::*;
-use azure_messaging_queues::prelude::*;
 use azure_storage::core::prelude::*;
+use azure_storage_queues::prelude::*;
 use std::error::Error;
 use std::time::Duration;
 
@@ -27,34 +27,29 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     trace!("getting messages");
 
-    let response = queue
+    let get_response = queue
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .execute()
         .await?;
 
-    println!("response == {:#?}", response);
+    println!("get_response == {:#?}", get_response);
 
-    let get_messages_response = queue
-        .get_messages()
-        .number_of_messages(2)
-        .visibility_timeout(Duration::from_secs(10)) // the message will become visible again after 10 secs
-        .execute()
-        .await?;
-    println!("get_messages_response == {:#?}", get_messages_response);
+    if get_response.messages.is_empty() {
+        println!("no message to delete");
+    } else {
+        for message_to_delete in get_response.messages {
+            println!("deleting message {:?}", message_to_delete);
 
-    // we will now update the contents of the retrieved messages
-    // Note that we have to specify how long the message will stay
-    // "hidden" before being visible again in the queue.
-    for message_to_update in get_messages_response.messages.into_iter() {
-        let pop_receipt = queue.as_pop_receipt_client(message_to_update);
+            let delete_response = queue
+                .as_pop_receipt_client(message_to_delete)
+                .delete()
+                .execute()
+                .await?;
 
-        let response = pop_receipt
-            .update(Duration::from_secs(4))
-            .execute(format!("new body at {}", chrono::Utc::now()))
-            .await?;
-        println!("response == {:#?}", response);
+            println!("delete_response == {:#?}", delete_response);
+        }
     }
 
     Ok(())

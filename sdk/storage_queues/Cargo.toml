@@ -1,13 +1,13 @@
 [package]
-name = "azure_messaging_queues"
+name = "azure_storage_queues"
 version = "0.1.0"
-description = "Rust wrappers around Microsoft Azure Messaging Queues REST APIs"
+description = "Rust wrappers around Microsoft Azure Storage Queues REST APIs"
 readme = "README.md"
 authors = ["Microsoft Corp."]
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_messaging_queues"
+documentation = "https://docs.rs/azure_storage_queues"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
 edition = "2018"

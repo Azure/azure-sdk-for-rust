@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate log;
 use azure_core::prelude::*;
-use azure_messaging_queues::prelude::*;
 use azure_storage::core::prelude::*;
+use azure_storage_queues::prelude::*;
 use std::error::Error;
 
 #[tokio::main]
@@ -23,12 +23,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
 
     let queue = storage_account.as_queue_client(queue_name);
+    println!("{:#?}", queue);
 
-    trace!("putting message");
+    trace!("peeking messages");
+
     let response = queue
-        .put_message()
-        .client_request_id("optional correlation token")
-        .execute(format!("Azure SDK for Rust rocks! {}", chrono::Utc::now()))
+        .peek_messages()
+        .number_of_messages(2)
+        .execute()
         .await?;
 
     println!("response == {:#?}", response);
