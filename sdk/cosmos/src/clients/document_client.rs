@@ -68,7 +68,7 @@ impl DocumentClient {
         T: DeserializeOwned,
     {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request)?;
 
@@ -82,14 +82,14 @@ impl DocumentClient {
     }
 
     /// replace a document in a collection
-    pub async fn replace_document<'a, T: Serialize>(
+    pub async fn replace_document<T: Serialize>(
         &self,
         ctx: Context,
-        document: &'a T,
+        document: &T,
         options: ReplaceDocumentOptions<'_>,
     ) -> crate::Result<ReplaceDocumentResponse> {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::PUT);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request, document, self.partition_key_serialized())?;
 
@@ -108,8 +108,8 @@ impl DocumentClient {
         ctx: Context,
         options: DeleteDocumentOptions<'_>,
     ) -> crate::Result<DeleteDocumentResponse> {
-        let mut request = self.prepare_request_pipeline_with_document_name(http::Method::PUT);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut request = self.prepare_request_pipeline_with_document_name(http::Method::DELETE);
+        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request, self.partition_key_serialized())?;
 

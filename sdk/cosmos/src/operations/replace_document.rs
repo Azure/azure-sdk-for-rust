@@ -18,7 +18,7 @@ pub struct ReplaceDocumentOptions<'a> {
     if_match_condition: Option<IfMatchCondition<'a>>,
     if_modified_since: Option<IfModifiedSince<'a>>,
     consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: TenativeWritesAllowance,
+    allow_tentative_writes: TentativeWritesAllowance,
 }
 
 impl<'a> ReplaceDocumentOptions<'a> {
@@ -29,7 +29,7 @@ impl<'a> ReplaceDocumentOptions<'a> {
             if_match_condition: None,
             if_modified_since: None,
             consistency_level: None,
-            allow_tentative_writes: TenativeWritesAllowance::Deny,
+            allow_tentative_writes: TentativeWritesAllowance::Deny,
         }
     }
 }
@@ -39,7 +39,7 @@ impl<'a> ReplaceDocumentOptions<'a> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
         if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
-        allow_tentative_writes: TenativeWritesAllowance,
+        allow_tentative_writes: TentativeWritesAllowance,
         indexing_directive: IndexingDirective,
     }
 
@@ -52,7 +52,7 @@ impl<'a> ReplaceDocumentOptions<'a> {
         &self,
         request: &mut HttpRequest,
         document: &'b D,
-        serialized_parition_key: &str,
+        serialized_partition_key: &str,
     ) -> crate::Result<()>
     where
         D: Serialize,
@@ -60,8 +60,8 @@ impl<'a> ReplaceDocumentOptions<'a> {
         let partition_key = self
             .partition_key
             .as_deref()
-            .unwrap_or(serialized_parition_key);
-        add_as_partition_key_header_serialized2(&partition_key, request);
+            .unwrap_or(serialized_partition_key);
+        add_as_partition_key_header_serialized2(partition_key, request);
 
         azure_core::headers::add_mandatory_header2(&self.indexing_directive, request)?;
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
