@@ -14,7 +14,7 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
     env_logger::init();
 
     let client = setup::initialize("create_database_and_collection")?;
-    let database_name = "sample";
+    let database_name = "test-create-database-and-collection";
     let context = Context::new();
 
     // create database!

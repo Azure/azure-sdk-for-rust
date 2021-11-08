@@ -72,10 +72,7 @@ impl<'a> CreateOrUpdateModuleIdentityBuilder<'a> {
         Ok(self
             .service_client
             .http_client()
-            .execute_request_check_statuses(
-                request,
-                &[http::StatusCode::OK, http::StatusCode::CREATED],
-            )
+            .execute_request_check_status(request, http::StatusCode::OK)
             .await?
             .try_into()?)
     }

@@ -72,8 +72,6 @@ impl DatabaseClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(GetDatabaseResponse::try_from(response).await?)
@@ -85,17 +83,16 @@ impl DatabaseClient {
         ctx: Context,
         options: DeleteDatabaseOptions,
     ) -> crate::Result<DeleteDatabaseResponse> {
-        let mut request = self
-            .cosmos_client()
-            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!("dbs/{}", self.database_name()),
+            http::Method::DELETE,
+        );
         let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(DeleteDatabaseResponse::try_from(response).await?)
@@ -127,7 +124,6 @@ impl DatabaseClient {
                                 .send(&mut pipeline_context, &mut request)
                                 .await
                         );
-                        let response = r#try!(response.validate(http::StatusCode::OK).await);
                         ListCollectionsResponse::try_from(response).await
                     }
                     State::Continuation(continuation_token) => {
@@ -146,7 +142,6 @@ impl DatabaseClient {
                                 .send(&mut pipeline_context, &mut request)
                                 .await
                         );
-                        let response = r#try!(response.validate(http::StatusCode::OK).await);
                         ListCollectionsResponse::try_from(response).await
                     }
                     State::Done => return None,
@@ -182,8 +177,6 @@ impl DatabaseClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(CreateCollectionResponse::try_from(response).await?)
@@ -215,7 +208,6 @@ impl DatabaseClient {
                                 .send(&mut pipeline_context, &mut request)
                                 .await
                         );
-                        let response = r#try!(response.validate(http::StatusCode::OK).await);
                         ListUsersResponse::try_from(response).await
                     }
                     State::Continuation(continuation_token) => {
@@ -234,7 +226,6 @@ impl DatabaseClient {
                                 .send(&mut pipeline_context, &mut request)
                                 .await
                         );
-                        let response = r#try!(response.validate(http::StatusCode::OK).await);
                         ListUsersResponse::try_from(response).await
                     }
                     State::Done => return None,
