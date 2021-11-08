@@ -278,8 +278,8 @@ pub mod record_sets {
         resource_group_name: &str,
         zone_name: &str,
         record_type: &str,
-        u24top: Option<&str>,
-        u24filter: Option<&str>,
+        top: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecordSetListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -302,11 +302,11 @@ pub mod record_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -352,8 +352,8 @@ pub mod record_sets {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         zone_name: &str,
-        u24top: Option<&str>,
-        u24filter: Option<&str>,
+        top: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecordSetListResult, list_all::Error> {
         let http_client = operation_config.http_client();
@@ -375,11 +375,11 @@ pub mod record_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -643,8 +643,8 @@ pub mod zones {
     pub async fn list_zones_in_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        u24top: Option<&str>,
-        u24filter: Option<&str>,
+        top: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ZoneListResult, list_zones_in_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -665,11 +665,11 @@ pub mod zones {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -718,8 +718,8 @@ pub mod zones {
     }
     pub async fn list_zones_in_subscription(
         operation_config: &crate::OperationConfig,
-        u24top: Option<&str>,
-        u24filter: Option<&str>,
+        top: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ZoneListResult, list_zones_in_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -739,11 +739,11 @@ pub mod zones {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

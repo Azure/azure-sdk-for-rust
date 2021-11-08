@@ -55,7 +55,7 @@ pub mod management_groups {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         cache_control: Option<&str>,
-        u24skiptoken: Option<&str>,
+        skiptoken: Option<&str>,
     ) -> std::result::Result<models::ManagementGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Management/managementGroups", operation_config.base_path(),);
@@ -73,8 +73,8 @@ pub mod management_groups {
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -124,9 +124,9 @@ pub mod management_groups {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-        u24expand: Option<&str>,
-        u24recurse: Option<bool>,
-        u24filter: Option<&str>,
+        expand: Option<&str>,
+        recurse: Option<bool>,
+        filter: Option<&str>,
         cache_control: Option<&str>,
     ) -> std::result::Result<models::ManagementGroup, get::Error> {
         let http_client = operation_config.http_client();
@@ -146,14 +146,14 @@ pub mod management_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24recurse) = u24recurse {
-            url.query_pairs_mut().append_pair("$recurse", u24recurse.to_string().as_str());
+        if let Some(recurse) = recurse {
+            url.query_pairs_mut().append_pair("$recurse", recurse.to_string().as_str());
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
@@ -440,8 +440,8 @@ pub mod management_groups {
     pub async fn get_descendants(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::DescendantListResult, get_descendants::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -460,11 +460,11 @@ pub mod management_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -740,7 +740,7 @@ pub mod management_group_subscriptions {
     pub async fn get_subscriptions_under_management_group(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-        u24skiptoken: Option<&str>,
+        skiptoken: Option<&str>,
     ) -> std::result::Result<models::ListSubscriptionUnderManagementGroup, get_subscriptions_under_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -759,8 +759,8 @@ pub mod management_group_subscriptions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1422,13 +1422,13 @@ pub mod entities {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24skiptoken: Option<&str>,
-        u24skip: Option<i64>,
-        u24top: Option<i64>,
-        u24select: Option<&str>,
-        u24search: Option<&str>,
-        u24filter: Option<&str>,
-        u24view: Option<&str>,
+        skiptoken: Option<&str>,
+        skip: Option<i64>,
+        top: Option<i64>,
+        select: Option<&str>,
+        search: Option<&str>,
+        filter: Option<&str>,
+        view: Option<&str>,
         group_name: Option<&str>,
         cache_control: Option<&str>,
     ) -> std::result::Result<models::EntityListResult, list::Error> {
@@ -1445,26 +1445,26 @@ pub mod entities {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24skip) = u24skip {
-            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        if let Some(u24search) = u24search {
-            url.query_pairs_mut().append_pair("$search", u24search);
+        if let Some(search) = search {
+            url.query_pairs_mut().append_pair("$search", search);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24view) = u24view {
-            url.query_pairs_mut().append_pair("$view", u24view);
+        if let Some(view) = view {
+            url.query_pairs_mut().append_pair("$view", view);
         }
         if let Some(group_name) = group_name {
             url.query_pairs_mut().append_pair("groupName", group_name);

@@ -25,7 +25,7 @@ pub mod conversion {
 pub struct ConversionList {
     pub conversions: Vec<Conversion>,
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub u40next_link: Option<String>,
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConversionInputSettings {
@@ -133,5 +133,5 @@ pub enum SessionSize {
 pub struct SessionsList {
     pub sessions: Vec<SessionProperties>,
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub u40next_link: Option<String>,
+    pub next_link: Option<String>,
 }

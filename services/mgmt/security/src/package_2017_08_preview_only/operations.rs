@@ -1249,7 +1249,7 @@ pub mod io_t_security_solutions_analytics_aggregated_alerts {
         subscription_id: &str,
         resource_group_name: &str,
         solution_name: &str,
-        u24top: Option<i64>,
+        top: Option<i64>,
     ) -> std::result::Result<models::IoTSecurityAggregatedAlertList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedAlerts" , operation_config . base_path () , subscription_id , resource_group_name , solution_name) ;
@@ -1264,8 +1264,8 @@ pub mod io_t_security_solutions_analytics_aggregated_alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1520,7 +1520,7 @@ pub mod io_t_security_solutions_analytics_recommendations {
         subscription_id: &str,
         resource_group_name: &str,
         solution_name: &str,
-        u24top: Option<i64>,
+        top: Option<i64>,
     ) -> std::result::Result<models::IoTSecurityAggregatedRecommendationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedRecommendations" , operation_config . base_path () , subscription_id , resource_group_name , solution_name) ;
@@ -1535,8 +1535,8 @@ pub mod io_t_security_solutions_analytics_recommendations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1589,7 +1589,7 @@ pub mod io_t_security_solutions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::IoTSecuritySolutionsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1608,8 +1608,8 @@ pub mod io_t_security_solutions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1663,7 +1663,7 @@ pub mod io_t_security_solutions_resource_group {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::IoTSecuritySolutionsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1683,8 +1683,8 @@ pub mod io_t_security_solutions_resource_group {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

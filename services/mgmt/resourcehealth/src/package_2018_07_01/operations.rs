@@ -30,7 +30,7 @@ pub mod events {
     use super::{models, API_VERSION};
     pub async fn list_by_subscription_id(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         query_start_time: Option<&str>,
         subscription_id: &str,
         view: Option<&str>,
@@ -52,8 +52,8 @@ pub mod events {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(query_start_time) = query_start_time {
             url.query_pairs_mut().append_pair("queryStartTime", query_start_time);
@@ -114,7 +114,7 @@ pub mod events {
     pub async fn list_by_single_resource(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         view: Option<&str>,
     ) -> std::result::Result<models::Events, list_by_single_resource::Error> {
         let http_client = operation_config.http_client();
@@ -134,8 +134,8 @@ pub mod events {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(view) = view {
             url.query_pairs_mut().append_pair("view", view);
@@ -195,9 +195,9 @@ pub mod availability_statuses {
     use super::{models, API_VERSION};
     pub async fn list_by_subscription_id(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::AvailabilityStatusListResult, list_by_subscription_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -216,11 +216,11 @@ pub mod availability_statuses {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -276,8 +276,8 @@ pub mod availability_statuses {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
+        filter: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::AvailabilityStatusListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -297,11 +297,11 @@ pub mod availability_statuses {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -356,8 +356,8 @@ pub mod availability_statuses {
     pub async fn get_by_resource(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
+        filter: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::AvailabilityStatus, get_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -376,11 +376,11 @@ pub mod availability_statuses {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -433,8 +433,8 @@ pub mod availability_statuses {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
+        filter: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::AvailabilityStatusListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -453,11 +453,11 @@ pub mod availability_statuses {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

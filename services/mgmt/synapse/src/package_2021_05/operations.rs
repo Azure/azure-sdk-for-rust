@@ -8494,7 +8494,7 @@ pub mod sql_pool_sensitivity_labels {
         resource_group_name: &str,
         workspace_name: &str,
         sql_pool_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::SensitivityLabelListResult, list_current::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -8516,8 +8516,8 @@ pub mod sql_pool_sensitivity_labels {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -8632,8 +8632,8 @@ pub mod sql_pool_sensitivity_labels {
         workspace_name: &str,
         sql_pool_name: &str,
         include_disabled_recommendations: Option<bool>,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::SensitivityLabelListResult, list_recommended::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -8661,11 +8661,11 @@ pub mod sql_pool_sensitivity_labels {
                 include_disabled_recommendations.to_string().as_str(),
             );
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -9083,7 +9083,7 @@ pub mod sql_pool_schemas {
         resource_group_name: &str,
         workspace_name: &str,
         sql_pool_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::SqlPoolSchemaListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -9105,8 +9105,8 @@ pub mod sql_pool_schemas {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -9215,7 +9215,7 @@ pub mod sql_pool_tables {
         workspace_name: &str,
         sql_pool_name: &str,
         schema_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::SqlPoolTableListResult, list_by_schema::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -9238,8 +9238,8 @@ pub mod sql_pool_tables {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -9354,7 +9354,7 @@ pub mod sql_pool_table_columns {
         sql_pool_name: &str,
         schema_name: &str,
         table_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::SqlPoolColumnListResult, list_by_table_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -9378,8 +9378,8 @@ pub mod sql_pool_table_columns {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

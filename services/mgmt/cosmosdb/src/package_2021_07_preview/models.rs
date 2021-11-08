@@ -173,11 +173,11 @@ pub mod database_account_get_results {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtendedResourceProperties {
     #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-    pub u5frid: Option<String>,
+    pub rid: Option<String>,
     #[serde(rename = "_ts", default, skip_serializing_if = "Option::is_none")]
-    pub u5fts: Option<f64>,
+    pub ts: Option<f64>,
     #[serde(rename = "_etag", default, skip_serializing_if = "Option::is_none")]
-    pub u5fetag: Option<String>,
+    pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThroughputSettingsGetResults {
@@ -228,9 +228,9 @@ pub mod sql_database_get_properties {
         #[serde(flatten)]
         pub extended_resource_properties: ExtendedResourceProperties,
         #[serde(rename = "_colls", default, skip_serializing_if = "Option::is_none")]
-        pub u5fcolls: Option<String>,
+        pub colls: Option<String>,
         #[serde(rename = "_users", default, skip_serializing_if = "Option::is_none")]
-        pub u5fusers: Option<String>,
+        pub users: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1421,7 +1421,7 @@ pub struct MetricName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricValue {
     #[serde(rename = "_count", default, skip_serializing_if = "Option::is_none")]
-    pub u5fcount: Option<f64>,
+    pub count: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub average: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1877,7 +1877,7 @@ pub mod restorable_sql_database_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Resource {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-        pub u5frid: Option<String>,
+        pub rid: Option<String>,
         #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
         pub operation_type: Option<OperationType>,
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -1898,11 +1898,11 @@ pub mod restorable_sql_database_properties {
             #[serde(flatten)]
             pub extended_resource_properties: ExtendedResourceProperties,
             #[serde(rename = "_colls", default, skip_serializing_if = "Option::is_none")]
-            pub u5fcolls: Option<String>,
+            pub colls: Option<String>,
             #[serde(rename = "_users", default, skip_serializing_if = "Option::is_none")]
-            pub u5fusers: Option<String>,
+            pub users: Option<String>,
             #[serde(rename = "_self", default, skip_serializing_if = "Option::is_none")]
-            pub u5fself: Option<String>,
+            pub self_: Option<String>,
         }
     }
 }
@@ -1932,7 +1932,7 @@ pub mod restorable_sql_container_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Resource {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-        pub u5frid: Option<String>,
+        pub rid: Option<String>,
         #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
         pub operation_type: Option<OperationType>,
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -1953,7 +1953,7 @@ pub mod restorable_sql_container_properties {
             #[serde(flatten)]
             pub extended_resource_properties: ExtendedResourceProperties,
             #[serde(rename = "_self", default, skip_serializing_if = "Option::is_none")]
-            pub u5fself: Option<String>,
+            pub self_: Option<String>,
         }
     }
 }
@@ -1988,7 +1988,7 @@ pub mod restorable_mongodb_database_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Resource {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-        pub u5frid: Option<String>,
+        pub rid: Option<String>,
         #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
         pub operation_type: Option<OperationType>,
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -2025,7 +2025,7 @@ pub mod restorable_mongodb_collection_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Resource {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-        pub u5frid: Option<String>,
+        pub rid: Option<String>,
         #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
         pub operation_type: Option<OperationType>,
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]

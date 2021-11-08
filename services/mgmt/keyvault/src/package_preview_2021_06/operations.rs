@@ -867,7 +867,7 @@ pub mod vaults {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        u24top: Option<i32>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::VaultListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -888,8 +888,8 @@ pub mod vaults {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -943,7 +943,7 @@ pub mod vaults {
     }
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
-        u24top: Option<i32>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::VaultListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -963,8 +963,8 @@ pub mod vaults {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1233,8 +1233,8 @@ pub mod vaults {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: &str,
-        u24top: Option<i32>,
+        filter: &str,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::ResourceListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -1250,9 +1250,9 @@ pub mod vaults {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2082,7 +2082,7 @@ pub mod managed_hsms {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        u24top: Option<i32>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::ManagedHsmListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -2103,8 +2103,8 @@ pub mod managed_hsms {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2158,7 +2158,7 @@ pub mod managed_hsms {
     }
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
-        u24top: Option<i32>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::ManagedHsmListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -2178,8 +2178,8 @@ pub mod managed_hsms {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3134,7 +3134,7 @@ pub mod secrets {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vault_name: &str,
-        u24top: Option<i32>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::SecretListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -3156,8 +3156,8 @@ pub mod secrets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

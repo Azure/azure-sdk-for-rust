@@ -1382,7 +1382,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::Database, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1404,8 +1404,8 @@ pub mod databases {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1680,8 +1680,8 @@ pub mod databases {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::DatabaseListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1702,11 +1702,11 @@ pub mod databases {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2275,7 +2275,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        u24filter: &str,
+        filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2297,7 +2297,7 @@ pub mod databases {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+        url.query_pairs_mut().append_pair("$filter", filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -3880,7 +3880,7 @@ pub mod elastic_pools {
         resource_group_name: &str,
         server_name: &str,
         elastic_pool_name: &str,
-        u24filter: &str,
+        filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3902,7 +3902,7 @@ pub mod elastic_pools {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+        url.query_pairs_mut().append_pair("$filter", filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -9965,8 +9965,8 @@ pub mod job_executions {
         end_time_min: Option<&str>,
         end_time_max: Option<&str>,
         is_active: Option<bool>,
-        u24skip: Option<i64>,
-        u24top: Option<i64>,
+        skip: Option<i64>,
+        top: Option<i64>,
         subscription_id: &str,
     ) -> std::result::Result<models::JobExecutionListResult, list_by_agent::Error> {
         let http_client = operation_config.http_client();
@@ -10004,11 +10004,11 @@ pub mod job_executions {
         if let Some(is_active) = is_active {
             url.query_pairs_mut().append_pair("isActive", is_active.to_string().as_str());
         }
-        if let Some(u24skip) = u24skip {
-            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10189,8 +10189,8 @@ pub mod job_executions {
         end_time_min: Option<&str>,
         end_time_max: Option<&str>,
         is_active: Option<bool>,
-        u24skip: Option<i64>,
-        u24top: Option<i64>,
+        skip: Option<i64>,
+        top: Option<i64>,
         subscription_id: &str,
     ) -> std::result::Result<models::JobExecutionListResult, list_by_job::Error> {
         let http_client = operation_config.http_client();
@@ -10229,11 +10229,11 @@ pub mod job_executions {
         if let Some(is_active) = is_active {
             url.query_pairs_mut().append_pair("isActive", is_active.to_string().as_str());
         }
-        if let Some(u24skip) = u24skip {
-            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10706,8 +10706,8 @@ pub mod job_step_executions {
         end_time_min: Option<&str>,
         end_time_max: Option<&str>,
         is_active: Option<bool>,
-        u24skip: Option<i64>,
-        u24top: Option<i64>,
+        skip: Option<i64>,
+        top: Option<i64>,
         subscription_id: &str,
     ) -> std::result::Result<models::JobExecutionListResult, list_by_job_execution::Error> {
         let http_client = operation_config.http_client();
@@ -10747,11 +10747,11 @@ pub mod job_step_executions {
         if let Some(is_active) = is_active {
             url.query_pairs_mut().append_pair("isActive", is_active.to_string().as_str());
         }
-        if let Some(u24skip) = u24skip {
-            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -11293,8 +11293,8 @@ pub mod job_target_executions {
         end_time_min: Option<&str>,
         end_time_max: Option<&str>,
         is_active: Option<bool>,
-        u24skip: Option<i64>,
-        u24top: Option<i64>,
+        skip: Option<i64>,
+        top: Option<i64>,
         subscription_id: &str,
     ) -> std::result::Result<models::JobExecutionListResult, list_by_job_execution::Error> {
         let http_client = operation_config.http_client();
@@ -11334,11 +11334,11 @@ pub mod job_target_executions {
         if let Some(is_active) = is_active {
             url.query_pairs_mut().append_pair("isActive", is_active.to_string().as_str());
         }
-        if let Some(u24skip) = u24skip {
-            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -11392,8 +11392,8 @@ pub mod job_target_executions {
         end_time_min: Option<&str>,
         end_time_max: Option<&str>,
         is_active: Option<bool>,
-        u24skip: Option<i64>,
-        u24top: Option<i64>,
+        skip: Option<i64>,
+        top: Option<i64>,
         subscription_id: &str,
     ) -> std::result::Result<models::JobExecutionListResult, list_by_step::Error> {
         let http_client = operation_config.http_client();
@@ -11434,11 +11434,11 @@ pub mod job_target_executions {
         if let Some(is_active) = is_active {
             url.query_pairs_mut().append_pair("isActive", is_active.to_string().as_str());
         }
-        if let Some(u24skip) = u24skip {
-            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -13892,7 +13892,7 @@ pub mod sensitivity_labels {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SensitivityLabelListResult, list_current_by_database::Error> {
         let http_client = operation_config.http_client();
@@ -13915,8 +13915,8 @@ pub mod sensitivity_labels {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -13963,8 +13963,8 @@ pub mod sensitivity_labels {
         server_name: &str,
         database_name: &str,
         include_disabled_recommendations: Option<bool>,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SensitivityLabelListResult, list_recommended_by_database::Error> {
         let http_client = operation_config.http_client();
@@ -13993,11 +13993,11 @@ pub mod sensitivity_labels {
                 include_disabled_recommendations.to_string().as_str(),
             );
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -16628,7 +16628,7 @@ pub mod managed_instance_keys {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ManagedInstanceKeyListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
@@ -16650,8 +16650,8 @@ pub mod managed_instance_keys {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -18113,7 +18113,7 @@ pub mod managed_database_sensitivity_labels {
         resource_group_name: &str,
         managed_instance_name: &str,
         database_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SensitivityLabelListResult, list_current_by_database::Error> {
         let http_client = operation_config.http_client();
@@ -18136,8 +18136,8 @@ pub mod managed_database_sensitivity_labels {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -18184,8 +18184,8 @@ pub mod managed_database_sensitivity_labels {
         managed_instance_name: &str,
         database_name: &str,
         include_disabled_recommendations: Option<bool>,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SensitivityLabelListResult, list_recommended_by_database::Error> {
         let http_client = operation_config.http_client();
@@ -18214,11 +18214,11 @@ pub mod managed_database_sensitivity_labels {
                 include_disabled_recommendations.to_string().as_str(),
             );
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

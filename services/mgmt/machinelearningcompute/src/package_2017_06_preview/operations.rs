@@ -560,7 +560,7 @@ pub mod operationalization_clusters {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        u24skiptoken: Option<&str>,
+        skiptoken: Option<&str>,
     ) -> std::result::Result<models::PaginatedOperationalizationClustersList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -580,8 +580,8 @@ pub mod operationalization_clusters {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -631,7 +631,7 @@ pub mod operationalization_clusters {
     pub async fn list_by_subscription_id(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        u24skiptoken: Option<&str>,
+        skiptoken: Option<&str>,
     ) -> std::result::Result<models::PaginatedOperationalizationClustersList, list_by_subscription_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -650,8 +650,8 @@ pub mod operationalization_clusters {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

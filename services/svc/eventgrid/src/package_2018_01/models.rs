@@ -873,7 +873,7 @@ pub struct MediaJobErrorDetail {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutput {
     #[serde(rename = "@odata.type", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_type: Option<String>,
+    pub odata_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<MediaJobError>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

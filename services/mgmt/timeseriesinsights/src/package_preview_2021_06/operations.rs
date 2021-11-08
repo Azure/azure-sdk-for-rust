@@ -121,7 +121,7 @@ pub mod environments {
         subscription_id: &str,
         resource_group_name: &str,
         environment_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::EnvironmentResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -142,8 +142,8 @@ pub mod environments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

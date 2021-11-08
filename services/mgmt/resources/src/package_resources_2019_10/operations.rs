@@ -787,8 +787,8 @@ pub mod deployments {
     pub async fn list_at_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
+        filter: Option<&str>,
+        top: Option<i32>,
     ) -> std::result::Result<models::DeploymentListResult, list_at_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -807,11 +807,11 @@ pub mod deployments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1462,8 +1462,8 @@ pub mod deployments {
     }
     pub async fn list_at_tenant_scope(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
+        filter: Option<&str>,
+        top: Option<i32>,
     ) -> std::result::Result<models::DeploymentListResult, list_at_tenant_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Resources/deployments/", operation_config.base_path(),);
@@ -1478,11 +1478,11 @@ pub mod deployments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2152,8 +2152,8 @@ pub mod deployments {
     pub async fn list_at_management_group_scope(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
+        filter: Option<&str>,
+        top: Option<i32>,
     ) -> std::result::Result<models::DeploymentListResult, list_at_management_group_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2172,11 +2172,11 @@ pub mod deployments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2847,8 +2847,8 @@ pub mod deployments {
     }
     pub async fn list_at_subscription_scope(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
+        filter: Option<&str>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::DeploymentListResult, list_at_subscription_scope::Error> {
         let http_client = operation_config.http_client();
@@ -2868,11 +2868,11 @@ pub mod deployments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3535,8 +3535,8 @@ pub mod deployments {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
+        filter: Option<&str>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::DeploymentListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -3557,11 +3557,11 @@ pub mod deployments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3833,8 +3833,8 @@ pub mod providers {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24top: Option<i32>,
-        u24expand: Option<&str>,
+        top: Option<i32>,
+        expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ProviderListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -3850,11 +3850,11 @@ pub mod providers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3903,8 +3903,8 @@ pub mod providers {
     }
     pub async fn list_at_tenant_scope(
         operation_config: &crate::OperationConfig,
-        u24top: Option<i32>,
-        u24expand: Option<&str>,
+        top: Option<i32>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::ProviderListResult, list_at_tenant_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers", operation_config.base_path(),);
@@ -3919,11 +3919,11 @@ pub mod providers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3975,7 +3975,7 @@ pub mod providers {
     }
     pub async fn get(
         operation_config: &crate::OperationConfig,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
         resource_provider_namespace: &str,
         subscription_id: &str,
     ) -> std::result::Result<models::Provider, get::Error> {
@@ -3997,8 +3997,8 @@ pub mod providers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4047,7 +4047,7 @@ pub mod providers {
     }
     pub async fn get_at_tenant_scope(
         operation_config: &crate::OperationConfig,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
         resource_provider_namespace: &str,
     ) -> std::result::Result<models::Provider, get_at_tenant_scope::Error> {
         let http_client = operation_config.http_client();
@@ -4063,8 +4063,8 @@ pub mod providers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4120,9 +4120,9 @@ pub mod resources {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
-        u24top: Option<i32>,
+        filter: Option<&str>,
+        expand: Option<&str>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::ResourceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -4143,14 +4143,14 @@ pub mod resources {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4354,9 +4354,9 @@ pub mod resources {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
-        u24top: Option<i32>,
+        filter: Option<&str>,
+        expand: Option<&str>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::ResourceListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -4372,14 +4372,14 @@ pub mod resources {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5633,8 +5633,8 @@ pub mod resource_groups {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
+        filter: Option<&str>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::ResourceGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -5650,11 +5650,11 @@ pub mod resource_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6434,7 +6434,7 @@ pub mod deployment_operations {
         operation_config: &crate::OperationConfig,
         scope: &str,
         deployment_name: &str,
-        u24top: Option<i32>,
+        top: Option<i32>,
     ) -> std::result::Result<models::DeploymentOperationsListResult, list_at_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6454,8 +6454,8 @@ pub mod deployment_operations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6579,7 +6579,7 @@ pub mod deployment_operations {
     pub async fn list_at_tenant_scope(
         operation_config: &crate::OperationConfig,
         deployment_name: &str,
-        u24top: Option<i32>,
+        top: Option<i32>,
     ) -> std::result::Result<models::DeploymentOperationsListResult, list_at_tenant_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6598,8 +6598,8 @@ pub mod deployment_operations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6728,7 +6728,7 @@ pub mod deployment_operations {
         operation_config: &crate::OperationConfig,
         group_id: &str,
         deployment_name: &str,
-        u24top: Option<i32>,
+        top: Option<i32>,
     ) -> std::result::Result<models::DeploymentOperationsListResult, list_at_management_group_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6748,8 +6748,8 @@ pub mod deployment_operations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6879,7 +6879,7 @@ pub mod deployment_operations {
     pub async fn list_at_subscription_scope(
         operation_config: &crate::OperationConfig,
         deployment_name: &str,
-        u24top: Option<i32>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::DeploymentOperationsListResult, list_at_subscription_scope::Error> {
         let http_client = operation_config.http_client();
@@ -6900,8 +6900,8 @@ pub mod deployment_operations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7029,7 +7029,7 @@ pub mod deployment_operations {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         deployment_name: &str,
-        u24top: Option<i32>,
+        top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::DeploymentOperationsListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -7051,8 +7051,8 @@ pub mod deployment_operations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

@@ -2019,7 +2019,7 @@ pub struct RunCommandParameterDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunCommandDocumentBase {
     #[serde(rename = "$schema")]
-    pub u24schema: String,
+    pub schema: String,
     pub id: String,
     #[serde(rename = "osType")]
     pub os_type: run_command_document_base::OsType,

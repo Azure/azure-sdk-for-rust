@@ -252,15 +252,15 @@ pub mod events {
         app_id: &str,
         event_type: &str,
         timespan: Option<&str>,
-        u24filter: Option<&str>,
-        u24search: Option<&str>,
-        u24orderby: Option<&str>,
-        u24select: Option<&str>,
-        u24skip: Option<i32>,
-        u24top: Option<i32>,
-        u24format: Option<&str>,
-        u24count: Option<bool>,
-        u24apply: Option<&str>,
+        filter: Option<&str>,
+        search: Option<&str>,
+        orderby: Option<&str>,
+        select: Option<&str>,
+        skip: Option<i32>,
+        top: Option<i32>,
+        format: Option<&str>,
+        count: Option<bool>,
+        apply: Option<&str>,
     ) -> std::result::Result<models::EventsResults, get_by_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/apps/{}/events/{}", operation_config.base_path(), app_id, event_type);
@@ -277,32 +277,32 @@ pub mod events {
         if let Some(timespan) = timespan {
             url.query_pairs_mut().append_pair("timespan", timespan);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24search) = u24search {
-            url.query_pairs_mut().append_pair("$search", u24search);
+        if let Some(search) = search {
+            url.query_pairs_mut().append_pair("$search", search);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        if let Some(u24skip) = u24skip {
-            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
+        if let Some(skip) = skip {
+            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24format) = u24format {
-            url.query_pairs_mut().append_pair("$format", u24format);
+        if let Some(format) = format {
+            url.query_pairs_mut().append_pair("$format", format);
         }
-        if let Some(u24count) = u24count {
-            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
+        if let Some(count) = count {
+            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

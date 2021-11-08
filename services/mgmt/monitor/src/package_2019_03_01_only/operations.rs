@@ -554,7 +554,7 @@ pub mod baselines {
         interval: Option<&str>,
         aggregation: Option<&str>,
         sensitivities: Option<&str>,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         result_type: Option<&str>,
     ) -> std::result::Result<models::MetricBaselinesResponse, list::Error> {
         let http_client = operation_config.http_client();
@@ -592,8 +592,8 @@ pub mod baselines {
         if let Some(sensitivities) = sensitivities {
             url.query_pairs_mut().append_pair("sensitivities", sensitivities);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(result_type) = result_type {
             url.query_pairs_mut().append_pair("resultType", result_type);

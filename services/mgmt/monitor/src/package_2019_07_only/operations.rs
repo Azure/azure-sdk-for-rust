@@ -23,7 +23,7 @@ pub mod metrics {
         aggregation: Option<&str>,
         top: Option<i32>,
         orderby: Option<&str>,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         result_type: Option<&str>,
         metricnamespace: Option<&str>,
         auto_adjust_timegrain: Option<bool>,
@@ -64,8 +64,8 @@ pub mod metrics {
         if let Some(orderby) = orderby {
             url.query_pairs_mut().append_pair("orderby", orderby);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(result_type) = result_type {
             url.query_pairs_mut().append_pair("resultType", result_type);

@@ -57,13 +57,13 @@ pub struct IncomingRelationshipCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncomingRelationship {
     #[serde(rename = "$relationshipId", default, skip_serializing_if = "Option::is_none")]
-    pub u24relationship_id: Option<String>,
+    pub relationship_id: Option<String>,
     #[serde(rename = "$sourceId", default, skip_serializing_if = "Option::is_none")]
-    pub u24source_id: Option<String>,
+    pub source_id: Option<String>,
     #[serde(rename = "$relationshipName", default, skip_serializing_if = "Option::is_none")]
-    pub u24relationship_name: Option<String>,
+    pub relationship_name: Option<String>,
     #[serde(rename = "$relationshipLink", default, skip_serializing_if = "Option::is_none")]
-    pub u24relationship_link: Option<String>,
+    pub relationship_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuerySpecification {

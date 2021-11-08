@@ -172,20 +172,20 @@ pub struct TypedErrorInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyEventsQueryResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_context: Option<String>,
+    pub odata_context: Option<String>,
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_count: Option<i32>,
+    pub odata_count: Option<i32>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_next_link: Option<String>,
+    pub odata_next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyEvent>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyEvent {
     #[serde(rename = "@odata.id", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_id: Option<String>,
+    pub odata_id: Option<String>,
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_context: Option<String>,
+    pub odata_context: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -266,20 +266,20 @@ pub type MetadataDocument = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyStatesQueryResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_context: Option<String>,
+    pub odata_context: Option<String>,
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_count: Option<i32>,
+    pub odata_count: Option<i32>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_next_link: Option<String>,
+    pub odata_next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyState {
     #[serde(rename = "@odata.id", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_id: Option<String>,
+    pub odata_id: Option<String>,
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_context: Option<String>,
+    pub odata_context: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -392,18 +392,18 @@ pub struct IfNotExistsEvaluationDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SummarizeResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_context: Option<String>,
+    pub odata_context: Option<String>,
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_count: Option<i32>,
+    pub odata_count: Option<i32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Summary>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Summary {
     #[serde(rename = "@odata.id", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_id: Option<String>,
+    pub odata_id: Option<String>,
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_context: Option<String>,
+    pub odata_context: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<SummaryResults>,
     #[serde(rename = "policyAssignments", default, skip_serializing_if = "Vec::is_empty")]
@@ -467,7 +467,7 @@ pub struct PolicyGroupSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsListResults {
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_count: Option<i32>,
+    pub odata_count: Option<i32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }

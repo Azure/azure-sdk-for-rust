@@ -207,9 +207,9 @@ pub mod get_location_by_host_name {
 pub async fn get_apps(
     operation_config: &crate::OperationConfig,
     host_name: &str,
-    u24filter: Option<&str>,
-    u24top: Option<i32>,
-    u24select: Option<&str>,
+    filter: Option<&str>,
+    top: Option<i32>,
+    select: Option<&str>,
 ) -> std::result::Result<models::ApplicationCollection, get_apps::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -228,14 +228,14 @@ pub async fn get_apps(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(u24filter) = u24filter {
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+    if let Some(filter) = filter {
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
-    if let Some(u24top) = u24top {
-        url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+    if let Some(top) = top {
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
-    if let Some(u24select) = u24select {
-        url.query_pairs_mut().append_pair("$select", u24select);
+    if let Some(select) = select {
+        url.query_pairs_mut().append_pair("$select", select);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -289,9 +289,9 @@ pub async fn get_mam_user_devices(
     operation_config: &crate::OperationConfig,
     host_name: &str,
     user_name: &str,
-    u24filter: Option<&str>,
-    u24top: Option<i32>,
-    u24select: Option<&str>,
+    filter: Option<&str>,
+    top: Option<i32>,
+    select: Option<&str>,
 ) -> std::result::Result<models::DeviceCollection, get_mam_user_devices::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -311,14 +311,14 @@ pub async fn get_mam_user_devices(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(u24filter) = u24filter {
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+    if let Some(filter) = filter {
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
-    if let Some(u24top) = u24top {
-        url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+    if let Some(top) = top {
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
-    if let Some(u24select) = u24select {
-        url.query_pairs_mut().append_pair("$select", u24select);
+    if let Some(select) = select {
+        url.query_pairs_mut().append_pair("$select", select);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -373,7 +373,7 @@ pub async fn get_mam_user_device_by_device_name(
     host_name: &str,
     user_name: &str,
     device_name: &str,
-    u24select: Option<&str>,
+    select: Option<&str>,
 ) -> std::result::Result<models::Device, get_mam_user_device_by_device_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -394,8 +394,8 @@ pub async fn get_mam_user_device_by_device_name(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(u24select) = u24select {
-        url.query_pairs_mut().append_pair("$select", u24select);
+    if let Some(select) = select {
+        url.query_pairs_mut().append_pair("$select", select);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -524,9 +524,9 @@ pub mod wipe_mam_user_device {
 pub async fn get_operation_results(
     operation_config: &crate::OperationConfig,
     host_name: &str,
-    u24filter: Option<&str>,
-    u24top: Option<i32>,
-    u24select: Option<&str>,
+    filter: Option<&str>,
+    top: Option<i32>,
+    select: Option<&str>,
 ) -> std::result::Result<models::OperationResultCollection, get_operation_results::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -545,14 +545,14 @@ pub async fn get_operation_results(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(u24filter) = u24filter {
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+    if let Some(filter) = filter {
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
-    if let Some(u24top) = u24top {
-        url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+    if let Some(top) = top {
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
-    if let Some(u24select) = u24select {
-        url.query_pairs_mut().append_pair("$select", u24select);
+    if let Some(select) = select {
+        url.query_pairs_mut().append_pair("$select", select);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -676,9 +676,9 @@ pub mod get_mam_statuses {
 pub async fn get_mam_flagged_users(
     operation_config: &crate::OperationConfig,
     host_name: &str,
-    u24filter: Option<&str>,
-    u24top: Option<i32>,
-    u24select: Option<&str>,
+    filter: Option<&str>,
+    top: Option<i32>,
+    select: Option<&str>,
 ) -> std::result::Result<models::FlaggedUserCollection, get_mam_flagged_users::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -697,14 +697,14 @@ pub async fn get_mam_flagged_users(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(u24filter) = u24filter {
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+    if let Some(filter) = filter {
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
-    if let Some(u24top) = u24top {
-        url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+    if let Some(top) = top {
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
-    if let Some(u24select) = u24select {
-        url.query_pairs_mut().append_pair("$select", u24select);
+    if let Some(select) = select {
+        url.query_pairs_mut().append_pair("$select", select);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -760,7 +760,7 @@ pub async fn get_mam_flagged_user_by_name(
     operation_config: &crate::OperationConfig,
     host_name: &str,
     user_name: &str,
-    u24select: Option<&str>,
+    select: Option<&str>,
 ) -> std::result::Result<models::FlaggedUser, get_mam_flagged_user_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -780,8 +780,8 @@ pub async fn get_mam_flagged_user_by_name(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(u24select) = u24select {
-        url.query_pairs_mut().append_pair("$select", u24select);
+    if let Some(select) = select {
+        url.query_pairs_mut().append_pair("$select", select);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -837,9 +837,9 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     operation_config: &crate::OperationConfig,
     host_name: &str,
     user_name: &str,
-    u24filter: Option<&str>,
-    u24top: Option<i32>,
-    u24select: Option<&str>,
+    filter: Option<&str>,
+    top: Option<i32>,
+    select: Option<&str>,
 ) -> std::result::Result<models::FlaggedEnrolledAppCollection, get_mam_user_flagged_enrolled_apps::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -859,14 +859,14 @@ pub async fn get_mam_user_flagged_enrolled_apps(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(u24filter) = u24filter {
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+    if let Some(filter) = filter {
+        url.query_pairs_mut().append_pair("$filter", filter);
     }
-    if let Some(u24top) = u24top {
-        url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+    if let Some(top) = top {
+        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
     }
-    if let Some(u24select) = u24select {
-        url.query_pairs_mut().append_pair("$select", u24select);
+    if let Some(select) = select {
+        url.query_pairs_mut().append_pair("$select", select);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -923,9 +923,9 @@ pub mod ios {
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
         host_name: &str,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24select: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        select: Option<&str>,
     ) -> std::result::Result<models::IosmamPolicyCollection, get_mam_policies::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -944,14 +944,14 @@ pub mod ios {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1005,7 +1005,7 @@ pub mod ios {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-        u24select: Option<&str>,
+        select: Option<&str>,
     ) -> std::result::Result<models::IOsmamPolicy, get_mam_policy_by_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1025,8 +1025,8 @@ pub mod ios {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1302,9 +1302,9 @@ pub mod ios {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24select: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        select: Option<&str>,
     ) -> std::result::Result<models::ApplicationCollection, get_app_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1324,14 +1324,14 @@ pub mod ios {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1770,9 +1770,9 @@ pub mod android {
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
         host_name: &str,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24select: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        select: Option<&str>,
     ) -> std::result::Result<models::AndroidMamPolicyCollection, get_mam_policies::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1791,14 +1791,14 @@ pub mod android {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1852,7 +1852,7 @@ pub mod android {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-        u24select: Option<&str>,
+        select: Option<&str>,
     ) -> std::result::Result<models::AndroidMamPolicy, get_mam_policy_by_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1872,8 +1872,8 @@ pub mod android {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2149,9 +2149,9 @@ pub mod android {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24select: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        select: Option<&str>,
     ) -> std::result::Result<models::ApplicationCollection, get_app_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2171,14 +2171,14 @@ pub mod android {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

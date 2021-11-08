@@ -18,7 +18,7 @@ pub mod management_groups {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24skiptoken: Option<&str>,
+        skiptoken: Option<&str>,
     ) -> std::result::Result<models::ManagementGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Management/managementGroups", operation_config.base_path(),);
@@ -33,8 +33,8 @@ pub mod management_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -84,8 +84,8 @@ pub mod management_groups {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-        u24expand: Option<&str>,
-        u24recurse: Option<bool>,
+        expand: Option<&str>,
+        recurse: Option<bool>,
     ) -> std::result::Result<models::ManagementGroupWithHierarchy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -104,11 +104,11 @@ pub mod management_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24recurse) = u24recurse {
-            url.query_pairs_mut().append_pair("$recurse", u24recurse.to_string().as_str());
+        if let Some(recurse) = recurse {
+            url.query_pairs_mut().append_pair("$recurse", recurse.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

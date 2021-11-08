@@ -494,7 +494,7 @@ pub mod role_definitions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::RoleDefinitionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -513,8 +513,8 @@ pub mod role_definitions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -632,7 +632,7 @@ pub mod provider_operations_metadata {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_provider_namespace: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::ProviderOperationsMetadata, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -651,8 +651,8 @@ pub mod provider_operations_metadata {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -701,7 +701,7 @@ pub mod provider_operations_metadata {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::ProviderOperationsMetadataListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -719,8 +719,8 @@ pub mod provider_operations_metadata {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -838,7 +838,7 @@ pub mod role_assignments {
         parent_resource_path: &str,
         resource_type: &str,
         resource_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RoleAssignmentListResult, list_for_resource::Error> {
         let http_client = operation_config.http_client();
@@ -863,8 +863,8 @@ pub mod role_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -917,7 +917,7 @@ pub mod role_assignments {
     pub async fn list_for_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RoleAssignmentListResult, list_for_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -938,8 +938,8 @@ pub mod role_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1408,7 +1408,7 @@ pub mod role_assignments {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RoleAssignmentListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -1428,8 +1428,8 @@ pub mod role_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1479,7 +1479,7 @@ pub mod role_assignments {
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::RoleAssignmentListResult, list_for_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1498,8 +1498,8 @@ pub mod role_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

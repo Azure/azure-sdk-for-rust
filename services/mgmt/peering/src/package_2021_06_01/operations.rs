@@ -1896,7 +1896,7 @@ pub mod received_routes {
         as_path: Option<&str>,
         origin_as_validation_state: Option<&str>,
         rpki_validation_state: Option<&str>,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::PeeringReceivedRouteListResult, list_by_peering::Error> {
         let http_client = operation_config.http_client();
@@ -1931,8 +1931,8 @@ pub mod received_routes {
         if let Some(rpki_validation_state) = rpki_validation_state {
             url.query_pairs_mut().append_pair("rpkiValidationState", rpki_validation_state);
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2443,7 +2443,7 @@ pub mod prefixes {
         resource_group_name: &str,
         peering_service_name: &str,
         prefix_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::PeeringServicePrefix, get::Error> {
         let http_client = operation_config.http_client();
@@ -2466,8 +2466,8 @@ pub mod prefixes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2679,7 +2679,7 @@ pub mod prefixes {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_service_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::PeeringServicePrefixListResult, list_by_peering_service::Error> {
         let http_client = operation_config.http_client();
@@ -2701,8 +2701,8 @@ pub mod prefixes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

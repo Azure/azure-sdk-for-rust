@@ -2808,7 +2808,7 @@ pub mod galleries {
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
-        u24select: Option<&str>,
+        select: Option<&str>,
     ) -> std::result::Result<models::Gallery, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2829,8 +2829,8 @@ pub mod galleries {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3656,7 +3656,7 @@ pub mod gallery_image_versions {
         gallery_name: &str,
         gallery_image_name: &str,
         gallery_image_version_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::GalleryImageVersion, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3679,8 +3679,8 @@ pub mod gallery_image_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4456,7 +4456,7 @@ pub mod gallery_application_versions {
         gallery_name: &str,
         gallery_application_name: &str,
         gallery_application_version_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::GalleryApplicationVersion, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4479,8 +4479,8 @@ pub mod gallery_application_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

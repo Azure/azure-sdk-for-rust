@@ -181,7 +181,7 @@ pub mod global_users {
         operation_config: &crate::OperationConfig,
         user_name: &str,
         environment_operations_payload: &models::EnvironmentOperationsPayload,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::GetEnvironmentResponse, get_environment::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -202,8 +202,8 @@ pub mod global_users {
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(environment_operations_payload).map_err(get_environment::Error::SerializeError)?;
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get_environment::Error::BuildRequestError)?;
@@ -899,10 +899,10 @@ pub mod lab_accounts {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24orderby: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ResponseWithContinuationLabAccount, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -921,17 +921,17 @@ pub mod lab_accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -985,10 +985,10 @@ pub mod lab_accounts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24orderby: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ResponseWithContinuationLabAccount, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1008,17 +1008,17 @@ pub mod lab_accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1075,7 +1075,7 @@ pub mod lab_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         lab_account_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::LabAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1096,8 +1096,8 @@ pub mod lab_accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1600,10 +1600,10 @@ pub mod gallery_images {
         subscription_id: &str,
         resource_group_name: &str,
         lab_account_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24orderby: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ResponseWithContinuationGalleryImage, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1624,17 +1624,17 @@ pub mod gallery_images {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1687,7 +1687,7 @@ pub mod gallery_images {
         resource_group_name: &str,
         lab_account_name: &str,
         gallery_image_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::GalleryImage, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1709,8 +1709,8 @@ pub mod gallery_images {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2000,10 +2000,10 @@ pub mod labs {
         subscription_id: &str,
         resource_group_name: &str,
         lab_account_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24orderby: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ResponseWithContinuationLab, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2024,17 +2024,17 @@ pub mod labs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2087,7 +2087,7 @@ pub mod labs {
         resource_group_name: &str,
         lab_account_name: &str,
         lab_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::Lab, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2109,8 +2109,8 @@ pub mod labs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2544,10 +2544,10 @@ pub mod environment_settings {
         resource_group_name: &str,
         lab_account_name: &str,
         lab_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24orderby: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ResponseWithContinuationEnvironmentSetting, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2569,17 +2569,17 @@ pub mod environment_settings {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2633,7 +2633,7 @@ pub mod environment_settings {
         lab_account_name: &str,
         lab_name: &str,
         environment_setting_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::EnvironmentSetting, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2656,8 +2656,8 @@ pub mod environment_settings {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3254,10 +3254,10 @@ pub mod environments {
         lab_account_name: &str,
         lab_name: &str,
         environment_setting_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24orderby: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ResponseWithContinuationEnvironment, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments" , operation_config . base_path () , subscription_id , resource_group_name , lab_account_name , lab_name , environment_setting_name) ;
@@ -3272,17 +3272,17 @@ pub mod environments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3337,7 +3337,7 @@ pub mod environments {
         lab_name: &str,
         environment_setting_name: &str,
         environment_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::Environment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , operation_config . base_path () , subscription_id , resource_group_name , lab_account_name , lab_name , environment_setting_name , environment_name) ;
@@ -3352,8 +3352,8 @@ pub mod environments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3903,10 +3903,10 @@ pub mod users {
         resource_group_name: &str,
         lab_account_name: &str,
         lab_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24orderby: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ResponseWithContinuationUser, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3928,17 +3928,17 @@ pub mod users {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3992,7 +3992,7 @@ pub mod users {
         lab_account_name: &str,
         lab_name: &str,
         user_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::User, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4015,8 +4015,8 @@ pub mod users {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

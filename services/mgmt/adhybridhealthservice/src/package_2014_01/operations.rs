@@ -166,7 +166,7 @@ pub mod adds_services {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         service_type: Option<&str>,
         skip_count: Option<i64>,
         take_count: Option<i64>,
@@ -187,8 +187,8 @@ pub mod adds_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(service_type) = service_type {
             url.query_pairs_mut().append_pair("serviceType", service_type);
@@ -686,7 +686,7 @@ pub mod adds_services {
     }
     pub async fn list_metric_metadata(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         service_name: &str,
         perf_counter: Option<bool>,
     ) -> std::result::Result<models::MetricMetadataList, list_metric_metadata::Error> {
@@ -707,8 +707,8 @@ pub mod adds_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(perf_counter) = perf_counter {
             url.query_pairs_mut().append_pair("perfCounter", perf_counter.to_string().as_str());
@@ -907,7 +907,7 @@ pub mod adds_services {
     pub async fn list_replication_details(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         with_details: Option<bool>,
     ) -> std::result::Result<models::ReplicationDetailsList, list_replication_details::Error> {
         let http_client = operation_config.http_client();
@@ -927,8 +927,8 @@ pub mod adds_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(with_details) = with_details {
             url.query_pairs_mut().append_pair("withDetails", with_details.to_string().as_str());
@@ -981,7 +981,7 @@ pub mod adds_services {
     pub async fn list_replication_summary(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         is_groupby_site: bool,
         query: &str,
         next_partition_key: &str,
@@ -1005,8 +1005,8 @@ pub mod adds_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         url.query_pairs_mut()
             .append_pair("isGroupbySite", is_groupby_site.to_string().as_str());
@@ -1065,7 +1065,7 @@ pub mod adds_services {
         operation_config: &crate::OperationConfig,
         service_member_id: &str,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         state: Option<&str>,
         from: Option<&str>,
         to: Option<&str>,
@@ -1088,8 +1088,8 @@ pub mod adds_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(state) = state {
             url.query_pairs_mut().append_pair("state", state);
@@ -1145,7 +1145,7 @@ pub mod adds_services {
     }
     pub async fn list_premium_services(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         service_type: Option<&str>,
         skip_count: Option<i64>,
         take_count: Option<i64>,
@@ -1166,8 +1166,8 @@ pub mod adds_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(service_type) = service_type {
             url.query_pairs_mut().append_pair("serviceType", service_type);
@@ -1229,7 +1229,7 @@ pub mod alerts {
     pub async fn list_adds_alerts(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         state: Option<&str>,
         from: Option<&str>,
         to: Option<&str>,
@@ -1251,8 +1251,8 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(state) = state {
             url.query_pairs_mut().append_pair("state", state);
@@ -1629,7 +1629,7 @@ pub mod adds_service_members {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::AddsServiceMembers, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1648,8 +1648,8 @@ pub mod adds_service_members {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1819,7 +1819,7 @@ pub mod adds_service_members {
     pub async fn list_credentials(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         service_member_id: &str,
     ) -> std::result::Result<models::Credentials, list_credentials::Error> {
         let http_client = operation_config.http_client();
@@ -1840,8 +1840,8 @@ pub mod adds_service_members {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1892,7 +1892,7 @@ pub mod ad_domain_service_members {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         is_groupby_site: bool,
         query: Option<&str>,
         next_partition_key: &str,
@@ -1916,8 +1916,8 @@ pub mod ad_domain_service_members {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         url.query_pairs_mut()
             .append_pair("isGroupbySite", is_groupby_site.to_string().as_str());
@@ -2306,7 +2306,7 @@ pub mod adds_services_service_members {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         dimension_type: Option<&str>,
         dimension_signature: Option<&str>,
     ) -> std::result::Result<models::ServiceMembers, list::Error> {
@@ -2327,8 +2327,8 @@ pub mod adds_services_service_members {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(dimension_type) = dimension_type {
             url.query_pairs_mut().append_pair("dimensionType", dimension_type);
@@ -2567,7 +2567,7 @@ pub mod services {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         service_type: Option<&str>,
         skip_count: Option<i64>,
         take_count: Option<i64>,
@@ -2588,8 +2588,8 @@ pub mod services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(service_type) = service_type {
             url.query_pairs_mut().append_pair("serviceType", service_type);
@@ -2703,7 +2703,7 @@ pub mod services {
     }
     pub async fn list_premium(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         service_type: Option<&str>,
         skip_count: Option<i64>,
         take_count: Option<i64>,
@@ -2724,8 +2724,8 @@ pub mod services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(service_type) = service_type {
             url.query_pairs_mut().append_pair("serviceType", service_type);
@@ -2966,7 +2966,7 @@ pub mod services {
     pub async fn list_alerts(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         state: Option<&str>,
         from: Option<&str>,
         to: Option<&str>,
@@ -2988,8 +2988,8 @@ pub mod services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(state) = state {
             url.query_pairs_mut().append_pair("state", state);
@@ -3577,7 +3577,7 @@ pub mod services {
     }
     pub async fn list_metric_metadata(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         service_name: &str,
         perf_counter: Option<bool>,
     ) -> std::result::Result<models::MetricMetadataList, list_metric_metadata::Error> {
@@ -3598,8 +3598,8 @@ pub mod services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(perf_counter) = perf_counter {
             url.query_pairs_mut().append_pair("perfCounter", perf_counter.to_string().as_str());
@@ -4284,7 +4284,7 @@ pub mod service_members {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         dimension_type: Option<&str>,
         dimension_signature: Option<&str>,
     ) -> std::result::Result<models::ServiceMembers, list::Error> {
@@ -4305,8 +4305,8 @@ pub mod service_members {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(dimension_type) = dimension_type {
             url.query_pairs_mut().append_pair("dimensionType", dimension_type);
@@ -4546,7 +4546,7 @@ pub mod service_members {
         operation_config: &crate::OperationConfig,
         service_member_id: &str,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         state: Option<&str>,
         from: Option<&str>,
         to: Option<&str>,
@@ -4569,8 +4569,8 @@ pub mod service_members {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(state) = state {
             url.query_pairs_mut().append_pair("state", state);
@@ -4693,7 +4693,7 @@ pub mod service_members {
     pub async fn list_credentials(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         service_member_id: &str,
     ) -> std::result::Result<models::Credentials, list_credentials::Error> {
         let http_client = operation_config.http_client();
@@ -4714,8 +4714,8 @@ pub mod service_members {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

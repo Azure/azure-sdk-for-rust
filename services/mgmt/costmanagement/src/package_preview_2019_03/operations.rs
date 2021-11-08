@@ -85,10 +85,10 @@ pub mod dimensions {
     pub async fn list_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        filter: Option<&str>,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::DimensionsListResult, list_by_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -107,17 +107,17 @@ pub mod dimensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -173,10 +173,10 @@ pub mod dimensions {
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         enrollment_account_id: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        filter: Option<&str>,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::DimensionsListResult, list_by_enrollment_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -196,17 +196,17 @@ pub mod dimensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -262,10 +262,10 @@ pub mod dimensions {
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         department_id: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        filter: Option<&str>,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::DimensionsListResult, list_by_department::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -285,17 +285,17 @@ pub mod dimensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -348,10 +348,10 @@ pub mod dimensions {
     pub async fn list_by_management_group(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        filter: Option<&str>,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::DimensionsListResult, list_by_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -370,17 +370,17 @@ pub mod dimensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -435,10 +435,10 @@ pub mod dimensions {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        filter: Option<&str>,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::DimensionsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -457,17 +457,17 @@ pub mod dimensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -521,10 +521,10 @@ pub mod dimensions {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        filter: Option<&str>,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::DimensionsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -544,17 +544,17 @@ pub mod dimensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1639,7 +1639,7 @@ pub mod cloud_connector {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         connector_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::ConnectorDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1658,8 +1658,8 @@ pub mod cloud_connector {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2056,7 +2056,7 @@ pub mod external_billing_account {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         external_billing_account_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::ExternalBillingAccountDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2075,8 +2075,8 @@ pub mod external_billing_account {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2264,7 +2264,7 @@ pub mod external_subscription {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         external_subscription_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::ExternalSubscriptionDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2283,8 +2283,8 @@ pub mod external_subscription {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2334,7 +2334,7 @@ pub mod external_subscription {
     pub async fn list_by_management_group(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
-        u24recurse: Option<bool>,
+        recurse: Option<bool>,
     ) -> std::result::Result<models::ExternalSubscriptionDefinitionListResult, list_by_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2353,8 +2353,8 @@ pub mod external_subscription {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24recurse) = u24recurse {
-            url.query_pairs_mut().append_pair("$recurse", u24recurse.to_string().as_str());
+        if let Some(recurse) = recurse {
+            url.query_pairs_mut().append_pair("$recurse", recurse.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

@@ -2942,8 +2942,8 @@ pub mod activity_logs {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: &str,
-        u24select: Option<&str>,
+        filter: &str,
+        select: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::EventDataCollection, list::Error> {
         let http_client = operation_config.http_client();
@@ -2963,9 +2963,9 @@ pub mod activity_logs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3079,8 +3079,8 @@ pub mod tenant_activity_logs {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
-        u24select: Option<&str>,
+        filter: Option<&str>,
+        select: Option<&str>,
     ) -> std::result::Result<models::EventDataCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3098,11 +3098,11 @@ pub mod tenant_activity_logs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3234,7 +3234,7 @@ pub mod metrics {
         aggregation: Option<&str>,
         top: Option<i32>,
         orderby: Option<&str>,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         result_type: Option<&str>,
         metricnamespace: Option<&str>,
     ) -> std::result::Result<models::Response, list::Error> {
@@ -3273,8 +3273,8 @@ pub mod metrics {
         if let Some(orderby) = orderby {
             url.query_pairs_mut().append_pair("orderby", orderby);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(result_type) = result_type {
             url.query_pairs_mut().append_pair("resultType", result_type);
@@ -4374,7 +4374,7 @@ pub mod scheduled_query_rules {
     }
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::LogSearchRuleResourceCollection, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -4394,8 +4394,8 @@ pub mod scheduled_query_rules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4448,7 +4448,7 @@ pub mod scheduled_query_rules {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::LogSearchRuleResourceCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -4469,8 +4469,8 @@ pub mod scheduled_query_rules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4534,7 +4534,7 @@ pub mod baselines {
         interval: Option<&str>,
         aggregation: Option<&str>,
         sensitivities: Option<&str>,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         result_type: Option<&str>,
     ) -> std::result::Result<models::MetricBaselinesResponse, list::Error> {
         let http_client = operation_config.http_client();
@@ -4572,8 +4572,8 @@ pub mod baselines {
         if let Some(sensitivities) = sensitivities {
             url.query_pairs_mut().append_pair("sensitivities", sensitivities);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         if let Some(result_type) = result_type {
             url.query_pairs_mut().append_pair("resultType", result_type);

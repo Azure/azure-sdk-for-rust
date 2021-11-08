@@ -455,9 +455,9 @@ pub mod quota_request_status {
         subscription_id: &str,
         provider_id: &str,
         location: &str,
-        u24filter: Option<&str>,
-        u24top: Option<i32>,
-        u24skiptoken: Option<&str>,
+        filter: Option<&str>,
+        top: Option<i32>,
+        skiptoken: Option<&str>,
     ) -> std::result::Result<models::QuotaRequestDetailsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -478,14 +478,14 @@ pub mod quota_request_status {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1458,7 +1458,7 @@ pub mod reservation_order {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         reservation_order_id: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::ReservationOrderResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1477,8 +1477,8 @@ pub mod reservation_order {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

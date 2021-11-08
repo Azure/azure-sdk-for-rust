@@ -424,8 +424,8 @@ pub mod backup_protection_intent {
         vault_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-        u24filter: Option<&str>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::ProtectionIntentResourceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -446,11 +446,11 @@ pub mod backup_protection_intent {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -500,8 +500,8 @@ pub mod backup_usage_summaries {
         vault_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-        u24filter: Option<&str>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::BackupManagementUsageList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -522,11 +522,11 @@ pub mod backup_usage_summaries {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

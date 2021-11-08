@@ -368,7 +368,7 @@ pub mod storage_accounts {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::StorageAccount, get_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -389,8 +389,8 @@ pub mod storage_accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -775,7 +775,7 @@ pub mod storage_accounts {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::StorageAccountListKeysResult, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -796,8 +796,8 @@ pub mod storage_accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -3159,9 +3159,9 @@ pub mod blob_containers {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-        u24maxpagesize: Option<&str>,
-        u24filter: Option<&str>,
-        u24include: Option<&str>,
+        maxpagesize: Option<&str>,
+        filter: Option<&str>,
+        include: Option<&str>,
     ) -> std::result::Result<models::ListContainerItems, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3182,14 +3182,14 @@ pub mod blob_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24maxpagesize) = u24maxpagesize {
-            url.query_pairs_mut().append_pair("$maxpagesize", u24maxpagesize);
+        if let Some(maxpagesize) = maxpagesize {
+            url.query_pairs_mut().append_pair("$maxpagesize", maxpagesize);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24include) = u24include {
-            url.query_pairs_mut().append_pair("$include", u24include);
+        if let Some(include) = include {
+            url.query_pairs_mut().append_pair("$include", include);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4380,9 +4380,9 @@ pub mod file_shares {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-        u24maxpagesize: Option<&str>,
-        u24filter: Option<&str>,
-        u24expand: Option<&str>,
+        maxpagesize: Option<&str>,
+        filter: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::FileShareItems, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4403,14 +4403,14 @@ pub mod file_shares {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24maxpagesize) = u24maxpagesize {
-            url.query_pairs_mut().append_pair("$maxpagesize", u24maxpagesize);
+        if let Some(maxpagesize) = maxpagesize {
+            url.query_pairs_mut().append_pair("$maxpagesize", maxpagesize);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4463,7 +4463,7 @@ pub mod file_shares {
         account_name: &str,
         share_name: &str,
         subscription_id: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
         x_ms_snapshot: Option<&str>,
     ) -> std::result::Result<models::FileShare, get::Error> {
         let http_client = operation_config.http_client();
@@ -4486,8 +4486,8 @@ pub mod file_shares {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         if let Some(x_ms_snapshot) = x_ms_snapshot {
             req_builder = req_builder.header("x-ms-snapshot", x_ms_snapshot);
@@ -4543,7 +4543,7 @@ pub mod file_shares {
         account_name: &str,
         share_name: &str,
         file_share: &models::FileShare,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -4568,8 +4568,8 @@ pub mod file_shares {
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(file_share).map_err(create::Error::SerializeError)?;
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
@@ -4707,7 +4707,7 @@ pub mod file_shares {
         share_name: &str,
         subscription_id: &str,
         x_ms_snapshot: Option<&str>,
-        u24include: Option<&str>,
+        include: Option<&str>,
     ) -> std::result::Result<delete::Response, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4732,8 +4732,8 @@ pub mod file_shares {
         if let Some(x_ms_snapshot) = x_ms_snapshot {
             req_builder = req_builder.header("x-ms-snapshot", x_ms_snapshot);
         }
-        if let Some(u24include) = u24include {
-            url.query_pairs_mut().append_pair("$include", u24include);
+        if let Some(include) = include {
+            url.query_pairs_mut().append_pair("$include", include);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5459,8 +5459,8 @@ pub mod queue {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-        u24maxpagesize: Option<&str>,
-        u24filter: Option<&str>,
+        maxpagesize: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::ListQueueResource, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5481,11 +5481,11 @@ pub mod queue {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24maxpagesize) = u24maxpagesize {
-            url.query_pairs_mut().append_pair("$maxpagesize", u24maxpagesize);
+        if let Some(maxpagesize) = maxpagesize {
+            url.query_pairs_mut().append_pair("$maxpagesize", maxpagesize);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

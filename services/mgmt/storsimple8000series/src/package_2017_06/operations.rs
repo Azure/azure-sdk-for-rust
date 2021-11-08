@@ -1082,7 +1082,7 @@ pub mod managers {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::FeatureList, list_feature_support_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1103,8 +1103,8 @@ pub mod managers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1296,7 +1296,7 @@ pub mod managers {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: &str,
+        filter: &str,
     ) -> std::result::Result<models::MetricList, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1317,7 +1317,7 @@ pub mod managers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+        url.query_pairs_mut().append_pair("$filter", filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -1794,7 +1794,7 @@ pub mod alerts {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::AlertList, list_by_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1815,8 +1815,8 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2497,7 +2497,7 @@ pub mod devices {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::DeviceList, list_by_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2518,8 +2518,8 @@ pub mod devices {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2570,7 +2570,7 @@ pub mod devices {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::Device, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2592,8 +2592,8 @@ pub mod devices {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3054,7 +3054,7 @@ pub mod devices {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: &str,
+        filter: &str,
     ) -> std::result::Result<models::MetricList, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3076,7 +3076,7 @@ pub mod devices {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+        url.query_pairs_mut().append_pair("$filter", filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -4832,7 +4832,7 @@ pub mod backups {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::BackupList, list_by_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4854,8 +4854,8 @@ pub mod backups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5269,7 +5269,7 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::JobList, list_by_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5291,8 +5291,8 @@ pub mod jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5482,7 +5482,7 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::JobList, list_by_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5503,8 +5503,8 @@ pub mod jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5848,7 +5848,7 @@ pub mod volume_containers {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: &str,
+        filter: &str,
     ) -> std::result::Result<models::MetricList, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5871,7 +5871,7 @@ pub mod volume_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+        url.query_pairs_mut().append_pair("$filter", filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -6291,7 +6291,7 @@ pub mod volumes {
         subscription_id: &str,
         resource_group_name: &str,
         manager_name: &str,
-        u24filter: &str,
+        filter: &str,
     ) -> std::result::Result<models::MetricList, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorSimple/managers/{}/devices/{}/volumeContainers/{}/volumes/{}/metrics" , operation_config . base_path () , subscription_id , resource_group_name , manager_name , device_name , volume_container_name , volume_name) ;
@@ -6306,7 +6306,7 @@ pub mod volumes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+        url.query_pairs_mut().append_pair("$filter", filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;

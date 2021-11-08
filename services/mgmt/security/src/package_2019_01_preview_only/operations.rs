@@ -53,7 +53,7 @@ pub mod regulatory_compliance_standards {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::RegulatoryComplianceStandardList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -72,8 +72,8 @@ pub mod regulatory_compliance_standards {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -195,7 +195,7 @@ pub mod regulatory_compliance_controls {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         regulatory_compliance_standard_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::RegulatoryComplianceControlList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -215,8 +215,8 @@ pub mod regulatory_compliance_controls {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -341,7 +341,7 @@ pub mod regulatory_compliance_assessments {
         subscription_id: &str,
         regulatory_compliance_standard_name: &str,
         regulatory_compliance_control_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::RegulatoryComplianceAssessmentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls/{}/regulatoryComplianceAssessments" , operation_config . base_path () , subscription_id , regulatory_compliance_standard_name , regulatory_compliance_control_name) ;
@@ -356,8 +356,8 @@ pub mod regulatory_compliance_assessments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1216,7 +1216,7 @@ pub mod assessments {
         operation_config: &crate::OperationConfig,
         resource_id: &str,
         assessment_name: &str,
-        u24expand: Option<&str>,
+        expand: Option<&str>,
     ) -> std::result::Result<models::SecurityAssessment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1236,8 +1236,8 @@ pub mod assessments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

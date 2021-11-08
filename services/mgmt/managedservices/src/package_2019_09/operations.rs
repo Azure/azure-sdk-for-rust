@@ -330,7 +330,7 @@ pub mod registration_assignments {
         operation_config: &crate::OperationConfig,
         scope: &str,
         registration_assignment_id: &str,
-        u24expand_registration_definition: Option<bool>,
+        expand_registration_definition: Option<bool>,
     ) -> std::result::Result<models::RegistrationAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -350,11 +350,9 @@ pub mod registration_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand_registration_definition) = u24expand_registration_definition {
-            url.query_pairs_mut().append_pair(
-                "$expandRegistrationDefinition",
-                u24expand_registration_definition.to_string().as_str(),
-            );
+        if let Some(expand_registration_definition) = expand_registration_definition {
+            url.query_pairs_mut()
+                .append_pair("$expandRegistrationDefinition", expand_registration_definition.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -559,7 +557,7 @@ pub mod registration_assignments {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        u24expand_registration_definition: Option<bool>,
+        expand_registration_definition: Option<bool>,
     ) -> std::result::Result<models::RegistrationAssignmentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -578,11 +576,9 @@ pub mod registration_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand_registration_definition) = u24expand_registration_definition {
-            url.query_pairs_mut().append_pair(
-                "$expandRegistrationDefinition",
-                u24expand_registration_definition.to_string().as_str(),
-            );
+        if let Some(expand_registration_definition) = expand_registration_definition {
+            url.query_pairs_mut()
+                .append_pair("$expandRegistrationDefinition", expand_registration_definition.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -635,7 +631,7 @@ pub mod marketplace_registration_definitions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::MarketplaceRegistrationDefinitionList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -654,8 +650,8 @@ pub mod marketplace_registration_definitions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -775,7 +771,7 @@ pub mod marketplace_registration_definitions_without_scope {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::MarketplaceRegistrationDefinitionList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -793,8 +789,8 @@ pub mod marketplace_registration_definitions_without_scope {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

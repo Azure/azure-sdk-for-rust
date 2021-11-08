@@ -136,7 +136,7 @@ pub struct SavedSearch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SavedSearchesListResult {
     #[serde(rename = "__metadata", default, skip_serializing_if = "Option::is_none")]
-    pub u5f_metadata: Option<SearchMetadata>,
+    pub metadata: Option<SearchMetadata>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SavedSearch>,
 }
@@ -207,7 +207,7 @@ pub struct StorageInsightListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageInsight>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub u40odata_next_link: Option<String>,
+    pub odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {

@@ -535,7 +535,7 @@ pub mod replication_events {
         resource_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::EventCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -556,8 +556,8 @@ pub mod replication_events {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3145,7 +3145,7 @@ pub mod replication_migration_items {
         resource_group_name: &str,
         subscription_id: &str,
         skip_token: Option<&str>,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::MigrationItemCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3169,8 +3169,8 @@ pub mod replication_migration_items {
         if let Some(skip_token) = skip_token {
             url.query_pairs_mut().append_pair("skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3355,7 +3355,7 @@ pub mod replication_protectable_items {
         subscription_id: &str,
         fabric_name: &str,
         protection_container_name: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::ProtectableItemCollection, list_by_replication_protection_containers::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectableItems" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , fabric_name , protection_container_name) ;
@@ -3370,8 +3370,8 @@ pub mod replication_protectable_items {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4544,7 +4544,7 @@ pub mod replication_protected_items {
         resource_group_name: &str,
         subscription_id: &str,
         skip_token: Option<&str>,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::ReplicationProtectedItemCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4568,8 +4568,8 @@ pub mod replication_protected_items {
         if let Some(skip_token) = skip_token {
             url.query_pairs_mut().append_pair("skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6662,7 +6662,7 @@ pub mod replication_jobs {
         resource_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
     ) -> std::result::Result<models::JobCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6683,8 +6683,8 @@ pub mod replication_jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

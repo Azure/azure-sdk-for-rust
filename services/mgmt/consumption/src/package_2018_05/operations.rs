@@ -36,9 +36,9 @@ pub mod price_sheet {
     use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
-        u24expand: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
         subscription_id: &str,
     ) -> std::result::Result<models::PriceSheetResult, get::Error> {
         let http_client = operation_config.http_client();
@@ -58,14 +58,14 @@ pub mod price_sheet {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -114,9 +114,9 @@ pub mod price_sheet {
     }
     pub async fn get_by_billing_period(
         operation_config: &crate::OperationConfig,
-        u24expand: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        expand: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
         subscription_id: &str,
         billing_period_name: &str,
     ) -> std::result::Result<models::PriceSheetResult, get_by_billing_period::Error> {
@@ -138,14 +138,14 @@ pub mod price_sheet {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -203,11 +203,11 @@ pub mod usage_details {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
-        u24apply: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        apply: Option<&str>,
     ) -> std::result::Result<models::UsageDetailsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -226,20 +226,20 @@ pub mod usage_details {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -290,11 +290,11 @@ pub mod usage_details {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         billing_period_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24apply: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        apply: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::UsageDetailsListResult, list_by_billing_period::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -314,20 +314,20 @@ pub mod usage_details {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -382,11 +382,11 @@ pub mod usage_details {
     pub async fn list_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
-        u24apply: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        apply: Option<&str>,
     ) -> std::result::Result<models::UsageDetailsListResult, list_by_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -405,20 +405,20 @@ pub mod usage_details {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -474,11 +474,11 @@ pub mod usage_details {
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         billing_period_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24apply: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        apply: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::UsageDetailsListResult, list_for_billing_period_by_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , operation_config . base_path () , billing_account_id , billing_period_name) ;
@@ -493,20 +493,20 @@ pub mod usage_details {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -561,11 +561,11 @@ pub mod usage_details {
     pub async fn list_by_department(
         operation_config: &crate::OperationConfig,
         department_id: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
-        u24apply: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        apply: Option<&str>,
     ) -> std::result::Result<models::UsageDetailsListResult, list_by_department::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -584,20 +584,20 @@ pub mod usage_details {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -651,11 +651,11 @@ pub mod usage_details {
         operation_config: &crate::OperationConfig,
         department_id: &str,
         billing_period_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24apply: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        apply: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::UsageDetailsListResult, list_for_billing_period_by_department::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , operation_config . base_path () , department_id , billing_period_name) ;
@@ -670,20 +670,20 @@ pub mod usage_details {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -738,11 +738,11 @@ pub mod usage_details {
     pub async fn list_by_enrollment_account(
         operation_config: &crate::OperationConfig,
         enrollment_account_id: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
-        u24apply: Option<&str>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
+        apply: Option<&str>,
     ) -> std::result::Result<models::UsageDetailsListResult, list_by_enrollment_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -761,20 +761,20 @@ pub mod usage_details {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -830,11 +830,11 @@ pub mod usage_details {
         operation_config: &crate::OperationConfig,
         enrollment_account_id: &str,
         billing_period_name: &str,
-        u24expand: Option<&str>,
-        u24filter: Option<&str>,
-        u24apply: Option<&str>,
-        u24skiptoken: Option<&str>,
-        u24top: Option<i64>,
+        expand: Option<&str>,
+        filter: Option<&str>,
+        apply: Option<&str>,
+        skiptoken: Option<&str>,
+        top: Option<i64>,
     ) -> std::result::Result<models::UsageDetailsListResult, list_for_billing_period_by_enrollment_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , operation_config . base_path () , enrollment_account_id , billing_period_name) ;
@@ -849,20 +849,20 @@ pub mod usage_details {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24apply) = u24apply {
-            url.query_pairs_mut().append_pair("$apply", u24apply);
+        if let Some(apply) = apply {
+            url.query_pairs_mut().append_pair("$apply", apply);
         }
-        if let Some(u24skiptoken) = u24skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
+        if let Some(skiptoken) = skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -919,7 +919,7 @@ pub mod forecasts {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        u24filter: Option<&str>,
+        filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ForecastsListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -939,8 +939,8 @@ pub mod forecasts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

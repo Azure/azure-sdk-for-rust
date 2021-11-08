@@ -262,7 +262,7 @@ pub struct EdgeModuleEntityCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EdgeModuleEntity>,
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub u40next_link: Option<String>,
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoStreaming {
@@ -315,7 +315,7 @@ pub mod video_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthenticationBase {
     #[serde(rename = "@type")]
-    pub u40type: String,
+    pub type_: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenClaim {
@@ -338,7 +338,7 @@ pub struct JwtAuthentication {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenKey {
     #[serde(rename = "@type")]
-    pub u40type: String,
+    pub type_: String,
     pub kid: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -418,14 +418,14 @@ pub struct VideoEntityCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VideoEntity>,
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub u40next_link: Option<String>,
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicyEntityCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AccessPolicyEntity>,
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub u40next_link: Option<String>,
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

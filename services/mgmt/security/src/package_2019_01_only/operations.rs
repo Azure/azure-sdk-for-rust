@@ -39,9 +39,9 @@ pub mod alerts {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        u24filter: Option<&str>,
-        u24select: Option<&str>,
-        u24expand: Option<&str>,
+        filter: Option<&str>,
+        select: Option<&str>,
+        expand: Option<&str>,
         auto_dismiss_rule_name: Option<&str>,
     ) -> std::result::Result<models::AlertList, list::Error> {
         let http_client = operation_config.http_client();
@@ -61,14 +61,14 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         if let Some(auto_dismiss_rule_name) = auto_dismiss_rule_name {
             url.query_pairs_mut().append_pair("autoDismissRuleName", auto_dismiss_rule_name);
@@ -122,9 +122,9 @@ pub mod alerts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        u24filter: Option<&str>,
-        u24select: Option<&str>,
-        u24expand: Option<&str>,
+        filter: Option<&str>,
+        select: Option<&str>,
+        expand: Option<&str>,
         auto_dismiss_rule_name: Option<&str>,
     ) -> std::result::Result<models::AlertList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -145,14 +145,14 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         if let Some(auto_dismiss_rule_name) = auto_dismiss_rule_name {
             url.query_pairs_mut().append_pair("autoDismissRuleName", auto_dismiss_rule_name);
@@ -211,9 +211,9 @@ pub mod alerts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         asc_location: &str,
-        u24filter: Option<&str>,
-        u24select: Option<&str>,
-        u24expand: Option<&str>,
+        filter: Option<&str>,
+        select: Option<&str>,
+        expand: Option<&str>,
         auto_dismiss_rule_name: Option<&str>,
     ) -> std::result::Result<models::AlertList, list_subscription_level_alerts_by_region::Error> {
         let http_client = operation_config.http_client();
@@ -234,14 +234,14 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         if let Some(auto_dismiss_rule_name) = auto_dismiss_rule_name {
             url.query_pairs_mut().append_pair("autoDismissRuleName", auto_dismiss_rule_name);
@@ -301,9 +301,9 @@ pub mod alerts {
         subscription_id: &str,
         asc_location: &str,
         resource_group_name: &str,
-        u24filter: Option<&str>,
-        u24select: Option<&str>,
-        u24expand: Option<&str>,
+        filter: Option<&str>,
+        select: Option<&str>,
+        expand: Option<&str>,
         auto_dismiss_rule_name: Option<&str>,
     ) -> std::result::Result<models::AlertList, list_resource_group_level_alerts_by_region::Error> {
         let http_client = operation_config.http_client();
@@ -325,14 +325,14 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24select) = u24select {
-            url.query_pairs_mut().append_pair("$select", u24select);
+        if let Some(select) = select {
+            url.query_pairs_mut().append_pair("$select", select);
         }
-        if let Some(u24expand) = u24expand {
-            url.query_pairs_mut().append_pair("$expand", u24expand);
+        if let Some(expand) = expand {
+            url.query_pairs_mut().append_pair("$expand", expand);
         }
         if let Some(auto_dismiss_rule_name) = auto_dismiss_rule_name {
             url.query_pairs_mut().append_pair("autoDismissRuleName", auto_dismiss_rule_name);

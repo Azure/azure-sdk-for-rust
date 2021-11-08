@@ -263,7 +263,7 @@ pub struct DeliveryRuleIsDeviceCondition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemoteAddressMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: remote_address_match_condition_parameters::U40odataType,
+    pub odata_type: remote_address_match_condition_parameters::U40odataType,
     pub operator: remote_address_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -290,7 +290,7 @@ pub mod remote_address_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestMethodMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: request_method_match_condition_parameters::U40odataType,
+    pub odata_type: request_method_match_condition_parameters::U40odataType,
     pub operator: request_method_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -312,7 +312,7 @@ pub mod request_method_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryStringMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: query_string_match_condition_parameters::U40odataType,
+    pub odata_type: query_string_match_condition_parameters::U40odataType,
     pub operator: query_string_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -345,7 +345,7 @@ pub mod query_string_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PostArgsMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: post_args_match_condition_parameters::U40odataType,
+    pub odata_type: post_args_match_condition_parameters::U40odataType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     pub operator: post_args_match_condition_parameters::Operator,
@@ -380,7 +380,7 @@ pub mod post_args_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestUriMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: request_uri_match_condition_parameters::U40odataType,
+    pub odata_type: request_uri_match_condition_parameters::U40odataType,
     pub operator: request_uri_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -413,7 +413,7 @@ pub mod request_uri_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestHeaderMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: request_header_match_condition_parameters::U40odataType,
+    pub odata_type: request_header_match_condition_parameters::U40odataType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     pub operator: request_header_match_condition_parameters::Operator,
@@ -448,7 +448,7 @@ pub mod request_header_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestBodyMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: request_body_match_condition_parameters::U40odataType,
+    pub odata_type: request_body_match_condition_parameters::U40odataType,
     pub operator: request_body_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -481,7 +481,7 @@ pub mod request_body_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestSchemeMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: request_scheme_match_condition_parameters::U40odataType,
+    pub odata_type: request_scheme_match_condition_parameters::U40odataType,
     pub operator: request_scheme_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -503,7 +503,7 @@ pub mod request_scheme_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlPathMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: url_path_match_condition_parameters::U40odataType,
+    pub odata_type: url_path_match_condition_parameters::U40odataType,
     pub operator: url_path_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -537,7 +537,7 @@ pub mod url_path_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileExtensionMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: url_file_extension_match_condition_parameters::U40odataType,
+    pub odata_type: url_file_extension_match_condition_parameters::U40odataType,
     pub operator: url_file_extension_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -570,7 +570,7 @@ pub mod url_file_extension_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileNameMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: url_file_name_match_condition_parameters::U40odataType,
+    pub odata_type: url_file_name_match_condition_parameters::U40odataType,
     pub operator: url_file_name_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -603,7 +603,7 @@ pub mod url_file_name_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpVersionMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: http_version_match_condition_parameters::U40odataType,
+    pub odata_type: http_version_match_condition_parameters::U40odataType,
     pub operator: http_version_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -625,7 +625,7 @@ pub mod http_version_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CookiesMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: cookies_match_condition_parameters::U40odataType,
+    pub odata_type: cookies_match_condition_parameters::U40odataType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     pub operator: cookies_match_condition_parameters::Operator,
@@ -660,7 +660,7 @@ pub mod cookies_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IsDeviceMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: is_device_match_condition_parameters::U40odataType,
+    pub odata_type: is_device_match_condition_parameters::U40odataType,
     pub operator: is_device_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -708,7 +708,7 @@ pub struct UrlRedirectAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRedirectActionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: url_redirect_action_parameters::U40odataType,
+    pub odata_type: url_redirect_action_parameters::U40odataType,
     #[serde(rename = "redirectType")]
     pub redirect_type: url_redirect_action_parameters::RedirectType,
     #[serde(rename = "destinationProtocol", default, skip_serializing_if = "Option::is_none")]
@@ -752,7 +752,7 @@ pub struct UrlSigningAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlSigningActionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: url_signing_action_parameters::U40odataType,
+    pub odata_type: url_signing_action_parameters::U40odataType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub algorithm: Option<url_signing_action_parameters::Algorithm>,
     #[serde(rename = "parameterNameOverride", default, skip_serializing_if = "Vec::is_empty")]
@@ -796,7 +796,7 @@ pub struct OriginGroupOverrideAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OriginGroupOverrideActionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: origin_group_override_action_parameters::U40odataType,
+    pub odata_type: origin_group_override_action_parameters::U40odataType,
     #[serde(rename = "originGroup")]
     pub origin_group: ResourceReference,
 }
@@ -817,7 +817,7 @@ pub struct UrlRewriteAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRewriteActionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: url_rewrite_action_parameters::U40odataType,
+    pub odata_type: url_rewrite_action_parameters::U40odataType,
     #[serde(rename = "sourcePattern")]
     pub source_pattern: String,
     pub destination: String,
@@ -847,7 +847,7 @@ pub struct DeliveryRuleResponseHeaderAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HeaderActionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: header_action_parameters::U40odataType,
+    pub odata_type: header_action_parameters::U40odataType,
     #[serde(rename = "headerAction")]
     pub header_action: header_action_parameters::HeaderAction,
     #[serde(rename = "headerName")]
@@ -878,7 +878,7 @@ pub struct DeliveryRuleCacheExpirationAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheExpirationActionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: cache_expiration_action_parameters::U40odataType,
+    pub odata_type: cache_expiration_action_parameters::U40odataType,
     #[serde(rename = "cacheBehavior")]
     pub cache_behavior: cache_expiration_action_parameters::CacheBehavior,
     #[serde(rename = "cacheType")]
@@ -913,7 +913,7 @@ pub struct DeliveryRuleCacheKeyQueryStringAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheKeyQueryStringActionParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: cache_key_query_string_action_parameters::U40odataType,
+    pub odata_type: cache_key_query_string_action_parameters::U40odataType,
     #[serde(rename = "queryStringBehavior")]
     pub query_string_behavior: cache_key_query_string_action_parameters::QueryStringBehavior,
     #[serde(rename = "queryParameters", default, skip_serializing_if = "Option::is_none")]
@@ -1030,7 +1030,7 @@ pub struct UrlSigningKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSigningKeyParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: key_vault_signing_key_parameters::U40odataType,
+    pub odata_type: key_vault_signing_key_parameters::U40odataType,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
     #[serde(rename = "resourceGroupName")]
@@ -1345,7 +1345,7 @@ pub struct CdnManagedHttpsParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CdnCertificateSourceParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: cdn_certificate_source_parameters::U40odataType,
+    pub odata_type: cdn_certificate_source_parameters::U40odataType,
     #[serde(rename = "certificateType")]
     pub certificate_type: cdn_certificate_source_parameters::CertificateType,
 }
@@ -1372,7 +1372,7 @@ pub struct UserManagedHttpsParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultCertificateSourceParameters {
     #[serde(rename = "@odata.type")]
-    pub u40odata_type: key_vault_certificate_source_parameters::U40odataType,
+    pub odata_type: key_vault_certificate_source_parameters::U40odataType,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
     #[serde(rename = "resourceGroupName")]

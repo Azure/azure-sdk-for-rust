@@ -121,7 +121,7 @@ pub mod accounts {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::AccountList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -140,8 +140,8 @@ pub mod accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -498,7 +498,7 @@ pub mod accounts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::AccountList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -518,8 +518,8 @@ pub mod accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -576,7 +576,7 @@ pub mod consumer_invitations {
     use super::{models, API_VERSION};
     pub async fn list_invitations(
         operation_config: &crate::OperationConfig,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::ConsumerInvitationList, list_invitations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataShare/listInvitations", operation_config.base_path(),);
@@ -591,8 +591,8 @@ pub mod consumer_invitations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1028,9 +1028,9 @@ pub mod data_sets {
         resource_group_name: &str,
         account_name: &str,
         share_name: &str,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::DataSetList, list_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1052,14 +1052,14 @@ pub mod data_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1354,9 +1354,9 @@ pub mod data_set_mappings {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::DataSetMappingList, list_by_share_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1378,14 +1378,14 @@ pub mod data_set_mappings {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1826,9 +1826,9 @@ pub mod invitations {
         resource_group_name: &str,
         account_name: &str,
         share_name: &str,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::InvitationList, list_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1850,14 +1850,14 @@ pub mod invitations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1979,9 +1979,9 @@ pub mod shares {
         account_name: &str,
         share_name: &str,
         share_synchronization: &models::ShareSynchronization,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::SynchronizationDetailsList, list_synchronization_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2005,14 +2005,14 @@ pub mod shares {
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(share_synchronization).map_err(list_synchronization_details::Error::SerializeError)?;
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -2069,9 +2069,9 @@ pub mod shares {
         resource_group_name: &str,
         account_name: &str,
         share_name: &str,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ShareSynchronizationList, list_synchronizations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2093,14 +2093,14 @@ pub mod shares {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -2395,9 +2395,9 @@ pub mod shares {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ShareList, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2418,14 +2418,14 @@ pub mod shares {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2778,7 +2778,7 @@ pub mod provider_share_subscriptions {
         resource_group_name: &str,
         account_name: &str,
         share_name: &str,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::ProviderShareSubscriptionList, list_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2800,8 +2800,8 @@ pub mod provider_share_subscriptions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2950,7 +2950,7 @@ pub mod share_subscriptions {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::SourceShareSynchronizationSettingList, list_source_share_synchronization_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSourceShareSynchronizationSettings" , operation_config . base_path () , subscription_id , resource_group_name , account_name , share_subscription_name) ;
@@ -2965,8 +2965,8 @@ pub mod share_subscriptions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -3026,9 +3026,9 @@ pub mod share_subscriptions {
         account_name: &str,
         share_subscription_name: &str,
         share_subscription_synchronization: &models::ShareSubscriptionSynchronization,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::SynchronizationDetailsList, list_synchronization_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizationDetails" , operation_config . base_path () , subscription_id , resource_group_name , account_name , share_subscription_name) ;
@@ -3046,14 +3046,14 @@ pub mod share_subscriptions {
         req_builder = req_builder.header("content-type", "application/json");
         let req_body =
             azure_core::to_json(share_subscription_synchronization).map_err(list_synchronization_details::Error::SerializeError)?;
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder
@@ -3110,9 +3110,9 @@ pub mod share_subscriptions {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ShareSubscriptionSynchronizationList, list_synchronizations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3134,14 +3134,14 @@ pub mod share_subscriptions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -3524,9 +3524,9 @@ pub mod share_subscriptions {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        u24skip_token: Option<&str>,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
+        skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
     ) -> std::result::Result<models::ShareSubscriptionList, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3547,14 +3547,14 @@ pub mod share_subscriptions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3613,7 +3613,7 @@ pub mod consumer_source_data_sets {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::ConsumerSourceDataSetList, list_by_share_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3635,8 +3635,8 @@ pub mod consumer_source_data_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3940,7 +3940,7 @@ pub mod synchronization_settings {
         resource_group_name: &str,
         account_name: &str,
         share_name: &str,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::SynchronizationSettingList, list_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3962,8 +3962,8 @@ pub mod synchronization_settings {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4265,7 +4265,7 @@ pub mod triggers {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        u24skip_token: Option<&str>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::TriggerList, list_by_share_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4287,8 +4287,8 @@ pub mod triggers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

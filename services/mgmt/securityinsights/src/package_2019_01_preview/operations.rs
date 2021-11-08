@@ -1861,10 +1861,10 @@ pub mod incidents {
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::IncidentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1886,17 +1886,17 @@ pub mod incidents {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2426,10 +2426,10 @@ pub mod incident_comments {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::IncidentCommentList, list_by_incident::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2452,17 +2452,17 @@ pub mod incident_comments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2746,10 +2746,10 @@ pub mod incident_relations {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         incident_id: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::RelationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2772,17 +2772,17 @@ pub mod incident_relations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4291,10 +4291,10 @@ pub mod bookmark_relations {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         bookmark_id: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::RelationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4317,17 +4317,17 @@ pub mod bookmark_relations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4688,10 +4688,10 @@ pub mod cases {
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::CaseList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4713,17 +4713,17 @@ pub mod cases {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5098,10 +5098,10 @@ pub mod comments {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         case_id: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::CaseCommentList, list_by_case::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5124,17 +5124,17 @@ pub mod comments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5278,10 +5278,10 @@ pub mod case_relations {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         case_id: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::CaseRelationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5304,17 +5304,17 @@ pub mod case_relations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6302,10 +6302,10 @@ pub mod entities_relations {
         operational_insights_resource_provider: &str,
         workspace_name: &str,
         entity_id: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::RelationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6328,17 +6328,17 @@ pub mod entities_relations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7194,10 +7194,10 @@ pub mod threat_intelligence_indicators {
         resource_group_name: &str,
         operational_insights_resource_provider: &str,
         workspace_name: &str,
-        u24filter: Option<&str>,
-        u24orderby: Option<&str>,
-        u24top: Option<i32>,
-        u24skip_token: Option<&str>,
+        filter: Option<&str>,
+        orderby: Option<&str>,
+        top: Option<i32>,
+        skip_token: Option<&str>,
     ) -> std::result::Result<models::ThreatIntelligenceInformationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators" , operation_config . base_path () , subscription_id , resource_group_name , operational_insights_resource_provider , workspace_name) ;
@@ -7212,17 +7212,17 @@ pub mod threat_intelligence_indicators {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(u24filter) = u24filter {
-            url.query_pairs_mut().append_pair("$filter", u24filter);
+        if let Some(filter) = filter {
+            url.query_pairs_mut().append_pair("$filter", filter);
         }
-        if let Some(u24orderby) = u24orderby {
-            url.query_pairs_mut().append_pair("$orderby", u24orderby);
+        if let Some(orderby) = orderby {
+            url.query_pairs_mut().append_pair("$orderby", orderby);
         }
-        if let Some(u24top) = u24top {
-            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
+        if let Some(top) = top {
+            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
         }
-        if let Some(u24skip_token) = u24skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
+        if let Some(skip_token) = skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

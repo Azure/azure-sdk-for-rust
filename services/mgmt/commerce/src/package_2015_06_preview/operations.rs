@@ -101,7 +101,7 @@ pub mod rate_card {
     use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
-        u24filter: &str,
+        filter: &str,
         subscription_id: &str,
     ) -> std::result::Result<models::ResourceRateCardInfo, get::Error> {
         let http_client = operation_config.http_client();
@@ -121,7 +121,7 @@ pub mod rate_card {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", u24filter);
+        url.query_pairs_mut().append_pair("$filter", filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
