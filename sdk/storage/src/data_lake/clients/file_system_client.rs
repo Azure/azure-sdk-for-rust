@@ -6,41 +6,29 @@ use azure_core::pipeline::Pipeline;
 use azure_core::{Context, HttpClient, PipelineContext};
 use bytes::Bytes;
 
-use std::sync::Arc;
 use url::Url;
-
-pub trait AsFileSystemClient<A: Into<String>> {
-    fn as_file_system_client(&self, name: A) -> Result<Arc<FileSystemClient>, url::ParseError>;
-}
-
-impl<A: Into<String>> AsFileSystemClient<A> for Arc<DataLakeClient> {
-    fn as_file_system_client(&self, name: A) -> Result<Arc<FileSystemClient>, url::ParseError> {
-        FileSystemClient::new(self.clone(), name.into())
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct FileSystemClient {
-    data_lake_client: Arc<DataLakeClient>,
+    data_lake_client: DataLakeClient,
     name: String,
     url: Url,
 }
 
 impl FileSystemClient {
-    pub(crate) fn new(
-        data_lake_client: Arc<DataLakeClient>,
-        name: String,
-    ) -> Result<Arc<Self>, url::ParseError> {
-        let mut url = data_lake_client.url().to_owned();
+    pub(crate) fn new(data_lake_client: DataLakeClient, name: String) -> Self {
+        let mut url = url::Url::parse(data_lake_client.url()).unwrap();
+
         url.path_segments_mut()
-            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
+            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)
+            .unwrap()
             .push(&name);
 
-        Ok(Arc::new(Self {
+        Self {
             data_lake_client,
             name,
             url,
-        }))
+        }
     }
 
     pub fn create(&self) -> CreateFileSystemBuilder {
