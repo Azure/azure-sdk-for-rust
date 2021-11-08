@@ -5,7 +5,7 @@ use std::sync::Arc;
 /// Pipeline execution context.
 #[derive(Clone, Debug)]
 pub struct Context {
-    pub type_map: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
+    type_map: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
 }
 
 impl Default for Context {
@@ -28,6 +28,8 @@ impl Context {
     where
         E: Send + Sync + 'static,
     {
+        // we make sure that for every TypeId of E as key we ALWAYS retrieve an Option<Arc<E>>. That's why
+        // the `unwrap` below is safe.
         self.type_map
             .insert(TypeId::of::<E>(), Arc::new(entity))
             .map(|displaced| displaced.downcast().unwrap())
@@ -45,7 +47,7 @@ impl Context {
         self
     }
 
-    /// Removes an entity from the type map. If found it will be returned.
+    /// Removes an entity from the type map. If present, the entity will be returned.
     pub fn remove<E>(&mut self) -> Option<Arc<E>>
     where
         E: Send + Sync + 'static,
@@ -55,8 +57,9 @@ impl Context {
             .map(|removed| removed.downcast().unwrap())
     }
 
-    /// Returns a reference of the entity of the specified type signature, if exists. In there is
-    /// no entity with the specific type signature, `None` is returned instead.
+    /// Returns a reference of the entity of the specified type signature, if it exists.
+    ///
+    /// If there is no entity with the specific type signature, `None` is returned instead.
     pub fn get<E>(&self) -> Option<&E>
     where
         E: Send + Sync + 'static,

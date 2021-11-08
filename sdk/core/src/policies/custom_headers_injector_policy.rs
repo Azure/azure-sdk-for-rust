@@ -26,23 +26,21 @@ where
         request: &mut Request,
         next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
-        ctx.get_inner_context()
-            .get()
-            .map(|custom_headers: &CustomHeaders| {
-                custom_headers
-                    .0
-                    .iter()
-                    .for_each(|(header_name, header_value)| {
-                        log::trace!(
-                            "injecting custom context header {:?} with value {:?}",
-                            header_name,
-                            header_value
-                        );
-                        request
-                            .headers_mut()
-                            .insert(header_name, header_value.to_owned());
-                    });
-            });
+        if let Some(custom_headers) = ctx.get_inner_context().get::<CustomHeaders>() {
+            custom_headers
+                .0
+                .iter()
+                .for_each(|(header_name, header_value)| {
+                    log::trace!(
+                        "injecting custom context header {:?} with value {:?}",
+                        header_name,
+                        header_value
+                    );
+                    request
+                        .headers_mut()
+                        .insert(header_name, header_value.to_owned());
+                });
+        }
 
         next[0].send(ctx, request, &next[1..]).await
     }
