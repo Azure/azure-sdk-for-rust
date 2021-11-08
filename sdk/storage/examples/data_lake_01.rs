@@ -26,8 +26,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let bearer_token = DefaultAzureCredential::default()
         .get_token(resource_id)
         .await?;
-    println!("token expires on {}", bearer_token.expires_on);
-    println!();
+    println!("token expires on {}\n", bearer_token.expires_on);
 
     let data_lake_client = storage_account_client
         .as_storage_client()
@@ -37,8 +36,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("creating file system '{}'...", &file_system_name);
     let create_fs_response = file_system_client.create().execute().await?;
-    println!("create file system response == {:?}", create_fs_response);
-    println!();
+    println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path = "some/path/example-file.txt";
 
@@ -46,25 +44,22 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_file_response = file_system_client
         .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
-    println!("create file response == {:?}", create_file_response);
-    println!();
+    println!("create file response == {:?}\n", create_file_response);
 
     println!("creating file '{}' (overwrite)...", file_path);
     let create_file_response = file_system_client
         .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
-    println!("create file response == {:?}", create_file_response);
-    println!();
+    println!("create file response == {:?}\n", create_file_response);
 
     println!("creating file '{}' if not exists...", file_path);
     let create_file_if_not_exists_result = file_system_client
         .create_file_if_not_exists(Context::default(), file_path)
         .await;
     println!(
-        "create file result (should fail) == {:?}",
+        "create file result (should fail) == {:?}\n",
         create_file_if_not_exists_result
     );
-    println!();
 
     println!("appending to file '{}'...", file_path);
     let bytes = bytes::Bytes::from("some data");
@@ -78,8 +73,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             FileAppendOptions::default(),
         )
         .await?;
-    println!("append to file response == {:?}", append_to_file_response);
-    println!();
+    println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("flushing file '{}'...", file_path);
     let flush_file_response = file_system_client
@@ -91,8 +85,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             FileFlushOptions::default(),
         )
         .await?;
-    println!("flush file response == {:?}", flush_file_response);
-    println!();
+    println!("flush file response == {:?}\n", flush_file_response);
 
     let destination_file_path = "some/path/example-file-renamed.txt";
     println!(
@@ -107,13 +100,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             FileRenameOptions::default(),
         )
         .await?;
-    println!("rename file response == {:?}", rename_file_response);
-    println!();
+    println!("rename file response == {:?}\n", rename_file_response);
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().execute().await?;
-    println!("delete file system response == {:?}", delete_fs_response);
-    println!();
+    println!("delete file system response == {:?}\n", delete_fs_response);
 
     println!("data lake example 01 done.");
 

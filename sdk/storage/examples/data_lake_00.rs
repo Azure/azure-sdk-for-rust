@@ -28,8 +28,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let bearer_token = DefaultAzureCredential::default()
         .get_token(resource_id)
         .await?;
-    println!("token expires on {}", bearer_token.expires_on);
-    println!();
+    println!("token expires on {}\n", bearer_token.expires_on);
 
     let data_lake_client = storage_account_client
         .as_storage_client()
@@ -46,8 +45,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .properties(&fs_properties)
         .execute()
         .await?;
-    println!("create file system response == {:?}", create_fs_response);
-    println!();
+    println!("create file system response == {:?}\n", create_fs_response);
 
     println!("listing file systems...");
     let mut stream = Box::pin(
@@ -57,17 +55,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .stream(),
     );
     while let Some(list_fs_response) = stream.next().await {
-        println!("list file system response == {:?}", list_fs_response);
-        println!();
+        println!("list file system response == {:?}\n", list_fs_response);
     }
 
     println!("getting file system properties...");
     let get_fs_props_response = file_system_client.get_properties().execute().await?;
     println!(
-        "get file system properties response == {:?}",
+        "get file system properties response == {:?}\n",
         get_fs_props_response
     );
-    println!();
 
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
@@ -76,23 +72,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .execute()
         .await?;
     println!(
-        "set file system properties response == {:?}",
+        "set file system properties response == {:?}\n",
         set_fs_props_response
     );
-    println!();
 
     println!("getting file system properties...");
     let get_fs_props_response = file_system_client.get_properties().execute().await?;
     println!(
-        "get file system properties response == {:?}",
+        "get file system properties response == {:?}\n",
         get_fs_props_response
     );
-    println!();
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().execute().await?;
-    println!("delete file system response == {:?}", delete_fs_response);
-    println!();
+    println!("delete file system response == {:?}\n", delete_fs_response);
 
     println!("data lake example 00 done.");
 
