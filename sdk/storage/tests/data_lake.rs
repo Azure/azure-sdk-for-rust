@@ -118,6 +118,16 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         )
         .await?;
 
+    let destination_file_path = "some/path/e2etest-file-renamed.txt";
+    file_system_client
+        .rename_file(
+            Context::default(),
+            file_path,
+            destination_file_path,
+            FileRenameOptions::default(),
+        )
+        .await?;
+
     fs_properties.insert("ModifiedBy", "Iota");
     file_system_client
         .set_properties(Some(&fs_properties))

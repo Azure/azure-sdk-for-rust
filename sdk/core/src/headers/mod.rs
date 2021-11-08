@@ -97,6 +97,7 @@ pub const SOURCE_IF_UNMODIFIED_SINCE: &str = "x-ms-source-if-unmodified-since";
 pub const SOURCE_IF_MATCH: &str = "x-ms-source-if-match";
 pub const SOURCE_IF_NONE_MATCH: &str = "x-ms-source-if-none-match";
 pub const RANGE_GET_CONTENT_MD5: &str = "x-ms-range-get-content-md5";
+pub const RENAME_SOURCE: &str = "x-ms-rename-source";
 pub const LEASE_ID: &str = "x-ms-lease-id";
 pub const SOURCE_LEASE_ID: &str = "x-ms-source-lease-id";
 pub const CLIENT_REQUEST_ID: &str = "x-ms-client-request-id";

@@ -85,6 +85,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file response == {:?}", create_file_response);
     println!();
 
+    println!("creating file '{}' if not exists...", file_path);
+    let create_file_if_not_exists_result = file_system
+        .create_file_if_not_exists(Context::default(), file_path)
+        .await;
+    println!(
+        "create file result (should fail) == {:?}",
+        create_file_if_not_exists_result
+    );
+    println!();
+
     println!("appending to file '{}'...", file_path);
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
@@ -112,14 +122,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("flush file response == {:?}", flush_file_response);
     println!();
 
-    println!("creating file '{}' if not exists...", file_path);
-    let create_file_if_not_exists_result = file_system
-        .create_file_if_not_exists(Context::default(), file_path)
-        .await;
+    let destination_file_path = "some/path/example-file-renamed.txt";
     println!(
-        "create file result (should fail) == {:?}",
-        create_file_if_not_exists_result
+        "renaming file '{}' to '{}'...",
+        file_path, destination_file_path
     );
+    let rename_file_response = file_system
+        .rename_file(
+            Context::default(),
+            file_path,
+            destination_file_path,
+            FileRenameOptions::default(),
+        )
+        .await?;
+    println!("rename file response == {:?}", rename_file_response);
     println!();
 
     println!("setting file system properties...");
