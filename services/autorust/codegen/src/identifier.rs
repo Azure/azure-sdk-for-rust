@@ -15,7 +15,7 @@ pub trait CamelCaseIdent: ToOwned {
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
         let is_number = starts_with_number(self);
-        let mut txt = replace_first(self, true);
+        let mut txt = replace_first(self, true, false);
         txt = replace_special_chars(&txt);
         if !is_number {
             // heck::CamelCase::to_camel_case will remove underscores
@@ -35,7 +35,7 @@ pub trait SnakeCaseIdent: ToOwned {
 
 impl SnakeCaseIdent for str {
     fn to_snake_case_ident(&self) -> Result<TokenStream, Error> {
-        let mut txt = replace_first(self, true);
+        let mut txt = replace_first(self, false, true);
         txt = replace_special_chars(&txt);
         txt = txt.to_snake_case();
         txt = suffix_keyword(&txt);
@@ -48,7 +48,7 @@ impl SnakeCaseIdent for str {
 }
 
 pub fn ident(text: &str) -> Result<TokenStream, Error> {
-    let mut txt = replace_first(text, false);
+    let mut txt = replace_first(text, false, false);
     txt = replace_special_chars(&txt);
     txt = remove_spaces(&txt);
     txt = suffix_keyword(&txt);
@@ -87,14 +87,18 @@ fn unicode(c: char, uppercase: bool) -> String {
     format!("{}{}", u, &s[3..s.len() - 1])
 }
 
-fn replace_first(text: &str, uppercase: bool) -> String {
+fn replace_first(text: &str, uppercase: bool, remove: bool) -> String {
     let first = text.chars().next().unwrap_or_default();
     if first.is_numeric() {
         let n = if uppercase { 'N' } else { 'n' };
         format!("{}{}", n, text)
     } else if !first.is_ascii_alphanumeric() {
         if text.len() > 1 {
-            format!("{}{}", unicode(first, uppercase), &text[1..])
+            if remove {
+                format!("{}", &text[1..])
+            } else {
+                format!("{}{}", unicode(first, uppercase), &text[1..])
+            }
         } else {
             unicode(first, uppercase)
         }
@@ -185,9 +189,9 @@ mod tests {
 
     #[test]
     fn test_replace_first() -> Result<(), Error> {
-        assert_eq!(replace_first(".", false), "u2e");
-        assert_eq!(replace_first("/", false), "u2f");
-        assert_eq!(replace_first("", false), "u0");
+        assert_eq!(replace_first(".", false, false), "u2e");
+        assert_eq!(replace_first("/", false, false), "u2f");
+        assert_eq!(replace_first("", false, false), "u0");
         Ok(())
     }
 
@@ -279,6 +283,12 @@ mod tests {
     #[test]
     fn test_attr_qualified_name() -> Result<(), Error> {
         assert_eq!("attr:qualifiedName".to_snake_case_ident()?.to_string(), "attr_qualified_name");
+        Ok(())
+    }
+
+    #[test]
+    fn test_filter() -> Result<(), Error> {
+        assert_eq!("$filter".to_snake_case_ident()?.to_string(), "filter");
         Ok(())
     }
 }
