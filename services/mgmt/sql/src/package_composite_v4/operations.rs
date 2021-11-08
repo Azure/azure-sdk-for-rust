@@ -2,16 +2,797 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    RecoverableDatabases_Get(#[from] recoverable_databases::get::Error),
+    #[error(transparent)]
+    RecoverableDatabases_ListByServer(#[from] recoverable_databases::list_by_server::Error),
+    #[error(transparent)]
+    RestorableDroppedDatabases_Get(#[from] restorable_dropped_databases::get::Error),
+    #[error(transparent)]
+    RestorableDroppedDatabases_ListByServer(#[from] restorable_dropped_databases::list_by_server::Error),
+    #[error(transparent)]
+    ServerConnectionPolicies_Get(#[from] server_connection_policies::get::Error),
+    #[error(transparent)]
+    ServerConnectionPolicies_CreateOrUpdate(#[from] server_connection_policies::create_or_update::Error),
+    #[error(transparent)]
+    DatabaseThreatDetectionPolicies_Get(#[from] database_threat_detection_policies::get::Error),
+    #[error(transparent)]
+    DatabaseThreatDetectionPolicies_CreateOrUpdate(#[from] database_threat_detection_policies::create_or_update::Error),
+    #[error(transparent)]
+    DataMaskingPolicies_Get(#[from] data_masking_policies::get::Error),
+    #[error(transparent)]
+    DataMaskingPolicies_CreateOrUpdate(#[from] data_masking_policies::create_or_update::Error),
+    #[error(transparent)]
+    DataMaskingRules_CreateOrUpdate(#[from] data_masking_rules::create_or_update::Error),
+    #[error(transparent)]
+    DataMaskingRules_ListByDatabase(#[from] data_masking_rules::list_by_database::Error),
+    #[error(transparent)]
+    FirewallRules_Get(#[from] firewall_rules::get::Error),
+    #[error(transparent)]
+    FirewallRules_CreateOrUpdate(#[from] firewall_rules::create_or_update::Error),
+    #[error(transparent)]
+    FirewallRules_Delete(#[from] firewall_rules::delete::Error),
+    #[error(transparent)]
+    FirewallRules_ListByServer(#[from] firewall_rules::list_by_server::Error),
+    #[error(transparent)]
+    GeoBackupPolicies_Get(#[from] geo_backup_policies::get::Error),
+    #[error(transparent)]
+    GeoBackupPolicies_CreateOrUpdate(#[from] geo_backup_policies::create_or_update::Error),
+    #[error(transparent)]
+    GeoBackupPolicies_ListByDatabase(#[from] geo_backup_policies::list_by_database::Error),
+    #[error(transparent)]
+    Databases_ListMetrics(#[from] databases::list_metrics::Error),
+    #[error(transparent)]
+    Databases_ListMetricDefinitions(#[from] databases::list_metric_definitions::Error),
+    #[error(transparent)]
+    ElasticPools_ListMetrics(#[from] elastic_pools::list_metrics::Error),
+    #[error(transparent)]
+    ElasticPools_ListMetricDefinitions(#[from] elastic_pools::list_metric_definitions::Error),
+    #[error(transparent)]
+    RecommendedElasticPools_Get(#[from] recommended_elastic_pools::get::Error),
+    #[error(transparent)]
+    RecommendedElasticPools_ListByServer(#[from] recommended_elastic_pools::list_by_server::Error),
+    #[error(transparent)]
+    RecommendedElasticPools_ListMetrics(#[from] recommended_elastic_pools::list_metrics::Error),
+    #[error(transparent)]
+    ReplicationLinks_Get(#[from] replication_links::get::Error),
+    #[error(transparent)]
+    ReplicationLinks_Delete(#[from] replication_links::delete::Error),
+    #[error(transparent)]
+    ReplicationLinks_Failover(#[from] replication_links::failover::Error),
+    #[error(transparent)]
+    ReplicationLinks_FailoverAllowDataLoss(#[from] replication_links::failover_allow_data_loss::Error),
+    #[error(transparent)]
+    ReplicationLinks_Unlink(#[from] replication_links::unlink::Error),
+    #[error(transparent)]
+    ReplicationLinks_ListByDatabase(#[from] replication_links::list_by_database::Error),
+    #[error(transparent)]
+    ServerCommunicationLinks_Get(#[from] server_communication_links::get::Error),
+    #[error(transparent)]
+    ServerCommunicationLinks_CreateOrUpdate(#[from] server_communication_links::create_or_update::Error),
+    #[error(transparent)]
+    ServerCommunicationLinks_Delete(#[from] server_communication_links::delete::Error),
+    #[error(transparent)]
+    ServerCommunicationLinks_ListByServer(#[from] server_communication_links::list_by_server::Error),
+    #[error(transparent)]
+    ServiceObjectives_Get(#[from] service_objectives::get::Error),
+    #[error(transparent)]
+    ServiceObjectives_ListByServer(#[from] service_objectives::list_by_server::Error),
+    #[error(transparent)]
+    ElasticPoolActivities_ListByElasticPool(#[from] elastic_pool_activities::list_by_elastic_pool::Error),
+    #[error(transparent)]
+    ElasticPoolDatabaseActivities_ListByElasticPool(#[from] elastic_pool_database_activities::list_by_elastic_pool::Error),
+    #[error(transparent)]
+    ServiceTierAdvisors_Get(#[from] service_tier_advisors::get::Error),
+    #[error(transparent)]
+    ServiceTierAdvisors_ListByDatabase(#[from] service_tier_advisors::list_by_database::Error),
+    #[error(transparent)]
+    TransparentDataEncryptions_Get(#[from] transparent_data_encryptions::get::Error),
+    #[error(transparent)]
+    TransparentDataEncryptions_CreateOrUpdate(#[from] transparent_data_encryptions::create_or_update::Error),
+    #[error(transparent)]
+    TransparentDataEncryptionActivities_ListByConfiguration(#[from] transparent_data_encryption_activities::list_by_configuration::Error),
+    #[error(transparent)]
+    ServerUsages_ListByServer(#[from] server_usages::list_by_server::Error),
+    #[error(transparent)]
+    DatabaseUsages_ListByDatabase(#[from] database_usages::list_by_database::Error),
+    #[error(transparent)]
+    DatabaseAutomaticTuning_Get(#[from] database_automatic_tuning::get::Error),
+    #[error(transparent)]
+    DatabaseAutomaticTuning_Update(#[from] database_automatic_tuning::update::Error),
+    #[error(transparent)]
+    EncryptionProtectors_Revalidate(#[from] encryption_protectors::revalidate::Error),
+    #[error(transparent)]
+    EncryptionProtectors_ListByServer(#[from] encryption_protectors::list_by_server::Error),
+    #[error(transparent)]
+    EncryptionProtectors_Get(#[from] encryption_protectors::get::Error),
+    #[error(transparent)]
+    EncryptionProtectors_CreateOrUpdate(#[from] encryption_protectors::create_or_update::Error),
+    #[error(transparent)]
+    FailoverGroups_Get(#[from] failover_groups::get::Error),
+    #[error(transparent)]
+    FailoverGroups_CreateOrUpdate(#[from] failover_groups::create_or_update::Error),
+    #[error(transparent)]
+    FailoverGroups_Update(#[from] failover_groups::update::Error),
+    #[error(transparent)]
+    FailoverGroups_Delete(#[from] failover_groups::delete::Error),
+    #[error(transparent)]
+    FailoverGroups_ListByServer(#[from] failover_groups::list_by_server::Error),
+    #[error(transparent)]
+    FailoverGroups_Failover(#[from] failover_groups::failover::Error),
+    #[error(transparent)]
+    FailoverGroups_ForceFailoverAllowDataLoss(#[from] failover_groups::force_failover_allow_data_loss::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    ServerKeys_ListByServer(#[from] server_keys::list_by_server::Error),
+    #[error(transparent)]
+    ServerKeys_Get(#[from] server_keys::get::Error),
+    #[error(transparent)]
+    ServerKeys_CreateOrUpdate(#[from] server_keys::create_or_update::Error),
+    #[error(transparent)]
+    ServerKeys_Delete(#[from] server_keys::delete::Error),
+    #[error(transparent)]
+    SyncAgents_Get(#[from] sync_agents::get::Error),
+    #[error(transparent)]
+    SyncAgents_CreateOrUpdate(#[from] sync_agents::create_or_update::Error),
+    #[error(transparent)]
+    SyncAgents_Delete(#[from] sync_agents::delete::Error),
+    #[error(transparent)]
+    SyncAgents_ListByServer(#[from] sync_agents::list_by_server::Error),
+    #[error(transparent)]
+    SyncAgents_GenerateKey(#[from] sync_agents::generate_key::Error),
+    #[error(transparent)]
+    SyncAgents_ListLinkedDatabases(#[from] sync_agents::list_linked_databases::Error),
+    #[error(transparent)]
+    SubscriptionUsages_ListByLocation(#[from] subscription_usages::list_by_location::Error),
+    #[error(transparent)]
+    SubscriptionUsages_Get(#[from] subscription_usages::get::Error),
+    #[error(transparent)]
+    VirtualClusters_List(#[from] virtual_clusters::list::Error),
+    #[error(transparent)]
+    VirtualClusters_ListByResourceGroup(#[from] virtual_clusters::list_by_resource_group::Error),
+    #[error(transparent)]
+    VirtualClusters_Get(#[from] virtual_clusters::get::Error),
+    #[error(transparent)]
+    VirtualClusters_Update(#[from] virtual_clusters::update::Error),
+    #[error(transparent)]
+    VirtualClusters_Delete(#[from] virtual_clusters::delete::Error),
+    #[error(transparent)]
+    VirtualNetworkRules_Get(#[from] virtual_network_rules::get::Error),
+    #[error(transparent)]
+    VirtualNetworkRules_CreateOrUpdate(#[from] virtual_network_rules::create_or_update::Error),
+    #[error(transparent)]
+    VirtualNetworkRules_Delete(#[from] virtual_network_rules::delete::Error),
+    #[error(transparent)]
+    VirtualNetworkRules_ListByServer(#[from] virtual_network_rules::list_by_server::Error),
+    #[error(transparent)]
+    ExtendedDatabaseBlobAuditingPolicies_Get(#[from] extended_database_blob_auditing_policies::get::Error),
+    #[error(transparent)]
+    ExtendedDatabaseBlobAuditingPolicies_CreateOrUpdate(#[from] extended_database_blob_auditing_policies::create_or_update::Error),
+    #[error(transparent)]
+    ExtendedDatabaseBlobAuditingPolicies_ListByDatabase(#[from] extended_database_blob_auditing_policies::list_by_database::Error),
+    #[error(transparent)]
+    ExtendedServerBlobAuditingPolicies_Get(#[from] extended_server_blob_auditing_policies::get::Error),
+    #[error(transparent)]
+    ExtendedServerBlobAuditingPolicies_CreateOrUpdate(#[from] extended_server_blob_auditing_policies::create_or_update::Error),
+    #[error(transparent)]
+    ExtendedServerBlobAuditingPolicies_ListByServer(#[from] extended_server_blob_auditing_policies::list_by_server::Error),
+    #[error(transparent)]
+    ServerBlobAuditingPolicies_Get(#[from] server_blob_auditing_policies::get::Error),
+    #[error(transparent)]
+    ServerBlobAuditingPolicies_CreateOrUpdate(#[from] server_blob_auditing_policies::create_or_update::Error),
+    #[error(transparent)]
+    ServerBlobAuditingPolicies_ListByServer(#[from] server_blob_auditing_policies::list_by_server::Error),
+    #[error(transparent)]
+    DatabaseBlobAuditingPolicies_Get(#[from] database_blob_auditing_policies::get::Error),
+    #[error(transparent)]
+    DatabaseBlobAuditingPolicies_CreateOrUpdate(#[from] database_blob_auditing_policies::create_or_update::Error),
+    #[error(transparent)]
+    DatabaseBlobAuditingPolicies_ListByDatabase(#[from] database_blob_auditing_policies::list_by_database::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessmentRuleBaselines_Get(#[from] database_vulnerability_assessment_rule_baselines::get::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessmentRuleBaselines_CreateOrUpdate(
+        #[from] database_vulnerability_assessment_rule_baselines::create_or_update::Error,
+    ),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessmentRuleBaselines_Delete(#[from] database_vulnerability_assessment_rule_baselines::delete::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessments_Get(#[from] database_vulnerability_assessments::get::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessments_CreateOrUpdate(#[from] database_vulnerability_assessments::create_or_update::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessments_Delete(#[from] database_vulnerability_assessments::delete::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessments_ListByDatabase(#[from] database_vulnerability_assessments::list_by_database::Error),
+    #[error(transparent)]
+    JobAgents_ListByServer(#[from] job_agents::list_by_server::Error),
+    #[error(transparent)]
+    JobAgents_Get(#[from] job_agents::get::Error),
+    #[error(transparent)]
+    JobAgents_CreateOrUpdate(#[from] job_agents::create_or_update::Error),
+    #[error(transparent)]
+    JobAgents_Update(#[from] job_agents::update::Error),
+    #[error(transparent)]
+    JobAgents_Delete(#[from] job_agents::delete::Error),
+    #[error(transparent)]
+    JobCredentials_ListByAgent(#[from] job_credentials::list_by_agent::Error),
+    #[error(transparent)]
+    JobCredentials_Get(#[from] job_credentials::get::Error),
+    #[error(transparent)]
+    JobCredentials_CreateOrUpdate(#[from] job_credentials::create_or_update::Error),
+    #[error(transparent)]
+    JobCredentials_Delete(#[from] job_credentials::delete::Error),
+    #[error(transparent)]
+    JobExecutions_ListByAgent(#[from] job_executions::list_by_agent::Error),
+    #[error(transparent)]
+    JobExecutions_Cancel(#[from] job_executions::cancel::Error),
+    #[error(transparent)]
+    JobExecutions_Create(#[from] job_executions::create::Error),
+    #[error(transparent)]
+    JobExecutions_ListByJob(#[from] job_executions::list_by_job::Error),
+    #[error(transparent)]
+    JobExecutions_Get(#[from] job_executions::get::Error),
+    #[error(transparent)]
+    JobExecutions_CreateOrUpdate(#[from] job_executions::create_or_update::Error),
+    #[error(transparent)]
+    Jobs_ListByAgent(#[from] jobs::list_by_agent::Error),
+    #[error(transparent)]
+    Jobs_Get(#[from] jobs::get::Error),
+    #[error(transparent)]
+    Jobs_CreateOrUpdate(#[from] jobs::create_or_update::Error),
+    #[error(transparent)]
+    Jobs_Delete(#[from] jobs::delete::Error),
+    #[error(transparent)]
+    JobStepExecutions_ListByJobExecution(#[from] job_step_executions::list_by_job_execution::Error),
+    #[error(transparent)]
+    JobStepExecutions_Get(#[from] job_step_executions::get::Error),
+    #[error(transparent)]
+    JobSteps_ListByVersion(#[from] job_steps::list_by_version::Error),
+    #[error(transparent)]
+    JobSteps_GetByVersion(#[from] job_steps::get_by_version::Error),
+    #[error(transparent)]
+    JobSteps_ListByJob(#[from] job_steps::list_by_job::Error),
+    #[error(transparent)]
+    JobSteps_Get(#[from] job_steps::get::Error),
+    #[error(transparent)]
+    JobSteps_CreateOrUpdate(#[from] job_steps::create_or_update::Error),
+    #[error(transparent)]
+    JobSteps_Delete(#[from] job_steps::delete::Error),
+    #[error(transparent)]
+    JobTargetExecutions_ListByJobExecution(#[from] job_target_executions::list_by_job_execution::Error),
+    #[error(transparent)]
+    JobTargetExecutions_ListByStep(#[from] job_target_executions::list_by_step::Error),
+    #[error(transparent)]
+    JobTargetExecutions_Get(#[from] job_target_executions::get::Error),
+    #[error(transparent)]
+    JobTargetGroups_ListByAgent(#[from] job_target_groups::list_by_agent::Error),
+    #[error(transparent)]
+    JobTargetGroups_Get(#[from] job_target_groups::get::Error),
+    #[error(transparent)]
+    JobTargetGroups_CreateOrUpdate(#[from] job_target_groups::create_or_update::Error),
+    #[error(transparent)]
+    JobTargetGroups_Delete(#[from] job_target_groups::delete::Error),
+    #[error(transparent)]
+    JobVersions_ListByJob(#[from] job_versions::list_by_job::Error),
+    #[error(transparent)]
+    JobVersions_Get(#[from] job_versions::get::Error),
+    #[error(transparent)]
+    ManagedBackupShortTermRetentionPolicies_Get(#[from] managed_backup_short_term_retention_policies::get::Error),
+    #[error(transparent)]
+    ManagedBackupShortTermRetentionPolicies_CreateOrUpdate(#[from] managed_backup_short_term_retention_policies::create_or_update::Error),
+    #[error(transparent)]
+    ManagedBackupShortTermRetentionPolicies_Update(#[from] managed_backup_short_term_retention_policies::update::Error),
+    #[error(transparent)]
+    ManagedBackupShortTermRetentionPolicies_ListByDatabase(#[from] managed_backup_short_term_retention_policies::list_by_database::Error),
+    #[error(transparent)]
+    ManagedRestorableDroppedDatabaseBackupShortTermRetentionPolicies_Get(
+        #[from] managed_restorable_dropped_database_backup_short_term_retention_policies::get::Error,
+    ),
+    #[error(transparent)]
+    ManagedRestorableDroppedDatabaseBackupShortTermRetentionPolicies_CreateOrUpdate(
+        #[from] managed_restorable_dropped_database_backup_short_term_retention_policies::create_or_update::Error,
+    ),
+    #[error(transparent)]
+    ManagedRestorableDroppedDatabaseBackupShortTermRetentionPolicies_Update(
+        #[from] managed_restorable_dropped_database_backup_short_term_retention_policies::update::Error,
+    ),
+    #[error(transparent)]
+    ManagedRestorableDroppedDatabaseBackupShortTermRetentionPolicies_ListByRestorableDroppedDatabase(
+        #[from] managed_restorable_dropped_database_backup_short_term_retention_policies::list_by_restorable_dropped_database::Error,
+    ),
+    #[error(transparent)]
+    ServerAutomaticTuning_Get(#[from] server_automatic_tuning::get::Error),
+    #[error(transparent)]
+    ServerAutomaticTuning_Update(#[from] server_automatic_tuning::update::Error),
+    #[error(transparent)]
+    ServerDnsAliases_Get(#[from] server_dns_aliases::get::Error),
+    #[error(transparent)]
+    ServerDnsAliases_CreateOrUpdate(#[from] server_dns_aliases::create_or_update::Error),
+    #[error(transparent)]
+    ServerDnsAliases_Delete(#[from] server_dns_aliases::delete::Error),
+    #[error(transparent)]
+    ServerDnsAliases_ListByServer(#[from] server_dns_aliases::list_by_server::Error),
+    #[error(transparent)]
+    ServerDnsAliases_Acquire(#[from] server_dns_aliases::acquire::Error),
+    #[error(transparent)]
+    ServerSecurityAlertPolicies_Get(#[from] server_security_alert_policies::get::Error),
+    #[error(transparent)]
+    ServerSecurityAlertPolicies_CreateOrUpdate(#[from] server_security_alert_policies::create_or_update::Error),
+    #[error(transparent)]
+    ServerSecurityAlertPolicies_ListByServer(#[from] server_security_alert_policies::list_by_server::Error),
+    #[error(transparent)]
+    RestorableDroppedManagedDatabases_ListByInstance(#[from] restorable_dropped_managed_databases::list_by_instance::Error),
+    #[error(transparent)]
+    RestorableDroppedManagedDatabases_Get(#[from] restorable_dropped_managed_databases::get::Error),
+    #[error(transparent)]
+    RestorePoints_ListByDatabase(#[from] restore_points::list_by_database::Error),
+    #[error(transparent)]
+    RestorePoints_Create(#[from] restore_points::create::Error),
+    #[error(transparent)]
+    RestorePoints_Get(#[from] restore_points::get::Error),
+    #[error(transparent)]
+    RestorePoints_Delete(#[from] restore_points::delete::Error),
+    #[error(transparent)]
+    ManagedDatabaseSecurityAlertPolicies_Get(#[from] managed_database_security_alert_policies::get::Error),
+    #[error(transparent)]
+    ManagedDatabaseSecurityAlertPolicies_CreateOrUpdate(#[from] managed_database_security_alert_policies::create_or_update::Error),
+    #[error(transparent)]
+    ManagedDatabaseSecurityAlertPolicies_ListByDatabase(#[from] managed_database_security_alert_policies::list_by_database::Error),
+    #[error(transparent)]
+    ManagedServerSecurityAlertPolicies_Get(#[from] managed_server_security_alert_policies::get::Error),
+    #[error(transparent)]
+    ManagedServerSecurityAlertPolicies_CreateOrUpdate(#[from] managed_server_security_alert_policies::create_or_update::Error),
+    #[error(transparent)]
+    ManagedServerSecurityAlertPolicies_ListByInstance(#[from] managed_server_security_alert_policies::list_by_instance::Error),
+    #[error(transparent)]
+    SensitivityLabels_ListCurrentByDatabase(#[from] sensitivity_labels::list_current_by_database::Error),
+    #[error(transparent)]
+    SensitivityLabels_ListRecommendedByDatabase(#[from] sensitivity_labels::list_recommended_by_database::Error),
+    #[error(transparent)]
+    SensitivityLabels_EnableRecommendation(#[from] sensitivity_labels::enable_recommendation::Error),
+    #[error(transparent)]
+    SensitivityLabels_DisableRecommendation(#[from] sensitivity_labels::disable_recommendation::Error),
+    #[error(transparent)]
+    SensitivityLabels_Get(#[from] sensitivity_labels::get::Error),
+    #[error(transparent)]
+    SensitivityLabels_CreateOrUpdate(#[from] sensitivity_labels::create_or_update::Error),
+    #[error(transparent)]
+    SensitivityLabels_Delete(#[from] sensitivity_labels::delete::Error),
+    #[error(transparent)]
+    ManagedInstanceAdministrators_ListByInstance(#[from] managed_instance_administrators::list_by_instance::Error),
+    #[error(transparent)]
+    ManagedInstanceAdministrators_Get(#[from] managed_instance_administrators::get::Error),
+    #[error(transparent)]
+    ManagedInstanceAdministrators_CreateOrUpdate(#[from] managed_instance_administrators::create_or_update::Error),
+    #[error(transparent)]
+    ManagedInstanceAdministrators_Delete(#[from] managed_instance_administrators::delete::Error),
+    #[error(transparent)]
+    DatabaseOperations_Cancel(#[from] database_operations::cancel::Error),
+    #[error(transparent)]
+    DatabaseOperations_ListByDatabase(#[from] database_operations::list_by_database::Error),
+    #[error(transparent)]
+    ElasticPoolOperations_Cancel(#[from] elastic_pool_operations::cancel::Error),
+    #[error(transparent)]
+    ElasticPoolOperations_ListByElasticPool(#[from] elastic_pool_operations::list_by_elastic_pool::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessmentScans_ListByDatabase(#[from] database_vulnerability_assessment_scans::list_by_database::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessmentScans_Get(#[from] database_vulnerability_assessment_scans::get::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessmentScans_InitiateScan(#[from] database_vulnerability_assessment_scans::initiate_scan::Error),
+    #[error(transparent)]
+    DatabaseVulnerabilityAssessmentScans_Export(#[from] database_vulnerability_assessment_scans::export::Error),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessmentRuleBaselines_Get(#[from] managed_database_vulnerability_assessment_rule_baselines::get::Error),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessmentRuleBaselines_CreateOrUpdate(
+        #[from] managed_database_vulnerability_assessment_rule_baselines::create_or_update::Error,
+    ),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessmentRuleBaselines_Delete(
+        #[from] managed_database_vulnerability_assessment_rule_baselines::delete::Error,
+    ),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessmentScans_ListByDatabase(
+        #[from] managed_database_vulnerability_assessment_scans::list_by_database::Error,
+    ),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessmentScans_Get(#[from] managed_database_vulnerability_assessment_scans::get::Error),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessmentScans_InitiateScan(#[from] managed_database_vulnerability_assessment_scans::initiate_scan::Error),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessmentScans_Export(#[from] managed_database_vulnerability_assessment_scans::export::Error),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessments_Get(#[from] managed_database_vulnerability_assessments::get::Error),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessments_CreateOrUpdate(#[from] managed_database_vulnerability_assessments::create_or_update::Error),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessments_Delete(#[from] managed_database_vulnerability_assessments::delete::Error),
+    #[error(transparent)]
+    ManagedDatabaseVulnerabilityAssessments_ListByDatabase(#[from] managed_database_vulnerability_assessments::list_by_database::Error),
+    #[error(transparent)]
+    InstanceFailoverGroups_Get(#[from] instance_failover_groups::get::Error),
+    #[error(transparent)]
+    InstanceFailoverGroups_CreateOrUpdate(#[from] instance_failover_groups::create_or_update::Error),
+    #[error(transparent)]
+    InstanceFailoverGroups_Delete(#[from] instance_failover_groups::delete::Error),
+    #[error(transparent)]
+    InstanceFailoverGroups_ListByLocation(#[from] instance_failover_groups::list_by_location::Error),
+    #[error(transparent)]
+    InstanceFailoverGroups_Failover(#[from] instance_failover_groups::failover::Error),
+    #[error(transparent)]
+    InstanceFailoverGroups_ForceFailoverAllowDataLoss(#[from] instance_failover_groups::force_failover_allow_data_loss::Error),
+    #[error(transparent)]
+    TdeCertificates_Create(#[from] tde_certificates::create::Error),
+    #[error(transparent)]
+    ManagedInstanceTdeCertificates_Create(#[from] managed_instance_tde_certificates::create::Error),
+    #[error(transparent)]
+    ManagedInstanceKeys_ListByInstance(#[from] managed_instance_keys::list_by_instance::Error),
+    #[error(transparent)]
+    ManagedInstanceKeys_Get(#[from] managed_instance_keys::get::Error),
+    #[error(transparent)]
+    ManagedInstanceKeys_CreateOrUpdate(#[from] managed_instance_keys::create_or_update::Error),
+    #[error(transparent)]
+    ManagedInstanceKeys_Delete(#[from] managed_instance_keys::delete::Error),
+    #[error(transparent)]
+    ManagedInstanceEncryptionProtectors_Revalidate(#[from] managed_instance_encryption_protectors::revalidate::Error),
+    #[error(transparent)]
+    ManagedInstanceEncryptionProtectors_ListByInstance(#[from] managed_instance_encryption_protectors::list_by_instance::Error),
+    #[error(transparent)]
+    ManagedInstanceEncryptionProtectors_Get(#[from] managed_instance_encryption_protectors::get::Error),
+    #[error(transparent)]
+    ManagedInstanceEncryptionProtectors_CreateOrUpdate(#[from] managed_instance_encryption_protectors::create_or_update::Error),
+    #[error(transparent)]
+    RecoverableManagedDatabases_ListByInstance(#[from] recoverable_managed_databases::list_by_instance::Error),
+    #[error(transparent)]
+    RecoverableManagedDatabases_Get(#[from] recoverable_managed_databases::get::Error),
+    #[error(transparent)]
+    BackupShortTermRetentionPolicies_Get(#[from] backup_short_term_retention_policies::get::Error),
+    #[error(transparent)]
+    BackupShortTermRetentionPolicies_CreateOrUpdate(#[from] backup_short_term_retention_policies::create_or_update::Error),
+    #[error(transparent)]
+    BackupShortTermRetentionPolicies_Update(#[from] backup_short_term_retention_policies::update::Error),
+    #[error(transparent)]
+    BackupShortTermRetentionPolicies_ListByDatabase(#[from] backup_short_term_retention_policies::list_by_database::Error),
+    #[error(transparent)]
+    ManagedInstanceVulnerabilityAssessments_Get(#[from] managed_instance_vulnerability_assessments::get::Error),
+    #[error(transparent)]
+    ManagedInstanceVulnerabilityAssessments_CreateOrUpdate(#[from] managed_instance_vulnerability_assessments::create_or_update::Error),
+    #[error(transparent)]
+    ManagedInstanceVulnerabilityAssessments_Delete(#[from] managed_instance_vulnerability_assessments::delete::Error),
+    #[error(transparent)]
+    ManagedInstanceVulnerabilityAssessments_ListByInstance(#[from] managed_instance_vulnerability_assessments::list_by_instance::Error),
+    #[error(transparent)]
+    ServerVulnerabilityAssessments_Get(#[from] server_vulnerability_assessments::get::Error),
+    #[error(transparent)]
+    ServerVulnerabilityAssessments_CreateOrUpdate(#[from] server_vulnerability_assessments::create_or_update::Error),
+    #[error(transparent)]
+    ServerVulnerabilityAssessments_Delete(#[from] server_vulnerability_assessments::delete::Error),
+    #[error(transparent)]
+    ServerVulnerabilityAssessments_ListByServer(#[from] server_vulnerability_assessments::list_by_server::Error),
+    #[error(transparent)]
+    ManagedDatabaseSensitivityLabels_Get(#[from] managed_database_sensitivity_labels::get::Error),
+    #[error(transparent)]
+    ManagedDatabaseSensitivityLabels_CreateOrUpdate(#[from] managed_database_sensitivity_labels::create_or_update::Error),
+    #[error(transparent)]
+    ManagedDatabaseSensitivityLabels_Delete(#[from] managed_database_sensitivity_labels::delete::Error),
+    #[error(transparent)]
+    ManagedDatabaseSensitivityLabels_DisableRecommendation(#[from] managed_database_sensitivity_labels::disable_recommendation::Error),
+    #[error(transparent)]
+    ManagedDatabaseSensitivityLabels_EnableRecommendation(#[from] managed_database_sensitivity_labels::enable_recommendation::Error),
+    #[error(transparent)]
+    ManagedDatabaseSensitivityLabels_ListCurrentByDatabase(#[from] managed_database_sensitivity_labels::list_current_by_database::Error),
+    #[error(transparent)]
+    ManagedDatabaseSensitivityLabels_ListRecommendedByDatabase(
+        #[from] managed_database_sensitivity_labels::list_recommended_by_database::Error,
+    ),
+    #[error(transparent)]
+    InstancePools_Get(#[from] instance_pools::get::Error),
+    #[error(transparent)]
+    InstancePools_CreateOrUpdate(#[from] instance_pools::create_or_update::Error),
+    #[error(transparent)]
+    InstancePools_Update(#[from] instance_pools::update::Error),
+    #[error(transparent)]
+    InstancePools_Delete(#[from] instance_pools::delete::Error),
+    #[error(transparent)]
+    InstancePools_ListByResourceGroup(#[from] instance_pools::list_by_resource_group::Error),
+    #[error(transparent)]
+    InstancePools_List(#[from] instance_pools::list::Error),
+    #[error(transparent)]
+    Usages_ListByInstancePool(#[from] usages::list_by_instance_pool::Error),
+    #[error(transparent)]
+    PrivateLinkResources_ListByServer(#[from] private_link_resources::list_by_server::Error),
+    #[error(transparent)]
+    PrivateLinkResources_Get(#[from] private_link_resources::get::Error),
+    #[error(transparent)]
+    Servers_ListByResourceGroup(#[from] servers::list_by_resource_group::Error),
+    #[error(transparent)]
+    Servers_Get(#[from] servers::get::Error),
+    #[error(transparent)]
+    Servers_CreateOrUpdate(#[from] servers::create_or_update::Error),
+    #[error(transparent)]
+    Servers_Update(#[from] servers::update::Error),
+    #[error(transparent)]
+    Servers_Delete(#[from] servers::delete::Error),
+    #[error(transparent)]
+    Servers_List(#[from] servers::list::Error),
+    #[error(transparent)]
+    Servers_CheckNameAvailability(#[from] servers::check_name_availability::Error),
+    #[error(transparent)]
+    Capabilities_ListByLocation(#[from] capabilities::list_by_location::Error),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_Get(#[from] long_term_retention_managed_instance_backups::get::Error),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_Delete(#[from] long_term_retention_managed_instance_backups::delete::Error),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_ListByDatabase(#[from] long_term_retention_managed_instance_backups::list_by_database::Error),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_ListByInstance(#[from] long_term_retention_managed_instance_backups::list_by_instance::Error),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_ListByLocation(#[from] long_term_retention_managed_instance_backups::list_by_location::Error),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_GetByResourceGroup(
+        #[from] long_term_retention_managed_instance_backups::get_by_resource_group::Error,
+    ),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_DeleteByResourceGroup(
+        #[from] long_term_retention_managed_instance_backups::delete_by_resource_group::Error,
+    ),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_ListByResourceGroupDatabase(
+        #[from] long_term_retention_managed_instance_backups::list_by_resource_group_database::Error,
+    ),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_ListByResourceGroupInstance(
+        #[from] long_term_retention_managed_instance_backups::list_by_resource_group_instance::Error,
+    ),
+    #[error(transparent)]
+    LongTermRetentionManagedInstanceBackups_ListByResourceGroupLocation(
+        #[from] long_term_retention_managed_instance_backups::list_by_resource_group_location::Error,
+    ),
+    #[error(transparent)]
+    ManagedInstanceLongTermRetentionPolicies_Get(#[from] managed_instance_long_term_retention_policies::get::Error),
+    #[error(transparent)]
+    ManagedInstanceLongTermRetentionPolicies_CreateOrUpdate(#[from] managed_instance_long_term_retention_policies::create_or_update::Error),
+    #[error(transparent)]
+    ManagedInstanceLongTermRetentionPolicies_ListByDatabase(#[from] managed_instance_long_term_retention_policies::list_by_database::Error),
+    #[error(transparent)]
+    WorkloadGroups_Get(#[from] workload_groups::get::Error),
+    #[error(transparent)]
+    WorkloadGroups_CreateOrUpdate(#[from] workload_groups::create_or_update::Error),
+    #[error(transparent)]
+    WorkloadGroups_Delete(#[from] workload_groups::delete::Error),
+    #[error(transparent)]
+    WorkloadGroups_ListByDatabase(#[from] workload_groups::list_by_database::Error),
+    #[error(transparent)]
+    WorkloadClassifiers_Get(#[from] workload_classifiers::get::Error),
+    #[error(transparent)]
+    WorkloadClassifiers_CreateOrUpdate(#[from] workload_classifiers::create_or_update::Error),
+    #[error(transparent)]
+    WorkloadClassifiers_Delete(#[from] workload_classifiers::delete::Error),
+    #[error(transparent)]
+    WorkloadClassifiers_ListByWorkloadGroup(#[from] workload_classifiers::list_by_workload_group::Error),
+    #[error(transparent)]
+    ManagedInstanceOperations_Cancel(#[from] managed_instance_operations::cancel::Error),
+    #[error(transparent)]
+    ManagedInstanceOperations_ListByManagedInstance(#[from] managed_instance_operations::list_by_managed_instance::Error),
+    #[error(transparent)]
+    ManagedInstanceOperations_Get(#[from] managed_instance_operations::get::Error),
+    #[error(transparent)]
+    ServerAzureAdAdministrators_Get(#[from] server_azure_ad_administrators::get::Error),
+    #[error(transparent)]
+    ServerAzureAdAdministrators_CreateOrUpdate(#[from] server_azure_ad_administrators::create_or_update::Error),
+    #[error(transparent)]
+    ServerAzureAdAdministrators_Delete(#[from] server_azure_ad_administrators::delete::Error),
+    #[error(transparent)]
+    ServerAzureAdAdministrators_ListByServer(#[from] server_azure_ad_administrators::list_by_server::Error),
+    #[error(transparent)]
+    SyncGroups_ListSyncDatabaseIds(#[from] sync_groups::list_sync_database_ids::Error),
+    #[error(transparent)]
+    SyncGroups_RefreshHubSchema(#[from] sync_groups::refresh_hub_schema::Error),
+    #[error(transparent)]
+    SyncGroups_ListHubSchemas(#[from] sync_groups::list_hub_schemas::Error),
+    #[error(transparent)]
+    SyncGroups_ListLogs(#[from] sync_groups::list_logs::Error),
+    #[error(transparent)]
+    SyncGroups_CancelSync(#[from] sync_groups::cancel_sync::Error),
+    #[error(transparent)]
+    SyncGroups_TriggerSync(#[from] sync_groups::trigger_sync::Error),
+    #[error(transparent)]
+    SyncGroups_Get(#[from] sync_groups::get::Error),
+    #[error(transparent)]
+    SyncGroups_CreateOrUpdate(#[from] sync_groups::create_or_update::Error),
+    #[error(transparent)]
+    SyncGroups_Update(#[from] sync_groups::update::Error),
+    #[error(transparent)]
+    SyncGroups_Delete(#[from] sync_groups::delete::Error),
+    #[error(transparent)]
+    SyncGroups_ListByDatabase(#[from] sync_groups::list_by_database::Error),
+    #[error(transparent)]
+    SyncMembers_Get(#[from] sync_members::get::Error),
+    #[error(transparent)]
+    SyncMembers_CreateOrUpdate(#[from] sync_members::create_or_update::Error),
+    #[error(transparent)]
+    SyncMembers_Update(#[from] sync_members::update::Error),
+    #[error(transparent)]
+    SyncMembers_Delete(#[from] sync_members::delete::Error),
+    #[error(transparent)]
+    SyncMembers_ListBySyncGroup(#[from] sync_members::list_by_sync_group::Error),
+    #[error(transparent)]
+    SyncMembers_ListMemberSchemas(#[from] sync_members::list_member_schemas::Error),
+    #[error(transparent)]
+    SyncMembers_RefreshMemberSchema(#[from] sync_members::refresh_member_schema::Error),
+    #[error(transparent)]
+    Databases_Export(#[from] databases::export::Error),
+    #[error(transparent)]
+    ImportExport_Import(#[from] import_export::import::Error),
+    #[error(transparent)]
+    Servers_ImportDatabase(#[from] servers::import_database::Error),
+    #[error(transparent)]
+    ManagedDatabases_ListByInstance(#[from] managed_databases::list_by_instance::Error),
+    #[error(transparent)]
+    ManagedDatabases_Get(#[from] managed_databases::get::Error),
+    #[error(transparent)]
+    ManagedDatabases_CreateOrUpdate(#[from] managed_databases::create_or_update::Error),
+    #[error(transparent)]
+    ManagedDatabases_Update(#[from] managed_databases::update::Error),
+    #[error(transparent)]
+    ManagedDatabases_Delete(#[from] managed_databases::delete::Error),
+    #[error(transparent)]
+    ManagedDatabases_CompleteRestore(#[from] managed_databases::complete_restore::Error),
+    #[error(transparent)]
+    ManagedDatabases_ListInaccessibleByInstance(#[from] managed_databases::list_inaccessible_by_instance::Error),
+    #[error(transparent)]
+    ManagedDatabaseRestoreDetails_Get(#[from] managed_database_restore_details::get::Error),
+    #[error(transparent)]
+    ServerAzureAdOnlyAuthentications_Get(#[from] server_azure_ad_only_authentications::get::Error),
+    #[error(transparent)]
+    ServerAzureAdOnlyAuthentications_CreateOrUpdate(#[from] server_azure_ad_only_authentications::create_or_update::Error),
+    #[error(transparent)]
+    ServerAzureAdOnlyAuthentications_Delete(#[from] server_azure_ad_only_authentications::delete::Error),
+    #[error(transparent)]
+    ServerAzureAdOnlyAuthentications_ListByServer(#[from] server_azure_ad_only_authentications::list_by_server::Error),
+    #[error(transparent)]
+    ManagedInstances_ListByInstancePool(#[from] managed_instances::list_by_instance_pool::Error),
+    #[error(transparent)]
+    ManagedInstances_ListByResourceGroup(#[from] managed_instances::list_by_resource_group::Error),
+    #[error(transparent)]
+    ManagedInstances_Get(#[from] managed_instances::get::Error),
+    #[error(transparent)]
+    ManagedInstances_CreateOrUpdate(#[from] managed_instances::create_or_update::Error),
+    #[error(transparent)]
+    ManagedInstances_Update(#[from] managed_instances::update::Error),
+    #[error(transparent)]
+    ManagedInstances_Delete(#[from] managed_instances::delete::Error),
+    #[error(transparent)]
+    ManagedInstances_ListByManagedInstance(#[from] managed_instances::list_by_managed_instance::Error),
+    #[error(transparent)]
+    ManagedInstances_Failover(#[from] managed_instances::failover::Error),
+    #[error(transparent)]
+    ManagedInstances_List(#[from] managed_instances::list::Error),
+    #[error(transparent)]
+    ManagedInstanceAzureAdOnlyAuthentications_Get(#[from] managed_instance_azure_ad_only_authentications::get::Error),
+    #[error(transparent)]
+    ManagedInstanceAzureAdOnlyAuthentications_CreateOrUpdate(
+        #[from] managed_instance_azure_ad_only_authentications::create_or_update::Error,
+    ),
+    #[error(transparent)]
+    ManagedInstanceAzureAdOnlyAuthentications_Delete(#[from] managed_instance_azure_ad_only_authentications::delete::Error),
+    #[error(transparent)]
+    ManagedInstanceAzureAdOnlyAuthentications_ListByInstance(
+        #[from] managed_instance_azure_ad_only_authentications::list_by_instance::Error,
+    ),
+    #[error(transparent)]
+    ServerTrustGroups_Get(#[from] server_trust_groups::get::Error),
+    #[error(transparent)]
+    ServerTrustGroups_CreateOrUpdate(#[from] server_trust_groups::create_or_update::Error),
+    #[error(transparent)]
+    ServerTrustGroups_Delete(#[from] server_trust_groups::delete::Error),
+    #[error(transparent)]
+    ServerTrustGroups_ListByLocation(#[from] server_trust_groups::list_by_location::Error),
+    #[error(transparent)]
+    ServerTrustGroups_ListByInstance(#[from] server_trust_groups::list_by_instance::Error),
+    #[error(transparent)]
+    ElasticPools_ListByServer(#[from] elastic_pools::list_by_server::Error),
+    #[error(transparent)]
+    ElasticPools_Get(#[from] elastic_pools::get::Error),
+    #[error(transparent)]
+    ElasticPools_CreateOrUpdate(#[from] elastic_pools::create_or_update::Error),
+    #[error(transparent)]
+    ElasticPools_Update(#[from] elastic_pools::update::Error),
+    #[error(transparent)]
+    ElasticPools_Delete(#[from] elastic_pools::delete::Error),
+    #[error(transparent)]
+    ElasticPools_Failover(#[from] elastic_pools::failover::Error),
+    #[error(transparent)]
+    ServerDevOpsAuditSettings_Get(#[from] server_dev_ops_audit_settings::get::Error),
+    #[error(transparent)]
+    ServerDevOpsAuditSettings_CreateOrUpdate(#[from] server_dev_ops_audit_settings::create_or_update::Error),
+    #[error(transparent)]
+    ServerDevOpsAuditSettings_ListByServer(#[from] server_dev_ops_audit_settings::list_by_server::Error),
+    #[error(transparent)]
+    Databases_ListByServer(#[from] databases::list_by_server::Error),
+    #[error(transparent)]
+    Databases_Get(#[from] databases::get::Error),
+    #[error(transparent)]
+    Databases_CreateOrUpdate(#[from] databases::create_or_update::Error),
+    #[error(transparent)]
+    Databases_Update(#[from] databases::update::Error),
+    #[error(transparent)]
+    Databases_Delete(#[from] databases::delete::Error),
+    #[error(transparent)]
+    Databases_ListByElasticPool(#[from] databases::list_by_elastic_pool::Error),
+    #[error(transparent)]
+    Databases_Pause(#[from] databases::pause::Error),
+    #[error(transparent)]
+    Databases_Resume(#[from] databases::resume::Error),
+    #[error(transparent)]
+    Databases_Failover(#[from] databases::failover::Error),
+    #[error(transparent)]
+    Databases_ListInaccessibleByServer(#[from] databases::list_inaccessible_by_server::Error),
+    #[error(transparent)]
+    Databases_UpgradeDataWarehouse(#[from] databases::upgrade_data_warehouse::Error),
+    #[error(transparent)]
+    Databases_Rename(#[from] databases::rename::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_Copy(#[from] long_term_retention_backups::copy::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_Update(#[from] long_term_retention_backups::update::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_Get(#[from] long_term_retention_backups::get::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_Delete(#[from] long_term_retention_backups::delete::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_ListByDatabase(#[from] long_term_retention_backups::list_by_database::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_ListByLocation(#[from] long_term_retention_backups::list_by_location::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_ListByServer(#[from] long_term_retention_backups::list_by_server::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_CopyByResourceGroup(#[from] long_term_retention_backups::copy_by_resource_group::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_UpdateByResourceGroup(#[from] long_term_retention_backups::update_by_resource_group::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_GetByResourceGroup(#[from] long_term_retention_backups::get_by_resource_group::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_DeleteByResourceGroup(#[from] long_term_retention_backups::delete_by_resource_group::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_ListByResourceGroupDatabase(#[from] long_term_retention_backups::list_by_resource_group_database::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_ListByResourceGroupLocation(#[from] long_term_retention_backups::list_by_resource_group_location::Error),
+    #[error(transparent)]
+    LongTermRetentionBackups_ListByResourceGroupServer(#[from] long_term_retention_backups::list_by_resource_group_server::Error),
+    #[error(transparent)]
+    LongTermRetentionPolicies_Get(#[from] long_term_retention_policies::get::Error),
+    #[error(transparent)]
+    LongTermRetentionPolicies_CreateOrUpdate(#[from] long_term_retention_policies::create_or_update::Error),
+    #[error(transparent)]
+    LongTermRetentionPolicies_ListByDatabase(#[from] long_term_retention_policies::list_by_database::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Get(#[from] private_endpoint_connections::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_CreateOrUpdate(#[from] private_endpoint_connections::create_or_update::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Delete(#[from] private_endpoint_connections::delete::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_ListByServer(#[from] private_endpoint_connections::list_by_server::Error),
+}
 pub mod recoverable_databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-    ) -> std::result::Result<RecoverableDatabase, get::Error> {
+    ) -> std::result::Result<models::RecoverableDatabase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/recoverableDatabases/{}",
@@ -39,7 +820,7 @@ pub mod recoverable_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecoverableDatabase =
+                let rsp_value: models::RecoverableDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -53,7 +834,7 @@ pub mod recoverable_databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -77,7 +858,7 @@ pub mod recoverable_databases {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-    ) -> std::result::Result<RecoverableDatabaseListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::RecoverableDatabaseListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/recoverableDatabases",
@@ -107,7 +888,7 @@ pub mod recoverable_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecoverableDatabaseListResult =
+                let rsp_value: models::RecoverableDatabaseListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -121,7 +902,7 @@ pub mod recoverable_databases {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -142,14 +923,14 @@ pub mod recoverable_databases {
     }
 }
 pub mod restorable_dropped_databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         restorable_droppeded_database_id: &str,
-    ) -> std::result::Result<RestorableDroppedDatabase, get::Error> {
+    ) -> std::result::Result<models::RestorableDroppedDatabase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/restorableDroppedDatabases/{}",
@@ -177,7 +958,7 @@ pub mod restorable_dropped_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestorableDroppedDatabase =
+                let rsp_value: models::RestorableDroppedDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -191,7 +972,7 @@ pub mod restorable_dropped_databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -215,7 +996,7 @@ pub mod restorable_dropped_databases {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-    ) -> std::result::Result<RestorableDroppedDatabaseListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::RestorableDroppedDatabaseListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/restorableDroppedDatabases",
@@ -245,7 +1026,7 @@ pub mod restorable_dropped_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestorableDroppedDatabaseListResult =
+                let rsp_value: models::RestorableDroppedDatabaseListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -259,7 +1040,7 @@ pub mod restorable_dropped_databases {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -280,14 +1061,14 @@ pub mod restorable_dropped_databases {
     }
 }
 pub mod server_connection_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         connection_policy_name: &str,
-    ) -> std::result::Result<ServerConnectionPolicy, get::Error> {
+    ) -> std::result::Result<models::ServerConnectionPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/connectionPolicies/{}",
@@ -315,7 +1096,7 @@ pub mod server_connection_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerConnectionPolicy =
+                let rsp_value: models::ServerConnectionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -329,7 +1110,7 @@ pub mod server_connection_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -354,7 +1135,7 @@ pub mod server_connection_policies {
         resource_group_name: &str,
         server_name: &str,
         connection_policy_name: &str,
-        parameters: &ServerConnectionPolicy,
+        parameters: &models::ServerConnectionPolicy,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -387,13 +1168,13 @@ pub mod server_connection_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerConnectionPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerConnectionPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerConnectionPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerConnectionPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -407,11 +1188,11 @@ pub mod server_connection_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerConnectionPolicy),
-            Created201(ServerConnectionPolicy),
+            Ok200(models::ServerConnectionPolicy),
+            Created201(models::ServerConnectionPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -433,7 +1214,7 @@ pub mod server_connection_policies {
     }
 }
 pub mod database_threat_detection_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -441,7 +1222,7 @@ pub mod database_threat_detection_policies {
         server_name: &str,
         database_name: &str,
         security_alert_policy_name: &str,
-    ) -> std::result::Result<DatabaseSecurityAlertPolicy, get::Error> {
+    ) -> std::result::Result<models::DatabaseSecurityAlertPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/securityAlertPolicies/{}",
@@ -470,7 +1251,7 @@ pub mod database_threat_detection_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseSecurityAlertPolicy =
+                let rsp_value: models::DatabaseSecurityAlertPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -478,7 +1259,7 @@ pub mod database_threat_detection_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -504,7 +1285,7 @@ pub mod database_threat_detection_policies {
         server_name: &str,
         database_name: &str,
         security_alert_policy_name: &str,
-        parameters: &DatabaseSecurityAlertPolicy,
+        parameters: &models::DatabaseSecurityAlertPolicy,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -538,13 +1319,13 @@ pub mod database_threat_detection_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseSecurityAlertPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseSecurityAlertPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseSecurityAlertPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseSecurityAlertPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -552,11 +1333,11 @@ pub mod database_threat_detection_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatabaseSecurityAlertPolicy),
-            Created201(DatabaseSecurityAlertPolicy),
+            Ok200(models::DatabaseSecurityAlertPolicy),
+            Created201(models::DatabaseSecurityAlertPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -578,7 +1359,7 @@ pub mod database_threat_detection_policies {
     }
 }
 pub mod data_masking_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -586,7 +1367,7 @@ pub mod data_masking_policies {
         server_name: &str,
         database_name: &str,
         data_masking_policy_name: &str,
-    ) -> std::result::Result<DataMaskingPolicy, get::Error> {
+    ) -> std::result::Result<models::DataMaskingPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/dataMaskingPolicies/{}",
@@ -615,7 +1396,7 @@ pub mod data_masking_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataMaskingPolicy =
+                let rsp_value: models::DataMaskingPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -629,7 +1410,7 @@ pub mod data_masking_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -655,8 +1436,8 @@ pub mod data_masking_policies {
         server_name: &str,
         database_name: &str,
         data_masking_policy_name: &str,
-        parameters: &DataMaskingPolicy,
-    ) -> std::result::Result<DataMaskingPolicy, create_or_update::Error> {
+        parameters: &models::DataMaskingPolicy,
+    ) -> std::result::Result<models::DataMaskingPolicy, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/dataMaskingPolicies/{}",
@@ -689,7 +1470,7 @@ pub mod data_masking_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataMaskingPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataMaskingPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -703,7 +1484,7 @@ pub mod data_masking_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -724,7 +1505,7 @@ pub mod data_masking_policies {
     }
 }
 pub mod data_masking_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -733,7 +1514,7 @@ pub mod data_masking_rules {
         database_name: &str,
         data_masking_policy_name: &str,
         data_masking_rule_name: &str,
-        parameters: &DataMaskingRule,
+        parameters: &models::DataMaskingRule,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -768,13 +1549,13 @@ pub mod data_masking_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataMaskingRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataMaskingRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataMaskingRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataMaskingRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -788,11 +1569,11 @@ pub mod data_masking_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataMaskingRule),
-            Created201(DataMaskingRule),
+            Ok200(models::DataMaskingRule),
+            Created201(models::DataMaskingRule),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -819,7 +1600,7 @@ pub mod data_masking_rules {
         server_name: &str,
         database_name: &str,
         data_masking_policy_name: &str,
-    ) -> std::result::Result<DataMaskingRuleListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::DataMaskingRuleListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/dataMaskingPolicies/{}/rules",
@@ -851,7 +1632,7 @@ pub mod data_masking_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataMaskingRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataMaskingRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -865,7 +1646,7 @@ pub mod data_masking_rules {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -886,14 +1667,14 @@ pub mod data_masking_rules {
     }
 }
 pub mod firewall_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         firewall_rule_name: &str,
-    ) -> std::result::Result<FirewallRule, get::Error> {
+    ) -> std::result::Result<models::FirewallRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/firewallRules/{}",
@@ -921,7 +1702,7 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRule =
+                let rsp_value: models::FirewallRule =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -935,7 +1716,7 @@ pub mod firewall_rules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -960,7 +1741,7 @@ pub mod firewall_rules {
         resource_group_name: &str,
         server_name: &str,
         firewall_rule_name: &str,
-        parameters: &FirewallRule,
+        parameters: &models::FirewallRule,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -993,13 +1774,13 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FirewallRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FirewallRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -1013,11 +1794,11 @@ pub mod firewall_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(FirewallRule),
-            Created201(FirewallRule),
+            Ok200(models::FirewallRule),
+            Created201(models::FirewallRule),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1081,7 +1862,7 @@ pub mod firewall_rules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1110,7 +1891,7 @@ pub mod firewall_rules {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-    ) -> std::result::Result<FirewallRuleListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::FirewallRuleListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/firewallRules",
@@ -1140,7 +1921,7 @@ pub mod firewall_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRuleListResult =
+                let rsp_value: models::FirewallRuleListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1154,7 +1935,7 @@ pub mod firewall_rules {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1175,7 +1956,7 @@ pub mod firewall_rules {
     }
 }
 pub mod geo_backup_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1183,7 +1964,7 @@ pub mod geo_backup_policies {
         server_name: &str,
         database_name: &str,
         geo_backup_policy_name: &str,
-    ) -> std::result::Result<GeoBackupPolicy, get::Error> {
+    ) -> std::result::Result<models::GeoBackupPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/geoBackupPolicies/{}",
@@ -1212,7 +1993,7 @@ pub mod geo_backup_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GeoBackupPolicy =
+                let rsp_value: models::GeoBackupPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1226,7 +2007,7 @@ pub mod geo_backup_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1252,7 +2033,7 @@ pub mod geo_backup_policies {
         server_name: &str,
         database_name: &str,
         geo_backup_policy_name: &str,
-        parameters: &GeoBackupPolicy,
+        parameters: &models::GeoBackupPolicy,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1286,13 +2067,13 @@ pub mod geo_backup_policies {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GeoBackupPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GeoBackupPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GeoBackupPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GeoBackupPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -1306,11 +2087,11 @@ pub mod geo_backup_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(GeoBackupPolicy),
-            Ok200(GeoBackupPolicy),
+            Created201(models::GeoBackupPolicy),
+            Ok200(models::GeoBackupPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1336,7 +2117,7 @@ pub mod geo_backup_policies {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-    ) -> std::result::Result<GeoBackupPolicyListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::GeoBackupPolicyListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/geoBackupPolicies",
@@ -1367,7 +2148,7 @@ pub mod geo_backup_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GeoBackupPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GeoBackupPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1381,7 +2162,7 @@ pub mod geo_backup_policies {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1402,7 +2183,7 @@ pub mod geo_backup_policies {
     }
 }
 pub mod databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1410,7 +2191,7 @@ pub mod databases {
         server_name: &str,
         database_name: &str,
         filter: &str,
-    ) -> std::result::Result<MetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/metrics",
@@ -1442,7 +2223,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricListResult =
+                let rsp_value: models::MetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1456,7 +2237,7 @@ pub mod databases {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1481,7 +2262,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-    ) -> std::result::Result<MetricDefinitionListResult, list_metric_definitions::Error> {
+    ) -> std::result::Result<models::MetricDefinitionListResult, list_metric_definitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/metricDefinitions",
@@ -1514,7 +2295,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricDefinitionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricDefinitionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1528,7 +2309,7 @@ pub mod databases {
         }
     }
     pub mod list_metric_definitions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1552,7 +2333,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        parameters: &ExportDatabaseDefinition,
+        parameters: &models::ExportDatabaseDefinition,
         subscription_id: &str,
     ) -> std::result::Result<export::Response, export::Error> {
         let http_client = operation_config.http_client();
@@ -1583,7 +2364,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImportExportOperationResult =
+                let rsp_value: models::ImportExportOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| export::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(export::Response::Ok200(rsp_value))
             }
@@ -1592,10 +2373,10 @@ pub mod databases {
         }
     }
     pub mod export {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ImportExportOperationResult),
+            Ok200(models::ImportExportOperationResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1621,7 +2402,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::DatabaseListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases",
@@ -1651,7 +2432,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseListResult =
+                let rsp_value: models::DatabaseListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1659,7 +2440,7 @@ pub mod databases {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1684,7 +2465,7 @@ pub mod databases {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Database, get::Error> {
+    ) -> std::result::Result<models::Database, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}",
@@ -1712,7 +2493,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1720,7 +2501,7 @@ pub mod databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1744,7 +2525,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        parameters: &Database,
+        parameters: &models::Database,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1778,14 +2559,14 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Database = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Database = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -1793,12 +2574,12 @@ pub mod databases {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Database),
+            Ok200(models::Database),
             Accepted202,
-            Created201(Database),
+            Created201(models::Database),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1823,7 +2604,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        parameters: &DatabaseUpdate,
+        parameters: &models::DatabaseUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -1854,7 +2635,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -1863,10 +2644,10 @@ pub mod databases {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Database),
+            Ok200(models::Database),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1926,7 +2707,7 @@ pub mod databases {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1957,7 +2738,7 @@ pub mod databases {
         server_name: &str,
         elastic_pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseListResult, list_by_elastic_pool::Error> {
+    ) -> std::result::Result<models::DatabaseListResult, list_by_elastic_pool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}/databases",
@@ -1988,7 +2769,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_elastic_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1996,7 +2777,7 @@ pub mod databases {
         }
     }
     pub mod list_by_elastic_pool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2050,7 +2831,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| pause::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(pause::Response::Ok200(rsp_value))
             }
@@ -2059,10 +2840,10 @@ pub mod databases {
         }
     }
     pub mod pause {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Database),
+            Ok200(models::Database),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2118,7 +2899,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| resume::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(resume::Response::Ok200(rsp_value))
             }
@@ -2127,10 +2908,10 @@ pub mod databases {
         }
     }
     pub mod resume {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Database),
+            Ok200(models::Database),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2197,7 +2978,7 @@ pub mod databases {
         }
     }
     pub mod failover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2226,7 +3007,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseListResult, list_inaccessible_by_server::Error> {
+    ) -> std::result::Result<models::DatabaseListResult, list_inaccessible_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/inaccessibleDatabases",
@@ -2258,7 +3039,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_inaccessible_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2266,7 +3047,7 @@ pub mod databases {
         }
     }
     pub mod list_inaccessible_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2329,7 +3110,7 @@ pub mod databases {
         }
     }
     pub mod upgrade_data_warehouse {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2358,7 +3139,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        parameters: &ResourceMoveDefinition,
+        parameters: &models::ResourceMoveDefinition,
         subscription_id: &str,
     ) -> std::result::Result<(), rename::Error> {
         let http_client = operation_config.http_client();
@@ -2392,7 +3173,7 @@ pub mod databases {
         }
     }
     pub mod rename {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2413,7 +3194,7 @@ pub mod databases {
     }
 }
 pub mod elastic_pools {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2421,7 +3202,7 @@ pub mod elastic_pools {
         server_name: &str,
         elastic_pool_name: &str,
         filter: &str,
-    ) -> std::result::Result<MetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}/metrics",
@@ -2453,7 +3234,7 @@ pub mod elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricListResult =
+                let rsp_value: models::MetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2467,7 +3248,7 @@ pub mod elastic_pools {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2492,7 +3273,7 @@ pub mod elastic_pools {
         resource_group_name: &str,
         server_name: &str,
         elastic_pool_name: &str,
-    ) -> std::result::Result<MetricDefinitionListResult, list_metric_definitions::Error> {
+    ) -> std::result::Result<models::MetricDefinitionListResult, list_metric_definitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}/metricDefinitions",
@@ -2525,7 +3306,7 @@ pub mod elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricDefinitionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricDefinitionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2539,7 +3320,7 @@ pub mod elastic_pools {
         }
     }
     pub mod list_metric_definitions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2564,7 +3345,7 @@ pub mod elastic_pools {
         server_name: &str,
         skip: Option<i64>,
         subscription_id: &str,
-    ) -> std::result::Result<ElasticPoolListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ElasticPoolListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools",
@@ -2597,7 +3378,7 @@ pub mod elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ElasticPoolListResult =
+                let rsp_value: models::ElasticPoolListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2605,7 +3386,7 @@ pub mod elastic_pools {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2630,7 +3411,7 @@ pub mod elastic_pools {
         server_name: &str,
         elastic_pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ElasticPool, get::Error> {
+    ) -> std::result::Result<models::ElasticPool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}",
@@ -2658,7 +3439,7 @@ pub mod elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ElasticPool =
+                let rsp_value: models::ElasticPool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2666,7 +3447,7 @@ pub mod elastic_pools {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2690,7 +3471,7 @@ pub mod elastic_pools {
         resource_group_name: &str,
         server_name: &str,
         elastic_pool_name: &str,
-        parameters: &ElasticPool,
+        parameters: &models::ElasticPool,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2724,14 +3505,14 @@ pub mod elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ElasticPool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ElasticPool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ElasticPool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ElasticPool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -2739,12 +3520,12 @@ pub mod elastic_pools {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ElasticPool),
+            Ok200(models::ElasticPool),
             Accepted202,
-            Created201(ElasticPool),
+            Created201(models::ElasticPool),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2769,7 +3550,7 @@ pub mod elastic_pools {
         resource_group_name: &str,
         server_name: &str,
         elastic_pool_name: &str,
-        parameters: &ElasticPoolUpdate,
+        parameters: &models::ElasticPoolUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -2800,7 +3581,7 @@ pub mod elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ElasticPool =
+                let rsp_value: models::ElasticPool =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -2809,10 +3590,10 @@ pub mod elastic_pools {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ElasticPool),
+            Ok200(models::ElasticPool),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2872,7 +3653,7 @@ pub mod elastic_pools {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2939,7 +3720,7 @@ pub mod elastic_pools {
         }
     }
     pub mod failover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2965,14 +3746,14 @@ pub mod elastic_pools {
     }
 }
 pub mod recommended_elastic_pools {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         recommended_elastic_pool_name: &str,
-    ) -> std::result::Result<RecommendedElasticPool, get::Error> {
+    ) -> std::result::Result<models::RecommendedElasticPool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/recommendedElasticPools/{}",
@@ -3000,7 +3781,7 @@ pub mod recommended_elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecommendedElasticPool =
+                let rsp_value: models::RecommendedElasticPool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3014,7 +3795,7 @@ pub mod recommended_elastic_pools {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3038,7 +3819,7 @@ pub mod recommended_elastic_pools {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-    ) -> std::result::Result<RecommendedElasticPoolListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::RecommendedElasticPoolListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/recommendedElasticPools",
@@ -3068,7 +3849,7 @@ pub mod recommended_elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecommendedElasticPoolListResult =
+                let rsp_value: models::RecommendedElasticPoolListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3082,7 +3863,7 @@ pub mod recommended_elastic_pools {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3107,7 +3888,7 @@ pub mod recommended_elastic_pools {
         resource_group_name: &str,
         server_name: &str,
         recommended_elastic_pool_name: &str,
-    ) -> std::result::Result<RecommendedElasticPoolListMetricsResult, list_metrics::Error> {
+    ) -> std::result::Result<models::RecommendedElasticPoolListMetricsResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/recommendedElasticPools/{}/metrics",
@@ -3138,7 +3919,7 @@ pub mod recommended_elastic_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecommendedElasticPoolListMetricsResult =
+                let rsp_value: models::RecommendedElasticPoolListMetricsResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3152,7 +3933,7 @@ pub mod recommended_elastic_pools {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3173,7 +3954,7 @@ pub mod recommended_elastic_pools {
     }
 }
 pub mod replication_links {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3181,7 +3962,7 @@ pub mod replication_links {
         server_name: &str,
         database_name: &str,
         link_id: &str,
-    ) -> std::result::Result<ReplicationLink, get::Error> {
+    ) -> std::result::Result<models::ReplicationLink, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks/{}",
@@ -3210,7 +3991,7 @@ pub mod replication_links {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReplicationLink =
+                let rsp_value: models::ReplicationLink =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3224,7 +4005,7 @@ pub mod replication_links {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3289,7 +4070,7 @@ pub mod replication_links {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3363,7 +4144,7 @@ pub mod replication_links {
         }
     }
     pub mod failover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -3431,7 +4212,7 @@ pub mod replication_links {
         }
     }
     pub mod failover_allow_data_loss {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -3462,7 +4243,7 @@ pub mod replication_links {
         server_name: &str,
         database_name: &str,
         link_id: &str,
-        parameters: &UnlinkParameters,
+        parameters: &models::UnlinkParameters,
     ) -> std::result::Result<unlink::Response, unlink::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3503,7 +4284,7 @@ pub mod replication_links {
         }
     }
     pub mod unlink {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -3533,7 +4314,7 @@ pub mod replication_links {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-    ) -> std::result::Result<ReplicationLinkListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::ReplicationLinkListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/replicationLinks",
@@ -3564,7 +4345,7 @@ pub mod replication_links {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReplicationLinkListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ReplicationLinkListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3578,7 +4359,7 @@ pub mod replication_links {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3599,14 +4380,14 @@ pub mod replication_links {
     }
 }
 pub mod server_communication_links {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         communication_link_name: &str,
-    ) -> std::result::Result<ServerCommunicationLink, get::Error> {
+    ) -> std::result::Result<models::ServerCommunicationLink, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/communicationLinks/{}",
@@ -3634,7 +4415,7 @@ pub mod server_communication_links {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerCommunicationLink =
+                let rsp_value: models::ServerCommunicationLink =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3648,7 +4429,7 @@ pub mod server_communication_links {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3673,7 +4454,7 @@ pub mod server_communication_links {
         resource_group_name: &str,
         server_name: &str,
         communication_link_name: &str,
-        parameters: &ServerCommunicationLink,
+        parameters: &models::ServerCommunicationLink,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3706,7 +4487,7 @@ pub mod server_communication_links {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerCommunicationLink = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerCommunicationLink = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -3721,10 +4502,10 @@ pub mod server_communication_links {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(ServerCommunicationLink),
+            Created201(models::ServerCommunicationLink),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -3788,7 +4569,7 @@ pub mod server_communication_links {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3812,7 +4593,7 @@ pub mod server_communication_links {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-    ) -> std::result::Result<ServerCommunicationLinkListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ServerCommunicationLinkListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/communicationLinks",
@@ -3842,7 +4623,7 @@ pub mod server_communication_links {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerCommunicationLinkListResult =
+                let rsp_value: models::ServerCommunicationLinkListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3856,7 +4637,7 @@ pub mod server_communication_links {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3877,14 +4658,14 @@ pub mod server_communication_links {
     }
 }
 pub mod service_objectives {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         service_objective_name: &str,
-    ) -> std::result::Result<ServiceObjective, get::Error> {
+    ) -> std::result::Result<models::ServiceObjective, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/serviceObjectives/{}",
@@ -3912,7 +4693,7 @@ pub mod service_objectives {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceObjective =
+                let rsp_value: models::ServiceObjective =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3926,7 +4707,7 @@ pub mod service_objectives {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3950,7 +4731,7 @@ pub mod service_objectives {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-    ) -> std::result::Result<ServiceObjectiveListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ServiceObjectiveListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/serviceObjectives",
@@ -3980,7 +4761,7 @@ pub mod service_objectives {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceObjectiveListResult =
+                let rsp_value: models::ServiceObjectiveListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3994,7 +4775,7 @@ pub mod service_objectives {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4015,14 +4796,14 @@ pub mod service_objectives {
     }
 }
 pub mod elastic_pool_activities {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_elastic_pool(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         elastic_pool_name: &str,
-    ) -> std::result::Result<ElasticPoolActivityListResult, list_by_elastic_pool::Error> {
+    ) -> std::result::Result<models::ElasticPoolActivityListResult, list_by_elastic_pool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}/elasticPoolActivity",
@@ -4053,7 +4834,7 @@ pub mod elastic_pool_activities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ElasticPoolActivityListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ElasticPoolActivityListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_elastic_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4067,7 +4848,7 @@ pub mod elastic_pool_activities {
         }
     }
     pub mod list_by_elastic_pool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4088,14 +4869,14 @@ pub mod elastic_pool_activities {
     }
 }
 pub mod elastic_pool_database_activities {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_elastic_pool(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         elastic_pool_name: &str,
-    ) -> std::result::Result<ElasticPoolDatabaseActivityListResult, list_by_elastic_pool::Error> {
+    ) -> std::result::Result<models::ElasticPoolDatabaseActivityListResult, list_by_elastic_pool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}/elasticPoolDatabaseActivity",
@@ -4126,7 +4907,7 @@ pub mod elastic_pool_database_activities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ElasticPoolDatabaseActivityListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ElasticPoolDatabaseActivityListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_elastic_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4140,7 +4921,7 @@ pub mod elastic_pool_database_activities {
         }
     }
     pub mod list_by_elastic_pool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4161,7 +4942,7 @@ pub mod elastic_pool_database_activities {
     }
 }
 pub mod service_tier_advisors {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -4169,7 +4950,7 @@ pub mod service_tier_advisors {
         server_name: &str,
         database_name: &str,
         service_tier_advisor_name: &str,
-    ) -> std::result::Result<ServiceTierAdvisor, get::Error> {
+    ) -> std::result::Result<models::ServiceTierAdvisor, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/serviceTierAdvisors/{}",
@@ -4198,7 +4979,7 @@ pub mod service_tier_advisors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceTierAdvisor =
+                let rsp_value: models::ServiceTierAdvisor =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4212,7 +4993,7 @@ pub mod service_tier_advisors {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4237,7 +5018,7 @@ pub mod service_tier_advisors {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-    ) -> std::result::Result<ServiceTierAdvisorListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::ServiceTierAdvisorListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/serviceTierAdvisors",
@@ -4268,7 +5049,7 @@ pub mod service_tier_advisors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceTierAdvisorListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServiceTierAdvisorListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4282,7 +5063,7 @@ pub mod service_tier_advisors {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4303,7 +5084,7 @@ pub mod service_tier_advisors {
     }
 }
 pub mod transparent_data_encryptions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -4311,7 +5092,7 @@ pub mod transparent_data_encryptions {
         server_name: &str,
         database_name: &str,
         transparent_data_encryption_name: &str,
-    ) -> std::result::Result<TransparentDataEncryption, get::Error> {
+    ) -> std::result::Result<models::TransparentDataEncryption, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/transparentDataEncryption/{}",
@@ -4340,7 +5121,7 @@ pub mod transparent_data_encryptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransparentDataEncryption =
+                let rsp_value: models::TransparentDataEncryption =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4354,7 +5135,7 @@ pub mod transparent_data_encryptions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4380,7 +5161,7 @@ pub mod transparent_data_encryptions {
         server_name: &str,
         database_name: &str,
         transparent_data_encryption_name: &str,
-        parameters: &TransparentDataEncryption,
+        parameters: &models::TransparentDataEncryption,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4414,13 +5195,13 @@ pub mod transparent_data_encryptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransparentDataEncryption = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TransparentDataEncryption = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransparentDataEncryption = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TransparentDataEncryption = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -4434,11 +5215,11 @@ pub mod transparent_data_encryptions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(TransparentDataEncryption),
-            Created201(TransparentDataEncryption),
+            Ok200(models::TransparentDataEncryption),
+            Created201(models::TransparentDataEncryption),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4460,7 +5241,7 @@ pub mod transparent_data_encryptions {
     }
 }
 pub mod transparent_data_encryption_activities {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_configuration(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -4468,7 +5249,7 @@ pub mod transparent_data_encryption_activities {
         server_name: &str,
         database_name: &str,
         transparent_data_encryption_name: &str,
-    ) -> std::result::Result<TransparentDataEncryptionActivityListResult, list_by_configuration::Error> {
+    ) -> std::result::Result<models::TransparentDataEncryptionActivityListResult, list_by_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/transparentDataEncryption/{}/operationResults" , operation_config . base_path () , subscription_id , resource_group_name , server_name , database_name , transparent_data_encryption_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_configuration::Error::ParseUrlError)?;
@@ -4494,7 +5275,7 @@ pub mod transparent_data_encryption_activities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransparentDataEncryptionActivityListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TransparentDataEncryptionActivityListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4508,7 +5289,7 @@ pub mod transparent_data_encryption_activities {
         }
     }
     pub mod list_by_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4529,13 +5310,13 @@ pub mod transparent_data_encryption_activities {
     }
 }
 pub mod server_usages {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_server(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-    ) -> std::result::Result<ServerUsageListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ServerUsageListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/usages",
@@ -4565,7 +5346,7 @@ pub mod server_usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerUsageListResult =
+                let rsp_value: models::ServerUsageListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4579,7 +5360,7 @@ pub mod server_usages {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4600,14 +5381,14 @@ pub mod server_usages {
     }
 }
 pub mod database_usages {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_database(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-    ) -> std::result::Result<DatabaseUsageListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::DatabaseUsageListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/usages",
@@ -4638,7 +5419,7 @@ pub mod database_usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseUsageListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseUsageListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4652,7 +5433,7 @@ pub mod database_usages {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4673,14 +5454,14 @@ pub mod database_usages {
     }
 }
 pub mod database_automatic_tuning {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseAutomaticTuning, get::Error> {
+    ) -> std::result::Result<models::DatabaseAutomaticTuning, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/automaticTuning/current",
@@ -4708,7 +5489,7 @@ pub mod database_automatic_tuning {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAutomaticTuning =
+                let rsp_value: models::DatabaseAutomaticTuning =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4716,7 +5497,7 @@ pub mod database_automatic_tuning {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4740,9 +5521,9 @@ pub mod database_automatic_tuning {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        parameters: &DatabaseAutomaticTuning,
+        parameters: &models::DatabaseAutomaticTuning,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseAutomaticTuning, update::Error> {
+    ) -> std::result::Result<models::DatabaseAutomaticTuning, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/automaticTuning/current",
@@ -4771,7 +5552,7 @@ pub mod database_automatic_tuning {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAutomaticTuning =
+                let rsp_value: models::DatabaseAutomaticTuning =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4779,7 +5560,7 @@ pub mod database_automatic_tuning {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4800,7 +5581,7 @@ pub mod database_automatic_tuning {
     }
 }
 pub mod encryption_protectors {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn revalidate(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -4843,7 +5624,7 @@ pub mod encryption_protectors {
         }
     }
     pub mod revalidate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4872,7 +5653,7 @@ pub mod encryption_protectors {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<EncryptionProtectorListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::EncryptionProtectorListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/encryptionProtector",
@@ -4902,7 +5683,7 @@ pub mod encryption_protectors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EncryptionProtectorListResult =
+                let rsp_value: models::EncryptionProtectorListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4910,7 +5691,7 @@ pub mod encryption_protectors {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4935,7 +5716,7 @@ pub mod encryption_protectors {
         server_name: &str,
         encryption_protector_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<EncryptionProtector, get::Error> {
+    ) -> std::result::Result<models::EncryptionProtector, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/encryptionProtector/{}",
@@ -4963,7 +5744,7 @@ pub mod encryption_protectors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EncryptionProtector =
+                let rsp_value: models::EncryptionProtector =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4971,7 +5752,7 @@ pub mod encryption_protectors {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4995,7 +5776,7 @@ pub mod encryption_protectors {
         resource_group_name: &str,
         server_name: &str,
         encryption_protector_name: &str,
-        parameters: &EncryptionProtector,
+        parameters: &models::EncryptionProtector,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -5029,7 +5810,7 @@ pub mod encryption_protectors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EncryptionProtector = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EncryptionProtector = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -5038,10 +5819,10 @@ pub mod encryption_protectors {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(EncryptionProtector),
+            Ok200(models::EncryptionProtector),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -5064,14 +5845,14 @@ pub mod encryption_protectors {
     }
 }
 pub mod failover_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         failover_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FailoverGroup, get::Error> {
+    ) -> std::result::Result<models::FailoverGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/failoverGroups/{}",
@@ -5099,7 +5880,7 @@ pub mod failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FailoverGroup =
+                let rsp_value: models::FailoverGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5107,7 +5888,7 @@ pub mod failover_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5131,7 +5912,7 @@ pub mod failover_groups {
         resource_group_name: &str,
         server_name: &str,
         failover_group_name: &str,
-        parameters: &FailoverGroup,
+        parameters: &models::FailoverGroup,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -5165,14 +5946,14 @@ pub mod failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FailoverGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FailoverGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: FailoverGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FailoverGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -5180,12 +5961,12 @@ pub mod failover_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(FailoverGroup),
+            Ok200(models::FailoverGroup),
             Accepted202,
-            Created201(FailoverGroup),
+            Created201(models::FailoverGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5210,7 +5991,7 @@ pub mod failover_groups {
         resource_group_name: &str,
         server_name: &str,
         failover_group_name: &str,
-        parameters: &FailoverGroupUpdate,
+        parameters: &models::FailoverGroupUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -5241,7 +6022,7 @@ pub mod failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FailoverGroup =
+                let rsp_value: models::FailoverGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -5250,10 +6031,10 @@ pub mod failover_groups {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(FailoverGroup),
+            Ok200(models::FailoverGroup),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -5313,7 +6094,7 @@ pub mod failover_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -5343,7 +6124,7 @@ pub mod failover_groups {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FailoverGroupListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::FailoverGroupListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/failoverGroups",
@@ -5373,7 +6154,7 @@ pub mod failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FailoverGroupListResult =
+                let rsp_value: models::FailoverGroupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5381,7 +6162,7 @@ pub mod failover_groups {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5438,7 +6219,7 @@ pub mod failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FailoverGroup =
+                let rsp_value: models::FailoverGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| failover::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(failover::Response::Ok200(rsp_value))
             }
@@ -5447,10 +6228,10 @@ pub mod failover_groups {
         }
     }
     pub mod failover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(FailoverGroup),
+            Ok200(models::FailoverGroup),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -5511,7 +6292,7 @@ pub mod failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FailoverGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FailoverGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| force_failover_allow_data_loss::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(force_failover_allow_data_loss::Response::Ok200(rsp_value))
             }
@@ -5520,10 +6301,10 @@ pub mod failover_groups {
         }
     }
     pub mod force_failover_allow_data_loss {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(FailoverGroup),
+            Ok200(models::FailoverGroup),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -5546,8 +6327,8 @@ pub mod failover_groups {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Sql/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -5568,7 +6349,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5576,7 +6357,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5597,13 +6378,13 @@ pub mod operations {
     }
 }
 pub mod server_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_server(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerKeyListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ServerKeyListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/keys",
@@ -5633,7 +6414,7 @@ pub mod server_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerKeyListResult =
+                let rsp_value: models::ServerKeyListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5641,7 +6422,7 @@ pub mod server_keys {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5666,7 +6447,7 @@ pub mod server_keys {
         server_name: &str,
         key_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerKey, get::Error> {
+    ) -> std::result::Result<models::ServerKey, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/keys/{}",
@@ -5694,7 +6475,7 @@ pub mod server_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerKey =
+                let rsp_value: models::ServerKey =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5702,7 +6483,7 @@ pub mod server_keys {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5726,7 +6507,7 @@ pub mod server_keys {
         resource_group_name: &str,
         server_name: &str,
         key_name: &str,
-        parameters: &ServerKey,
+        parameters: &models::ServerKey,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -5760,14 +6541,14 @@ pub mod server_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -5775,12 +6556,12 @@ pub mod server_keys {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerKey),
+            Ok200(models::ServerKey),
             Accepted202,
-            Created201(ServerKey),
+            Created201(models::ServerKey),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5839,7 +6620,7 @@ pub mod server_keys {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -5866,14 +6647,14 @@ pub mod server_keys {
     }
 }
 pub mod sync_agents {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         sync_agent_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncAgent, get::Error> {
+    ) -> std::result::Result<models::SyncAgent, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/syncAgents/{}",
@@ -5901,7 +6682,7 @@ pub mod sync_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncAgent =
+                let rsp_value: models::SyncAgent =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5909,7 +6690,7 @@ pub mod sync_agents {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5933,7 +6714,7 @@ pub mod sync_agents {
         resource_group_name: &str,
         server_name: &str,
         sync_agent_name: &str,
-        parameters: &SyncAgent,
+        parameters: &models::SyncAgent,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -5967,14 +6748,14 @@ pub mod sync_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncAgent = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncAgent = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncAgent = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncAgent = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -5982,12 +6763,12 @@ pub mod sync_agents {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SyncAgent),
+            Ok200(models::SyncAgent),
             Accepted202,
-            Created201(SyncAgent),
+            Created201(models::SyncAgent),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -6046,7 +6827,7 @@ pub mod sync_agents {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -6076,7 +6857,7 @@ pub mod sync_agents {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncAgentListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::SyncAgentListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/syncAgents",
@@ -6106,7 +6887,7 @@ pub mod sync_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncAgentListResult =
+                let rsp_value: models::SyncAgentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6114,7 +6895,7 @@ pub mod sync_agents {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6139,7 +6920,7 @@ pub mod sync_agents {
         server_name: &str,
         sync_agent_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncAgentKeyProperties, generate_key::Error> {
+    ) -> std::result::Result<models::SyncAgentKeyProperties, generate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/syncAgents/{}/generateKey",
@@ -6171,7 +6952,7 @@ pub mod sync_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncAgentKeyProperties =
+                let rsp_value: models::SyncAgentKeyProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| generate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6179,7 +6960,7 @@ pub mod sync_agents {
         }
     }
     pub mod generate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6204,7 +6985,7 @@ pub mod sync_agents {
         server_name: &str,
         sync_agent_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncAgentLinkedDatabaseListResult, list_linked_databases::Error> {
+    ) -> std::result::Result<models::SyncAgentLinkedDatabaseListResult, list_linked_databases::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/syncAgents/{}/linkedDatabases",
@@ -6237,7 +7018,7 @@ pub mod sync_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncAgentLinkedDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncAgentLinkedDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_linked_databases::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6245,7 +7026,7 @@ pub mod sync_agents {
         }
     }
     pub mod list_linked_databases {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6266,12 +7047,12 @@ pub mod sync_agents {
     }
 }
 pub mod subscription_usages {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_location(
         operation_config: &crate::OperationConfig,
         location_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SubscriptionUsageListResult, list_by_location::Error> {
+    ) -> std::result::Result<models::SubscriptionUsageListResult, list_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/usages",
@@ -6300,7 +7081,7 @@ pub mod subscription_usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionUsageListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SubscriptionUsageListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6308,7 +7089,7 @@ pub mod subscription_usages {
         }
     }
     pub mod list_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6332,7 +7113,7 @@ pub mod subscription_usages {
         location_name: &str,
         usage_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SubscriptionUsage, get::Error> {
+    ) -> std::result::Result<models::SubscriptionUsage, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/usages/{}",
@@ -6359,7 +7140,7 @@ pub mod subscription_usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionUsage =
+                let rsp_value: models::SubscriptionUsage =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6367,7 +7148,7 @@ pub mod subscription_usages {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6388,11 +7169,11 @@ pub mod subscription_usages {
     }
 }
 pub mod virtual_clusters {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualClusterListResult, list::Error> {
+    ) -> std::result::Result<models::VirtualClusterListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/virtualClusters",
@@ -6417,7 +7198,7 @@ pub mod virtual_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualClusterListResult =
+                let rsp_value: models::VirtualClusterListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6425,7 +7206,7 @@ pub mod virtual_clusters {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6448,7 +7229,7 @@ pub mod virtual_clusters {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualClusterListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::VirtualClusterListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/virtualClusters",
@@ -6479,7 +7260,7 @@ pub mod virtual_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualClusterListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VirtualClusterListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6487,7 +7268,7 @@ pub mod virtual_clusters {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6511,7 +7292,7 @@ pub mod virtual_clusters {
         resource_group_name: &str,
         virtual_cluster_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualCluster, get::Error> {
+    ) -> std::result::Result<models::VirtualCluster, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/virtualClusters/{}",
@@ -6538,7 +7319,7 @@ pub mod virtual_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualCluster =
+                let rsp_value: models::VirtualCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6546,7 +7327,7 @@ pub mod virtual_clusters {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6569,7 +7350,7 @@ pub mod virtual_clusters {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         virtual_cluster_name: &str,
-        parameters: &VirtualClusterUpdate,
+        parameters: &models::VirtualClusterUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -6599,7 +7380,7 @@ pub mod virtual_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualCluster =
+                let rsp_value: models::VirtualCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -6608,10 +7389,10 @@ pub mod virtual_clusters {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VirtualCluster),
+            Ok200(models::VirtualCluster),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -6669,7 +7450,7 @@ pub mod virtual_clusters {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -6696,14 +7477,14 @@ pub mod virtual_clusters {
     }
 }
 pub mod virtual_network_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         virtual_network_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkRule, get::Error> {
+    ) -> std::result::Result<models::VirtualNetworkRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/virtualNetworkRules/{}",
@@ -6731,7 +7512,7 @@ pub mod virtual_network_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualNetworkRule =
+                let rsp_value: models::VirtualNetworkRule =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6739,7 +7520,7 @@ pub mod virtual_network_rules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6763,7 +7544,7 @@ pub mod virtual_network_rules {
         resource_group_name: &str,
         server_name: &str,
         virtual_network_rule_name: &str,
-        parameters: &VirtualNetworkRule,
+        parameters: &models::VirtualNetworkRule,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -6797,14 +7578,14 @@ pub mod virtual_network_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualNetworkRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VirtualNetworkRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualNetworkRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VirtualNetworkRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -6812,12 +7593,12 @@ pub mod virtual_network_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VirtualNetworkRule),
+            Ok200(models::VirtualNetworkRule),
             Accepted202,
-            Created201(VirtualNetworkRule),
+            Created201(models::VirtualNetworkRule),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -6876,7 +7657,7 @@ pub mod virtual_network_rules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -6906,7 +7687,7 @@ pub mod virtual_network_rules {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VirtualNetworkRuleListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::VirtualNetworkRuleListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/virtualNetworkRules",
@@ -6936,7 +7717,7 @@ pub mod virtual_network_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VirtualNetworkRuleListResult =
+                let rsp_value: models::VirtualNetworkRuleListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6944,7 +7725,7 @@ pub mod virtual_network_rules {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6965,7 +7746,7 @@ pub mod virtual_network_rules {
     }
 }
 pub mod extended_database_blob_auditing_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -6973,7 +7754,7 @@ pub mod extended_database_blob_auditing_policies {
         database_name: &str,
         blob_auditing_policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ExtendedDatabaseBlobAuditingPolicy, get::Error> {
+    ) -> std::result::Result<models::ExtendedDatabaseBlobAuditingPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/extendedAuditingSettings/{}",
@@ -7002,7 +7783,7 @@ pub mod extended_database_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtendedDatabaseBlobAuditingPolicy =
+                let rsp_value: models::ExtendedDatabaseBlobAuditingPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7010,7 +7791,7 @@ pub mod extended_database_blob_auditing_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7035,7 +7816,7 @@ pub mod extended_database_blob_auditing_policies {
         server_name: &str,
         database_name: &str,
         blob_auditing_policy_name: &str,
-        parameters: &ExtendedDatabaseBlobAuditingPolicy,
+        parameters: &models::ExtendedDatabaseBlobAuditingPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -7070,13 +7851,13 @@ pub mod extended_database_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtendedDatabaseBlobAuditingPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExtendedDatabaseBlobAuditingPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtendedDatabaseBlobAuditingPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExtendedDatabaseBlobAuditingPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -7084,11 +7865,11 @@ pub mod extended_database_blob_auditing_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ExtendedDatabaseBlobAuditingPolicy),
-            Created201(ExtendedDatabaseBlobAuditingPolicy),
+            Ok200(models::ExtendedDatabaseBlobAuditingPolicy),
+            Created201(models::ExtendedDatabaseBlobAuditingPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -7114,7 +7895,7 @@ pub mod extended_database_blob_auditing_policies {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ExtendedDatabaseBlobAuditingPolicyListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::ExtendedDatabaseBlobAuditingPolicyListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/extendedAuditingSettings",
@@ -7145,7 +7926,7 @@ pub mod extended_database_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtendedDatabaseBlobAuditingPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExtendedDatabaseBlobAuditingPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7153,7 +7934,7 @@ pub mod extended_database_blob_auditing_policies {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7174,14 +7955,14 @@ pub mod extended_database_blob_auditing_policies {
     }
 }
 pub mod extended_server_blob_auditing_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         blob_auditing_policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ExtendedServerBlobAuditingPolicy, get::Error> {
+    ) -> std::result::Result<models::ExtendedServerBlobAuditingPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/extendedAuditingSettings/{}",
@@ -7209,7 +7990,7 @@ pub mod extended_server_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtendedServerBlobAuditingPolicy =
+                let rsp_value: models::ExtendedServerBlobAuditingPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7217,7 +7998,7 @@ pub mod extended_server_blob_auditing_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7241,7 +8022,7 @@ pub mod extended_server_blob_auditing_policies {
         resource_group_name: &str,
         server_name: &str,
         blob_auditing_policy_name: &str,
-        parameters: &ExtendedServerBlobAuditingPolicy,
+        parameters: &models::ExtendedServerBlobAuditingPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -7275,7 +8056,7 @@ pub mod extended_server_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtendedServerBlobAuditingPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExtendedServerBlobAuditingPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -7284,10 +8065,10 @@ pub mod extended_server_blob_auditing_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ExtendedServerBlobAuditingPolicy),
+            Ok200(models::ExtendedServerBlobAuditingPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -7313,7 +8094,7 @@ pub mod extended_server_blob_auditing_policies {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ExtendedServerBlobAuditingPolicyListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ExtendedServerBlobAuditingPolicyListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/extendedAuditingSettings",
@@ -7343,7 +8124,7 @@ pub mod extended_server_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtendedServerBlobAuditingPolicyListResult =
+                let rsp_value: models::ExtendedServerBlobAuditingPolicyListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7351,7 +8132,7 @@ pub mod extended_server_blob_auditing_policies {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7372,14 +8153,14 @@ pub mod extended_server_blob_auditing_policies {
     }
 }
 pub mod server_blob_auditing_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         blob_auditing_policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerBlobAuditingPolicy, get::Error> {
+    ) -> std::result::Result<models::ServerBlobAuditingPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/auditingSettings/{}",
@@ -7407,7 +8188,7 @@ pub mod server_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerBlobAuditingPolicy =
+                let rsp_value: models::ServerBlobAuditingPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7415,7 +8196,7 @@ pub mod server_blob_auditing_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7439,7 +8220,7 @@ pub mod server_blob_auditing_policies {
         resource_group_name: &str,
         server_name: &str,
         blob_auditing_policy_name: &str,
-        parameters: &ServerBlobAuditingPolicy,
+        parameters: &models::ServerBlobAuditingPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -7473,7 +8254,7 @@ pub mod server_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerBlobAuditingPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerBlobAuditingPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -7482,10 +8263,10 @@ pub mod server_blob_auditing_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerBlobAuditingPolicy),
+            Ok200(models::ServerBlobAuditingPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -7511,7 +8292,7 @@ pub mod server_blob_auditing_policies {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerBlobAuditingPolicyListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ServerBlobAuditingPolicyListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/auditingSettings",
@@ -7541,7 +8322,7 @@ pub mod server_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerBlobAuditingPolicyListResult =
+                let rsp_value: models::ServerBlobAuditingPolicyListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7549,7 +8330,7 @@ pub mod server_blob_auditing_policies {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7570,7 +8351,7 @@ pub mod server_blob_auditing_policies {
     }
 }
 pub mod database_blob_auditing_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -7578,7 +8359,7 @@ pub mod database_blob_auditing_policies {
         database_name: &str,
         blob_auditing_policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseBlobAuditingPolicy, get::Error> {
+    ) -> std::result::Result<models::DatabaseBlobAuditingPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/auditingSettings/{}",
@@ -7607,7 +8388,7 @@ pub mod database_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseBlobAuditingPolicy =
+                let rsp_value: models::DatabaseBlobAuditingPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7615,7 +8396,7 @@ pub mod database_blob_auditing_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7640,7 +8421,7 @@ pub mod database_blob_auditing_policies {
         server_name: &str,
         database_name: &str,
         blob_auditing_policy_name: &str,
-        parameters: &DatabaseBlobAuditingPolicy,
+        parameters: &models::DatabaseBlobAuditingPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -7675,13 +8456,13 @@ pub mod database_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseBlobAuditingPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseBlobAuditingPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseBlobAuditingPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseBlobAuditingPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -7689,11 +8470,11 @@ pub mod database_blob_auditing_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatabaseBlobAuditingPolicy),
-            Created201(DatabaseBlobAuditingPolicy),
+            Ok200(models::DatabaseBlobAuditingPolicy),
+            Created201(models::DatabaseBlobAuditingPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -7719,7 +8500,7 @@ pub mod database_blob_auditing_policies {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseBlobAuditingPolicyListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::DatabaseBlobAuditingPolicyListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/auditingSettings",
@@ -7750,7 +8531,7 @@ pub mod database_blob_auditing_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseBlobAuditingPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseBlobAuditingPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7758,7 +8539,7 @@ pub mod database_blob_auditing_policies {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7779,7 +8560,7 @@ pub mod database_blob_auditing_policies {
     }
 }
 pub mod database_vulnerability_assessment_rule_baselines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -7789,7 +8570,7 @@ pub mod database_vulnerability_assessment_rule_baselines {
         rule_id: &str,
         baseline_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseVulnerabilityAssessmentRuleBaseline, get::Error> {
+    ) -> std::result::Result<models::DatabaseVulnerabilityAssessmentRuleBaseline, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , operation_config . base_path () , subscription_id , resource_group_name , server_name , database_name , vulnerability_assessment_name , rule_id , baseline_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -7810,7 +8591,7 @@ pub mod database_vulnerability_assessment_rule_baselines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentRuleBaseline =
+                let rsp_value: models::DatabaseVulnerabilityAssessmentRuleBaseline =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7818,7 +8599,7 @@ pub mod database_vulnerability_assessment_rule_baselines {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7845,9 +8626,9 @@ pub mod database_vulnerability_assessment_rule_baselines {
         vulnerability_assessment_name: &str,
         rule_id: &str,
         baseline_name: &str,
-        parameters: &DatabaseVulnerabilityAssessmentRuleBaseline,
+        parameters: &models::DatabaseVulnerabilityAssessmentRuleBaseline,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseVulnerabilityAssessmentRuleBaseline, create_or_update::Error> {
+    ) -> std::result::Result<models::DatabaseVulnerabilityAssessmentRuleBaseline, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , operation_config . base_path () , subscription_id , resource_group_name , server_name , database_name , vulnerability_assessment_name , rule_id , baseline_name) ;
         let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
@@ -7872,7 +8653,7 @@ pub mod database_vulnerability_assessment_rule_baselines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentRuleBaseline = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseVulnerabilityAssessmentRuleBaseline = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7880,7 +8661,7 @@ pub mod database_vulnerability_assessment_rule_baselines {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7932,7 +8713,7 @@ pub mod database_vulnerability_assessment_rule_baselines {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -7953,7 +8734,7 @@ pub mod database_vulnerability_assessment_rule_baselines {
     }
 }
 pub mod database_vulnerability_assessments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -7961,7 +8742,7 @@ pub mod database_vulnerability_assessments {
         database_name: &str,
         vulnerability_assessment_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseVulnerabilityAssessment, get::Error> {
+    ) -> std::result::Result<models::DatabaseVulnerabilityAssessment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/vulnerabilityAssessments/{}",
@@ -7990,7 +8771,7 @@ pub mod database_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessment =
+                let rsp_value: models::DatabaseVulnerabilityAssessment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7998,7 +8779,7 @@ pub mod database_vulnerability_assessments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8023,7 +8804,7 @@ pub mod database_vulnerability_assessments {
         server_name: &str,
         database_name: &str,
         vulnerability_assessment_name: &str,
-        parameters: &DatabaseVulnerabilityAssessment,
+        parameters: &models::DatabaseVulnerabilityAssessment,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -8058,13 +8839,13 @@ pub mod database_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseVulnerabilityAssessment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseVulnerabilityAssessment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -8072,11 +8853,11 @@ pub mod database_vulnerability_assessments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatabaseVulnerabilityAssessment),
-            Created201(DatabaseVulnerabilityAssessment),
+            Ok200(models::DatabaseVulnerabilityAssessment),
+            Created201(models::DatabaseVulnerabilityAssessment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -8135,7 +8916,7 @@ pub mod database_vulnerability_assessments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8160,7 +8941,7 @@ pub mod database_vulnerability_assessments {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseVulnerabilityAssessmentListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::DatabaseVulnerabilityAssessmentListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/vulnerabilityAssessments",
@@ -8191,7 +8972,7 @@ pub mod database_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseVulnerabilityAssessmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8199,7 +8980,7 @@ pub mod database_vulnerability_assessments {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8220,13 +9001,13 @@ pub mod database_vulnerability_assessments {
     }
 }
 pub mod job_agents {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_server(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobAgentListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::JobAgentListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents",
@@ -8256,7 +9037,7 @@ pub mod job_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobAgentListResult =
+                let rsp_value: models::JobAgentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8264,7 +9045,7 @@ pub mod job_agents {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8289,7 +9070,7 @@ pub mod job_agents {
         server_name: &str,
         job_agent_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobAgent, get::Error> {
+    ) -> std::result::Result<models::JobAgent, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}",
@@ -8317,7 +9098,7 @@ pub mod job_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobAgent =
+                let rsp_value: models::JobAgent =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8325,7 +9106,7 @@ pub mod job_agents {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8349,7 +9130,7 @@ pub mod job_agents {
         resource_group_name: &str,
         server_name: &str,
         job_agent_name: &str,
-        parameters: &JobAgent,
+        parameters: &models::JobAgent,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -8383,14 +9164,14 @@ pub mod job_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobAgent = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobAgent = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobAgent = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobAgent = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -8398,12 +9179,12 @@ pub mod job_agents {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobAgent),
+            Ok200(models::JobAgent),
             Accepted202,
-            Created201(JobAgent),
+            Created201(models::JobAgent),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -8428,7 +9209,7 @@ pub mod job_agents {
         resource_group_name: &str,
         server_name: &str,
         job_agent_name: &str,
-        parameters: &JobAgentUpdate,
+        parameters: &models::JobAgentUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -8459,7 +9240,7 @@ pub mod job_agents {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobAgent =
+                let rsp_value: models::JobAgent =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -8468,10 +9249,10 @@ pub mod job_agents {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobAgent),
+            Ok200(models::JobAgent),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -8531,7 +9312,7 @@ pub mod job_agents {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -8558,14 +9339,14 @@ pub mod job_agents {
     }
 }
 pub mod job_credentials {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_agent(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         job_agent_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobCredentialListResult, list_by_agent::Error> {
+    ) -> std::result::Result<models::JobCredentialListResult, list_by_agent::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/credentials",
@@ -8596,7 +9377,7 @@ pub mod job_credentials {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCredentialListResult =
+                let rsp_value: models::JobCredentialListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_agent::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8604,7 +9385,7 @@ pub mod job_credentials {
         }
     }
     pub mod list_by_agent {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8630,7 +9411,7 @@ pub mod job_credentials {
         job_agent_name: &str,
         credential_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobCredential, get::Error> {
+    ) -> std::result::Result<models::JobCredential, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/credentials/{}",
@@ -8659,7 +9440,7 @@ pub mod job_credentials {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCredential =
+                let rsp_value: models::JobCredential =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8667,7 +9448,7 @@ pub mod job_credentials {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8692,7 +9473,7 @@ pub mod job_credentials {
         server_name: &str,
         job_agent_name: &str,
         credential_name: &str,
-        parameters: &JobCredential,
+        parameters: &models::JobCredential,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -8727,13 +9508,13 @@ pub mod job_credentials {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCredential = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobCredential = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobCredential = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobCredential = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -8741,11 +9522,11 @@ pub mod job_credentials {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobCredential),
-            Created201(JobCredential),
+            Ok200(models::JobCredential),
+            Created201(models::JobCredential),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -8805,7 +9586,7 @@ pub mod job_credentials {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -8831,7 +9612,7 @@ pub mod job_credentials {
     }
 }
 pub mod job_executions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_agent(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -8845,7 +9626,7 @@ pub mod job_executions {
         skip: Option<i64>,
         top: Option<i64>,
         subscription_id: &str,
-    ) -> std::result::Result<JobExecutionListResult, list_by_agent::Error> {
+    ) -> std::result::Result<models::JobExecutionListResult, list_by_agent::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/executions",
@@ -8897,7 +9678,7 @@ pub mod job_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecutionListResult =
+                let rsp_value: models::JobExecutionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_agent::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8905,7 +9686,7 @@ pub mod job_executions {
         }
     }
     pub mod list_by_agent {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -8966,7 +9747,7 @@ pub mod job_executions {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9022,7 +9803,7 @@ pub mod job_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecution =
+                let rsp_value: models::JobExecution =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
@@ -9031,10 +9812,10 @@ pub mod job_executions {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobExecution),
+            Ok200(models::JobExecution),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -9069,7 +9850,7 @@ pub mod job_executions {
         skip: Option<i64>,
         top: Option<i64>,
         subscription_id: &str,
-    ) -> std::result::Result<JobExecutionListResult, list_by_job::Error> {
+    ) -> std::result::Result<models::JobExecutionListResult, list_by_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/executions",
@@ -9122,7 +9903,7 @@ pub mod job_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecutionListResult =
+                let rsp_value: models::JobExecutionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9130,7 +9911,7 @@ pub mod job_executions {
         }
     }
     pub mod list_by_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9157,7 +9938,7 @@ pub mod job_executions {
         job_name: &str,
         job_execution_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobExecution, get::Error> {
+    ) -> std::result::Result<models::JobExecution, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/executions/{}",
@@ -9187,7 +9968,7 @@ pub mod job_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecution =
+                let rsp_value: models::JobExecution =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9195,7 +9976,7 @@ pub mod job_executions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9255,14 +10036,14 @@ pub mod job_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecution = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobExecution = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecution = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobExecution = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -9270,12 +10051,12 @@ pub mod job_executions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobExecution),
+            Ok200(models::JobExecution),
             Accepted202,
-            Created201(JobExecution),
+            Created201(models::JobExecution),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -9297,14 +10078,14 @@ pub mod job_executions {
     }
 }
 pub mod jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_agent(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         job_agent_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobListResult, list_by_agent::Error> {
+    ) -> std::result::Result<models::JobListResult, list_by_agent::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs",
@@ -9335,7 +10116,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobListResult =
+                let rsp_value: models::JobListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_agent::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9343,7 +10124,7 @@ pub mod jobs {
         }
     }
     pub mod list_by_agent {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9369,7 +10150,7 @@ pub mod jobs {
         job_agent_name: &str,
         job_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Job, get::Error> {
+    ) -> std::result::Result<models::Job, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}",
@@ -9398,7 +10179,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job =
+                let rsp_value: models::Job =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9406,7 +10187,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9431,7 +10212,7 @@ pub mod jobs {
         server_name: &str,
         job_agent_name: &str,
         job_name: &str,
-        parameters: &Job,
+        parameters: &models::Job,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -9466,13 +10247,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Job = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Job = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -9480,11 +10261,11 @@ pub mod jobs {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Job),
-            Created201(Job),
+            Ok200(models::Job),
+            Created201(models::Job),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -9544,7 +10325,7 @@ pub mod jobs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -9570,7 +10351,7 @@ pub mod jobs {
     }
 }
 pub mod job_step_executions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_job_execution(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -9586,7 +10367,7 @@ pub mod job_step_executions {
         skip: Option<i64>,
         top: Option<i64>,
         subscription_id: &str,
-    ) -> std::result::Result<JobExecutionListResult, list_by_job_execution::Error> {
+    ) -> std::result::Result<models::JobExecutionListResult, list_by_job_execution::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/executions/{}/steps",
@@ -9642,7 +10423,7 @@ pub mod job_step_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecutionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobExecutionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_job_execution::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9650,7 +10431,7 @@ pub mod job_step_executions {
         }
     }
     pub mod list_by_job_execution {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9678,7 +10459,7 @@ pub mod job_step_executions {
         job_execution_id: &str,
         step_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobExecution, get::Error> {
+    ) -> std::result::Result<models::JobExecution, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/executions/{}/steps/{}",
@@ -9709,7 +10490,7 @@ pub mod job_step_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecution =
+                let rsp_value: models::JobExecution =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9717,7 +10498,7 @@ pub mod job_step_executions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9738,7 +10519,7 @@ pub mod job_step_executions {
     }
 }
 pub mod job_steps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_version(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -9747,7 +10528,7 @@ pub mod job_steps {
         job_name: &str,
         job_version: i32,
         subscription_id: &str,
-    ) -> std::result::Result<JobStepListResult, list_by_version::Error> {
+    ) -> std::result::Result<models::JobStepListResult, list_by_version::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/versions/{}/steps",
@@ -9780,7 +10561,7 @@ pub mod job_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobStepListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobStepListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_version::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9788,7 +10569,7 @@ pub mod job_steps {
         }
     }
     pub mod list_by_version {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9816,7 +10597,7 @@ pub mod job_steps {
         job_version: i32,
         step_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobStep, get_by_version::Error> {
+    ) -> std::result::Result<models::JobStep, get_by_version::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/versions/{}/steps/{}",
@@ -9850,7 +10631,7 @@ pub mod job_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobStep =
+                let rsp_value: models::JobStep =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_version::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9858,7 +10639,7 @@ pub mod job_steps {
         }
     }
     pub mod get_by_version {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9884,7 +10665,7 @@ pub mod job_steps {
         job_agent_name: &str,
         job_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobStepListResult, list_by_job::Error> {
+    ) -> std::result::Result<models::JobStepListResult, list_by_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/steps",
@@ -9916,7 +10697,7 @@ pub mod job_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobStepListResult =
+                let rsp_value: models::JobStepListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9924,7 +10705,7 @@ pub mod job_steps {
         }
     }
     pub mod list_by_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -9951,7 +10732,7 @@ pub mod job_steps {
         job_name: &str,
         step_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobStep, get::Error> {
+    ) -> std::result::Result<models::JobStep, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/steps/{}",
@@ -9981,7 +10762,7 @@ pub mod job_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobStep =
+                let rsp_value: models::JobStep =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9989,7 +10770,7 @@ pub mod job_steps {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10015,7 +10796,7 @@ pub mod job_steps {
         job_agent_name: &str,
         job_name: &str,
         step_name: &str,
-        parameters: &JobStep,
+        parameters: &models::JobStep,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -10051,13 +10832,13 @@ pub mod job_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobStep = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobStep = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobStep = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobStep = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -10065,11 +10846,11 @@ pub mod job_steps {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobStep),
-            Created201(JobStep),
+            Ok200(models::JobStep),
+            Created201(models::JobStep),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -10131,7 +10912,7 @@ pub mod job_steps {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -10157,7 +10938,7 @@ pub mod job_steps {
     }
 }
 pub mod job_target_executions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_job_execution(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -10173,7 +10954,7 @@ pub mod job_target_executions {
         skip: Option<i64>,
         top: Option<i64>,
         subscription_id: &str,
-    ) -> std::result::Result<JobExecutionListResult, list_by_job_execution::Error> {
+    ) -> std::result::Result<models::JobExecutionListResult, list_by_job_execution::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/executions/{}/targets",
@@ -10229,7 +11010,7 @@ pub mod job_target_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecutionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobExecutionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_job_execution::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10237,7 +11018,7 @@ pub mod job_target_executions {
         }
     }
     pub mod list_by_job_execution {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10272,7 +11053,7 @@ pub mod job_target_executions {
         skip: Option<i64>,
         top: Option<i64>,
         subscription_id: &str,
-    ) -> std::result::Result<JobExecutionListResult, list_by_step::Error> {
+    ) -> std::result::Result<models::JobExecutionListResult, list_by_step::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/executions/{}/steps/{}/targets",
@@ -10327,7 +11108,7 @@ pub mod job_target_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecutionListResult =
+                let rsp_value: models::JobExecutionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_step::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10335,7 +11116,7 @@ pub mod job_target_executions {
         }
     }
     pub mod list_by_step {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10364,7 +11145,7 @@ pub mod job_target_executions {
         step_name: &str,
         target_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobExecution, get::Error> {
+    ) -> std::result::Result<models::JobExecution, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/executions/{}/steps/{}/targets/{}" , operation_config . base_path () , subscription_id , resource_group_name , server_name , job_agent_name , job_name , job_execution_id , step_name , target_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -10385,7 +11166,7 @@ pub mod job_target_executions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobExecution =
+                let rsp_value: models::JobExecution =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10393,7 +11174,7 @@ pub mod job_target_executions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10414,14 +11195,14 @@ pub mod job_target_executions {
     }
 }
 pub mod job_target_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_agent(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         job_agent_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobTargetGroupListResult, list_by_agent::Error> {
+    ) -> std::result::Result<models::JobTargetGroupListResult, list_by_agent::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/targetGroups",
@@ -10452,7 +11233,7 @@ pub mod job_target_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobTargetGroupListResult =
+                let rsp_value: models::JobTargetGroupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_agent::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10460,7 +11241,7 @@ pub mod job_target_groups {
         }
     }
     pub mod list_by_agent {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10486,7 +11267,7 @@ pub mod job_target_groups {
         job_agent_name: &str,
         target_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobTargetGroup, get::Error> {
+    ) -> std::result::Result<models::JobTargetGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/targetGroups/{}",
@@ -10515,7 +11296,7 @@ pub mod job_target_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobTargetGroup =
+                let rsp_value: models::JobTargetGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10523,7 +11304,7 @@ pub mod job_target_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10548,7 +11329,7 @@ pub mod job_target_groups {
         server_name: &str,
         job_agent_name: &str,
         target_group_name: &str,
-        parameters: &JobTargetGroup,
+        parameters: &models::JobTargetGroup,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -10583,13 +11364,13 @@ pub mod job_target_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobTargetGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobTargetGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobTargetGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobTargetGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -10597,11 +11378,11 @@ pub mod job_target_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobTargetGroup),
-            Created201(JobTargetGroup),
+            Ok200(models::JobTargetGroup),
+            Created201(models::JobTargetGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -10661,7 +11442,7 @@ pub mod job_target_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -10687,7 +11468,7 @@ pub mod job_target_groups {
     }
 }
 pub mod job_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_job(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -10695,7 +11476,7 @@ pub mod job_versions {
         job_agent_name: &str,
         job_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<JobVersionListResult, list_by_job::Error> {
+    ) -> std::result::Result<models::JobVersionListResult, list_by_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/versions",
@@ -10727,7 +11508,7 @@ pub mod job_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobVersionListResult =
+                let rsp_value: models::JobVersionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10735,7 +11516,7 @@ pub mod job_versions {
         }
     }
     pub mod list_by_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10762,7 +11543,7 @@ pub mod job_versions {
         job_name: &str,
         job_version: i32,
         subscription_id: &str,
-    ) -> std::result::Result<JobVersion, get::Error> {
+    ) -> std::result::Result<models::JobVersion, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/jobAgents/{}/jobs/{}/versions/{}",
@@ -10792,7 +11573,7 @@ pub mod job_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobVersion =
+                let rsp_value: models::JobVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10800,7 +11581,7 @@ pub mod job_versions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10821,7 +11602,7 @@ pub mod job_versions {
     }
 }
 pub mod managed_backup_short_term_retention_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -10829,7 +11610,7 @@ pub mod managed_backup_short_term_retention_policies {
         database_name: &str,
         policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedBackupShortTermRetentionPolicy, get::Error> {
+    ) -> std::result::Result<models::ManagedBackupShortTermRetentionPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/backupShortTermRetentionPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name , policy_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -10850,7 +11631,7 @@ pub mod managed_backup_short_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedBackupShortTermRetentionPolicy =
+                let rsp_value: models::ManagedBackupShortTermRetentionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10858,7 +11639,7 @@ pub mod managed_backup_short_term_retention_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -10883,7 +11664,7 @@ pub mod managed_backup_short_term_retention_policies {
         managed_instance_name: &str,
         database_name: &str,
         policy_name: &str,
-        parameters: &ManagedBackupShortTermRetentionPolicy,
+        parameters: &models::ManagedBackupShortTermRetentionPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -10910,7 +11691,7 @@ pub mod managed_backup_short_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedBackupShortTermRetentionPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedBackupShortTermRetentionPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -10919,10 +11700,10 @@ pub mod managed_backup_short_term_retention_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedBackupShortTermRetentionPolicy),
+            Ok200(models::ManagedBackupShortTermRetentionPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -10949,7 +11730,7 @@ pub mod managed_backup_short_term_retention_policies {
         managed_instance_name: &str,
         database_name: &str,
         policy_name: &str,
-        parameters: &ManagedBackupShortTermRetentionPolicy,
+        parameters: &models::ManagedBackupShortTermRetentionPolicy,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -10973,7 +11754,7 @@ pub mod managed_backup_short_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedBackupShortTermRetentionPolicy =
+                let rsp_value: models::ManagedBackupShortTermRetentionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -10982,10 +11763,10 @@ pub mod managed_backup_short_term_retention_policies {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedBackupShortTermRetentionPolicy),
+            Ok200(models::ManagedBackupShortTermRetentionPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -11012,7 +11793,7 @@ pub mod managed_backup_short_term_retention_policies {
         managed_instance_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedBackupShortTermRetentionPolicyListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::ManagedBackupShortTermRetentionPolicyListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/backupShortTermRetentionPolicies" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_database::Error::ParseUrlError)?;
@@ -11036,7 +11817,7 @@ pub mod managed_backup_short_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedBackupShortTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedBackupShortTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11044,7 +11825,7 @@ pub mod managed_backup_short_term_retention_policies {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11065,7 +11846,7 @@ pub mod managed_backup_short_term_retention_policies {
     }
 }
 pub mod managed_restorable_dropped_database_backup_short_term_retention_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -11073,7 +11854,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         restorable_dropped_database_id: &str,
         policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedBackupShortTermRetentionPolicy, get::Error> {
+    ) -> std::result::Result<models::ManagedBackupShortTermRetentionPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/restorableDroppedDatabases/{}/backupShortTermRetentionPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , restorable_dropped_database_id , policy_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -11094,7 +11875,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedBackupShortTermRetentionPolicy =
+                let rsp_value: models::ManagedBackupShortTermRetentionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11102,7 +11883,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11127,7 +11908,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         managed_instance_name: &str,
         restorable_dropped_database_id: &str,
         policy_name: &str,
-        parameters: &ManagedBackupShortTermRetentionPolicy,
+        parameters: &models::ManagedBackupShortTermRetentionPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -11154,7 +11935,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedBackupShortTermRetentionPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedBackupShortTermRetentionPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -11163,10 +11944,10 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedBackupShortTermRetentionPolicy),
+            Ok200(models::ManagedBackupShortTermRetentionPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -11193,7 +11974,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         managed_instance_name: &str,
         restorable_dropped_database_id: &str,
         policy_name: &str,
-        parameters: &ManagedBackupShortTermRetentionPolicy,
+        parameters: &models::ManagedBackupShortTermRetentionPolicy,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -11217,7 +11998,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedBackupShortTermRetentionPolicy =
+                let rsp_value: models::ManagedBackupShortTermRetentionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -11226,10 +12007,10 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedBackupShortTermRetentionPolicy),
+            Ok200(models::ManagedBackupShortTermRetentionPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -11256,7 +12037,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         managed_instance_name: &str,
         restorable_dropped_database_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedBackupShortTermRetentionPolicyListResult, list_by_restorable_dropped_database::Error> {
+    ) -> std::result::Result<models::ManagedBackupShortTermRetentionPolicyListResult, list_by_restorable_dropped_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/restorableDroppedDatabases/{}/backupShortTermRetentionPolicies" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , restorable_dropped_database_id) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_restorable_dropped_database::Error::ParseUrlError)?;
@@ -11282,7 +12063,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedBackupShortTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedBackupShortTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_restorable_dropped_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11290,7 +12071,7 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
         }
     }
     pub mod list_by_restorable_dropped_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11311,13 +12092,13 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
     }
 }
 pub mod server_automatic_tuning {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerAutomaticTuning, get::Error> {
+    ) -> std::result::Result<models::ServerAutomaticTuning, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/automaticTuning/current",
@@ -11344,7 +12125,7 @@ pub mod server_automatic_tuning {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerAutomaticTuning =
+                let rsp_value: models::ServerAutomaticTuning =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11352,7 +12133,7 @@ pub mod server_automatic_tuning {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11375,9 +12156,9 @@ pub mod server_automatic_tuning {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
-        parameters: &ServerAutomaticTuning,
+        parameters: &models::ServerAutomaticTuning,
         subscription_id: &str,
-    ) -> std::result::Result<ServerAutomaticTuning, update::Error> {
+    ) -> std::result::Result<models::ServerAutomaticTuning, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/automaticTuning/current",
@@ -11405,7 +12186,7 @@ pub mod server_automatic_tuning {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerAutomaticTuning =
+                let rsp_value: models::ServerAutomaticTuning =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11413,7 +12194,7 @@ pub mod server_automatic_tuning {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11434,14 +12215,14 @@ pub mod server_automatic_tuning {
     }
 }
 pub mod server_dns_aliases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         dns_alias_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerDnsAlias, get::Error> {
+    ) -> std::result::Result<models::ServerDnsAlias, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/dnsAliases/{}",
@@ -11469,7 +12250,7 @@ pub mod server_dns_aliases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerDnsAlias =
+                let rsp_value: models::ServerDnsAlias =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11477,7 +12258,7 @@ pub mod server_dns_aliases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11533,14 +12314,14 @@ pub mod server_dns_aliases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerDnsAlias = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerDnsAlias = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerDnsAlias = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerDnsAlias = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -11548,12 +12329,12 @@ pub mod server_dns_aliases {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerDnsAlias),
+            Ok200(models::ServerDnsAlias),
             Accepted202,
-            Created201(ServerDnsAlias),
+            Created201(models::ServerDnsAlias),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -11612,7 +12393,7 @@ pub mod server_dns_aliases {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -11642,7 +12423,7 @@ pub mod server_dns_aliases {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerDnsAliasListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ServerDnsAliasListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/dnsAliases",
@@ -11672,7 +12453,7 @@ pub mod server_dns_aliases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerDnsAliasListResult =
+                let rsp_value: models::ServerDnsAliasListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11680,7 +12461,7 @@ pub mod server_dns_aliases {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11704,7 +12485,7 @@ pub mod server_dns_aliases {
         resource_group_name: &str,
         server_name: &str,
         dns_alias_name: &str,
-        parameters: &ServerDnsAliasAcquisition,
+        parameters: &models::ServerDnsAliasAcquisition,
         subscription_id: &str,
     ) -> std::result::Result<acquire::Response, acquire::Error> {
         let http_client = operation_config.http_client();
@@ -11742,7 +12523,7 @@ pub mod server_dns_aliases {
         }
     }
     pub mod acquire {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -11768,14 +12549,14 @@ pub mod server_dns_aliases {
     }
 }
 pub mod server_security_alert_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         security_alert_policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerSecurityAlertPolicy, get::Error> {
+    ) -> std::result::Result<models::ServerSecurityAlertPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/securityAlertPolicies/{}",
@@ -11803,7 +12584,7 @@ pub mod server_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerSecurityAlertPolicy =
+                let rsp_value: models::ServerSecurityAlertPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11811,7 +12592,7 @@ pub mod server_security_alert_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11835,7 +12616,7 @@ pub mod server_security_alert_policies {
         resource_group_name: &str,
         server_name: &str,
         security_alert_policy_name: &str,
-        parameters: &ServerSecurityAlertPolicy,
+        parameters: &models::ServerSecurityAlertPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -11869,7 +12650,7 @@ pub mod server_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerSecurityAlertPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerSecurityAlertPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -11878,10 +12659,10 @@ pub mod server_security_alert_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerSecurityAlertPolicy),
+            Ok200(models::ServerSecurityAlertPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -11907,7 +12688,7 @@ pub mod server_security_alert_policies {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LogicalServerSecurityAlertPolicyListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::LogicalServerSecurityAlertPolicyListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/securityAlertPolicies",
@@ -11937,7 +12718,7 @@ pub mod server_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LogicalServerSecurityAlertPolicyListResult =
+                let rsp_value: models::LogicalServerSecurityAlertPolicyListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11945,7 +12726,7 @@ pub mod server_security_alert_policies {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -11966,13 +12747,13 @@ pub mod server_security_alert_policies {
     }
 }
 pub mod restorable_dropped_managed_databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_instance(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RestorableDroppedManagedDatabaseListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::RestorableDroppedManagedDatabaseListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/restorableDroppedDatabases",
@@ -12002,7 +12783,7 @@ pub mod restorable_dropped_managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestorableDroppedManagedDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RestorableDroppedManagedDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12010,7 +12791,7 @@ pub mod restorable_dropped_managed_databases {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12035,7 +12816,7 @@ pub mod restorable_dropped_managed_databases {
         managed_instance_name: &str,
         restorable_dropped_database_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RestorableDroppedManagedDatabase, get::Error> {
+    ) -> std::result::Result<models::RestorableDroppedManagedDatabase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/restorableDroppedDatabases/{}",
@@ -12063,7 +12844,7 @@ pub mod restorable_dropped_managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestorableDroppedManagedDatabase =
+                let rsp_value: models::RestorableDroppedManagedDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12071,7 +12852,7 @@ pub mod restorable_dropped_managed_databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12092,14 +12873,14 @@ pub mod restorable_dropped_managed_databases {
     }
 }
 pub mod restore_points {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_database(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RestorePointListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::RestorePointListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/restorePoints",
@@ -12130,7 +12911,7 @@ pub mod restore_points {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestorePointListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RestorePointListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12138,7 +12919,7 @@ pub mod restore_points {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12162,7 +12943,7 @@ pub mod restore_points {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        parameters: &CreateDatabaseRestorePointDefinition,
+        parameters: &models::CreateDatabaseRestorePointDefinition,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -12193,14 +12974,14 @@ pub mod restore_points {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestorePoint =
+                let rsp_value: models::RestorePoint =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestorePoint =
+                let rsp_value: models::RestorePoint =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
@@ -12208,12 +12989,12 @@ pub mod restore_points {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(RestorePoint),
+            Ok200(models::RestorePoint),
             Accepted202,
-            Created201(RestorePoint),
+            Created201(models::RestorePoint),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -12240,7 +13021,7 @@ pub mod restore_points {
         database_name: &str,
         restore_point_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RestorePoint, get::Error> {
+    ) -> std::result::Result<models::RestorePoint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/restorePoints/{}",
@@ -12269,7 +13050,7 @@ pub mod restore_points {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestorePoint =
+                let rsp_value: models::RestorePoint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12277,7 +13058,7 @@ pub mod restore_points {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12335,7 +13116,7 @@ pub mod restore_points {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12356,7 +13137,7 @@ pub mod restore_points {
     }
 }
 pub mod managed_database_security_alert_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -12364,7 +13145,7 @@ pub mod managed_database_security_alert_policies {
         database_name: &str,
         security_alert_policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedDatabaseSecurityAlertPolicy, get::Error> {
+    ) -> std::result::Result<models::ManagedDatabaseSecurityAlertPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/securityAlertPolicies/{}",
@@ -12393,7 +13174,7 @@ pub mod managed_database_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabaseSecurityAlertPolicy =
+                let rsp_value: models::ManagedDatabaseSecurityAlertPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12401,7 +13182,7 @@ pub mod managed_database_security_alert_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12426,7 +13207,7 @@ pub mod managed_database_security_alert_policies {
         managed_instance_name: &str,
         database_name: &str,
         security_alert_policy_name: &str,
-        parameters: &ManagedDatabaseSecurityAlertPolicy,
+        parameters: &models::ManagedDatabaseSecurityAlertPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -12461,13 +13242,13 @@ pub mod managed_database_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabaseSecurityAlertPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedDatabaseSecurityAlertPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabaseSecurityAlertPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedDatabaseSecurityAlertPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -12475,11 +13256,11 @@ pub mod managed_database_security_alert_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedDatabaseSecurityAlertPolicy),
-            Created201(ManagedDatabaseSecurityAlertPolicy),
+            Ok200(models::ManagedDatabaseSecurityAlertPolicy),
+            Created201(models::ManagedDatabaseSecurityAlertPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -12505,7 +13286,7 @@ pub mod managed_database_security_alert_policies {
         managed_instance_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedDatabaseSecurityAlertPolicyListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::ManagedDatabaseSecurityAlertPolicyListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/securityAlertPolicies",
@@ -12536,7 +13317,7 @@ pub mod managed_database_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabaseSecurityAlertPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedDatabaseSecurityAlertPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12544,7 +13325,7 @@ pub mod managed_database_security_alert_policies {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12565,14 +13346,14 @@ pub mod managed_database_security_alert_policies {
     }
 }
 pub mod managed_server_security_alert_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
         security_alert_policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedServerSecurityAlertPolicy, get::Error> {
+    ) -> std::result::Result<models::ManagedServerSecurityAlertPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/securityAlertPolicies/{}",
@@ -12600,7 +13381,7 @@ pub mod managed_server_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedServerSecurityAlertPolicy =
+                let rsp_value: models::ManagedServerSecurityAlertPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12608,7 +13389,7 @@ pub mod managed_server_security_alert_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12632,7 +13413,7 @@ pub mod managed_server_security_alert_policies {
         resource_group_name: &str,
         managed_instance_name: &str,
         security_alert_policy_name: &str,
-        parameters: &ManagedServerSecurityAlertPolicy,
+        parameters: &models::ManagedServerSecurityAlertPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -12666,7 +13447,7 @@ pub mod managed_server_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedServerSecurityAlertPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedServerSecurityAlertPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -12675,10 +13456,10 @@ pub mod managed_server_security_alert_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedServerSecurityAlertPolicy),
+            Ok200(models::ManagedServerSecurityAlertPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -12704,7 +13485,7 @@ pub mod managed_server_security_alert_policies {
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedServerSecurityAlertPolicyListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedServerSecurityAlertPolicyListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/securityAlertPolicies",
@@ -12734,7 +13515,7 @@ pub mod managed_server_security_alert_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedServerSecurityAlertPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedServerSecurityAlertPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12742,7 +13523,7 @@ pub mod managed_server_security_alert_policies {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12763,7 +13544,7 @@ pub mod managed_server_security_alert_policies {
     }
 }
 pub mod sensitivity_labels {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_current_by_database(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -12771,7 +13552,7 @@ pub mod sensitivity_labels {
         database_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SensitivityLabelListResult, list_current_by_database::Error> {
+    ) -> std::result::Result<models::SensitivityLabelListResult, list_current_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/currentSensitivityLabels",
@@ -12807,7 +13588,7 @@ pub mod sensitivity_labels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabelListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SensitivityLabelListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_current_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12815,7 +13596,7 @@ pub mod sensitivity_labels {
         }
     }
     pub mod list_current_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12843,7 +13624,7 @@ pub mod sensitivity_labels {
         skip_token: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SensitivityLabelListResult, list_recommended_by_database::Error> {
+    ) -> std::result::Result<models::SensitivityLabelListResult, list_recommended_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/recommendedSensitivityLabels",
@@ -12888,7 +13669,7 @@ pub mod sensitivity_labels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabelListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SensitivityLabelListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_recommended_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12896,7 +13677,7 @@ pub mod sensitivity_labels {
         }
     }
     pub mod list_recommended_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -12955,7 +13736,7 @@ pub mod sensitivity_labels {
         }
     }
     pub mod enable_recommendation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13014,7 +13795,7 @@ pub mod sensitivity_labels {
         }
     }
     pub mod disable_recommendation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13043,7 +13824,7 @@ pub mod sensitivity_labels {
         column_name: &str,
         sensitivity_label_source: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SensitivityLabel, get::Error> {
+    ) -> std::result::Result<models::SensitivityLabel, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}" , operation_config . base_path () , subscription_id , resource_group_name , server_name , database_name , schema_name , table_name , column_name , sensitivity_label_source) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -13064,7 +13845,7 @@ pub mod sensitivity_labels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabel =
+                let rsp_value: models::SensitivityLabel =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13072,7 +13853,7 @@ pub mod sensitivity_labels {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13100,7 +13881,7 @@ pub mod sensitivity_labels {
         table_name: &str,
         column_name: &str,
         sensitivity_label_source: &str,
-        parameters: &SensitivityLabel,
+        parameters: &models::SensitivityLabel,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -13127,13 +13908,13 @@ pub mod sensitivity_labels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabel = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SensitivityLabel = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabel = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SensitivityLabel = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -13141,11 +13922,11 @@ pub mod sensitivity_labels {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SensitivityLabel),
-            Created201(SensitivityLabel),
+            Ok200(models::SensitivityLabel),
+            Created201(models::SensitivityLabel),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -13199,7 +13980,7 @@ pub mod sensitivity_labels {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13220,13 +14001,13 @@ pub mod sensitivity_labels {
     }
 }
 pub mod managed_instance_administrators {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_instance(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceAdministratorListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedInstanceAdministratorListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/administrators",
@@ -13256,7 +14037,7 @@ pub mod managed_instance_administrators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceAdministratorListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceAdministratorListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13264,7 +14045,7 @@ pub mod managed_instance_administrators {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13289,7 +14070,7 @@ pub mod managed_instance_administrators {
         managed_instance_name: &str,
         administrator_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceAdministrator, get::Error> {
+    ) -> std::result::Result<models::ManagedInstanceAdministrator, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/administrators/{}",
@@ -13317,7 +14098,7 @@ pub mod managed_instance_administrators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceAdministrator =
+                let rsp_value: models::ManagedInstanceAdministrator =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13325,7 +14106,7 @@ pub mod managed_instance_administrators {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13349,7 +14130,7 @@ pub mod managed_instance_administrators {
         resource_group_name: &str,
         managed_instance_name: &str,
         administrator_name: &str,
-        parameters: &ManagedInstanceAdministrator,
+        parameters: &models::ManagedInstanceAdministrator,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -13383,14 +14164,14 @@ pub mod managed_instance_administrators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceAdministrator = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceAdministrator = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceAdministrator = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceAdministrator = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -13398,12 +14179,12 @@ pub mod managed_instance_administrators {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedInstanceAdministrator),
+            Ok200(models::ManagedInstanceAdministrator),
             Accepted202,
-            Created201(ManagedInstanceAdministrator),
+            Created201(models::ManagedInstanceAdministrator),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -13461,7 +14242,7 @@ pub mod managed_instance_administrators {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -13487,7 +14268,7 @@ pub mod managed_instance_administrators {
     }
 }
 pub mod database_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn cancel(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -13528,7 +14309,7 @@ pub mod database_operations {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13553,7 +14334,7 @@ pub mod database_operations {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseOperationListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::DatabaseOperationListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/operations",
@@ -13584,7 +14365,7 @@ pub mod database_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseOperationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseOperationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13592,7 +14373,7 @@ pub mod database_operations {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13613,7 +14394,7 @@ pub mod database_operations {
     }
 }
 pub mod elastic_pool_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn cancel(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -13654,7 +14435,7 @@ pub mod elastic_pool_operations {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13679,7 +14460,7 @@ pub mod elastic_pool_operations {
         server_name: &str,
         elastic_pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ElasticPoolOperationListResult, list_by_elastic_pool::Error> {
+    ) -> std::result::Result<models::ElasticPoolOperationListResult, list_by_elastic_pool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/elasticPools/{}/operations",
@@ -13710,7 +14491,7 @@ pub mod elastic_pool_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ElasticPoolOperationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ElasticPoolOperationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_elastic_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13718,7 +14499,7 @@ pub mod elastic_pool_operations {
         }
     }
     pub mod list_by_elastic_pool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13739,7 +14520,7 @@ pub mod elastic_pool_operations {
     }
 }
 pub mod database_vulnerability_assessment_scans {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_database(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -13747,7 +14528,7 @@ pub mod database_vulnerability_assessment_scans {
         database_name: &str,
         vulnerability_assessment_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VulnerabilityAssessmentScanRecordListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::VulnerabilityAssessmentScanRecordListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/vulnerabilityAssessments/{}/scans",
@@ -13779,7 +14560,7 @@ pub mod database_vulnerability_assessment_scans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VulnerabilityAssessmentScanRecordListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VulnerabilityAssessmentScanRecordListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13787,7 +14568,7 @@ pub mod database_vulnerability_assessment_scans {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13814,7 +14595,7 @@ pub mod database_vulnerability_assessment_scans {
         vulnerability_assessment_name: &str,
         scan_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VulnerabilityAssessmentScanRecord, get::Error> {
+    ) -> std::result::Result<models::VulnerabilityAssessmentScanRecord, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/vulnerabilityAssessments/{}/scans/{}",
@@ -13844,7 +14625,7 @@ pub mod database_vulnerability_assessment_scans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VulnerabilityAssessmentScanRecord =
+                let rsp_value: models::VulnerabilityAssessmentScanRecord =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13852,7 +14633,7 @@ pub mod database_vulnerability_assessment_scans {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -13908,7 +14689,7 @@ pub mod database_vulnerability_assessment_scans {
         }
     }
     pub mod initiate_scan {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -13962,13 +14743,13 @@ pub mod database_vulnerability_assessment_scans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentScansExport =
+                let rsp_value: models::DatabaseVulnerabilityAssessmentScansExport =
                     serde_json::from_slice(rsp_body).map_err(|source| export::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(export::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentScansExport =
+                let rsp_value: models::DatabaseVulnerabilityAssessmentScansExport =
                     serde_json::from_slice(rsp_body).map_err(|source| export::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(export::Response::Created201(rsp_value))
             }
@@ -13976,11 +14757,11 @@ pub mod database_vulnerability_assessment_scans {
         }
     }
     pub mod export {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatabaseVulnerabilityAssessmentScansExport),
-            Created201(DatabaseVulnerabilityAssessmentScansExport),
+            Ok200(models::DatabaseVulnerabilityAssessmentScansExport),
+            Created201(models::DatabaseVulnerabilityAssessmentScansExport),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -14002,7 +14783,7 @@ pub mod database_vulnerability_assessment_scans {
     }
 }
 pub mod managed_database_vulnerability_assessment_rule_baselines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -14012,7 +14793,7 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
         rule_id: &str,
         baseline_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseVulnerabilityAssessmentRuleBaseline, get::Error> {
+    ) -> std::result::Result<models::DatabaseVulnerabilityAssessmentRuleBaseline, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name , vulnerability_assessment_name , rule_id , baseline_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -14033,7 +14814,7 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentRuleBaseline =
+                let rsp_value: models::DatabaseVulnerabilityAssessmentRuleBaseline =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14041,7 +14822,7 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14068,9 +14849,9 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
         vulnerability_assessment_name: &str,
         rule_id: &str,
         baseline_name: &str,
-        parameters: &DatabaseVulnerabilityAssessmentRuleBaseline,
+        parameters: &models::DatabaseVulnerabilityAssessmentRuleBaseline,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseVulnerabilityAssessmentRuleBaseline, create_or_update::Error> {
+    ) -> std::result::Result<models::DatabaseVulnerabilityAssessmentRuleBaseline, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name , vulnerability_assessment_name , rule_id , baseline_name) ;
         let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
@@ -14095,7 +14876,7 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentRuleBaseline = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseVulnerabilityAssessmentRuleBaseline = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14103,7 +14884,7 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14155,7 +14936,7 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14176,7 +14957,7 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
     }
 }
 pub mod managed_database_vulnerability_assessment_scans {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_database(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -14184,7 +14965,7 @@ pub mod managed_database_vulnerability_assessment_scans {
         database_name: &str,
         vulnerability_assessment_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VulnerabilityAssessmentScanRecordListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::VulnerabilityAssessmentScanRecordListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/vulnerabilityAssessments/{}/scans" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name , vulnerability_assessment_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_database::Error::ParseUrlError)?;
@@ -14208,7 +14989,7 @@ pub mod managed_database_vulnerability_assessment_scans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VulnerabilityAssessmentScanRecordListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VulnerabilityAssessmentScanRecordListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14216,7 +14997,7 @@ pub mod managed_database_vulnerability_assessment_scans {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14243,7 +15024,7 @@ pub mod managed_database_vulnerability_assessment_scans {
         vulnerability_assessment_name: &str,
         scan_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VulnerabilityAssessmentScanRecord, get::Error> {
+    ) -> std::result::Result<models::VulnerabilityAssessmentScanRecord, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/vulnerabilityAssessments/{}/scans/{}" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name , vulnerability_assessment_name , scan_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -14264,7 +15045,7 @@ pub mod managed_database_vulnerability_assessment_scans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VulnerabilityAssessmentScanRecord =
+                let rsp_value: models::VulnerabilityAssessmentScanRecord =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14272,7 +15053,7 @@ pub mod managed_database_vulnerability_assessment_scans {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14328,7 +15109,7 @@ pub mod managed_database_vulnerability_assessment_scans {
         }
     }
     pub mod initiate_scan {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -14382,13 +15163,13 @@ pub mod managed_database_vulnerability_assessment_scans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentScansExport =
+                let rsp_value: models::DatabaseVulnerabilityAssessmentScansExport =
                     serde_json::from_slice(rsp_body).map_err(|source| export::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(export::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentScansExport =
+                let rsp_value: models::DatabaseVulnerabilityAssessmentScansExport =
                     serde_json::from_slice(rsp_body).map_err(|source| export::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(export::Response::Created201(rsp_value))
             }
@@ -14396,11 +15177,11 @@ pub mod managed_database_vulnerability_assessment_scans {
         }
     }
     pub mod export {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatabaseVulnerabilityAssessmentScansExport),
-            Created201(DatabaseVulnerabilityAssessmentScansExport),
+            Ok200(models::DatabaseVulnerabilityAssessmentScansExport),
+            Created201(models::DatabaseVulnerabilityAssessmentScansExport),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -14422,7 +15203,7 @@ pub mod managed_database_vulnerability_assessment_scans {
     }
 }
 pub mod managed_database_vulnerability_assessments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -14430,7 +15211,7 @@ pub mod managed_database_vulnerability_assessments {
         database_name: &str,
         vulnerability_assessment_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseVulnerabilityAssessment, get::Error> {
+    ) -> std::result::Result<models::DatabaseVulnerabilityAssessment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/vulnerabilityAssessments/{}",
@@ -14459,7 +15240,7 @@ pub mod managed_database_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessment =
+                let rsp_value: models::DatabaseVulnerabilityAssessment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14467,7 +15248,7 @@ pub mod managed_database_vulnerability_assessments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14492,7 +15273,7 @@ pub mod managed_database_vulnerability_assessments {
         managed_instance_name: &str,
         database_name: &str,
         vulnerability_assessment_name: &str,
-        parameters: &DatabaseVulnerabilityAssessment,
+        parameters: &models::DatabaseVulnerabilityAssessment,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -14527,13 +15308,13 @@ pub mod managed_database_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseVulnerabilityAssessment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseVulnerabilityAssessment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -14541,11 +15322,11 @@ pub mod managed_database_vulnerability_assessments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatabaseVulnerabilityAssessment),
-            Created201(DatabaseVulnerabilityAssessment),
+            Ok200(models::DatabaseVulnerabilityAssessment),
+            Created201(models::DatabaseVulnerabilityAssessment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -14604,7 +15385,7 @@ pub mod managed_database_vulnerability_assessments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14629,7 +15410,7 @@ pub mod managed_database_vulnerability_assessments {
         managed_instance_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseVulnerabilityAssessmentListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::DatabaseVulnerabilityAssessmentListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/vulnerabilityAssessments",
@@ -14660,7 +15441,7 @@ pub mod managed_database_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseVulnerabilityAssessmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseVulnerabilityAssessmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14668,7 +15449,7 @@ pub mod managed_database_vulnerability_assessments {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14689,14 +15470,14 @@ pub mod managed_database_vulnerability_assessments {
     }
 }
 pub mod instance_failover_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         location_name: &str,
         failover_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<InstanceFailoverGroup, get::Error> {
+    ) -> std::result::Result<models::InstanceFailoverGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/instanceFailoverGroups/{}",
@@ -14724,7 +15505,7 @@ pub mod instance_failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstanceFailoverGroup =
+                let rsp_value: models::InstanceFailoverGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14732,7 +15513,7 @@ pub mod instance_failover_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14756,7 +15537,7 @@ pub mod instance_failover_groups {
         resource_group_name: &str,
         location_name: &str,
         failover_group_name: &str,
-        parameters: &InstanceFailoverGroup,
+        parameters: &models::InstanceFailoverGroup,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -14790,14 +15571,14 @@ pub mod instance_failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstanceFailoverGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InstanceFailoverGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstanceFailoverGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InstanceFailoverGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -14805,12 +15586,12 @@ pub mod instance_failover_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(InstanceFailoverGroup),
+            Ok200(models::InstanceFailoverGroup),
             Accepted202,
-            Created201(InstanceFailoverGroup),
+            Created201(models::InstanceFailoverGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -14869,7 +15650,7 @@ pub mod instance_failover_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -14899,7 +15680,7 @@ pub mod instance_failover_groups {
         resource_group_name: &str,
         location_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<InstanceFailoverGroupListResult, list_by_location::Error> {
+    ) -> std::result::Result<models::InstanceFailoverGroupListResult, list_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/instanceFailoverGroups",
@@ -14929,7 +15710,7 @@ pub mod instance_failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstanceFailoverGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InstanceFailoverGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14937,7 +15718,7 @@ pub mod instance_failover_groups {
         }
     }
     pub mod list_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -14994,7 +15775,7 @@ pub mod instance_failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstanceFailoverGroup =
+                let rsp_value: models::InstanceFailoverGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| failover::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(failover::Response::Ok200(rsp_value))
             }
@@ -15003,10 +15784,10 @@ pub mod instance_failover_groups {
         }
     }
     pub mod failover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(InstanceFailoverGroup),
+            Ok200(models::InstanceFailoverGroup),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -15060,7 +15841,7 @@ pub mod instance_failover_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstanceFailoverGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InstanceFailoverGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| force_failover_allow_data_loss::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(force_failover_allow_data_loss::Response::Ok200(rsp_value))
             }
@@ -15069,10 +15850,10 @@ pub mod instance_failover_groups {
         }
     }
     pub mod force_failover_allow_data_loss {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(InstanceFailoverGroup),
+            Ok200(models::InstanceFailoverGroup),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -15095,12 +15876,12 @@ pub mod instance_failover_groups {
     }
 }
 pub mod tde_certificates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
-        parameters: &TdeCertificate,
+        parameters: &models::TdeCertificate,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -15134,7 +15915,7 @@ pub mod tde_certificates {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -15160,12 +15941,12 @@ pub mod tde_certificates {
     }
 }
 pub mod managed_instance_tde_certificates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
-        parameters: &TdeCertificate,
+        parameters: &models::TdeCertificate,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -15199,7 +15980,7 @@ pub mod managed_instance_tde_certificates {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -15225,14 +16006,14 @@ pub mod managed_instance_tde_certificates {
     }
 }
 pub mod managed_instance_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_instance(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceKeyListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedInstanceKeyListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/keys",
@@ -15265,7 +16046,7 @@ pub mod managed_instance_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceKeyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceKeyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15273,7 +16054,7 @@ pub mod managed_instance_keys {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -15298,7 +16079,7 @@ pub mod managed_instance_keys {
         managed_instance_name: &str,
         key_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceKey, get::Error> {
+    ) -> std::result::Result<models::ManagedInstanceKey, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/keys/{}",
@@ -15326,7 +16107,7 @@ pub mod managed_instance_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceKey =
+                let rsp_value: models::ManagedInstanceKey =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15334,7 +16115,7 @@ pub mod managed_instance_keys {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -15358,7 +16139,7 @@ pub mod managed_instance_keys {
         resource_group_name: &str,
         managed_instance_name: &str,
         key_name: &str,
-        parameters: &ManagedInstanceKey,
+        parameters: &models::ManagedInstanceKey,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -15392,14 +16173,14 @@ pub mod managed_instance_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -15407,12 +16188,12 @@ pub mod managed_instance_keys {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedInstanceKey),
+            Ok200(models::ManagedInstanceKey),
             Accepted202,
-            Created201(ManagedInstanceKey),
+            Created201(models::ManagedInstanceKey),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -15471,7 +16252,7 @@ pub mod managed_instance_keys {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -15498,7 +16279,7 @@ pub mod managed_instance_keys {
     }
 }
 pub mod managed_instance_encryption_protectors {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn revalidate(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -15541,7 +16322,7 @@ pub mod managed_instance_encryption_protectors {
         }
     }
     pub mod revalidate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -15570,7 +16351,7 @@ pub mod managed_instance_encryption_protectors {
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceEncryptionProtectorListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedInstanceEncryptionProtectorListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/encryptionProtector",
@@ -15600,7 +16381,7 @@ pub mod managed_instance_encryption_protectors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceEncryptionProtectorListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceEncryptionProtectorListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15608,7 +16389,7 @@ pub mod managed_instance_encryption_protectors {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -15633,7 +16414,7 @@ pub mod managed_instance_encryption_protectors {
         managed_instance_name: &str,
         encryption_protector_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceEncryptionProtector, get::Error> {
+    ) -> std::result::Result<models::ManagedInstanceEncryptionProtector, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/encryptionProtector/{}",
@@ -15661,7 +16442,7 @@ pub mod managed_instance_encryption_protectors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceEncryptionProtector =
+                let rsp_value: models::ManagedInstanceEncryptionProtector =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15669,7 +16450,7 @@ pub mod managed_instance_encryption_protectors {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -15693,7 +16474,7 @@ pub mod managed_instance_encryption_protectors {
         resource_group_name: &str,
         managed_instance_name: &str,
         encryption_protector_name: &str,
-        parameters: &ManagedInstanceEncryptionProtector,
+        parameters: &models::ManagedInstanceEncryptionProtector,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -15727,7 +16508,7 @@ pub mod managed_instance_encryption_protectors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceEncryptionProtector = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceEncryptionProtector = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -15736,10 +16517,10 @@ pub mod managed_instance_encryption_protectors {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedInstanceEncryptionProtector),
+            Ok200(models::ManagedInstanceEncryptionProtector),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -15762,13 +16543,13 @@ pub mod managed_instance_encryption_protectors {
     }
 }
 pub mod recoverable_managed_databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_instance(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RecoverableManagedDatabaseListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::RecoverableManagedDatabaseListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/recoverableDatabases",
@@ -15798,7 +16579,7 @@ pub mod recoverable_managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecoverableManagedDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RecoverableManagedDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15806,7 +16587,7 @@ pub mod recoverable_managed_databases {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -15831,7 +16612,7 @@ pub mod recoverable_managed_databases {
         managed_instance_name: &str,
         recoverable_database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RecoverableManagedDatabase, get::Error> {
+    ) -> std::result::Result<models::RecoverableManagedDatabase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/recoverableDatabases/{}",
@@ -15859,7 +16640,7 @@ pub mod recoverable_managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RecoverableManagedDatabase =
+                let rsp_value: models::RecoverableManagedDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15867,7 +16648,7 @@ pub mod recoverable_managed_databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -15888,7 +16669,7 @@ pub mod recoverable_managed_databases {
     }
 }
 pub mod backup_short_term_retention_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -15896,7 +16677,7 @@ pub mod backup_short_term_retention_policies {
         database_name: &str,
         policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupShortTermRetentionPolicy, get::Error> {
+    ) -> std::result::Result<models::BackupShortTermRetentionPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupShortTermRetentionPolicies/{}",
@@ -15925,7 +16706,7 @@ pub mod backup_short_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupShortTermRetentionPolicy =
+                let rsp_value: models::BackupShortTermRetentionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15933,7 +16714,7 @@ pub mod backup_short_term_retention_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -15958,7 +16739,7 @@ pub mod backup_short_term_retention_policies {
         server_name: &str,
         database_name: &str,
         policy_name: &str,
-        parameters: &BackupShortTermRetentionPolicy,
+        parameters: &models::BackupShortTermRetentionPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -15993,7 +16774,7 @@ pub mod backup_short_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupShortTermRetentionPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupShortTermRetentionPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -16002,10 +16783,10 @@ pub mod backup_short_term_retention_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BackupShortTermRetentionPolicy),
+            Ok200(models::BackupShortTermRetentionPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -16032,7 +16813,7 @@ pub mod backup_short_term_retention_policies {
         server_name: &str,
         database_name: &str,
         policy_name: &str,
-        parameters: &BackupShortTermRetentionPolicy,
+        parameters: &models::BackupShortTermRetentionPolicy,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -16064,7 +16845,7 @@ pub mod backup_short_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupShortTermRetentionPolicy =
+                let rsp_value: models::BackupShortTermRetentionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -16073,10 +16854,10 @@ pub mod backup_short_term_retention_policies {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BackupShortTermRetentionPolicy),
+            Ok200(models::BackupShortTermRetentionPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -16103,7 +16884,7 @@ pub mod backup_short_term_retention_policies {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupShortTermRetentionPolicyListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::BackupShortTermRetentionPolicyListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupShortTermRetentionPolicies",
@@ -16134,7 +16915,7 @@ pub mod backup_short_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupShortTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupShortTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16142,7 +16923,7 @@ pub mod backup_short_term_retention_policies {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16163,14 +16944,14 @@ pub mod backup_short_term_retention_policies {
     }
 }
 pub mod managed_instance_vulnerability_assessments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
         vulnerability_assessment_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceVulnerabilityAssessment, get::Error> {
+    ) -> std::result::Result<models::ManagedInstanceVulnerabilityAssessment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/vulnerabilityAssessments/{}",
@@ -16198,7 +16979,7 @@ pub mod managed_instance_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceVulnerabilityAssessment =
+                let rsp_value: models::ManagedInstanceVulnerabilityAssessment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16206,7 +16987,7 @@ pub mod managed_instance_vulnerability_assessments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16230,7 +17011,7 @@ pub mod managed_instance_vulnerability_assessments {
         resource_group_name: &str,
         managed_instance_name: &str,
         vulnerability_assessment_name: &str,
-        parameters: &ManagedInstanceVulnerabilityAssessment,
+        parameters: &models::ManagedInstanceVulnerabilityAssessment,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -16264,13 +17045,13 @@ pub mod managed_instance_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceVulnerabilityAssessment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceVulnerabilityAssessment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceVulnerabilityAssessment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceVulnerabilityAssessment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -16278,11 +17059,11 @@ pub mod managed_instance_vulnerability_assessments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedInstanceVulnerabilityAssessment),
-            Created201(ManagedInstanceVulnerabilityAssessment),
+            Ok200(models::ManagedInstanceVulnerabilityAssessment),
+            Created201(models::ManagedInstanceVulnerabilityAssessment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -16339,7 +17120,7 @@ pub mod managed_instance_vulnerability_assessments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16363,7 +17144,7 @@ pub mod managed_instance_vulnerability_assessments {
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceVulnerabilityAssessmentListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedInstanceVulnerabilityAssessmentListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/vulnerabilityAssessments",
@@ -16393,7 +17174,7 @@ pub mod managed_instance_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceVulnerabilityAssessmentListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceVulnerabilityAssessmentListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16401,7 +17182,7 @@ pub mod managed_instance_vulnerability_assessments {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16422,14 +17203,14 @@ pub mod managed_instance_vulnerability_assessments {
     }
 }
 pub mod server_vulnerability_assessments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         vulnerability_assessment_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerVulnerabilityAssessment, get::Error> {
+    ) -> std::result::Result<models::ServerVulnerabilityAssessment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/vulnerabilityAssessments/{}",
@@ -16457,7 +17238,7 @@ pub mod server_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerVulnerabilityAssessment =
+                let rsp_value: models::ServerVulnerabilityAssessment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16465,7 +17246,7 @@ pub mod server_vulnerability_assessments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16489,7 +17270,7 @@ pub mod server_vulnerability_assessments {
         resource_group_name: &str,
         server_name: &str,
         vulnerability_assessment_name: &str,
-        parameters: &ServerVulnerabilityAssessment,
+        parameters: &models::ServerVulnerabilityAssessment,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -16523,13 +17304,13 @@ pub mod server_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerVulnerabilityAssessment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerVulnerabilityAssessment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerVulnerabilityAssessment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerVulnerabilityAssessment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -16537,11 +17318,11 @@ pub mod server_vulnerability_assessments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerVulnerabilityAssessment),
-            Created201(ServerVulnerabilityAssessment),
+            Ok200(models::ServerVulnerabilityAssessment),
+            Created201(models::ServerVulnerabilityAssessment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -16598,7 +17379,7 @@ pub mod server_vulnerability_assessments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16622,7 +17403,7 @@ pub mod server_vulnerability_assessments {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerVulnerabilityAssessmentListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ServerVulnerabilityAssessmentListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/vulnerabilityAssessments",
@@ -16652,7 +17433,7 @@ pub mod server_vulnerability_assessments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerVulnerabilityAssessmentListResult =
+                let rsp_value: models::ServerVulnerabilityAssessmentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16660,7 +17441,7 @@ pub mod server_vulnerability_assessments {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16681,7 +17462,7 @@ pub mod server_vulnerability_assessments {
     }
 }
 pub mod managed_database_sensitivity_labels {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -16692,7 +17473,7 @@ pub mod managed_database_sensitivity_labels {
         column_name: &str,
         sensitivity_label_source: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SensitivityLabel, get::Error> {
+    ) -> std::result::Result<models::SensitivityLabel, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name , schema_name , table_name , column_name , sensitivity_label_source) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -16713,7 +17494,7 @@ pub mod managed_database_sensitivity_labels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabel =
+                let rsp_value: models::SensitivityLabel =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16721,7 +17502,7 @@ pub mod managed_database_sensitivity_labels {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16749,7 +17530,7 @@ pub mod managed_database_sensitivity_labels {
         table_name: &str,
         column_name: &str,
         sensitivity_label_source: &str,
-        parameters: &SensitivityLabel,
+        parameters: &models::SensitivityLabel,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -16776,13 +17557,13 @@ pub mod managed_database_sensitivity_labels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabel = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SensitivityLabel = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabel = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SensitivityLabel = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -16790,11 +17571,11 @@ pub mod managed_database_sensitivity_labels {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SensitivityLabel),
-            Created201(SensitivityLabel),
+            Ok200(models::SensitivityLabel),
+            Created201(models::SensitivityLabel),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -16848,7 +17629,7 @@ pub mod managed_database_sensitivity_labels {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16907,7 +17688,7 @@ pub mod managed_database_sensitivity_labels {
         }
     }
     pub mod disable_recommendation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16966,7 +17747,7 @@ pub mod managed_database_sensitivity_labels {
         }
     }
     pub mod enable_recommendation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -16992,7 +17773,7 @@ pub mod managed_database_sensitivity_labels {
         database_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SensitivityLabelListResult, list_current_by_database::Error> {
+    ) -> std::result::Result<models::SensitivityLabelListResult, list_current_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/currentSensitivityLabels",
@@ -17028,7 +17809,7 @@ pub mod managed_database_sensitivity_labels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabelListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SensitivityLabelListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_current_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17036,7 +17817,7 @@ pub mod managed_database_sensitivity_labels {
         }
     }
     pub mod list_current_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17064,7 +17845,7 @@ pub mod managed_database_sensitivity_labels {
         skip_token: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SensitivityLabelListResult, list_recommended_by_database::Error> {
+    ) -> std::result::Result<models::SensitivityLabelListResult, list_recommended_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/recommendedSensitivityLabels",
@@ -17109,7 +17890,7 @@ pub mod managed_database_sensitivity_labels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SensitivityLabelListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SensitivityLabelListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_recommended_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17117,7 +17898,7 @@ pub mod managed_database_sensitivity_labels {
         }
     }
     pub mod list_recommended_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17138,13 +17919,13 @@ pub mod managed_database_sensitivity_labels {
     }
 }
 pub mod instance_pools {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         instance_pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<InstancePool, get::Error> {
+    ) -> std::result::Result<models::InstancePool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/instancePools/{}",
@@ -17171,7 +17952,7 @@ pub mod instance_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstancePool =
+                let rsp_value: models::InstancePool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17179,7 +17960,7 @@ pub mod instance_pools {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17202,7 +17983,7 @@ pub mod instance_pools {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         instance_pool_name: &str,
-        parameters: &InstancePool,
+        parameters: &models::InstancePool,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -17235,14 +18016,14 @@ pub mod instance_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstancePool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InstancePool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstancePool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InstancePool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -17250,12 +18031,12 @@ pub mod instance_pools {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(InstancePool),
+            Ok200(models::InstancePool),
             Accepted202,
-            Created201(InstancePool),
+            Created201(models::InstancePool),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -17279,7 +18060,7 @@ pub mod instance_pools {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         instance_pool_name: &str,
-        parameters: &InstancePoolUpdate,
+        parameters: &models::InstancePoolUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -17309,7 +18090,7 @@ pub mod instance_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstancePool =
+                let rsp_value: models::InstancePool =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -17318,10 +18099,10 @@ pub mod instance_pools {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(InstancePool),
+            Ok200(models::InstancePool),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -17379,7 +18160,7 @@ pub mod instance_pools {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -17408,7 +18189,7 @@ pub mod instance_pools {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<InstancePoolListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::InstancePoolListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/instancePools",
@@ -17439,7 +18220,7 @@ pub mod instance_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstancePoolListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InstancePoolListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17447,7 +18228,7 @@ pub mod instance_pools {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17469,7 +18250,7 @@ pub mod instance_pools {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<InstancePoolListResult, list::Error> {
+    ) -> std::result::Result<models::InstancePoolListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/instancePools",
@@ -17494,7 +18275,7 @@ pub mod instance_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InstancePoolListResult =
+                let rsp_value: models::InstancePoolListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17502,7 +18283,7 @@ pub mod instance_pools {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17523,14 +18304,14 @@ pub mod instance_pools {
     }
 }
 pub mod usages {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_instance_pool(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         instance_pool_name: &str,
         expand_children: Option<bool>,
         subscription_id: &str,
-    ) -> std::result::Result<UsageListResult, list_by_instance_pool::Error> {
+    ) -> std::result::Result<models::UsageListResult, list_by_instance_pool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/instancePools/{}/usages",
@@ -17566,7 +18347,7 @@ pub mod usages {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsageListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UsageListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17574,7 +18355,7 @@ pub mod usages {
         }
     }
     pub mod list_by_instance_pool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17595,13 +18376,13 @@ pub mod usages {
     }
 }
 pub mod private_link_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_server(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateLinkResources",
@@ -17631,7 +18412,7 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult =
+                let rsp_value: models::PrivateLinkResourceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17639,7 +18420,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17664,7 +18445,7 @@ pub mod private_link_resources {
         server_name: &str,
         group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateLinkResources/{}",
@@ -17692,7 +18473,7 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17700,7 +18481,7 @@ pub mod private_link_resources {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17721,12 +18502,12 @@ pub mod private_link_resources {
     }
 }
 pub mod servers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ServerListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers",
@@ -17757,7 +18538,7 @@ pub mod servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17765,7 +18546,7 @@ pub mod servers {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17789,7 +18570,7 @@ pub mod servers {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Server, get::Error> {
+    ) -> std::result::Result<models::Server, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}",
@@ -17816,7 +18597,7 @@ pub mod servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Server =
+                let rsp_value: models::Server =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17824,7 +18605,7 @@ pub mod servers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -17847,7 +18628,7 @@ pub mod servers {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
-        parameters: &Server,
+        parameters: &models::Server,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -17880,14 +18661,14 @@ pub mod servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Server = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Server = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Server = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Server = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -17895,12 +18676,12 @@ pub mod servers {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Server),
+            Ok200(models::Server),
             Accepted202,
-            Created201(Server),
+            Created201(models::Server),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -17924,7 +18705,7 @@ pub mod servers {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
-        parameters: &ServerUpdate,
+        parameters: &models::ServerUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -17954,7 +18735,7 @@ pub mod servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Server =
+                let rsp_value: models::Server =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -17963,10 +18744,10 @@ pub mod servers {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Server),
+            Ok200(models::Server),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -18024,7 +18805,7 @@ pub mod servers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -18052,7 +18833,7 @@ pub mod servers {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ServerListResult, list::Error> {
+    ) -> std::result::Result<models::ServerListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/servers",
@@ -18077,7 +18858,7 @@ pub mod servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerListResult =
+                let rsp_value: models::ServerListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18085,7 +18866,7 @@ pub mod servers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18106,9 +18887,9 @@ pub mod servers {
     }
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
-        parameters: &CheckNameAvailabilityRequest,
+        parameters: &models::CheckNameAvailabilityRequest,
         subscription_id: &str,
-    ) -> std::result::Result<CheckNameAvailabilityResponse, check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckNameAvailabilityResponse, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/checkNameAvailability",
@@ -18139,7 +18920,7 @@ pub mod servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18147,7 +18928,7 @@ pub mod servers {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18170,7 +18951,7 @@ pub mod servers {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
-        parameters: &ImportNewDatabaseDefinition,
+        parameters: &models::ImportNewDatabaseDefinition,
         subscription_id: &str,
     ) -> std::result::Result<import_database::Response, import_database::Error> {
         let http_client = operation_config.http_client();
@@ -18203,7 +18984,7 @@ pub mod servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImportExportOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ImportExportOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| import_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(import_database::Response::Ok200(rsp_value))
             }
@@ -18212,10 +18993,10 @@ pub mod servers {
         }
     }
     pub mod import_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ImportExportOperationResult),
+            Ok200(models::ImportExportOperationResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -18238,13 +19019,13 @@ pub mod servers {
     }
 }
 pub mod capabilities {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_location(
         operation_config: &crate::OperationConfig,
         location_name: &str,
         include: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<LocationCapabilities, list_by_location::Error> {
+    ) -> std::result::Result<models::LocationCapabilities, list_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/capabilities",
@@ -18276,7 +19057,7 @@ pub mod capabilities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LocationCapabilities = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LocationCapabilities = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18284,7 +19065,7 @@ pub mod capabilities {
         }
     }
     pub mod list_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18305,7 +19086,7 @@ pub mod capabilities {
     }
 }
 pub mod long_term_retention_managed_instance_backups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         location_name: &str,
@@ -18313,7 +19094,7 @@ pub mod long_term_retention_managed_instance_backups {
         database_name: &str,
         backup_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionBackup, get::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionBackup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionManagedInstances/{}/longTermRetentionDatabases/{}/longTermRetentionManagedInstanceBackups/{}" , operation_config . base_path () , subscription_id , location_name , managed_instance_name , database_name , backup_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -18334,7 +19115,7 @@ pub mod long_term_retention_managed_instance_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionBackup =
+                let rsp_value: models::ManagedInstanceLongTermRetentionBackup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18342,7 +19123,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18393,7 +19174,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -18425,7 +19206,7 @@ pub mod long_term_retention_managed_instance_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionBackupListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionBackupListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionManagedInstances/{}/longTermRetentionDatabases/{}/longTermRetentionManagedInstanceBackups" , operation_config . base_path () , subscription_id , location_name , managed_instance_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_database::Error::ParseUrlError)?;
@@ -18456,7 +19237,7 @@ pub mod long_term_retention_managed_instance_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18464,7 +19245,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18490,7 +19271,7 @@ pub mod long_term_retention_managed_instance_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionBackupListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionBackupListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionManagedInstances/{}/longTermRetentionManagedInstanceBackups" , operation_config . base_path () , subscription_id , location_name , managed_instance_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_instance::Error::ParseUrlError)?;
@@ -18521,7 +19302,7 @@ pub mod long_term_retention_managed_instance_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18529,7 +19310,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18554,7 +19335,7 @@ pub mod long_term_retention_managed_instance_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionBackupListResult, list_by_location::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionBackupListResult, list_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionManagedInstanceBackups",
@@ -18590,7 +19371,7 @@ pub mod long_term_retention_managed_instance_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18598,7 +19379,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod list_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18625,7 +19406,7 @@ pub mod long_term_retention_managed_instance_backups {
         database_name: &str,
         backup_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionBackup, get_by_resource_group::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionBackup, get_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionManagedInstances/{}/longTermRetentionDatabases/{}/longTermRetentionManagedInstanceBackups/{}" , operation_config . base_path () , subscription_id , resource_group_name , location_name , managed_instance_name , database_name , backup_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_by_resource_group::Error::ParseUrlError)?;
@@ -18651,7 +19432,7 @@ pub mod long_term_retention_managed_instance_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionBackup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionBackup = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18659,7 +19440,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod get_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18716,7 +19497,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod delete_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -18749,7 +19530,7 @@ pub mod long_term_retention_managed_instance_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionBackupListResult, list_by_resource_group_database::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionBackupListResult, list_by_resource_group_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionManagedInstances/{}/longTermRetentionDatabases/{}/longTermRetentionManagedInstanceBackups" , operation_config . base_path () , subscription_id , resource_group_name , location_name , managed_instance_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_resource_group_database::Error::ParseUrlError)?;
@@ -18782,7 +19563,7 @@ pub mod long_term_retention_managed_instance_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18790,7 +19571,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod list_by_resource_group_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18817,7 +19598,7 @@ pub mod long_term_retention_managed_instance_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionBackupListResult, list_by_resource_group_instance::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionBackupListResult, list_by_resource_group_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionManagedInstances/{}/longTermRetentionManagedInstanceBackups" , operation_config . base_path () , subscription_id , resource_group_name , location_name , managed_instance_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_resource_group_instance::Error::ParseUrlError)?;
@@ -18850,7 +19631,7 @@ pub mod long_term_retention_managed_instance_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18858,7 +19639,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod list_by_resource_group_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18884,7 +19665,7 @@ pub mod long_term_retention_managed_instance_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionBackupListResult, list_by_resource_group_location::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionBackupListResult, list_by_resource_group_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionManagedInstanceBackups",
@@ -18923,7 +19704,7 @@ pub mod long_term_retention_managed_instance_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18931,7 +19712,7 @@ pub mod long_term_retention_managed_instance_backups {
         }
     }
     pub mod list_by_resource_group_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -18952,7 +19733,7 @@ pub mod long_term_retention_managed_instance_backups {
     }
 }
 pub mod managed_instance_long_term_retention_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -18960,7 +19741,7 @@ pub mod managed_instance_long_term_retention_policies {
         database_name: &str,
         policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionPolicy, get::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/backupLongTermRetentionPolicies/{}" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name , policy_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -18981,7 +19762,7 @@ pub mod managed_instance_long_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionPolicy =
+                let rsp_value: models::ManagedInstanceLongTermRetentionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18989,7 +19770,7 @@ pub mod managed_instance_long_term_retention_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19014,7 +19795,7 @@ pub mod managed_instance_long_term_retention_policies {
         managed_instance_name: &str,
         database_name: &str,
         policy_name: &str,
-        parameters: &ManagedInstanceLongTermRetentionPolicy,
+        parameters: &models::ManagedInstanceLongTermRetentionPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -19041,7 +19822,7 @@ pub mod managed_instance_long_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -19050,10 +19831,10 @@ pub mod managed_instance_long_term_retention_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedInstanceLongTermRetentionPolicy),
+            Ok200(models::ManagedInstanceLongTermRetentionPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -19080,7 +19861,7 @@ pub mod managed_instance_long_term_retention_policies {
         managed_instance_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceLongTermRetentionPolicyListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::ManagedInstanceLongTermRetentionPolicyListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/backupLongTermRetentionPolicies" , operation_config . base_path () , subscription_id , resource_group_name , managed_instance_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_database::Error::ParseUrlError)?;
@@ -19104,7 +19885,7 @@ pub mod managed_instance_long_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceLongTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceLongTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19112,7 +19893,7 @@ pub mod managed_instance_long_term_retention_policies {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19133,7 +19914,7 @@ pub mod managed_instance_long_term_retention_policies {
     }
 }
 pub mod workload_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -19141,7 +19922,7 @@ pub mod workload_groups {
         database_name: &str,
         workload_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WorkloadGroup, get::Error> {
+    ) -> std::result::Result<models::WorkloadGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/workloadGroups/{}",
@@ -19170,7 +19951,7 @@ pub mod workload_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadGroup =
+                let rsp_value: models::WorkloadGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19178,7 +19959,7 @@ pub mod workload_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19203,7 +19984,7 @@ pub mod workload_groups {
         server_name: &str,
         database_name: &str,
         workload_group_name: &str,
-        parameters: &WorkloadGroup,
+        parameters: &models::WorkloadGroup,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -19238,14 +20019,14 @@ pub mod workload_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkloadGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkloadGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -19253,12 +20034,12 @@ pub mod workload_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(WorkloadGroup),
+            Ok200(models::WorkloadGroup),
             Accepted202,
-            Created201(WorkloadGroup),
+            Created201(models::WorkloadGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -19319,7 +20100,7 @@ pub mod workload_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -19350,7 +20131,7 @@ pub mod workload_groups {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WorkloadGroupListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::WorkloadGroupListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/workloadGroups",
@@ -19381,7 +20162,7 @@ pub mod workload_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkloadGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19389,7 +20170,7 @@ pub mod workload_groups {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19410,7 +20191,7 @@ pub mod workload_groups {
     }
 }
 pub mod workload_classifiers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -19419,7 +20200,7 @@ pub mod workload_classifiers {
         workload_group_name: &str,
         workload_classifier_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WorkloadClassifier, get::Error> {
+    ) -> std::result::Result<models::WorkloadClassifier, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/workloadGroups/{}/workloadClassifiers/{}" , operation_config . base_path () , subscription_id , resource_group_name , server_name , database_name , workload_group_name , workload_classifier_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -19440,7 +20221,7 @@ pub mod workload_classifiers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadClassifier =
+                let rsp_value: models::WorkloadClassifier =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19448,7 +20229,7 @@ pub mod workload_classifiers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19474,7 +20255,7 @@ pub mod workload_classifiers {
         database_name: &str,
         workload_group_name: &str,
         workload_classifier_name: &str,
-        parameters: &WorkloadClassifier,
+        parameters: &models::WorkloadClassifier,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -19501,14 +20282,14 @@ pub mod workload_classifiers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadClassifier = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkloadClassifier = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadClassifier = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkloadClassifier = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -19516,12 +20297,12 @@ pub mod workload_classifiers {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(WorkloadClassifier),
+            Ok200(models::WorkloadClassifier),
             Accepted202,
-            Created201(WorkloadClassifier),
+            Created201(models::WorkloadClassifier),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -19575,7 +20356,7 @@ pub mod workload_classifiers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -19607,7 +20388,7 @@ pub mod workload_classifiers {
         database_name: &str,
         workload_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WorkloadClassifierListResult, list_by_workload_group::Error> {
+    ) -> std::result::Result<models::WorkloadClassifierListResult, list_by_workload_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/workloadGroups/{}/workloadClassifiers",
@@ -19641,7 +20422,7 @@ pub mod workload_classifiers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadClassifierListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkloadClassifierListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workload_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19649,7 +20430,7 @@ pub mod workload_classifiers {
         }
     }
     pub mod list_by_workload_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19670,7 +20451,7 @@ pub mod workload_classifiers {
     }
 }
 pub mod managed_instance_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn cancel(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -19709,7 +20490,7 @@ pub mod managed_instance_operations {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19733,7 +20514,7 @@ pub mod managed_instance_operations {
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceOperationListResult, list_by_managed_instance::Error> {
+    ) -> std::result::Result<models::ManagedInstanceOperationListResult, list_by_managed_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/operations",
@@ -19765,7 +20546,7 @@ pub mod managed_instance_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceOperationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceOperationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_managed_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19773,7 +20554,7 @@ pub mod managed_instance_operations {
         }
     }
     pub mod list_by_managed_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19798,7 +20579,7 @@ pub mod managed_instance_operations {
         managed_instance_name: &str,
         operation_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceOperation, get::Error> {
+    ) -> std::result::Result<models::ManagedInstanceOperation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/operations/{}",
@@ -19826,7 +20607,7 @@ pub mod managed_instance_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceOperation =
+                let rsp_value: models::ManagedInstanceOperation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19834,7 +20615,7 @@ pub mod managed_instance_operations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19855,14 +20636,14 @@ pub mod managed_instance_operations {
     }
 }
 pub mod server_azure_ad_administrators {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
         administrator_name: &str,
-    ) -> std::result::Result<ServerAzureAdAdministrator, get::Error> {
+    ) -> std::result::Result<models::ServerAzureAdAdministrator, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/administrators/{}",
@@ -19890,7 +20671,7 @@ pub mod server_azure_ad_administrators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerAzureAdAdministrator =
+                let rsp_value: models::ServerAzureAdAdministrator =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19898,7 +20679,7 @@ pub mod server_azure_ad_administrators {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -19923,7 +20704,7 @@ pub mod server_azure_ad_administrators {
         resource_group_name: &str,
         server_name: &str,
         administrator_name: &str,
-        parameters: &ServerAzureAdAdministrator,
+        parameters: &models::ServerAzureAdAdministrator,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -19956,14 +20737,14 @@ pub mod server_azure_ad_administrators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerAzureAdAdministrator = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerAzureAdAdministrator = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerAzureAdAdministrator = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerAzureAdAdministrator = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -19971,12 +20752,12 @@ pub mod server_azure_ad_administrators {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerAzureAdAdministrator),
+            Ok200(models::ServerAzureAdAdministrator),
             Accepted202,
-            Created201(ServerAzureAdAdministrator),
+            Created201(models::ServerAzureAdAdministrator),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -20035,7 +20816,7 @@ pub mod server_azure_ad_administrators {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -20065,7 +20846,7 @@ pub mod server_azure_ad_administrators {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-    ) -> std::result::Result<AdministratorListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::AdministratorListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/administrators",
@@ -20095,7 +20876,7 @@ pub mod server_azure_ad_administrators {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdministratorListResult =
+                let rsp_value: models::AdministratorListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20103,7 +20884,7 @@ pub mod server_azure_ad_administrators {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20124,12 +20905,12 @@ pub mod server_azure_ad_administrators {
     }
 }
 pub mod sync_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_sync_database_ids(
         operation_config: &crate::OperationConfig,
         location_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncDatabaseIdListResult, list_sync_database_ids::Error> {
+    ) -> std::result::Result<models::SyncDatabaseIdListResult, list_sync_database_ids::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/syncDatabaseIds",
@@ -20160,7 +20941,7 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncDatabaseIdListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncDatabaseIdListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_sync_database_ids::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20168,7 +20949,7 @@ pub mod sync_groups {
         }
     }
     pub mod list_sync_database_ids {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20231,7 +21012,7 @@ pub mod sync_groups {
         }
     }
     pub mod refresh_hub_schema {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -20262,7 +21043,7 @@ pub mod sync_groups {
         database_name: &str,
         sync_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncFullSchemaPropertiesListResult, list_hub_schemas::Error> {
+    ) -> std::result::Result<models::SyncFullSchemaPropertiesListResult, list_hub_schemas::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/syncGroups/{}/hubSchemas",
@@ -20294,7 +21075,7 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncFullSchemaPropertiesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncFullSchemaPropertiesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_hub_schemas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20302,7 +21083,7 @@ pub mod sync_groups {
         }
     }
     pub mod list_hub_schemas {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20332,7 +21113,7 @@ pub mod sync_groups {
         type_: &str,
         continuation_token: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SyncGroupLogListResult, list_logs::Error> {
+    ) -> std::result::Result<models::SyncGroupLogListResult, list_logs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/syncGroups/{}/logs",
@@ -20370,7 +21151,7 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroupLogListResult =
+                let rsp_value: models::SyncGroupLogListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_logs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20378,7 +21159,7 @@ pub mod sync_groups {
         }
     }
     pub mod list_logs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20440,7 +21221,7 @@ pub mod sync_groups {
         }
     }
     pub mod cancel_sync {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20502,7 +21283,7 @@ pub mod sync_groups {
         }
     }
     pub mod trigger_sync {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20528,7 +21309,7 @@ pub mod sync_groups {
         database_name: &str,
         sync_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncGroup, get::Error> {
+    ) -> std::result::Result<models::SyncGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/syncGroups/{}",
@@ -20557,7 +21338,7 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroup =
+                let rsp_value: models::SyncGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20565,7 +21346,7 @@ pub mod sync_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20590,7 +21371,7 @@ pub mod sync_groups {
         server_name: &str,
         database_name: &str,
         sync_group_name: &str,
-        parameters: &SyncGroup,
+        parameters: &models::SyncGroup,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -20625,14 +21406,14 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -20640,12 +21421,12 @@ pub mod sync_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SyncGroup),
+            Ok200(models::SyncGroup),
             Accepted202,
-            Created201(SyncGroup),
+            Created201(models::SyncGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -20671,7 +21452,7 @@ pub mod sync_groups {
         server_name: &str,
         database_name: &str,
         sync_group_name: &str,
-        parameters: &SyncGroup,
+        parameters: &models::SyncGroup,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -20703,7 +21484,7 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroup =
+                let rsp_value: models::SyncGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -20712,10 +21493,10 @@ pub mod sync_groups {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SyncGroup),
+            Ok200(models::SyncGroup),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -20777,7 +21558,7 @@ pub mod sync_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -20808,7 +21589,7 @@ pub mod sync_groups {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncGroupListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::SyncGroupListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/syncGroups",
@@ -20839,7 +21620,7 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20847,7 +21628,7 @@ pub mod sync_groups {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20868,7 +21649,7 @@ pub mod sync_groups {
     }
 }
 pub mod sync_members {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -20877,7 +21658,7 @@ pub mod sync_members {
         sync_group_name: &str,
         sync_member_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncMember, get::Error> {
+    ) -> std::result::Result<models::SyncMember, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/syncGroups/{}/syncMembers/{}",
@@ -20907,7 +21688,7 @@ pub mod sync_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncMember =
+                let rsp_value: models::SyncMember =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20915,7 +21696,7 @@ pub mod sync_members {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20941,7 +21722,7 @@ pub mod sync_members {
         database_name: &str,
         sync_group_name: &str,
         sync_member_name: &str,
-        parameters: &SyncMember,
+        parameters: &models::SyncMember,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -20977,14 +21758,14 @@ pub mod sync_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncMember = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncMember = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncMember = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncMember = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -20992,12 +21773,12 @@ pub mod sync_members {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SyncMember),
+            Ok200(models::SyncMember),
             Accepted202,
-            Created201(SyncMember),
+            Created201(models::SyncMember),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -21024,7 +21805,7 @@ pub mod sync_members {
         database_name: &str,
         sync_group_name: &str,
         sync_member_name: &str,
-        parameters: &SyncMember,
+        parameters: &models::SyncMember,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -21057,7 +21838,7 @@ pub mod sync_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncMember =
+                let rsp_value: models::SyncMember =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -21066,10 +21847,10 @@ pub mod sync_members {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SyncMember),
+            Ok200(models::SyncMember),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -21133,7 +21914,7 @@ pub mod sync_members {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21165,7 +21946,7 @@ pub mod sync_members {
         database_name: &str,
         sync_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncMemberListResult, list_by_sync_group::Error> {
+    ) -> std::result::Result<models::SyncMemberListResult, list_by_sync_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/syncGroups/{}/syncMembers",
@@ -21197,7 +21978,7 @@ pub mod sync_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncMemberListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncMemberListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_sync_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21205,7 +21986,7 @@ pub mod sync_members {
         }
     }
     pub mod list_by_sync_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21232,7 +22013,7 @@ pub mod sync_members {
         sync_group_name: &str,
         sync_member_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SyncFullSchemaPropertiesListResult, list_member_schemas::Error> {
+    ) -> std::result::Result<models::SyncFullSchemaPropertiesListResult, list_member_schemas::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/syncGroups/{}/syncMembers/{}/schemas",
@@ -21265,7 +22046,7 @@ pub mod sync_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncFullSchemaPropertiesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncFullSchemaPropertiesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_member_schemas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21273,7 +22054,7 @@ pub mod sync_members {
         }
     }
     pub mod list_member_schemas {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21331,7 +22112,7 @@ pub mod sync_members {
         }
     }
     pub mod refresh_member_schema {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21357,13 +22138,13 @@ pub mod sync_members {
     }
 }
 pub mod import_export {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn import(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        parameters: &ImportExistingDatabaseDefinition,
+        parameters: &models::ImportExistingDatabaseDefinition,
         subscription_id: &str,
     ) -> std::result::Result<import::Response, import::Error> {
         let http_client = operation_config.http_client();
@@ -21394,7 +22175,7 @@ pub mod import_export {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ImportExportOperationResult =
+                let rsp_value: models::ImportExportOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| import::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(import::Response::Ok200(rsp_value))
             }
@@ -21403,10 +22184,10 @@ pub mod import_export {
         }
     }
     pub mod import {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ImportExportOperationResult),
+            Ok200(models::ImportExportOperationResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -21429,13 +22210,13 @@ pub mod import_export {
     }
 }
 pub mod managed_databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_instance(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedDatabaseListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedDatabaseListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases",
@@ -21465,7 +22246,7 @@ pub mod managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21473,7 +22254,7 @@ pub mod managed_databases {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21498,7 +22279,7 @@ pub mod managed_databases {
         managed_instance_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedDatabase, get::Error> {
+    ) -> std::result::Result<models::ManagedDatabase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}",
@@ -21526,7 +22307,7 @@ pub mod managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabase =
+                let rsp_value: models::ManagedDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21534,7 +22315,7 @@ pub mod managed_databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21558,7 +22339,7 @@ pub mod managed_databases {
         resource_group_name: &str,
         managed_instance_name: &str,
         database_name: &str,
-        parameters: &ManagedDatabase,
+        parameters: &models::ManagedDatabase,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -21592,14 +22373,14 @@ pub mod managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -21607,12 +22388,12 @@ pub mod managed_databases {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedDatabase),
+            Ok200(models::ManagedDatabase),
             Accepted202,
-            Created201(ManagedDatabase),
+            Created201(models::ManagedDatabase),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -21637,7 +22418,7 @@ pub mod managed_databases {
         resource_group_name: &str,
         managed_instance_name: &str,
         database_name: &str,
-        parameters: &ManagedDatabaseUpdate,
+        parameters: &models::ManagedDatabaseUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -21668,7 +22449,7 @@ pub mod managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabase =
+                let rsp_value: models::ManagedDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -21677,10 +22458,10 @@ pub mod managed_databases {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedDatabase),
+            Ok200(models::ManagedDatabase),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -21740,7 +22521,7 @@ pub mod managed_databases {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21770,7 +22551,7 @@ pub mod managed_databases {
         resource_group_name: &str,
         managed_instance_name: &str,
         database_name: &str,
-        parameters: &CompleteDatabaseRestoreDefinition,
+        parameters: &models::CompleteDatabaseRestoreDefinition,
         subscription_id: &str,
     ) -> std::result::Result<complete_restore::Response, complete_restore::Error> {
         let http_client = operation_config.http_client();
@@ -21808,7 +22589,7 @@ pub mod managed_databases {
         }
     }
     pub mod complete_restore {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21837,7 +22618,7 @@ pub mod managed_databases {
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedDatabaseListResult, list_inaccessible_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedDatabaseListResult, list_inaccessible_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/inaccessibleManagedDatabases",
@@ -21869,7 +22650,7 @@ pub mod managed_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_inaccessible_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21877,7 +22658,7 @@ pub mod managed_databases {
         }
     }
     pub mod list_inaccessible_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21898,7 +22679,7 @@ pub mod managed_databases {
     }
 }
 pub mod managed_database_restore_details {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -21906,7 +22687,7 @@ pub mod managed_database_restore_details {
         database_name: &str,
         restore_details_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedDatabaseRestoreDetailsResult, get::Error> {
+    ) -> std::result::Result<models::ManagedDatabaseRestoreDetailsResult, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/databases/{}/restoreDetails/{}",
@@ -21935,7 +22716,7 @@ pub mod managed_database_restore_details {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedDatabaseRestoreDetailsResult =
+                let rsp_value: models::ManagedDatabaseRestoreDetailsResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21943,7 +22724,7 @@ pub mod managed_database_restore_details {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21964,14 +22745,14 @@ pub mod managed_database_restore_details {
     }
 }
 pub mod server_azure_ad_only_authentications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         authentication_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerAzureAdOnlyAuthentication, get::Error> {
+    ) -> std::result::Result<models::ServerAzureAdOnlyAuthentication, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/azureADOnlyAuthentications/{}",
@@ -21999,7 +22780,7 @@ pub mod server_azure_ad_only_authentications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerAzureAdOnlyAuthentication =
+                let rsp_value: models::ServerAzureAdOnlyAuthentication =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22007,7 +22788,7 @@ pub mod server_azure_ad_only_authentications {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22031,7 +22812,7 @@ pub mod server_azure_ad_only_authentications {
         resource_group_name: &str,
         server_name: &str,
         authentication_name: &str,
-        parameters: &ServerAzureAdOnlyAuthentication,
+        parameters: &models::ServerAzureAdOnlyAuthentication,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -22065,14 +22846,14 @@ pub mod server_azure_ad_only_authentications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerAzureAdOnlyAuthentication = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerAzureAdOnlyAuthentication = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerAzureAdOnlyAuthentication = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerAzureAdOnlyAuthentication = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -22080,12 +22861,12 @@ pub mod server_azure_ad_only_authentications {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerAzureAdOnlyAuthentication),
+            Ok200(models::ServerAzureAdOnlyAuthentication),
             Accepted202,
-            Created201(ServerAzureAdOnlyAuthentication),
+            Created201(models::ServerAzureAdOnlyAuthentication),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -22144,7 +22925,7 @@ pub mod server_azure_ad_only_authentications {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -22174,7 +22955,7 @@ pub mod server_azure_ad_only_authentications {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AzureAdOnlyAuthListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::AzureAdOnlyAuthListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/azureADOnlyAuthentications",
@@ -22204,7 +22985,7 @@ pub mod server_azure_ad_only_authentications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureAdOnlyAuthListResult =
+                let rsp_value: models::AzureAdOnlyAuthListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22212,7 +22993,7 @@ pub mod server_azure_ad_only_authentications {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22233,13 +23014,13 @@ pub mod server_azure_ad_only_authentications {
     }
 }
 pub mod managed_instances {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_instance_pool(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         instance_pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceListResult, list_by_instance_pool::Error> {
+    ) -> std::result::Result<models::ManagedInstanceListResult, list_by_instance_pool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/instancePools/{}/managedInstances",
@@ -22271,7 +23052,7 @@ pub mod managed_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22279,7 +23060,7 @@ pub mod managed_instances {
         }
     }
     pub mod list_by_instance_pool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22302,7 +23083,7 @@ pub mod managed_instances {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ManagedInstanceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances",
@@ -22333,7 +23114,7 @@ pub mod managed_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22341,7 +23122,7 @@ pub mod managed_instances {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22365,7 +23146,7 @@ pub mod managed_instances {
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstance, get::Error> {
+    ) -> std::result::Result<models::ManagedInstance, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}",
@@ -22392,7 +23173,7 @@ pub mod managed_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstance =
+                let rsp_value: models::ManagedInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22400,7 +23181,7 @@ pub mod managed_instances {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22423,7 +23204,7 @@ pub mod managed_instances {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
-        parameters: &ManagedInstance,
+        parameters: &models::ManagedInstance,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -22456,14 +23237,14 @@ pub mod managed_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstance = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstance = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstance = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstance = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -22471,12 +23252,12 @@ pub mod managed_instances {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedInstance),
+            Ok200(models::ManagedInstance),
             Accepted202,
-            Created201(ManagedInstance),
+            Created201(models::ManagedInstance),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -22500,7 +23281,7 @@ pub mod managed_instances {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
-        parameters: &ManagedInstanceUpdate,
+        parameters: &models::ManagedInstanceUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -22530,7 +23311,7 @@ pub mod managed_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstance =
+                let rsp_value: models::ManagedInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -22539,10 +23320,10 @@ pub mod managed_instances {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedInstance),
+            Ok200(models::ManagedInstance),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -22600,7 +23381,7 @@ pub mod managed_instances {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -22637,7 +23418,7 @@ pub mod managed_instances {
         aggregation_function: Option<&str>,
         observation_metric: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<TopQueriesListResult, list_by_managed_instance::Error> {
+    ) -> std::result::Result<models::TopQueriesListResult, list_by_managed_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/topqueries",
@@ -22691,7 +23472,7 @@ pub mod managed_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TopQueriesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TopQueriesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_managed_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22699,7 +23480,7 @@ pub mod managed_instances {
         }
     }
     pub mod list_by_managed_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22762,7 +23543,7 @@ pub mod managed_instances {
         }
     }
     pub mod failover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -22789,7 +23570,7 @@ pub mod managed_instances {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceListResult, list::Error> {
+    ) -> std::result::Result<models::ManagedInstanceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/managedInstances",
@@ -22814,7 +23595,7 @@ pub mod managed_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceListResult =
+                let rsp_value: models::ManagedInstanceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22822,7 +23603,7 @@ pub mod managed_instances {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22843,14 +23624,14 @@ pub mod managed_instances {
     }
 }
 pub mod managed_instance_azure_ad_only_authentications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         managed_instance_name: &str,
         authentication_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceAzureAdOnlyAuthentication, get::Error> {
+    ) -> std::result::Result<models::ManagedInstanceAzureAdOnlyAuthentication, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/azureADOnlyAuthentications/{}",
@@ -22878,7 +23659,7 @@ pub mod managed_instance_azure_ad_only_authentications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceAzureAdOnlyAuthentication =
+                let rsp_value: models::ManagedInstanceAzureAdOnlyAuthentication =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22886,7 +23667,7 @@ pub mod managed_instance_azure_ad_only_authentications {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22910,7 +23691,7 @@ pub mod managed_instance_azure_ad_only_authentications {
         resource_group_name: &str,
         managed_instance_name: &str,
         authentication_name: &str,
-        parameters: &ManagedInstanceAzureAdOnlyAuthentication,
+        parameters: &models::ManagedInstanceAzureAdOnlyAuthentication,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -22944,14 +23725,14 @@ pub mod managed_instance_azure_ad_only_authentications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceAzureAdOnlyAuthentication = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceAzureAdOnlyAuthentication = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceAzureAdOnlyAuthentication = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceAzureAdOnlyAuthentication = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -22959,12 +23740,12 @@ pub mod managed_instance_azure_ad_only_authentications {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedInstanceAzureAdOnlyAuthentication),
+            Ok200(models::ManagedInstanceAzureAdOnlyAuthentication),
             Accepted202,
-            Created201(ManagedInstanceAzureAdOnlyAuthentication),
+            Created201(models::ManagedInstanceAzureAdOnlyAuthentication),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -23023,7 +23804,7 @@ pub mod managed_instance_azure_ad_only_authentications {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -23053,7 +23834,7 @@ pub mod managed_instance_azure_ad_only_authentications {
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedInstanceAzureAdOnlyAuthListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ManagedInstanceAzureAdOnlyAuthListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/azureADOnlyAuthentications",
@@ -23083,7 +23864,7 @@ pub mod managed_instance_azure_ad_only_authentications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedInstanceAzureAdOnlyAuthListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedInstanceAzureAdOnlyAuthListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23091,7 +23872,7 @@ pub mod managed_instance_azure_ad_only_authentications {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -23112,14 +23893,14 @@ pub mod managed_instance_azure_ad_only_authentications {
     }
 }
 pub mod server_trust_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         location_name: &str,
         server_trust_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerTrustGroup, get::Error> {
+    ) -> std::result::Result<models::ServerTrustGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/serverTrustGroups/{}",
@@ -23147,7 +23928,7 @@ pub mod server_trust_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerTrustGroup =
+                let rsp_value: models::ServerTrustGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23155,7 +23936,7 @@ pub mod server_trust_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -23179,7 +23960,7 @@ pub mod server_trust_groups {
         resource_group_name: &str,
         location_name: &str,
         server_trust_group_name: &str,
-        parameters: &ServerTrustGroup,
+        parameters: &models::ServerTrustGroup,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -23213,14 +23994,14 @@ pub mod server_trust_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerTrustGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerTrustGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerTrustGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerTrustGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -23228,12 +24009,12 @@ pub mod server_trust_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerTrustGroup),
+            Ok200(models::ServerTrustGroup),
             Accepted202,
-            Created201(ServerTrustGroup),
+            Created201(models::ServerTrustGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -23292,7 +24073,7 @@ pub mod server_trust_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -23322,7 +24103,7 @@ pub mod server_trust_groups {
         resource_group_name: &str,
         location_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerTrustGroupListResult, list_by_location::Error> {
+    ) -> std::result::Result<models::ServerTrustGroupListResult, list_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/serverTrustGroups",
@@ -23352,7 +24133,7 @@ pub mod server_trust_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerTrustGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerTrustGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23360,7 +24141,7 @@ pub mod server_trust_groups {
         }
     }
     pub mod list_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -23384,7 +24165,7 @@ pub mod server_trust_groups {
         resource_group_name: &str,
         managed_instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerTrustGroupListResult, list_by_instance::Error> {
+    ) -> std::result::Result<models::ServerTrustGroupListResult, list_by_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/managedInstances/{}/serverTrustGroups",
@@ -23414,7 +24195,7 @@ pub mod server_trust_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerTrustGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerTrustGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23422,7 +24203,7 @@ pub mod server_trust_groups {
         }
     }
     pub mod list_by_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -23443,14 +24224,14 @@ pub mod server_trust_groups {
     }
 }
 pub mod server_dev_ops_audit_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         dev_ops_auditing_settings_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerDevOpsAuditingSettings, get::Error> {
+    ) -> std::result::Result<models::ServerDevOpsAuditingSettings, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/devOpsAuditingSettings/{}",
@@ -23478,7 +24259,7 @@ pub mod server_dev_ops_audit_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerDevOpsAuditingSettings =
+                let rsp_value: models::ServerDevOpsAuditingSettings =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23486,7 +24267,7 @@ pub mod server_dev_ops_audit_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -23510,7 +24291,7 @@ pub mod server_dev_ops_audit_settings {
         resource_group_name: &str,
         server_name: &str,
         dev_ops_auditing_settings_name: &str,
-        parameters: &ServerDevOpsAuditingSettings,
+        parameters: &models::ServerDevOpsAuditingSettings,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -23544,7 +24325,7 @@ pub mod server_dev_ops_audit_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerDevOpsAuditingSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerDevOpsAuditingSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -23553,10 +24334,10 @@ pub mod server_dev_ops_audit_settings {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerDevOpsAuditingSettings),
+            Ok200(models::ServerDevOpsAuditingSettings),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -23582,7 +24363,7 @@ pub mod server_dev_ops_audit_settings {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ServerDevOpsAuditSettingsListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::ServerDevOpsAuditSettingsListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/devOpsAuditingSettings",
@@ -23612,7 +24393,7 @@ pub mod server_dev_ops_audit_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerDevOpsAuditSettingsListResult =
+                let rsp_value: models::ServerDevOpsAuditSettingsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23620,7 +24401,7 @@ pub mod server_dev_ops_audit_settings {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -23641,14 +24422,14 @@ pub mod server_dev_ops_audit_settings {
     }
 }
 pub mod long_term_retention_backups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn copy(
         operation_config: &crate::OperationConfig,
         location_name: &str,
         long_term_retention_server_name: &str,
         long_term_retention_database_name: &str,
         backup_name: &str,
-        parameters: &CopyLongTermRetentionBackupParameters,
+        parameters: &models::CopyLongTermRetentionBackupParameters,
         subscription_id: &str,
     ) -> std::result::Result<copy::Response, copy::Error> {
         let http_client = operation_config.http_client();
@@ -23672,7 +24453,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupOperationResult =
+                let rsp_value: models::LongTermRetentionBackupOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| copy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(copy::Response::Ok200(rsp_value))
             }
@@ -23681,10 +24462,10 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod copy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(LongTermRetentionBackupOperationResult),
+            Ok200(models::LongTermRetentionBackupOperationResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -23711,7 +24492,7 @@ pub mod long_term_retention_backups {
         long_term_retention_server_name: &str,
         long_term_retention_database_name: &str,
         backup_name: &str,
-        parameters: &UpdateLongTermRetentionBackupParameters,
+        parameters: &models::UpdateLongTermRetentionBackupParameters,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -23735,7 +24516,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupOperationResult =
+                let rsp_value: models::LongTermRetentionBackupOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -23744,10 +24525,10 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(LongTermRetentionBackupOperationResult),
+            Ok200(models::LongTermRetentionBackupOperationResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -23775,7 +24556,7 @@ pub mod long_term_retention_backups {
         long_term_retention_database_name: &str,
         backup_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackup, get::Error> {
+    ) -> std::result::Result<models::LongTermRetentionBackup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -23796,7 +24577,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackup =
+                let rsp_value: models::LongTermRetentionBackup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23804,7 +24585,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -23855,7 +24636,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -23887,7 +24668,7 @@ pub mod long_term_retention_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::LongTermRetentionBackupListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , location_name , long_term_retention_server_name , long_term_retention_database_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_database::Error::ParseUrlError)?;
@@ -23918,7 +24699,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23926,7 +24707,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -23951,7 +24732,7 @@ pub mod long_term_retention_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_location::Error> {
+    ) -> std::result::Result<models::LongTermRetentionBackupListResult, list_by_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionBackups",
@@ -23987,7 +24768,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -23995,7 +24776,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod list_by_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24021,7 +24802,7 @@ pub mod long_term_retention_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::LongTermRetentionBackupListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionBackups",
@@ -24058,7 +24839,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult =
+                let rsp_value: models::LongTermRetentionBackupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -24066,7 +24847,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24092,7 +24873,7 @@ pub mod long_term_retention_backups {
         long_term_retention_server_name: &str,
         long_term_retention_database_name: &str,
         backup_name: &str,
-        parameters: &CopyLongTermRetentionBackupParameters,
+        parameters: &models::CopyLongTermRetentionBackupParameters,
         subscription_id: &str,
     ) -> std::result::Result<copy_by_resource_group::Response, copy_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -24121,7 +24902,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionBackupOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| copy_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(copy_by_resource_group::Response::Ok200(rsp_value))
             }
@@ -24130,10 +24911,10 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod copy_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(LongTermRetentionBackupOperationResult),
+            Ok200(models::LongTermRetentionBackupOperationResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -24161,7 +24942,7 @@ pub mod long_term_retention_backups {
         long_term_retention_server_name: &str,
         long_term_retention_database_name: &str,
         backup_name: &str,
-        parameters: &UpdateLongTermRetentionBackupParameters,
+        parameters: &models::UpdateLongTermRetentionBackupParameters,
         subscription_id: &str,
     ) -> std::result::Result<update_by_resource_group::Response, update_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -24190,7 +24971,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionBackupOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_by_resource_group::Response::Ok200(rsp_value))
             }
@@ -24199,10 +24980,10 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod update_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(LongTermRetentionBackupOperationResult),
+            Ok200(models::LongTermRetentionBackupOperationResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -24231,7 +25012,7 @@ pub mod long_term_retention_backups {
         long_term_retention_database_name: &str,
         backup_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackup, get_by_resource_group::Error> {
+    ) -> std::result::Result<models::LongTermRetentionBackup, get_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups/{}" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name , backup_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_by_resource_group::Error::ParseUrlError)?;
@@ -24257,7 +25038,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionBackup = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -24265,7 +25046,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod get_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24322,7 +25103,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod delete_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -24355,7 +25136,7 @@ pub mod long_term_retention_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_database::Error> {
+    ) -> std::result::Result<models::LongTermRetentionBackupListResult, list_by_resource_group_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionDatabases/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name , long_term_retention_database_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_resource_group_database::Error::ParseUrlError)?;
@@ -24388,7 +25169,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -24396,7 +25177,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod list_by_resource_group_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24422,7 +25203,7 @@ pub mod long_term_retention_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_location::Error> {
+    ) -> std::result::Result<models::LongTermRetentionBackupListResult, list_by_resource_group_location::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionBackups",
@@ -24461,7 +25242,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group_location::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -24469,7 +25250,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod list_by_resource_group_location {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24496,7 +25277,7 @@ pub mod long_term_retention_backups {
         only_latest_per_database: Option<bool>,
         database_state: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionBackupListResult, list_by_resource_group_server::Error> {
+    ) -> std::result::Result<models::LongTermRetentionBackupListResult, list_by_resource_group_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/locations/{}/longTermRetentionServers/{}/longTermRetentionBackups" , operation_config . base_path () , subscription_id , resource_group_name , location_name , long_term_retention_server_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_resource_group_server::Error::ParseUrlError)?;
@@ -24529,7 +25310,7 @@ pub mod long_term_retention_backups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionBackupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -24537,7 +25318,7 @@ pub mod long_term_retention_backups {
         }
     }
     pub mod list_by_resource_group_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24558,7 +25339,7 @@ pub mod long_term_retention_backups {
     }
 }
 pub mod long_term_retention_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -24566,7 +25347,7 @@ pub mod long_term_retention_policies {
         database_name: &str,
         policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionPolicy, get::Error> {
+    ) -> std::result::Result<models::LongTermRetentionPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupLongTermRetentionPolicies/{}",
@@ -24595,7 +25376,7 @@ pub mod long_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionPolicy =
+                let rsp_value: models::LongTermRetentionPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -24603,7 +25384,7 @@ pub mod long_term_retention_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24628,7 +25409,7 @@ pub mod long_term_retention_policies {
         server_name: &str,
         database_name: &str,
         policy_name: &str,
-        parameters: &LongTermRetentionPolicy,
+        parameters: &models::LongTermRetentionPolicy,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -24663,7 +25444,7 @@ pub mod long_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -24672,10 +25453,10 @@ pub mod long_term_retention_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(LongTermRetentionPolicy),
+            Ok200(models::LongTermRetentionPolicy),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -24702,7 +25483,7 @@ pub mod long_term_retention_policies {
         server_name: &str,
         database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LongTermRetentionPolicyListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::LongTermRetentionPolicyListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/backupLongTermRetentionPolicies",
@@ -24733,7 +25514,7 @@ pub mod long_term_retention_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LongTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LongTermRetentionPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -24741,7 +25522,7 @@ pub mod long_term_retention_policies {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24762,14 +25543,14 @@ pub mod long_term_retention_policies {
     }
 }
 pub mod private_endpoint_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         server_name: &str,
         private_endpoint_connection_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections/{}",
@@ -24797,7 +25578,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -24805,7 +25586,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -24829,7 +25610,7 @@ pub mod private_endpoint_connections {
         resource_group_name: &str,
         server_name: &str,
         private_endpoint_connection_name: &str,
-        parameters: &PrivateEndpointConnection,
+        parameters: &models::PrivateEndpointConnection,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -24863,7 +25644,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -24872,10 +25653,10 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -24935,7 +25716,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -24965,7 +25746,7 @@ pub mod private_endpoint_connections {
         resource_group_name: &str,
         server_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_server::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/privateEndpointConnections",
@@ -24995,7 +25776,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult =
+                let rsp_value: models::PrivateEndpointConnectionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_server::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -25003,7 +25784,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list_by_server {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

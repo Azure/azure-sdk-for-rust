@@ -28,6 +28,10 @@ pub struct RegistrationDefinitionProperties {
     pub managed_by_tenant_id: String,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
+    #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub managee_tenant_id: Option<String>,
+    #[serde(rename = "manageeTenantName", default, skip_serializing_if = "Option::is_none")]
+    pub managee_tenant_name: Option<String>,
     #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_tenant_name: Option<String>,
 }

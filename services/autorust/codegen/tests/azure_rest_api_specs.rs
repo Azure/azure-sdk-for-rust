@@ -15,24 +15,27 @@ const VMWARE_SPEC: &str =
 
 #[test]
 fn refs_count_security_common() -> Result<()> {
-    let api = &spec::openapi::parse(COMMON_TYPES_SPEC)?;
-    let refs = spec::openapi::get_references(api);
+    let doc_file = COMMON_TYPES_SPEC;
+    let api = &spec::openapi::parse(doc_file)?;
+    let refs = spec::openapi::get_references(doc_file, api);
     assert_eq!(15, refs.len());
     Ok(())
 }
 
 #[test]
 fn refs_count_avs() -> Result<()> {
-    let api = &spec::openapi::parse(VMWARE_SPEC)?;
-    let refs = spec::openapi::get_references(api);
+    let doc_file = VMWARE_SPEC;
+    let api = &spec::openapi::parse(doc_file)?;
+    let refs = spec::openapi::get_references(doc_file, api);
     assert_eq!(199, refs.len());
     Ok(())
 }
 
 #[test]
 fn ref_files() -> Result<()> {
-    let api = &spec::openapi::parse(VMWARE_SPEC)?;
-    let files = spec::openapi::get_reference_file_paths(api);
+    let doc_file = VMWARE_SPEC;
+    let api = &spec::openapi::parse(doc_file)?;
+    let files = spec::openapi::get_reference_file_paths(doc_file, api);
     assert_eq!(1, files.len());
     assert!(files.contains("../../../../../common-types/resource-management/v1/types.json"));
     Ok(())
@@ -62,7 +65,7 @@ fn test_resolve_schema_ref() -> Result<()> {
 
 #[test]
 fn test_resolve_parameter_ref() -> Result<()> {
-    let file = PathBuf::from(VMWARE_SPEC);
+    let file = VMWARE_SPEC;
     let spec = &Spec::read_files(&[&file])?;
     spec.resolve_parameter_ref(
         &file,
@@ -73,10 +76,10 @@ fn test_resolve_parameter_ref() -> Result<()> {
 
 #[test]
 fn test_resolve_all_refs() -> Result<()> {
-    let doc_file = PathBuf::from(VMWARE_SPEC);
+    let doc_file = VMWARE_SPEC;
     let spec = &Spec::read_files(&[&doc_file])?;
-    for (doc_file, doc) in spec.docs() {
-        let refs = spec::openapi::get_references(doc);
+    for (doc_file, api) in spec.docs() {
+        let refs = spec::openapi::get_references(doc_file, api);
         for rs in refs {
             match rs {
                 TypedReference::PathItem(_) => {}

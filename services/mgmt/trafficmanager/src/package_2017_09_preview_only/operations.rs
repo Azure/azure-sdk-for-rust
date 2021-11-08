@@ -2,9 +2,22 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    HeatMap_Get(#[from] heat_map::get::Error),
+    #[error(transparent)]
+    TrafficManagerUserMetricsKeys_Get(#[from] traffic_manager_user_metrics_keys::get::Error),
+    #[error(transparent)]
+    TrafficManagerUserMetricsKeys_CreateOrUpdate(#[from] traffic_manager_user_metrics_keys::create_or_update::Error),
+    #[error(transparent)]
+    TrafficManagerUserMetricsKeys_Delete(#[from] traffic_manager_user_metrics_keys::delete::Error),
+}
 pub mod heat_map {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -13,7 +26,7 @@ pub mod heat_map {
         heat_map_type: &str,
         top_left: &[f64],
         bot_right: &[f64],
-    ) -> std::result::Result<HeatMapModel, get::Error> {
+    ) -> std::result::Result<models::HeatMapModel, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}/heatMaps/{}",
@@ -41,13 +54,13 @@ pub mod heat_map {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HeatMapModel =
+                let rsp_value: models::HeatMapModel =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -57,7 +70,7 @@ pub mod heat_map {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -81,11 +94,11 @@ pub mod heat_map {
     }
 }
 pub mod traffic_manager_user_metrics_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<TrafficManagerUserMetricsKeyModel, get::Error> {
+    ) -> std::result::Result<models::TrafficManagerUserMetricsKeyModel, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/trafficManagerUserMetricsKeys",
@@ -110,13 +123,13 @@ pub mod traffic_manager_user_metrics_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TrafficManagerUserMetricsKeyModel =
+                let rsp_value: models::TrafficManagerUserMetricsKeyModel =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -126,7 +139,7 @@ pub mod traffic_manager_user_metrics_keys {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -151,7 +164,7 @@ pub mod traffic_manager_user_metrics_keys {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<TrafficManagerUserMetricsKeyModel, create_or_update::Error> {
+    ) -> std::result::Result<models::TrafficManagerUserMetricsKeyModel, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/trafficManagerUserMetricsKeys",
@@ -179,13 +192,13 @@ pub mod traffic_manager_user_metrics_keys {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: TrafficManagerUserMetricsKeyModel = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TrafficManagerUserMetricsKeyModel = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -195,7 +208,7 @@ pub mod traffic_manager_user_metrics_keys {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -220,7 +233,7 @@ pub mod traffic_manager_user_metrics_keys {
     pub async fn delete(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DeleteOperationResult, delete::Error> {
+    ) -> std::result::Result<models::DeleteOperationResult, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/trafficManagerUserMetricsKeys",
@@ -245,13 +258,13 @@ pub mod traffic_manager_user_metrics_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeleteOperationResult =
+                let rsp_value: models::DeleteOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -261,7 +274,7 @@ pub mod traffic_manager_user_metrics_keys {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

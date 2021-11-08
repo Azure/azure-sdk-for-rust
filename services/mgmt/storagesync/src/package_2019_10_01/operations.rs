@@ -2,10 +2,89 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    StorageSyncServices_CheckNameAvailability(#[from] storage_sync_services::check_name_availability::Error),
+    #[error(transparent)]
+    StorageSyncServices_Get(#[from] storage_sync_services::get::Error),
+    #[error(transparent)]
+    StorageSyncServices_Create(#[from] storage_sync_services::create::Error),
+    #[error(transparent)]
+    StorageSyncServices_Update(#[from] storage_sync_services::update::Error),
+    #[error(transparent)]
+    StorageSyncServices_Delete(#[from] storage_sync_services::delete::Error),
+    #[error(transparent)]
+    StorageSyncServices_ListByResourceGroup(#[from] storage_sync_services::list_by_resource_group::Error),
+    #[error(transparent)]
+    StorageSyncServices_ListBySubscription(#[from] storage_sync_services::list_by_subscription::Error),
+    #[error(transparent)]
+    SyncGroups_ListByStorageSyncService(#[from] sync_groups::list_by_storage_sync_service::Error),
+    #[error(transparent)]
+    SyncGroups_Get(#[from] sync_groups::get::Error),
+    #[error(transparent)]
+    SyncGroups_Create(#[from] sync_groups::create::Error),
+    #[error(transparent)]
+    SyncGroups_Delete(#[from] sync_groups::delete::Error),
+    #[error(transparent)]
+    CloudEndpoints_Get(#[from] cloud_endpoints::get::Error),
+    #[error(transparent)]
+    CloudEndpoints_Create(#[from] cloud_endpoints::create::Error),
+    #[error(transparent)]
+    CloudEndpoints_Delete(#[from] cloud_endpoints::delete::Error),
+    #[error(transparent)]
+    CloudEndpoints_ListBySyncGroup(#[from] cloud_endpoints::list_by_sync_group::Error),
+    #[error(transparent)]
+    CloudEndpoints_PreBackup(#[from] cloud_endpoints::pre_backup::Error),
+    #[error(transparent)]
+    CloudEndpoints_PostBackup(#[from] cloud_endpoints::post_backup::Error),
+    #[error(transparent)]
+    CloudEndpoints_PreRestore(#[from] cloud_endpoints::pre_restore::Error),
+    #[error(transparent)]
+    CloudEndpoints_Restoreheartbeat(#[from] cloud_endpoints::restoreheartbeat::Error),
+    #[error(transparent)]
+    CloudEndpoints_PostRestore(#[from] cloud_endpoints::post_restore::Error),
+    #[error(transparent)]
+    CloudEndpoints_TriggerChangeDetection(#[from] cloud_endpoints::trigger_change_detection::Error),
+    #[error(transparent)]
+    ServerEndpoints_Get(#[from] server_endpoints::get::Error),
+    #[error(transparent)]
+    ServerEndpoints_Create(#[from] server_endpoints::create::Error),
+    #[error(transparent)]
+    ServerEndpoints_Update(#[from] server_endpoints::update::Error),
+    #[error(transparent)]
+    ServerEndpoints_Delete(#[from] server_endpoints::delete::Error),
+    #[error(transparent)]
+    ServerEndpoints_ListBySyncGroup(#[from] server_endpoints::list_by_sync_group::Error),
+    #[error(transparent)]
+    ServerEndpoints_RecallAction(#[from] server_endpoints::recall_action::Error),
+    #[error(transparent)]
+    RegisteredServers_ListByStorageSyncService(#[from] registered_servers::list_by_storage_sync_service::Error),
+    #[error(transparent)]
+    RegisteredServers_Get(#[from] registered_servers::get::Error),
+    #[error(transparent)]
+    RegisteredServers_Create(#[from] registered_servers::create::Error),
+    #[error(transparent)]
+    RegisteredServers_Delete(#[from] registered_servers::delete::Error),
+    #[error(transparent)]
+    RegisteredServers_TriggerRollover(#[from] registered_servers::trigger_rollover::Error),
+    #[error(transparent)]
+    Workflows_ListByStorageSyncService(#[from] workflows::list_by_storage_sync_service::Error),
+    #[error(transparent)]
+    Workflows_Get(#[from] workflows::get::Error),
+    #[error(transparent)]
+    Workflows_Abort(#[from] workflows::abort::Error),
+    #[error(transparent)]
+    OperationStatus_Get(#[from] operation_status::get::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationEntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.StorageSync/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +105,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationEntityListResult =
+                let rsp_value: models::OperationEntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +121,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,13 +145,13 @@ pub mod operations {
     }
 }
 pub mod storage_sync_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         location_name: &str,
         subscription_id: &str,
-        parameters: &CheckNameAvailabilityParameters,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+        parameters: &models::CheckNameAvailabilityParameters,
+    ) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StorageSync/locations/{}/checkNameAvailability",
@@ -104,7 +183,7 @@ pub mod storage_sync_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -118,7 +197,7 @@ pub mod storage_sync_services {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -142,7 +221,7 @@ pub mod storage_sync_services {
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
-    ) -> std::result::Result<StorageSyncService, get::Error> {
+    ) -> std::result::Result<models::StorageSyncService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}",
@@ -169,13 +248,13 @@ pub mod storage_sync_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncService =
+                let rsp_value: models::StorageSyncService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -185,7 +264,7 @@ pub mod storage_sync_services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -212,8 +291,8 @@ pub mod storage_sync_services {
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
-        parameters: &StorageSyncServiceCreateParameters,
-    ) -> std::result::Result<StorageSyncService, create::Error> {
+        parameters: &models::StorageSyncServiceCreateParameters,
+    ) -> std::result::Result<models::StorageSyncService, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}",
@@ -241,13 +320,13 @@ pub mod storage_sync_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncService =
+                let rsp_value: models::StorageSyncService =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -257,7 +336,7 @@ pub mod storage_sync_services {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -284,8 +363,8 @@ pub mod storage_sync_services {
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
-        parameters: Option<&StorageSyncServiceUpdateParameters>,
-    ) -> std::result::Result<StorageSyncService, update::Error> {
+        parameters: Option<&models::StorageSyncServiceUpdateParameters>,
+    ) -> std::result::Result<models::StorageSyncService, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}",
@@ -317,13 +396,13 @@ pub mod storage_sync_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncService =
+                let rsp_value: models::StorageSyncService =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -333,7 +412,7 @@ pub mod storage_sync_services {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -389,7 +468,7 @@ pub mod storage_sync_services {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -399,7 +478,7 @@ pub mod storage_sync_services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -430,7 +509,7 @@ pub mod storage_sync_services {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<StorageSyncServiceArray, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::StorageSyncServiceArray, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices",
@@ -461,13 +540,13 @@ pub mod storage_sync_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncServiceArray = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncServiceArray = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -477,7 +556,7 @@ pub mod storage_sync_services {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -502,7 +581,7 @@ pub mod storage_sync_services {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<StorageSyncServiceArray, list_by_subscription::Error> {
+    ) -> std::result::Result<models::StorageSyncServiceArray, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StorageSync/storageSyncServices",
@@ -530,13 +609,13 @@ pub mod storage_sync_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncServiceArray = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncServiceArray = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -546,7 +625,7 @@ pub mod storage_sync_services {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -570,13 +649,13 @@ pub mod storage_sync_services {
     }
 }
 pub mod sync_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_storage_sync_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
-    ) -> std::result::Result<SyncGroupArray, list_by_storage_sync_service::Error> {
+    ) -> std::result::Result<models::SyncGroupArray, list_by_storage_sync_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups",
@@ -608,13 +687,13 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroupArray = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SyncGroupArray = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_storage_sync_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_storage_sync_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_storage_sync_service::Error::DefaultResponse {
                     status_code,
@@ -624,7 +703,7 @@ pub mod sync_groups {
         }
     }
     pub mod list_by_storage_sync_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -652,7 +731,7 @@ pub mod sync_groups {
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
-    ) -> std::result::Result<SyncGroup, get::Error> {
+    ) -> std::result::Result<models::SyncGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}",
@@ -680,13 +759,13 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroup =
+                let rsp_value: models::SyncGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -696,7 +775,7 @@ pub mod sync_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -724,8 +803,8 @@ pub mod sync_groups {
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
-        parameters: &SyncGroupCreateParameters,
-    ) -> std::result::Result<SyncGroup, create::Error> {
+        parameters: &models::SyncGroupCreateParameters,
+    ) -> std::result::Result<models::SyncGroup, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}",
@@ -754,13 +833,13 @@ pub mod sync_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SyncGroup =
+                let rsp_value: models::SyncGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -770,7 +849,7 @@ pub mod sync_groups {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -828,7 +907,7 @@ pub mod sync_groups {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -838,7 +917,7 @@ pub mod sync_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -867,7 +946,7 @@ pub mod sync_groups {
     }
 }
 pub mod cloud_endpoints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -875,7 +954,7 @@ pub mod cloud_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
-    ) -> std::result::Result<CloudEndpoint, get::Error> {
+    ) -> std::result::Result<models::CloudEndpoint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}",
@@ -904,13 +983,13 @@ pub mod cloud_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudEndpoint =
+                let rsp_value: models::CloudEndpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -920,7 +999,7 @@ pub mod cloud_endpoints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -949,7 +1028,7 @@ pub mod cloud_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
-        parameters: &CloudEndpointCreateParameters,
+        parameters: &models::CloudEndpointCreateParameters,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -980,14 +1059,14 @@ pub mod cloud_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudEndpoint =
+                let rsp_value: models::CloudEndpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -997,10 +1076,10 @@ pub mod cloud_endpoints {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CloudEndpoint),
+            Ok200(models::CloudEndpoint),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1063,7 +1142,7 @@ pub mod cloud_endpoints {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1073,7 +1152,7 @@ pub mod cloud_endpoints {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1107,7 +1186,7 @@ pub mod cloud_endpoints {
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
-    ) -> std::result::Result<CloudEndpointArray, list_by_sync_group::Error> {
+    ) -> std::result::Result<models::CloudEndpointArray, list_by_sync_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints",
@@ -1138,13 +1217,13 @@ pub mod cloud_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudEndpointArray = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudEndpointArray = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_sync_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_sync_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_sync_group::Error::DefaultResponse {
                     status_code,
@@ -1154,7 +1233,7 @@ pub mod cloud_endpoints {
         }
     }
     pub mod list_by_sync_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1183,7 +1262,7 @@ pub mod cloud_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
-        parameters: &BackupRequest,
+        parameters: &models::BackupRequest,
     ) -> std::result::Result<pre_backup::Response, pre_backup::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/prebackup" , operation_config . base_path () , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
@@ -1211,7 +1290,7 @@ pub mod cloud_endpoints {
             http::StatusCode::ACCEPTED => Ok(pre_backup::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| pre_backup::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(pre_backup::Error::DefaultResponse {
                     status_code,
@@ -1221,7 +1300,7 @@ pub mod cloud_endpoints {
         }
     }
     pub mod pre_backup {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1255,7 +1334,7 @@ pub mod cloud_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
-        parameters: &BackupRequest,
+        parameters: &models::BackupRequest,
     ) -> std::result::Result<post_backup::Response, post_backup::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/postbackup" , operation_config . base_path () , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
@@ -1281,14 +1360,14 @@ pub mod cloud_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PostBackupResponse =
+                let rsp_value: models::PostBackupResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| post_backup::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(post_backup::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(post_backup::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| post_backup::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post_backup::Error::DefaultResponse {
                     status_code,
@@ -1298,10 +1377,10 @@ pub mod cloud_endpoints {
         }
     }
     pub mod post_backup {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PostBackupResponse),
+            Ok200(models::PostBackupResponse),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1332,7 +1411,7 @@ pub mod cloud_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
-        parameters: &PreRestoreRequest,
+        parameters: &models::PreRestoreRequest,
     ) -> std::result::Result<pre_restore::Response, pre_restore::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/prerestore" , operation_config . base_path () , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
@@ -1360,7 +1439,7 @@ pub mod cloud_endpoints {
             http::StatusCode::ACCEPTED => Ok(pre_restore::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| pre_restore::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(pre_restore::Error::DefaultResponse {
                     status_code,
@@ -1370,7 +1449,7 @@ pub mod cloud_endpoints {
         }
     }
     pub mod pre_restore {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1430,7 +1509,7 @@ pub mod cloud_endpoints {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| restoreheartbeat::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(restoreheartbeat::Error::DefaultResponse {
                     status_code,
@@ -1440,7 +1519,7 @@ pub mod cloud_endpoints {
         }
     }
     pub mod restoreheartbeat {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1469,7 +1548,7 @@ pub mod cloud_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
-        parameters: &PostRestoreRequest,
+        parameters: &models::PostRestoreRequest,
     ) -> std::result::Result<post_restore::Response, post_restore::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/postrestore" , operation_config . base_path () , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
@@ -1497,7 +1576,7 @@ pub mod cloud_endpoints {
             http::StatusCode::ACCEPTED => Ok(post_restore::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| post_restore::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post_restore::Error::DefaultResponse {
                     status_code,
@@ -1507,7 +1586,7 @@ pub mod cloud_endpoints {
         }
     }
     pub mod post_restore {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1541,7 +1620,7 @@ pub mod cloud_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         cloud_endpoint_name: &str,
-        parameters: &TriggerChangeDetectionParameters,
+        parameters: &models::TriggerChangeDetectionParameters,
     ) -> std::result::Result<trigger_change_detection::Response, trigger_change_detection::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/cloudEndpoints/{}/triggerChangeDetection" , operation_config . base_path () , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , cloud_endpoint_name) ;
@@ -1571,7 +1650,7 @@ pub mod cloud_endpoints {
             http::StatusCode::ACCEPTED => Ok(trigger_change_detection::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| trigger_change_detection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(trigger_change_detection::Error::DefaultResponse {
                     status_code,
@@ -1581,7 +1660,7 @@ pub mod cloud_endpoints {
         }
     }
     pub mod trigger_change_detection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1610,7 +1689,7 @@ pub mod cloud_endpoints {
     }
 }
 pub mod server_endpoints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1618,7 +1697,7 @@ pub mod server_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         server_endpoint_name: &str,
-    ) -> std::result::Result<ServerEndpoint, get::Error> {
+    ) -> std::result::Result<models::ServerEndpoint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints/{}",
@@ -1647,13 +1726,13 @@ pub mod server_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerEndpoint =
+                let rsp_value: models::ServerEndpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1663,7 +1742,7 @@ pub mod server_endpoints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1692,7 +1771,7 @@ pub mod server_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         server_endpoint_name: &str,
-        parameters: &ServerEndpointCreateParameters,
+        parameters: &models::ServerEndpointCreateParameters,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1723,14 +1802,14 @@ pub mod server_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerEndpoint =
+                let rsp_value: models::ServerEndpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1740,10 +1819,10 @@ pub mod server_endpoints {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerEndpoint),
+            Ok200(models::ServerEndpoint),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1774,7 +1853,7 @@ pub mod server_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         server_endpoint_name: &str,
-        parameters: Option<&ServerEndpointUpdateParameters>,
+        parameters: Option<&models::ServerEndpointUpdateParameters>,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1809,14 +1888,14 @@ pub mod server_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerEndpoint =
+                let rsp_value: models::ServerEndpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1826,10 +1905,10 @@ pub mod server_endpoints {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ServerEndpoint),
+            Ok200(models::ServerEndpoint),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1891,7 +1970,7 @@ pub mod server_endpoints {
             http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1901,7 +1980,7 @@ pub mod server_endpoints {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1934,7 +2013,7 @@ pub mod server_endpoints {
         resource_group_name: &str,
         storage_sync_service_name: &str,
         sync_group_name: &str,
-    ) -> std::result::Result<ServerEndpointArray, list_by_sync_group::Error> {
+    ) -> std::result::Result<models::ServerEndpointArray, list_by_sync_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints",
@@ -1965,13 +2044,13 @@ pub mod server_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServerEndpointArray = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServerEndpointArray = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_sync_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_sync_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_sync_group::Error::DefaultResponse {
                     status_code,
@@ -1981,7 +2060,7 @@ pub mod server_endpoints {
         }
     }
     pub mod list_by_sync_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2010,7 +2089,7 @@ pub mod server_endpoints {
         storage_sync_service_name: &str,
         sync_group_name: &str,
         server_endpoint_name: &str,
-        parameters: &RecallActionParameters,
+        parameters: &models::RecallActionParameters,
     ) -> std::result::Result<recall_action::Response, recall_action::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/syncGroups/{}/serverEndpoints/{}/recallAction" , operation_config . base_path () , subscription_id , resource_group_name , storage_sync_service_name , sync_group_name , server_endpoint_name) ;
@@ -2038,7 +2117,7 @@ pub mod server_endpoints {
             http::StatusCode::ACCEPTED => Ok(recall_action::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| recall_action::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(recall_action::Error::DefaultResponse {
                     status_code,
@@ -2048,7 +2127,7 @@ pub mod server_endpoints {
         }
     }
     pub mod recall_action {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2077,13 +2156,13 @@ pub mod server_endpoints {
     }
 }
 pub mod registered_servers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_storage_sync_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
-    ) -> std::result::Result<RegisteredServerArray, list_by_storage_sync_service::Error> {
+    ) -> std::result::Result<models::RegisteredServerArray, list_by_storage_sync_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/registeredServers",
@@ -2115,13 +2194,13 @@ pub mod registered_servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegisteredServerArray = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RegisteredServerArray = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_storage_sync_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_storage_sync_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_storage_sync_service::Error::DefaultResponse {
                     status_code,
@@ -2131,7 +2210,7 @@ pub mod registered_servers {
         }
     }
     pub mod list_by_storage_sync_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2159,7 +2238,7 @@ pub mod registered_servers {
         resource_group_name: &str,
         storage_sync_service_name: &str,
         server_id: &str,
-    ) -> std::result::Result<RegisteredServer, get::Error> {
+    ) -> std::result::Result<models::RegisteredServer, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/registeredServers/{}",
@@ -2187,13 +2266,13 @@ pub mod registered_servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegisteredServer =
+                let rsp_value: models::RegisteredServer =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2203,7 +2282,7 @@ pub mod registered_servers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2231,7 +2310,7 @@ pub mod registered_servers {
         resource_group_name: &str,
         storage_sync_service_name: &str,
         server_id: &str,
-        parameters: &RegisteredServerCreateParameters,
+        parameters: &models::RegisteredServerCreateParameters,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2261,14 +2340,14 @@ pub mod registered_servers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegisteredServer =
+                let rsp_value: models::RegisteredServer =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -2278,10 +2357,10 @@ pub mod registered_servers {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(RegisteredServer),
+            Ok200(models::RegisteredServer),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2342,7 +2421,7 @@ pub mod registered_servers {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2352,7 +2431,7 @@ pub mod registered_servers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2386,7 +2465,7 @@ pub mod registered_servers {
         resource_group_name: &str,
         storage_sync_service_name: &str,
         server_id: &str,
-        parameters: &TriggerRolloverRequest,
+        parameters: &models::TriggerRolloverRequest,
     ) -> std::result::Result<trigger_rollover::Response, trigger_rollover::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/registeredServers/{}/triggerRollover" , operation_config . base_path () , subscription_id , resource_group_name , storage_sync_service_name , server_id) ;
@@ -2414,7 +2493,7 @@ pub mod registered_servers {
             http::StatusCode::ACCEPTED => Ok(trigger_rollover::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| trigger_rollover::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(trigger_rollover::Error::DefaultResponse {
                     status_code,
@@ -2424,7 +2503,7 @@ pub mod registered_servers {
         }
     }
     pub mod trigger_rollover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2453,13 +2532,13 @@ pub mod registered_servers {
     }
 }
 pub mod workflows {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_storage_sync_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         storage_sync_service_name: &str,
-    ) -> std::result::Result<WorkflowArray, list_by_storage_sync_service::Error> {
+    ) -> std::result::Result<models::WorkflowArray, list_by_storage_sync_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/workflows",
@@ -2491,13 +2570,13 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkflowArray = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkflowArray = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_storage_sync_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageSyncError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_storage_sync_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_storage_sync_service::Error::DefaultResponse {
                     status_code,
@@ -2507,7 +2586,7 @@ pub mod workflows {
         }
     }
     pub mod list_by_storage_sync_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2535,7 +2614,7 @@ pub mod workflows {
         resource_group_name: &str,
         storage_sync_service_name: &str,
         workflow_id: &str,
-    ) -> std::result::Result<Workflow, get::Error> {
+    ) -> std::result::Result<models::Workflow, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/storageSyncServices/{}/workflows/{}",
@@ -2563,13 +2642,13 @@ pub mod workflows {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Workflow =
+                let rsp_value: models::Workflow =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2579,7 +2658,7 @@ pub mod workflows {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2637,7 +2716,7 @@ pub mod workflows {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| abort::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(abort::Error::DefaultResponse {
                     status_code,
@@ -2647,7 +2726,7 @@ pub mod workflows {
         }
     }
     pub mod abort {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2671,7 +2750,7 @@ pub mod workflows {
     }
 }
 pub mod operation_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2679,7 +2758,7 @@ pub mod operation_status {
         location_name: &str,
         workflow_id: &str,
         operation_id: &str,
-    ) -> std::result::Result<OperationStatus, get::Error> {
+    ) -> std::result::Result<models::OperationStatus, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageSync/locations/{}/workflows/{}/operations/{}",
@@ -2708,13 +2787,13 @@ pub mod operation_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageSyncError =
+                let rsp_value: models::StorageSyncError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2724,7 +2803,7 @@ pub mod operation_status {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

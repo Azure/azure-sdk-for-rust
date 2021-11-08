@@ -2,14 +2,29 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    WorkbookTemplates_ListByResourceGroup(#[from] workbook_templates::list_by_resource_group::Error),
+    #[error(transparent)]
+    WorkbookTemplates_Get(#[from] workbook_templates::get::Error),
+    #[error(transparent)]
+    WorkbookTemplates_CreateOrUpdate(#[from] workbook_templates::create_or_update::Error),
+    #[error(transparent)]
+    WorkbookTemplates_Update(#[from] workbook_templates::update::Error),
+    #[error(transparent)]
+    WorkbookTemplates_Delete(#[from] workbook_templates::delete::Error),
+}
 pub mod workbook_templates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<WorkbookTemplatesListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::WorkbookTemplatesListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/workbooktemplates",
@@ -40,13 +55,13 @@ pub mod workbook_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookTemplatesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkbookTemplatesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkbookError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -56,7 +71,7 @@ pub mod workbook_templates {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -83,7 +98,7 @@ pub mod workbook_templates {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<WorkbookTemplate, get::Error> {
+    ) -> std::result::Result<models::WorkbookTemplate, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/workbooktemplates/{}",
@@ -110,13 +125,13 @@ pub mod workbook_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookTemplate =
+                let rsp_value: models::WorkbookTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookError =
+                let rsp_value: models::WorkbookError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -126,7 +141,7 @@ pub mod workbook_templates {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -153,7 +168,7 @@ pub mod workbook_templates {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        workbook_template_properties: &WorkbookTemplate,
+        workbook_template_properties: &models::WorkbookTemplate,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -185,19 +200,19 @@ pub mod workbook_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookTemplate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkbookTemplate = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookTemplate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkbookTemplate = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkbookError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -207,11 +222,11 @@ pub mod workbook_templates {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(WorkbookTemplate),
-            Created201(WorkbookTemplate),
+            Ok200(models::WorkbookTemplate),
+            Created201(models::WorkbookTemplate),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -239,8 +254,8 @@ pub mod workbook_templates {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        workbook_template_update_parameters: Option<&WorkbookTemplateUpdateParameters>,
-    ) -> std::result::Result<WorkbookTemplate, update::Error> {
+        workbook_template_update_parameters: Option<&models::WorkbookTemplateUpdateParameters>,
+    ) -> std::result::Result<models::WorkbookTemplate, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/workbooktemplates/{}",
@@ -272,13 +287,13 @@ pub mod workbook_templates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookTemplate =
+                let rsp_value: models::WorkbookTemplate =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookError =
+                let rsp_value: models::WorkbookError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -288,7 +303,7 @@ pub mod workbook_templates {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -344,7 +359,7 @@ pub mod workbook_templates {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkbookError =
+                let rsp_value: models::WorkbookError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -354,7 +369,7 @@ pub mod workbook_templates {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

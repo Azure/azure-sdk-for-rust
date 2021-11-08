@@ -2,10 +2,73 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    DataManagers_List(#[from] data_managers::list::Error),
+    #[error(transparent)]
+    DataManagers_ListByResourceGroup(#[from] data_managers::list_by_resource_group::Error),
+    #[error(transparent)]
+    DataManagers_Get(#[from] data_managers::get::Error),
+    #[error(transparent)]
+    DataManagers_Create(#[from] data_managers::create::Error),
+    #[error(transparent)]
+    DataManagers_Update(#[from] data_managers::update::Error),
+    #[error(transparent)]
+    DataManagers_Delete(#[from] data_managers::delete::Error),
+    #[error(transparent)]
+    DataServices_ListByDataManager(#[from] data_services::list_by_data_manager::Error),
+    #[error(transparent)]
+    DataServices_Get(#[from] data_services::get::Error),
+    #[error(transparent)]
+    JobDefinitions_ListByDataService(#[from] job_definitions::list_by_data_service::Error),
+    #[error(transparent)]
+    JobDefinitions_Get(#[from] job_definitions::get::Error),
+    #[error(transparent)]
+    JobDefinitions_CreateOrUpdate(#[from] job_definitions::create_or_update::Error),
+    #[error(transparent)]
+    JobDefinitions_Delete(#[from] job_definitions::delete::Error),
+    #[error(transparent)]
+    Jobs_ListByJobDefinition(#[from] jobs::list_by_job_definition::Error),
+    #[error(transparent)]
+    Jobs_Get(#[from] jobs::get::Error),
+    #[error(transparent)]
+    Jobs_Cancel(#[from] jobs::cancel::Error),
+    #[error(transparent)]
+    Jobs_Resume(#[from] jobs::resume::Error),
+    #[error(transparent)]
+    JobDefinitions_Run(#[from] job_definitions::run::Error),
+    #[error(transparent)]
+    Jobs_ListByDataService(#[from] jobs::list_by_data_service::Error),
+    #[error(transparent)]
+    DataStores_ListByDataManager(#[from] data_stores::list_by_data_manager::Error),
+    #[error(transparent)]
+    DataStores_Get(#[from] data_stores::get::Error),
+    #[error(transparent)]
+    DataStores_CreateOrUpdate(#[from] data_stores::create_or_update::Error),
+    #[error(transparent)]
+    DataStores_Delete(#[from] data_stores::delete::Error),
+    #[error(transparent)]
+    DataStoreTypes_ListByDataManager(#[from] data_store_types::list_by_data_manager::Error),
+    #[error(transparent)]
+    DataStoreTypes_Get(#[from] data_store_types::get::Error),
+    #[error(transparent)]
+    JobDefinitions_ListByDataManager(#[from] job_definitions::list_by_data_manager::Error),
+    #[error(transparent)]
+    Jobs_ListByDataManager(#[from] jobs::list_by_data_manager::Error),
+    #[error(transparent)]
+    PublicKeys_ListByDataManager(#[from] public_keys::list_by_data_manager::Error),
+    #[error(transparent)]
+    PublicKeys_Get(#[from] public_keys::get::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<AvailableProviderOperations, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::AvailableProviderOperations, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.HybridData/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +89,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailableProviderOperations =
+                let rsp_value: models::AvailableProviderOperations =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +103,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,11 +124,11 @@ pub mod operations {
     }
 }
 pub mod data_managers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DataManagerList, list::Error> {
+    ) -> std::result::Result<models::DataManagerList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HybridData/dataManagers",
@@ -90,7 +153,7 @@ pub mod data_managers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataManagerList =
+                let rsp_value: models::DataManagerList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -104,7 +167,7 @@ pub mod data_managers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -127,7 +190,7 @@ pub mod data_managers {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DataManagerList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DataManagerList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers",
@@ -158,7 +221,7 @@ pub mod data_managers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataManagerList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataManagerList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -172,7 +235,7 @@ pub mod data_managers {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -196,7 +259,7 @@ pub mod data_managers {
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<DataManager, get::Error> {
+    ) -> std::result::Result<models::DataManager, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}",
@@ -223,7 +286,7 @@ pub mod data_managers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataManager =
+                let rsp_value: models::DataManager =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -237,7 +300,7 @@ pub mod data_managers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -261,7 +324,7 @@ pub mod data_managers {
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-        data_manager: &DataManager,
+        data_manager: &models::DataManager,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -290,7 +353,7 @@ pub mod data_managers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataManager =
+                let rsp_value: models::DataManager =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
@@ -305,10 +368,10 @@ pub mod data_managers {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataManager),
+            Ok200(models::DataManager),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -335,7 +398,7 @@ pub mod data_managers {
         resource_group_name: &str,
         data_manager_name: &str,
         if_match: Option<&str>,
-        data_manager_update_parameter: &DataManagerUpdateParameter,
+        data_manager_update_parameter: &models::DataManagerUpdateParameter,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -367,7 +430,7 @@ pub mod data_managers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataManager =
+                let rsp_value: models::DataManager =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -382,10 +445,10 @@ pub mod data_managers {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataManager),
+            Ok200(models::DataManager),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -448,7 +511,7 @@ pub mod data_managers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -474,13 +537,13 @@ pub mod data_managers {
     }
 }
 pub mod data_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_manager(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<DataServiceList, list_by_data_manager::Error> {
+    ) -> std::result::Result<models::DataServiceList, list_by_data_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices",
@@ -510,7 +573,7 @@ pub mod data_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataServiceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataServiceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_manager::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -524,7 +587,7 @@ pub mod data_services {
         }
     }
     pub mod list_by_data_manager {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -549,7 +612,7 @@ pub mod data_services {
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<DataService, get::Error> {
+    ) -> std::result::Result<models::DataService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}",
@@ -577,7 +640,7 @@ pub mod data_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataService =
+                let rsp_value: models::DataService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -591,7 +654,7 @@ pub mod data_services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -612,7 +675,7 @@ pub mod data_services {
     }
 }
 pub mod job_definitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_service(
         operation_config: &crate::OperationConfig,
         data_service_name: &str,
@@ -620,7 +683,7 @@ pub mod job_definitions {
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<JobDefinitionList, list_by_data_service::Error> {
+    ) -> std::result::Result<models::JobDefinitionList, list_by_data_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions",
@@ -654,7 +717,7 @@ pub mod job_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDefinitionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobDefinitionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -668,7 +731,7 @@ pub mod job_definitions {
         }
     }
     pub mod list_by_data_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -694,7 +757,7 @@ pub mod job_definitions {
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<JobDefinition, get::Error> {
+    ) -> std::result::Result<models::JobDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}",
@@ -723,7 +786,7 @@ pub mod job_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDefinition =
+                let rsp_value: models::JobDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -737,7 +800,7 @@ pub mod job_definitions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -760,7 +823,7 @@ pub mod job_definitions {
         operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
-        job_definition: &JobDefinition,
+        job_definition: &models::JobDefinition,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
@@ -797,7 +860,7 @@ pub mod job_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -812,10 +875,10 @@ pub mod job_definitions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobDefinition),
+            Ok200(models::JobDefinition),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -882,7 +945,7 @@ pub mod job_definitions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -910,7 +973,7 @@ pub mod job_definitions {
         operation_config: &crate::OperationConfig,
         data_service_name: &str,
         job_definition_name: &str,
-        run_parameters: &RunParameters,
+        run_parameters: &models::RunParameters,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
@@ -954,7 +1017,7 @@ pub mod job_definitions {
         }
     }
     pub mod run {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -984,7 +1047,7 @@ pub mod job_definitions {
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<JobDefinitionList, list_by_data_manager::Error> {
+    ) -> std::result::Result<models::JobDefinitionList, list_by_data_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/jobDefinitions",
@@ -1017,7 +1080,7 @@ pub mod job_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDefinitionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobDefinitionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_manager::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1031,7 +1094,7 @@ pub mod job_definitions {
         }
     }
     pub mod list_by_data_manager {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1052,7 +1115,7 @@ pub mod job_definitions {
     }
 }
 pub mod jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_job_definition(
         operation_config: &crate::OperationConfig,
         data_service_name: &str,
@@ -1061,7 +1124,7 @@ pub mod jobs {
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<JobList, list_by_job_definition::Error> {
+    ) -> std::result::Result<models::JobList, list_by_job_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs",
@@ -1098,7 +1161,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_job_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1112,7 +1175,7 @@ pub mod jobs {
         }
     }
     pub mod list_by_job_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1140,7 +1203,7 @@ pub mod jobs {
         resource_group_name: &str,
         data_manager_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<Job, get::Error> {
+    ) -> std::result::Result<models::Job, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobDefinitions/{}/jobs/{}" , operation_config . base_path () , subscription_id , resource_group_name , data_manager_name , data_service_name , job_definition_name , job_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1164,7 +1227,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job =
+                let rsp_value: models::Job =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1178,7 +1241,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1237,7 +1300,7 @@ pub mod jobs {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1301,7 +1364,7 @@ pub mod jobs {
         }
     }
     pub mod resume {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1332,7 +1395,7 @@ pub mod jobs {
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<JobList, list_by_data_service::Error> {
+    ) -> std::result::Result<models::JobList, list_by_data_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataServices/{}/jobs",
@@ -1366,7 +1429,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1380,7 +1443,7 @@ pub mod jobs {
         }
     }
     pub mod list_by_data_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1405,7 +1468,7 @@ pub mod jobs {
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<JobList, list_by_data_manager::Error> {
+    ) -> std::result::Result<models::JobList, list_by_data_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/jobs",
@@ -1438,7 +1501,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_manager::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1452,7 +1515,7 @@ pub mod jobs {
         }
     }
     pub mod list_by_data_manager {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1473,14 +1536,14 @@ pub mod jobs {
     }
 }
 pub mod data_stores {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_manager(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<DataStoreList, list_by_data_manager::Error> {
+    ) -> std::result::Result<models::DataStoreList, list_by_data_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStores",
@@ -1513,7 +1576,7 @@ pub mod data_stores {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataStoreList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataStoreList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_manager::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1527,7 +1590,7 @@ pub mod data_stores {
         }
     }
     pub mod list_by_data_manager {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1552,7 +1615,7 @@ pub mod data_stores {
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<DataStore, get::Error> {
+    ) -> std::result::Result<models::DataStore, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStores/{}",
@@ -1580,7 +1643,7 @@ pub mod data_stores {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataStore =
+                let rsp_value: models::DataStore =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1594,7 +1657,7 @@ pub mod data_stores {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1616,7 +1679,7 @@ pub mod data_stores {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         data_store_name: &str,
-        data_store: &DataStore,
+        data_store: &models::DataStore,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
@@ -1652,7 +1715,7 @@ pub mod data_stores {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataStore = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataStore = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -1667,10 +1730,10 @@ pub mod data_stores {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataStore),
+            Ok200(models::DataStore),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1735,7 +1798,7 @@ pub mod data_stores {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1761,13 +1824,13 @@ pub mod data_stores {
     }
 }
 pub mod data_store_types {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_manager(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<DataStoreTypeList, list_by_data_manager::Error> {
+    ) -> std::result::Result<models::DataStoreTypeList, list_by_data_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStoreTypes",
@@ -1797,7 +1860,7 @@ pub mod data_store_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataStoreTypeList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataStoreTypeList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_manager::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1811,7 +1874,7 @@ pub mod data_store_types {
         }
     }
     pub mod list_by_data_manager {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1836,7 +1899,7 @@ pub mod data_store_types {
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<DataStoreType, get::Error> {
+    ) -> std::result::Result<models::DataStoreType, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/dataStoreTypes/{}",
@@ -1864,7 +1927,7 @@ pub mod data_store_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataStoreType =
+                let rsp_value: models::DataStoreType =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1878,7 +1941,7 @@ pub mod data_store_types {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1899,13 +1962,13 @@ pub mod data_store_types {
     }
 }
 pub mod public_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_manager(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<PublicKeyList, list_by_data_manager::Error> {
+    ) -> std::result::Result<models::PublicKeyList, list_by_data_manager::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/publicKeys",
@@ -1935,7 +1998,7 @@ pub mod public_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicKeyList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PublicKeyList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_manager::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1949,7 +2012,7 @@ pub mod public_keys {
         }
     }
     pub mod list_by_data_manager {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1974,7 +2037,7 @@ pub mod public_keys {
         subscription_id: &str,
         resource_group_name: &str,
         data_manager_name: &str,
-    ) -> std::result::Result<PublicKey, get::Error> {
+    ) -> std::result::Result<models::PublicKey, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridData/dataManagers/{}/publicKeys/{}",
@@ -2002,7 +2065,7 @@ pub mod public_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicKey =
+                let rsp_value: models::PublicKey =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2016,7 +2079,7 @@ pub mod public_keys {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

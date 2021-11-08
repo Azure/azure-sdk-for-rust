@@ -2,9 +2,32 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Recommendations_Generate(#[from] recommendations::generate::Error),
+    #[error(transparent)]
+    Recommendations_GetGenerateStatus(#[from] recommendations::get_generate_status::Error),
+    #[error(transparent)]
+    Recommendations_List(#[from] recommendations::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Suppressions_Get(#[from] suppressions::get::Error),
+    #[error(transparent)]
+    Suppressions_Create(#[from] suppressions::create::Error),
+    #[error(transparent)]
+    Suppressions_Delete(#[from] suppressions::delete::Error),
+    #[error(transparent)]
+    Recommendations_Get(#[from] recommendations::get::Error),
+    #[error(transparent)]
+    Suppressions_List(#[from] suppressions::list::Error),
+}
 pub mod recommendations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn generate(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<(), generate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -43,7 +66,7 @@ pub mod recommendations {
         }
     }
     pub mod generate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -105,7 +128,7 @@ pub mod recommendations {
         }
     }
     pub mod get_generate_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -135,7 +158,7 @@ pub mod recommendations {
         filter: Option<&str>,
         top: Option<i64>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<ResourceRecommendationBaseListResult, list::Error> {
+    ) -> std::result::Result<models::ResourceRecommendationBaseListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Advisor/recommendations",
@@ -169,7 +192,7 @@ pub mod recommendations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceRecommendationBaseListResult =
+                let rsp_value: models::ResourceRecommendationBaseListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -183,7 +206,7 @@ pub mod recommendations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -206,7 +229,7 @@ pub mod recommendations {
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         recommendation_id: &str,
-    ) -> std::result::Result<ResourceRecommendationBase, get::Error> {
+    ) -> std::result::Result<models::ResourceRecommendationBase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Advisor/recommendations/{}",
@@ -232,7 +255,7 @@ pub mod recommendations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceRecommendationBase =
+                let rsp_value: models::ResourceRecommendationBase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -246,7 +269,7 @@ pub mod recommendations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -267,8 +290,8 @@ pub mod recommendations {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationEntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Advisor/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -289,7 +312,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationEntityListResult =
+                let rsp_value: models::OperationEntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -303,7 +326,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -324,13 +347,13 @@ pub mod operations {
     }
 }
 pub mod suppressions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
         recommendation_id: &str,
         name: &str,
-    ) -> std::result::Result<SuppressionContract, get::Error> {
+    ) -> std::result::Result<models::SuppressionContract, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Advisor/recommendations/{}/suppressions/{}",
@@ -357,7 +380,7 @@ pub mod suppressions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SuppressionContract =
+                let rsp_value: models::SuppressionContract =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -371,7 +394,7 @@ pub mod suppressions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -395,8 +418,8 @@ pub mod suppressions {
         resource_uri: &str,
         recommendation_id: &str,
         name: &str,
-        suppression_contract: &SuppressionContract,
-    ) -> std::result::Result<SuppressionContract, create::Error> {
+        suppression_contract: &models::SuppressionContract,
+    ) -> std::result::Result<models::SuppressionContract, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Advisor/recommendations/{}/suppressions/{}",
@@ -424,7 +447,7 @@ pub mod suppressions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SuppressionContract =
+                let rsp_value: models::SuppressionContract =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -438,7 +461,7 @@ pub mod suppressions {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -498,7 +521,7 @@ pub mod suppressions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -520,7 +543,7 @@ pub mod suppressions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<Vec<SuppressionContract>, list::Error> {
+    ) -> std::result::Result<Vec<models::SuppressionContract>, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Advisor/suppressions",
@@ -545,7 +568,7 @@ pub mod suppressions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<SuppressionContract> =
+                let rsp_value: Vec<models::SuppressionContract> =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -559,7 +582,7 @@ pub mod suppressions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

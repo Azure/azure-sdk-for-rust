@@ -2,10 +2,33 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    WebServices_Get(#[from] web_services::get::Error),
+    #[error(transparent)]
+    WebServices_CreateOrUpdate(#[from] web_services::create_or_update::Error),
+    #[error(transparent)]
+    WebServices_Patch(#[from] web_services::patch::Error),
+    #[error(transparent)]
+    WebServices_Remove(#[from] web_services::remove::Error),
+    #[error(transparent)]
+    WebServices_CreateRegionalProperties(#[from] web_services::create_regional_properties::Error),
+    #[error(transparent)]
+    WebServices_ListKeys(#[from] web_services::list_keys::Error),
+    #[error(transparent)]
+    WebServices_ListByResourceGroup(#[from] web_services::list_by_resource_group::Error),
+    #[error(transparent)]
+    WebServices_ListBySubscriptionId(#[from] web_services::list_by_subscription_id::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationEntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.MachineLearning/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +49,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationEntityListResult =
+                let rsp_value: models::OperationEntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +63,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,14 +84,14 @@ pub mod operations {
     }
 }
 pub mod web_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         web_service_name: &str,
         region: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<WebService, get::Error> {
+    ) -> std::result::Result<models::WebService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/webServices/{}",
@@ -98,7 +121,7 @@ pub mod web_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebService =
+                let rsp_value: models::WebService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -112,7 +135,7 @@ pub mod web_services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -135,7 +158,7 @@ pub mod web_services {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         web_service_name: &str,
-        create_or_update_payload: &WebService,
+        create_or_update_payload: &models::WebService,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -168,13 +191,13 @@ pub mod web_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -188,11 +211,11 @@ pub mod web_services {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(WebService),
-            Created201(WebService),
+            Ok200(models::WebService),
+            Created201(models::WebService),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -216,9 +239,9 @@ pub mod web_services {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         web_service_name: &str,
-        patch_payload: &PatchedWebService,
+        patch_payload: &models::PatchedWebService,
         subscription_id: &str,
-    ) -> std::result::Result<WebService, patch::Error> {
+    ) -> std::result::Result<models::WebService, patch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/webServices/{}",
@@ -246,7 +269,7 @@ pub mod web_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebService =
+                let rsp_value: models::WebService =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -260,7 +283,7 @@ pub mod web_services {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -321,7 +344,7 @@ pub mod web_services {
         }
     }
     pub mod remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -386,7 +409,7 @@ pub mod web_services {
             http::StatusCode::ACCEPTED => Ok(create_regional_properties::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AsyncOperationStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AsyncOperationStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_regional_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_regional_properties::Response::Ok200(rsp_value))
             }
@@ -400,11 +423,11 @@ pub mod web_services {
         }
     }
     pub mod create_regional_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(AsyncOperationStatus),
+            Ok200(models::AsyncOperationStatus),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -429,7 +452,7 @@ pub mod web_services {
         resource_group_name: &str,
         web_service_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebServiceKeys, list_keys::Error> {
+    ) -> std::result::Result<models::WebServiceKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/webServices/{}/listKeys",
@@ -459,7 +482,7 @@ pub mod web_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebServiceKeys =
+                let rsp_value: models::WebServiceKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -473,7 +496,7 @@ pub mod web_services {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -497,7 +520,7 @@ pub mod web_services {
         resource_group_name: &str,
         skiptoken: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PaginatedWebServicesList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PaginatedWebServicesList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/webServices",
@@ -531,7 +554,7 @@ pub mod web_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PaginatedWebServicesList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PaginatedWebServicesList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -545,7 +568,7 @@ pub mod web_services {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -568,7 +591,7 @@ pub mod web_services {
         operation_config: &crate::OperationConfig,
         skiptoken: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PaginatedWebServicesList, list_by_subscription_id::Error> {
+    ) -> std::result::Result<models::PaginatedWebServicesList, list_by_subscription_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MachineLearning/webServices",
@@ -601,7 +624,7 @@ pub mod web_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PaginatedWebServicesList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PaginatedWebServicesList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -615,7 +638,7 @@ pub mod web_services {
         }
     }
     pub mod list_by_subscription_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

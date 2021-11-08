@@ -2,13 +2,34 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    RoleAssignments_CheckPrincipalAccess(#[from] role_assignments::check_principal_access::Error),
+    #[error(transparent)]
+    RoleDefinitions_ListRoleDefinitions(#[from] role_definitions::list_role_definitions::Error),
+    #[error(transparent)]
+    RoleDefinitions_GetRoleDefinitionById(#[from] role_definitions::get_role_definition_by_id::Error),
+    #[error(transparent)]
+    RoleDefinitions_ListScopes(#[from] role_definitions::list_scopes::Error),
+    #[error(transparent)]
+    RoleAssignments_ListRoleAssignments(#[from] role_assignments::list_role_assignments::Error),
+    #[error(transparent)]
+    RoleAssignments_GetRoleAssignmentById(#[from] role_assignments::get_role_assignment_by_id::Error),
+    #[error(transparent)]
+    RoleAssignments_CreateRoleAssignment(#[from] role_assignments::create_role_assignment::Error),
+    #[error(transparent)]
+    RoleAssignments_DeleteRoleAssignmentById(#[from] role_assignments::delete_role_assignment_by_id::Error),
+}
 pub mod role_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_principal_access(
         operation_config: &crate::OperationConfig,
-        request: &CheckPrincipalAccessRequest,
-    ) -> std::result::Result<CheckPrincipalAccessResponse, check_principal_access::Error> {
+        request: &models::CheckPrincipalAccessRequest,
+    ) -> std::result::Result<models::CheckPrincipalAccessResponse, check_principal_access::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/checkAccessSynapseRbac", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(check_principal_access::Error::ParseUrlError)?;
@@ -35,13 +56,13 @@ pub mod role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckPrincipalAccessResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckPrincipalAccessResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_principal_access::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorContract = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_principal_access::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_principal_access::Error::DefaultResponse {
                     status_code,
@@ -51,7 +72,7 @@ pub mod role_assignments {
         }
     }
     pub mod check_principal_access {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -79,7 +100,7 @@ pub mod role_assignments {
         principal_id: Option<&str>,
         scope: Option<&str>,
         x_ms_continuation: Option<&str>,
-    ) -> std::result::Result<RoleAssignmentDetailsList, list_role_assignments::Error> {
+    ) -> std::result::Result<models::RoleAssignmentDetailsList, list_role_assignments::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/roleAssignments", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_role_assignments::Error::ParseUrlError)?;
@@ -117,13 +138,13 @@ pub mod role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RoleAssignmentDetailsList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RoleAssignmentDetailsList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_role_assignments::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorContract = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_role_assignments::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_role_assignments::Error::DefaultResponse {
                     status_code,
@@ -133,7 +154,7 @@ pub mod role_assignments {
         }
     }
     pub mod list_role_assignments {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -158,7 +179,7 @@ pub mod role_assignments {
     pub async fn get_role_assignment_by_id(
         operation_config: &crate::OperationConfig,
         role_assignment_id: &str,
-    ) -> std::result::Result<RoleAssignmentDetails, get_role_assignment_by_id::Error> {
+    ) -> std::result::Result<models::RoleAssignmentDetails, get_role_assignment_by_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/roleAssignments/{}", operation_config.base_path(), role_assignment_id);
         let mut url = url::Url::parse(url_str).map_err(get_role_assignment_by_id::Error::ParseUrlError)?;
@@ -184,13 +205,13 @@ pub mod role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RoleAssignmentDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RoleAssignmentDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_role_assignment_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorContract = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_role_assignment_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_role_assignment_by_id::Error::DefaultResponse {
                     status_code,
@@ -200,7 +221,7 @@ pub mod role_assignments {
         }
     }
     pub mod get_role_assignment_by_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -224,9 +245,9 @@ pub mod role_assignments {
     }
     pub async fn create_role_assignment(
         operation_config: &crate::OperationConfig,
-        request: &RoleAssignmentRequest,
+        request: &models::RoleAssignmentRequest,
         role_assignment_id: &str,
-    ) -> std::result::Result<RoleAssignmentDetails, create_role_assignment::Error> {
+    ) -> std::result::Result<models::RoleAssignmentDetails, create_role_assignment::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/roleAssignments/{}", operation_config.base_path(), role_assignment_id);
         let mut url = url::Url::parse(url_str).map_err(create_role_assignment::Error::ParseUrlError)?;
@@ -253,13 +274,13 @@ pub mod role_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RoleAssignmentDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RoleAssignmentDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_role_assignment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorContract = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_role_assignment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_role_assignment::Error::DefaultResponse {
                     status_code,
@@ -269,7 +290,7 @@ pub mod role_assignments {
         }
     }
     pub mod create_role_assignment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -326,7 +347,7 @@ pub mod role_assignments {
             http::StatusCode::NO_CONTENT => Ok(delete_role_assignment_by_id::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorContract = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_role_assignment_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_role_assignment_by_id::Error::DefaultResponse {
                     status_code,
@@ -336,7 +357,7 @@ pub mod role_assignments {
         }
     }
     pub mod delete_role_assignment_by_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -365,12 +386,12 @@ pub mod role_assignments {
     }
 }
 pub mod role_definitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_role_definitions(
         operation_config: &crate::OperationConfig,
         is_built_in: Option<bool>,
         scope: Option<&str>,
-    ) -> std::result::Result<RoleDefinitionsListResponse, list_role_definitions::Error> {
+    ) -> std::result::Result<models::RoleDefinitionsListResponse, list_role_definitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/roleDefinitions", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_role_definitions::Error::ParseUrlError)?;
@@ -402,13 +423,13 @@ pub mod role_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RoleDefinitionsListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RoleDefinitionsListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_role_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorContract = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_role_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_role_definitions::Error::DefaultResponse {
                     status_code,
@@ -418,7 +439,7 @@ pub mod role_definitions {
         }
     }
     pub mod list_role_definitions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -443,7 +464,7 @@ pub mod role_definitions {
     pub async fn get_role_definition_by_id(
         operation_config: &crate::OperationConfig,
         role_definition_id: &str,
-    ) -> std::result::Result<SynapseRoleDefinition, get_role_definition_by_id::Error> {
+    ) -> std::result::Result<models::SynapseRoleDefinition, get_role_definition_by_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/roleDefinitions/{}", operation_config.base_path(), role_definition_id);
         let mut url = url::Url::parse(url_str).map_err(get_role_definition_by_id::Error::ParseUrlError)?;
@@ -469,13 +490,13 @@ pub mod role_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SynapseRoleDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SynapseRoleDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_role_definition_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorContract = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_role_definition_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_role_definition_by_id::Error::DefaultResponse {
                     status_code,
@@ -485,7 +506,7 @@ pub mod role_definitions {
         }
     }
     pub mod get_role_definition_by_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -537,7 +558,7 @@ pub mod role_definitions {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorContract =
+                let rsp_value: models::ErrorContract =
                     serde_json::from_slice(rsp_body).map_err(|source| list_scopes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_scopes::Error::DefaultResponse {
                     status_code,
@@ -547,7 +568,7 @@ pub mod role_definitions {
         }
     }
     pub mod list_scopes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,15 +2,34 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    PrivateLinkAssociation_Put(#[from] private_link_association::put::Error),
+    #[error(transparent)]
+    PrivateLinkAssociation_Delete(#[from] private_link_association::delete::Error),
+    #[error(transparent)]
+    PrivateLinkAssociation_Get(#[from] private_link_association::get::Error),
+    #[error(transparent)]
+    ResourceManagementPrivateLink_Get(#[from] resource_management_private_link::get::Error),
+    #[error(transparent)]
+    ResourceManagementPrivateLink_Put(#[from] resource_management_private_link::put::Error),
+    #[error(transparent)]
+    ResourceManagementPrivateLink_Delete(#[from] resource_management_private_link::delete::Error),
+    #[error(transparent)]
+    ResourceManagementPrivateLink_List(#[from] resource_management_private_link::list::Error),
+}
 pub mod private_link_association {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn put(
         operation_config: &crate::OperationConfig,
         group_id: &str,
         pla_id: &str,
-        parameters: &PrivateLinkAssociationProperties,
-    ) -> std::result::Result<PrivateLinkAssociation, put::Error> {
+        parameters: &models::PrivateLinkAssociationProperties,
+    ) -> std::result::Result<models::PrivateLinkAssociation, put::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/privateLinkAssociations/{}",
@@ -37,13 +56,13 @@ pub mod private_link_association {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkAssociation =
+                let rsp_value: models::PrivateLinkAssociation =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(put::Error::DefaultResponse {
                     status_code,
@@ -53,7 +72,7 @@ pub mod private_link_association {
         }
     }
     pub mod put {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -107,7 +126,7 @@ pub mod private_link_association {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -117,7 +136,7 @@ pub mod private_link_association {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -147,7 +166,7 @@ pub mod private_link_association {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-    ) -> std::result::Result<PrivateLinkAssociationGetResult, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkAssociationGetResult, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Authorization/privateLinkAssociations",
@@ -172,13 +191,13 @@ pub mod private_link_association {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkAssociationGetResult =
+                let rsp_value: models::PrivateLinkAssociationGetResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -188,7 +207,7 @@ pub mod private_link_association {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -212,13 +231,13 @@ pub mod private_link_association {
     }
 }
 pub mod resource_management_private_link {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         rmpl_name: &str,
-    ) -> std::result::Result<ResourceManagementPrivateLink, get::Error> {
+    ) -> std::result::Result<models::ResourceManagementPrivateLink, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/resourceManagementPrivateLinks/{}",
@@ -245,13 +264,13 @@ pub mod resource_management_private_link {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceManagementPrivateLink =
+                let rsp_value: models::ResourceManagementPrivateLink =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -261,7 +280,7 @@ pub mod resource_management_private_link {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -288,8 +307,8 @@ pub mod resource_management_private_link {
         subscription_id: &str,
         resource_group_name: &str,
         rmpl_name: &str,
-        parameters: &ResourceManagementPrivateLinkLocation,
-    ) -> std::result::Result<ResourceManagementPrivateLink, put::Error> {
+        parameters: &models::ResourceManagementPrivateLinkLocation,
+    ) -> std::result::Result<models::ResourceManagementPrivateLink, put::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/resourceManagementPrivateLinks/{}",
@@ -317,13 +336,13 @@ pub mod resource_management_private_link {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceManagementPrivateLink =
+                let rsp_value: models::ResourceManagementPrivateLink =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(put::Error::DefaultResponse {
                     status_code,
@@ -333,7 +352,7 @@ pub mod resource_management_private_link {
         }
     }
     pub mod put {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -389,7 +408,7 @@ pub mod resource_management_private_link {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -399,7 +418,7 @@ pub mod resource_management_private_link {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -429,7 +448,7 @@ pub mod resource_management_private_link {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceManagementPrivateLinkListResult, list::Error> {
+    ) -> std::result::Result<models::ResourceManagementPrivateLinkListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/resourceManagementPrivateLinks",
@@ -454,13 +473,13 @@ pub mod resource_management_private_link {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceManagementPrivateLinkListResult =
+                let rsp_value: models::ResourceManagementPrivateLinkListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -470,7 +489,7 @@ pub mod resource_management_private_link {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

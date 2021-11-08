@@ -6,12 +6,12 @@
 #[cfg(feature = "package-2015-06-preview")]
 pub mod package_2015_06_preview;
 #[cfg(all(feature = "package-2015-06-preview", not(feature = "no-default-version")))]
-pub use package_2015_06_preview::{models, operations};
+pub use package_2015_06_preview::{models, operations, operations::Error};
 #[cfg(feature = "profile-hybrid-2020-09-01")]
 pub mod profile_hybrid_2020_09_01;
 use azure_core::setters;
 #[cfg(all(feature = "profile-hybrid-2020-09-01", not(feature = "no-default-version")))]
-pub use profile_hybrid_2020_09_01::{models, operations};
+pub use profile_hybrid_2020_09_01::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

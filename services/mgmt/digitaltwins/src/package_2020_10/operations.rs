@@ -2,15 +2,44 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    DigitalTwins_Get(#[from] digital_twins::get::Error),
+    #[error(transparent)]
+    DigitalTwins_CreateOrUpdate(#[from] digital_twins::create_or_update::Error),
+    #[error(transparent)]
+    DigitalTwins_Update(#[from] digital_twins::update::Error),
+    #[error(transparent)]
+    DigitalTwins_Delete(#[from] digital_twins::delete::Error),
+    #[error(transparent)]
+    DigitalTwinsEndpoint_List(#[from] digital_twins_endpoint::list::Error),
+    #[error(transparent)]
+    DigitalTwinsEndpoint_Get(#[from] digital_twins_endpoint::get::Error),
+    #[error(transparent)]
+    DigitalTwinsEndpoint_CreateOrUpdate(#[from] digital_twins_endpoint::create_or_update::Error),
+    #[error(transparent)]
+    DigitalTwinsEndpoint_Delete(#[from] digital_twins_endpoint::delete::Error),
+    #[error(transparent)]
+    DigitalTwins_List(#[from] digital_twins::list::Error),
+    #[error(transparent)]
+    DigitalTwins_ListByResourceGroup(#[from] digital_twins::list_by_resource_group::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    DigitalTwins_CheckNameAvailability(#[from] digital_twins::check_name_availability::Error),
+}
 pub mod digital_twins {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<DigitalTwinsDescription, get::Error> {
+    ) -> std::result::Result<models::DigitalTwinsDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
@@ -37,13 +66,13 @@ pub mod digital_twins {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsDescription =
+                let rsp_value: models::DigitalTwinsDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +82,7 @@ pub mod digital_twins {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,7 +109,7 @@ pub mod digital_twins {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        digital_twins_create: &DigitalTwinsDescription,
+        digital_twins_create: &models::DigitalTwinsDescription,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -112,19 +141,19 @@ pub mod digital_twins {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DigitalTwinsDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DigitalTwinsDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -134,11 +163,11 @@ pub mod digital_twins {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DigitalTwinsDescription),
-            Created201(DigitalTwinsDescription),
+            Ok200(models::DigitalTwinsDescription),
+            Created201(models::DigitalTwinsDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -166,8 +195,8 @@ pub mod digital_twins {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        digital_twins_patch_description: &DigitalTwinsPatchDescription,
-    ) -> std::result::Result<DigitalTwinsDescription, update::Error> {
+        digital_twins_patch_description: &models::DigitalTwinsPatchDescription,
+    ) -> std::result::Result<models::DigitalTwinsDescription, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}",
@@ -195,13 +224,13 @@ pub mod digital_twins {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsDescription =
+                let rsp_value: models::DigitalTwinsDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -211,7 +240,7 @@ pub mod digital_twins {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -265,20 +294,20 @@ pub mod digital_twins {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsDescription =
+                let rsp_value: models::DigitalTwinsDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsDescription =
+                let rsp_value: models::DigitalTwinsDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Accepted202(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -288,11 +317,11 @@ pub mod digital_twins {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DigitalTwinsDescription),
-            Accepted202(DigitalTwinsDescription),
+            Ok200(models::DigitalTwinsDescription),
+            Accepted202(models::DigitalTwinsDescription),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -319,7 +348,7 @@ pub mod digital_twins {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DigitalTwinsDescriptionListResult, list::Error> {
+    ) -> std::result::Result<models::DigitalTwinsDescriptionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances",
@@ -344,13 +373,13 @@ pub mod digital_twins {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsDescriptionListResult =
+                let rsp_value: models::DigitalTwinsDescriptionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -360,7 +389,7 @@ pub mod digital_twins {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -386,7 +415,7 @@ pub mod digital_twins {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DigitalTwinsDescriptionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DigitalTwinsDescriptionListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances",
@@ -417,13 +446,13 @@ pub mod digital_twins {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsDescriptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DigitalTwinsDescriptionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -433,7 +462,7 @@ pub mod digital_twins {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -459,8 +488,8 @@ pub mod digital_twins {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        digital_twins_instance_check_name: &CheckNameRequest,
-    ) -> std::result::Result<CheckNameResult, check_name_availability::Error> {
+        digital_twins_instance_check_name: &models::CheckNameRequest,
+    ) -> std::result::Result<models::CheckNameResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DigitalTwins/locations/{}/checkNameAvailability",
@@ -492,13 +521,13 @@ pub mod digital_twins {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -508,7 +537,7 @@ pub mod digital_twins {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -532,13 +561,13 @@ pub mod digital_twins {
     }
 }
 pub mod digital_twins_endpoint {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<DigitalTwinsEndpointResourceListResult, list::Error> {
+    ) -> std::result::Result<models::DigitalTwinsEndpointResourceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints",
@@ -565,13 +594,13 @@ pub mod digital_twins_endpoint {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsEndpointResourceListResult =
+                let rsp_value: models::DigitalTwinsEndpointResourceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -581,7 +610,7 @@ pub mod digital_twins_endpoint {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -609,7 +638,7 @@ pub mod digital_twins_endpoint {
         resource_group_name: &str,
         resource_name: &str,
         endpoint_name: &str,
-    ) -> std::result::Result<DigitalTwinsEndpointResource, get::Error> {
+    ) -> std::result::Result<models::DigitalTwinsEndpointResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DigitalTwins/digitalTwinsInstances/{}/endpoints/{}",
@@ -637,13 +666,13 @@ pub mod digital_twins_endpoint {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsEndpointResource =
+                let rsp_value: models::DigitalTwinsEndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -653,7 +682,7 @@ pub mod digital_twins_endpoint {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -681,7 +710,7 @@ pub mod digital_twins_endpoint {
         resource_group_name: &str,
         resource_name: &str,
         endpoint_name: &str,
-        endpoint_description: &DigitalTwinsEndpointResource,
+        endpoint_description: &models::DigitalTwinsEndpointResource,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -714,19 +743,19 @@ pub mod digital_twins_endpoint {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsEndpointResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DigitalTwinsEndpointResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsEndpointResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DigitalTwinsEndpointResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -736,11 +765,11 @@ pub mod digital_twins_endpoint {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DigitalTwinsEndpointResource),
-            Created201(DigitalTwinsEndpointResource),
+            Ok200(models::DigitalTwinsEndpointResource),
+            Created201(models::DigitalTwinsEndpointResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -797,20 +826,20 @@ pub mod digital_twins_endpoint {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsEndpointResource =
+                let rsp_value: models::DigitalTwinsEndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DigitalTwinsEndpointResource =
+                let rsp_value: models::DigitalTwinsEndpointResource =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Accepted202(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -820,11 +849,11 @@ pub mod digital_twins_endpoint {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DigitalTwinsEndpointResource),
-            Accepted202(DigitalTwinsEndpointResource),
+            Ok200(models::DigitalTwinsEndpointResource),
+            Accepted202(models::DigitalTwinsEndpointResource),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -850,8 +879,8 @@ pub mod digital_twins_endpoint {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DigitalTwins/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -872,13 +901,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -888,7 +917,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

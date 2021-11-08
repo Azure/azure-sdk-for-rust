@@ -2,10 +2,157 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    OperationResults_Get(#[from] operation_results::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForEdmUpload_Get(#[from] private_link_services_for_edm_upload::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForEdmUpload_CreateOrUpdate(#[from] private_link_services_for_edm_upload::create_or_update::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForEdmUpload_Update(#[from] private_link_services_for_edm_upload::update::Error),
+    #[error(transparent)]
+    Services_Delete(#[from] services::delete::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForEdmUpload_List(#[from] private_link_services_for_edm_upload::list::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForEdmUpload_ListByResourceGroup(#[from] private_link_services_for_edm_upload::list_by_resource_group::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsForEdm_ListByService(#[from] private_endpoint_connections_for_edm::list_by_service::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsForEdm_Get(#[from] private_endpoint_connections_for_edm::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsForEdm_CreateOrUpdate(#[from] private_endpoint_connections_for_edm::create_or_update::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsForEdm_Delete(#[from] private_endpoint_connections_for_edm::delete::Error),
+    #[error(transparent)]
+    PrivateLinkResources_ListByService(#[from] private_link_resources::list_by_service::Error),
+    #[error(transparent)]
+    PrivateLinkResources_Get(#[from] private_link_resources::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365ComplianceCenter_Get(#[from] private_link_services_for_m365_compliance_center::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365ComplianceCenter_CreateOrUpdate(
+        #[from] private_link_services_for_m365_compliance_center::create_or_update::Error,
+    ),
+    #[error(transparent)]
+    PrivateLinkServicesForM365ComplianceCenter_Update(#[from] private_link_services_for_m365_compliance_center::update::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365ComplianceCenter_Delete(#[from] private_link_services_for_m365_compliance_center::delete::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365ComplianceCenter_List(#[from] private_link_services_for_m365_compliance_center::list::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365ComplianceCenter_ListByResourceGroup(
+        #[from] private_link_services_for_m365_compliance_center::list_by_resource_group::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionsComp_ListByService(#[from] private_endpoint_connections_comp::list_by_service::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsComp_Get(#[from] private_endpoint_connections_comp::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsComp_CreateOrUpdate(#[from] private_endpoint_connections_comp::create_or_update::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsComp_Delete(#[from] private_endpoint_connections_comp::delete::Error),
+    #[error(transparent)]
+    PrivateLinkResourcesComp_ListByService(#[from] private_link_resources_comp::list_by_service::Error),
+    #[error(transparent)]
+    PrivateLinkResourcesComp_Get(#[from] private_link_resources_comp::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365SecurityCenter_Get(#[from] private_link_services_for_m365_security_center::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365SecurityCenter_CreateOrUpdate(
+        #[from] private_link_services_for_m365_security_center::create_or_update::Error,
+    ),
+    #[error(transparent)]
+    PrivateLinkServicesForM365SecurityCenter_Update(#[from] private_link_services_for_m365_security_center::update::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365SecurityCenter_Delete(#[from] private_link_services_for_m365_security_center::delete::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365SecurityCenter_List(#[from] private_link_services_for_m365_security_center::list::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForM365SecurityCenter_ListByResourceGroup(
+        #[from] private_link_services_for_m365_security_center::list_by_resource_group::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionsSec_ListByService(#[from] private_endpoint_connections_sec::list_by_service::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsSec_Get(#[from] private_endpoint_connections_sec::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsSec_CreateOrUpdate(#[from] private_endpoint_connections_sec::create_or_update::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsSec_Delete(#[from] private_endpoint_connections_sec::delete::Error),
+    #[error(transparent)]
+    PrivateLinkResourcesSec_ListByService(#[from] private_link_resources_sec::list_by_service::Error),
+    #[error(transparent)]
+    PrivateLinkResourcesSec_Get(#[from] private_link_resources_sec::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForO365ManagementActivityApi_Get(#[from] private_link_services_for_o365_management_activity_api::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForO365ManagementActivityApi_CreateOrUpdate(
+        #[from] private_link_services_for_o365_management_activity_api::create_or_update::Error,
+    ),
+    #[error(transparent)]
+    PrivateLinkServicesForO365ManagementActivityApi_Update(#[from] private_link_services_for_o365_management_activity_api::update::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForO365ManagementActivityApi_Delete(#[from] private_link_services_for_o365_management_activity_api::delete::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForO365ManagementActivityApi_List(#[from] private_link_services_for_o365_management_activity_api::list::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForO365ManagementActivityApi_ListByResourceGroup(
+        #[from] private_link_services_for_o365_management_activity_api::list_by_resource_group::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionsAdtApi_ListByService(#[from] private_endpoint_connections_adt_api::list_by_service::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsAdtApi_Get(#[from] private_endpoint_connections_adt_api::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsAdtApi_CreateOrUpdate(#[from] private_endpoint_connections_adt_api::create_or_update::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsAdtApi_Delete(#[from] private_endpoint_connections_adt_api::delete::Error),
+    #[error(transparent)]
+    PrivateLinkResourcesAdtApi_ListByService(#[from] private_link_resources_adt_api::list_by_service::Error),
+    #[error(transparent)]
+    PrivateLinkResourcesAdtApi_Get(#[from] private_link_resources_adt_api::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForSccPowershell_Get(#[from] private_link_services_for_scc_powershell::get::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForSccPowershell_CreateOrUpdate(#[from] private_link_services_for_scc_powershell::create_or_update::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForSccPowershell_Update(#[from] private_link_services_for_scc_powershell::update::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForSccPowershell_Delete(#[from] private_link_services_for_scc_powershell::delete::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForSccPowershell_List(#[from] private_link_services_for_scc_powershell::list::Error),
+    #[error(transparent)]
+    PrivateLinkServicesForSccPowershell_ListByResourceGroup(
+        #[from] private_link_services_for_scc_powershell::list_by_resource_group::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionsForSccPowershell_ListByService(
+        #[from] private_endpoint_connections_for_scc_powershell::list_by_service::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionsForSccPowershell_Get(#[from] private_endpoint_connections_for_scc_powershell::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsForSccPowershell_CreateOrUpdate(
+        #[from] private_endpoint_connections_for_scc_powershell::create_or_update::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionsForSccPowershell_Delete(#[from] private_endpoint_connections_for_scc_powershell::delete::Error),
+    #[error(transparent)]
+    PrivateLinkResourcesForSccPowershell_ListByService(#[from] private_link_resources_for_scc_powershell::list_by_service::Error),
+    #[error(transparent)]
+    PrivateLinkResourcesForSccPowershell_Get(#[from] private_link_resources_for_scc_powershell::get::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.SecurityAndCompliance/operations",
@@ -29,13 +176,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -45,7 +192,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -69,13 +216,13 @@ pub mod operations {
     }
 }
 pub mod operation_results {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location_name: &str,
         operation_result_id: &str,
-    ) -> std::result::Result<OperationResultsDescription, get::Error> {
+    ) -> std::result::Result<models::OperationResultsDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/locations/{}/operationresults/{}",
@@ -102,13 +249,13 @@ pub mod operation_results {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResultsDescription =
+                let rsp_value: models::OperationResultsDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -118,7 +265,7 @@ pub mod operation_results {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -142,13 +289,13 @@ pub mod operation_results {
     }
 }
 pub mod private_link_services_for_edm_upload {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForEdmUploadDescription, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForEdmUploadDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}",
@@ -175,13 +322,13 @@ pub mod private_link_services_for_edm_upload {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForEdmUploadDescription =
+                let rsp_value: models::PrivateLinkServicesForEdmUploadDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -191,7 +338,7 @@ pub mod private_link_services_for_edm_upload {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -218,7 +365,7 @@ pub mod private_link_services_for_edm_upload {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        private_link_services_for_edm_upload_description: &PrivateLinkServicesForEdmUploadDescription,
+        private_link_services_for_edm_upload_description: &models::PrivateLinkServicesForEdmUploadDescription,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -251,19 +398,19 @@ pub mod private_link_services_for_edm_upload {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForEdmUploadDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForEdmUploadDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForEdmUploadDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForEdmUploadDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -273,11 +420,11 @@ pub mod private_link_services_for_edm_upload {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForEdmUploadDescription),
-            Created201(PrivateLinkServicesForEdmUploadDescription),
+            Ok200(models::PrivateLinkServicesForEdmUploadDescription),
+            Created201(models::PrivateLinkServicesForEdmUploadDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -305,7 +452,7 @@ pub mod private_link_services_for_edm_upload {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        service_patch_description: &ServicesPatchDescription,
+        service_patch_description: &models::ServicesPatchDescription,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -334,19 +481,19 @@ pub mod private_link_services_for_edm_upload {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForEdmUploadDescription =
+                let rsp_value: models::PrivateLinkServicesForEdmUploadDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForEdmUploadDescription =
+                let rsp_value: models::PrivateLinkServicesForEdmUploadDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -356,11 +503,11 @@ pub mod private_link_services_for_edm_upload {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForEdmUploadDescription),
-            Accepted202(PrivateLinkServicesForEdmUploadDescription),
+            Ok200(models::PrivateLinkServicesForEdmUploadDescription),
+            Accepted202(models::PrivateLinkServicesForEdmUploadDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -386,7 +533,7 @@ pub mod private_link_services_for_edm_upload {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkServicesForEdmUploadDescriptionListResult, list::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForEdmUploadDescriptionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload",
@@ -411,13 +558,13 @@ pub mod private_link_services_for_edm_upload {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForEdmUploadDescriptionListResult =
+                let rsp_value: models::PrivateLinkServicesForEdmUploadDescriptionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -427,7 +574,7 @@ pub mod private_link_services_for_edm_upload {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -453,7 +600,7 @@ pub mod private_link_services_for_edm_upload {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForEdmUploadDescriptionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForEdmUploadDescriptionListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload",
@@ -484,13 +631,13 @@ pub mod private_link_services_for_edm_upload {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForEdmUploadDescriptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForEdmUploadDescriptionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -500,7 +647,7 @@ pub mod private_link_services_for_edm_upload {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -524,7 +671,7 @@ pub mod private_link_services_for_edm_upload {
     }
 }
 pub mod services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn delete(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -560,7 +707,7 @@ pub mod services {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -570,7 +717,7 @@ pub mod services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -600,13 +747,13 @@ pub mod services {
     }
 }
 pub mod private_endpoint_connections_for_edm {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -630,13 +777,13 @@ pub mod private_endpoint_connections_for_edm {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -646,7 +793,7 @@ pub mod private_endpoint_connections_for_edm {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -674,7 +821,7 @@ pub mod private_endpoint_connections_for_edm {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -695,13 +842,13 @@ pub mod private_endpoint_connections_for_edm {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -711,7 +858,7 @@ pub mod private_endpoint_connections_for_edm {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -739,7 +886,7 @@ pub mod private_endpoint_connections_for_edm {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-        properties: &PrivateEndpointConnection,
+        properties: &models::PrivateEndpointConnection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
@@ -765,19 +912,19 @@ pub mod private_endpoint_connections_for_edm {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -787,11 +934,11 @@ pub mod private_endpoint_connections_for_edm {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
-            Created201(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
+            Created201(models::PrivateEndpointConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -844,7 +991,7 @@ pub mod private_endpoint_connections_for_edm {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -854,7 +1001,7 @@ pub mod private_endpoint_connections_for_edm {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -884,13 +1031,13 @@ pub mod private_endpoint_connections_for_edm {
     }
 }
 pub mod private_link_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateLinkResources" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -914,13 +1061,13 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -930,7 +1077,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -958,7 +1105,7 @@ pub mod private_link_resources {
         resource_group_name: &str,
         resource_name: &str,
         group_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForEDMUpload/{}/privateLinkResources/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , group_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -979,13 +1126,13 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -995,7 +1142,7 @@ pub mod private_link_resources {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1019,13 +1166,13 @@ pub mod private_link_resources {
     }
 }
 pub mod private_link_services_for_m365_compliance_center {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForM365ComplianceCenterDescription, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForM365ComplianceCenterDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}",
@@ -1052,13 +1199,13 @@ pub mod private_link_services_for_m365_compliance_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365ComplianceCenterDescription =
+                let rsp_value: models::PrivateLinkServicesForM365ComplianceCenterDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1068,7 +1215,7 @@ pub mod private_link_services_for_m365_compliance_center {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1095,7 +1242,7 @@ pub mod private_link_services_for_m365_compliance_center {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        private_link_services_for_m365_compliance_center_description: &PrivateLinkServicesForM365ComplianceCenterDescription,
+        private_link_services_for_m365_compliance_center_description: &models::PrivateLinkServicesForM365ComplianceCenterDescription,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1128,19 +1275,19 @@ pub mod private_link_services_for_m365_compliance_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365ComplianceCenterDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForM365ComplianceCenterDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365ComplianceCenterDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForM365ComplianceCenterDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1150,11 +1297,11 @@ pub mod private_link_services_for_m365_compliance_center {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForM365ComplianceCenterDescription),
-            Created201(PrivateLinkServicesForM365ComplianceCenterDescription),
+            Ok200(models::PrivateLinkServicesForM365ComplianceCenterDescription),
+            Created201(models::PrivateLinkServicesForM365ComplianceCenterDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1182,7 +1329,7 @@ pub mod private_link_services_for_m365_compliance_center {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        service_patch_description: &ServicesPatchDescription,
+        service_patch_description: &models::ServicesPatchDescription,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1211,19 +1358,19 @@ pub mod private_link_services_for_m365_compliance_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365ComplianceCenterDescription =
+                let rsp_value: models::PrivateLinkServicesForM365ComplianceCenterDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365ComplianceCenterDescription =
+                let rsp_value: models::PrivateLinkServicesForM365ComplianceCenterDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1233,11 +1380,11 @@ pub mod private_link_services_for_m365_compliance_center {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForM365ComplianceCenterDescription),
-            Accepted202(PrivateLinkServicesForM365ComplianceCenterDescription),
+            Ok200(models::PrivateLinkServicesForM365ComplianceCenterDescription),
+            Accepted202(models::PrivateLinkServicesForM365ComplianceCenterDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1295,7 +1442,7 @@ pub mod private_link_services_for_m365_compliance_center {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1305,7 +1452,7 @@ pub mod private_link_services_for_m365_compliance_center {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1336,7 +1483,7 @@ pub mod private_link_services_for_m365_compliance_center {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkServicesForM365ComplianceCenterDescriptionListResult, list::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForM365ComplianceCenterDescriptionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter",
@@ -1361,13 +1508,13 @@ pub mod private_link_services_for_m365_compliance_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365ComplianceCenterDescriptionListResult =
+                let rsp_value: models::PrivateLinkServicesForM365ComplianceCenterDescriptionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1377,7 +1524,7 @@ pub mod private_link_services_for_m365_compliance_center {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1403,7 +1550,7 @@ pub mod private_link_services_for_m365_compliance_center {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForM365ComplianceCenterDescriptionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForM365ComplianceCenterDescriptionListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter",
@@ -1434,13 +1581,14 @@ pub mod private_link_services_for_m365_compliance_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365ComplianceCenterDescriptionListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::PrivateLinkServicesForM365ComplianceCenterDescriptionListResult =
+                    serde_json::from_slice(rsp_body)
+                        .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1450,7 +1598,7 @@ pub mod private_link_services_for_m365_compliance_center {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1474,13 +1622,13 @@ pub mod private_link_services_for_m365_compliance_center {
     }
 }
 pub mod private_endpoint_connections_comp {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -1504,13 +1652,13 @@ pub mod private_endpoint_connections_comp {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -1520,7 +1668,7 @@ pub mod private_endpoint_connections_comp {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1548,7 +1696,7 @@ pub mod private_endpoint_connections_comp {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1569,13 +1717,13 @@ pub mod private_endpoint_connections_comp {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1585,7 +1733,7 @@ pub mod private_endpoint_connections_comp {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1613,7 +1761,7 @@ pub mod private_endpoint_connections_comp {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-        properties: &PrivateEndpointConnection,
+        properties: &models::PrivateEndpointConnection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
@@ -1639,19 +1787,19 @@ pub mod private_endpoint_connections_comp {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1661,11 +1809,11 @@ pub mod private_endpoint_connections_comp {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
-            Created201(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
+            Created201(models::PrivateEndpointConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1718,7 +1866,7 @@ pub mod private_endpoint_connections_comp {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1728,7 +1876,7 @@ pub mod private_endpoint_connections_comp {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1758,13 +1906,13 @@ pub mod private_endpoint_connections_comp {
     }
 }
 pub mod private_link_resources_comp {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateLinkResources" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -1788,13 +1936,13 @@ pub mod private_link_resources_comp {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -1804,7 +1952,7 @@ pub mod private_link_resources_comp {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1832,7 +1980,7 @@ pub mod private_link_resources_comp {
         resource_group_name: &str,
         resource_name: &str,
         group_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365ComplianceCenter/{}/privateLinkResources/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , group_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1853,13 +2001,13 @@ pub mod private_link_resources_comp {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1869,7 +2017,7 @@ pub mod private_link_resources_comp {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1893,13 +2041,13 @@ pub mod private_link_resources_comp {
     }
 }
 pub mod private_link_services_for_m365_security_center {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForM365SecurityCenterDescription, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForM365SecurityCenterDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}",
@@ -1926,13 +2074,13 @@ pub mod private_link_services_for_m365_security_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365SecurityCenterDescription =
+                let rsp_value: models::PrivateLinkServicesForM365SecurityCenterDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1942,7 +2090,7 @@ pub mod private_link_services_for_m365_security_center {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1969,7 +2117,7 @@ pub mod private_link_services_for_m365_security_center {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        private_link_services_for_m365_security_center_description: &PrivateLinkServicesForM365SecurityCenterDescription,
+        private_link_services_for_m365_security_center_description: &models::PrivateLinkServicesForM365SecurityCenterDescription,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2002,19 +2150,19 @@ pub mod private_link_services_for_m365_security_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365SecurityCenterDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForM365SecurityCenterDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365SecurityCenterDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForM365SecurityCenterDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2024,11 +2172,11 @@ pub mod private_link_services_for_m365_security_center {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForM365SecurityCenterDescription),
-            Created201(PrivateLinkServicesForM365SecurityCenterDescription),
+            Ok200(models::PrivateLinkServicesForM365SecurityCenterDescription),
+            Created201(models::PrivateLinkServicesForM365SecurityCenterDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2056,7 +2204,7 @@ pub mod private_link_services_for_m365_security_center {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        service_patch_description: &ServicesPatchDescription,
+        service_patch_description: &models::ServicesPatchDescription,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2085,19 +2233,19 @@ pub mod private_link_services_for_m365_security_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365SecurityCenterDescription =
+                let rsp_value: models::PrivateLinkServicesForM365SecurityCenterDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365SecurityCenterDescription =
+                let rsp_value: models::PrivateLinkServicesForM365SecurityCenterDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2107,11 +2255,11 @@ pub mod private_link_services_for_m365_security_center {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForM365SecurityCenterDescription),
-            Accepted202(PrivateLinkServicesForM365SecurityCenterDescription),
+            Ok200(models::PrivateLinkServicesForM365SecurityCenterDescription),
+            Accepted202(models::PrivateLinkServicesForM365SecurityCenterDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2169,7 +2317,7 @@ pub mod private_link_services_for_m365_security_center {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2179,7 +2327,7 @@ pub mod private_link_services_for_m365_security_center {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2210,7 +2358,7 @@ pub mod private_link_services_for_m365_security_center {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkServicesForM365SecurityCenterDescriptionListResult, list::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForM365SecurityCenterDescriptionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter",
@@ -2235,13 +2383,13 @@ pub mod private_link_services_for_m365_security_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365SecurityCenterDescriptionListResult =
+                let rsp_value: models::PrivateLinkServicesForM365SecurityCenterDescriptionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2251,7 +2399,7 @@ pub mod private_link_services_for_m365_security_center {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2277,7 +2425,7 @@ pub mod private_link_services_for_m365_security_center {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForM365SecurityCenterDescriptionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForM365SecurityCenterDescriptionListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter",
@@ -2308,13 +2456,13 @@ pub mod private_link_services_for_m365_security_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForM365SecurityCenterDescriptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForM365SecurityCenterDescriptionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -2324,7 +2472,7 @@ pub mod private_link_services_for_m365_security_center {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2348,13 +2496,13 @@ pub mod private_link_services_for_m365_security_center {
     }
 }
 pub mod private_endpoint_connections_sec {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -2378,13 +2526,13 @@ pub mod private_endpoint_connections_sec {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -2394,7 +2542,7 @@ pub mod private_endpoint_connections_sec {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2422,7 +2570,7 @@ pub mod private_endpoint_connections_sec {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -2443,13 +2591,13 @@ pub mod private_endpoint_connections_sec {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2459,7 +2607,7 @@ pub mod private_endpoint_connections_sec {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2487,7 +2635,7 @@ pub mod private_endpoint_connections_sec {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-        properties: &PrivateEndpointConnection,
+        properties: &models::PrivateEndpointConnection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
@@ -2513,19 +2661,19 @@ pub mod private_endpoint_connections_sec {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2535,11 +2683,11 @@ pub mod private_endpoint_connections_sec {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
-            Created201(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
+            Created201(models::PrivateEndpointConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2592,7 +2740,7 @@ pub mod private_endpoint_connections_sec {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2602,7 +2750,7 @@ pub mod private_endpoint_connections_sec {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2632,13 +2780,13 @@ pub mod private_endpoint_connections_sec {
     }
 }
 pub mod private_link_resources_sec {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateLinkResources" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -2662,13 +2810,13 @@ pub mod private_link_resources_sec {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -2678,7 +2826,7 @@ pub mod private_link_resources_sec {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2706,7 +2854,7 @@ pub mod private_link_resources_sec {
         resource_group_name: &str,
         resource_name: &str,
         group_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForM365SecurityCenter/{}/privateLinkResources/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , group_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -2727,13 +2875,13 @@ pub mod private_link_resources_sec {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2743,7 +2891,7 @@ pub mod private_link_resources_sec {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2767,13 +2915,13 @@ pub mod private_link_resources_sec {
     }
 }
 pub mod private_link_services_for_o365_management_activity_api {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForO365ManagementActivityApiDescription, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForO365ManagementActivityApiDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -2794,13 +2942,13 @@ pub mod private_link_services_for_o365_management_activity_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForO365ManagementActivityApiDescription =
+                let rsp_value: models::PrivateLinkServicesForO365ManagementActivityApiDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2810,7 +2958,7 @@ pub mod private_link_services_for_o365_management_activity_api {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2837,7 +2985,7 @@ pub mod private_link_services_for_o365_management_activity_api {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        private_link_services_for_o365_management_activity_api_description: &PrivateLinkServicesForO365ManagementActivityApiDescription,
+        private_link_services_for_o365_management_activity_api_description : & models :: PrivateLinkServicesForO365ManagementActivityApiDescription,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
@@ -2864,19 +3012,19 @@ pub mod private_link_services_for_o365_management_activity_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForO365ManagementActivityApiDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForO365ManagementActivityApiDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForO365ManagementActivityApiDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForO365ManagementActivityApiDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2886,11 +3034,11 @@ pub mod private_link_services_for_o365_management_activity_api {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForO365ManagementActivityApiDescription),
-            Created201(PrivateLinkServicesForO365ManagementActivityApiDescription),
+            Ok200(models::PrivateLinkServicesForO365ManagementActivityApiDescription),
+            Created201(models::PrivateLinkServicesForO365ManagementActivityApiDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2918,7 +3066,7 @@ pub mod private_link_services_for_o365_management_activity_api {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        service_patch_description: &ServicesPatchDescription,
+        service_patch_description: &models::ServicesPatchDescription,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
@@ -2941,19 +3089,19 @@ pub mod private_link_services_for_o365_management_activity_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForO365ManagementActivityApiDescription =
+                let rsp_value: models::PrivateLinkServicesForO365ManagementActivityApiDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForO365ManagementActivityApiDescription =
+                let rsp_value: models::PrivateLinkServicesForO365ManagementActivityApiDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2963,11 +3111,11 @@ pub mod private_link_services_for_o365_management_activity_api {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForO365ManagementActivityApiDescription),
-            Accepted202(PrivateLinkServicesForO365ManagementActivityApiDescription),
+            Ok200(models::PrivateLinkServicesForO365ManagementActivityApiDescription),
+            Accepted202(models::PrivateLinkServicesForO365ManagementActivityApiDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3019,7 +3167,7 @@ pub mod private_link_services_for_o365_management_activity_api {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3029,7 +3177,7 @@ pub mod private_link_services_for_o365_management_activity_api {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3060,7 +3208,7 @@ pub mod private_link_services_for_o365_management_activity_api {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult, list::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI",
@@ -3085,13 +3233,13 @@ pub mod private_link_services_for_o365_management_activity_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult =
+                let rsp_value: models::PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -3101,7 +3249,7 @@ pub mod private_link_services_for_o365_management_activity_api {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3127,7 +3275,8 @@ pub mod private_link_services_for_o365_management_activity_api {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult, list_by_resource_group::Error>
+    {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI" , operation_config . base_path () , subscription_id , resource_group_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_resource_group::Error::ParseUrlError)?;
@@ -3153,13 +3302,14 @@ pub mod private_link_services_for_o365_management_activity_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
+                let rsp_value: models::PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult =
+                    serde_json::from_slice(rsp_body)
+                        .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -3169,7 +3319,7 @@ pub mod private_link_services_for_o365_management_activity_api {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3193,13 +3343,13 @@ pub mod private_link_services_for_o365_management_activity_api {
     }
 }
 pub mod private_endpoint_connections_adt_api {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -3223,13 +3373,13 @@ pub mod private_endpoint_connections_adt_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -3239,7 +3389,7 @@ pub mod private_endpoint_connections_adt_api {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3267,7 +3417,7 @@ pub mod private_endpoint_connections_adt_api {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -3288,13 +3438,13 @@ pub mod private_endpoint_connections_adt_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3304,7 +3454,7 @@ pub mod private_endpoint_connections_adt_api {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3332,7 +3482,7 @@ pub mod private_endpoint_connections_adt_api {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-        properties: &PrivateEndpointConnection,
+        properties: &models::PrivateEndpointConnection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
@@ -3358,19 +3508,19 @@ pub mod private_endpoint_connections_adt_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -3380,11 +3530,11 @@ pub mod private_endpoint_connections_adt_api {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
-            Created201(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
+            Created201(models::PrivateEndpointConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3437,7 +3587,7 @@ pub mod private_endpoint_connections_adt_api {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3447,7 +3597,7 @@ pub mod private_endpoint_connections_adt_api {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3477,13 +3627,13 @@ pub mod private_endpoint_connections_adt_api {
     }
 }
 pub mod private_link_resources_adt_api {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateLinkResources" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -3507,13 +3657,13 @@ pub mod private_link_resources_adt_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -3523,7 +3673,7 @@ pub mod private_link_resources_adt_api {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3551,7 +3701,7 @@ pub mod private_link_resources_adt_api {
         resource_group_name: &str,
         resource_name: &str,
         group_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForO365ManagementActivityAPI/{}/privateLinkResources/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , group_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -3572,13 +3722,13 @@ pub mod private_link_resources_adt_api {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3588,7 +3738,7 @@ pub mod private_link_resources_adt_api {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3612,13 +3762,13 @@ pub mod private_link_resources_adt_api {
     }
 }
 pub mod private_link_services_for_scc_powershell {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForSccPowershellDescription, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForSccPowershellDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}",
@@ -3645,13 +3795,13 @@ pub mod private_link_services_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForSccPowershellDescription =
+                let rsp_value: models::PrivateLinkServicesForSccPowershellDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3661,7 +3811,7 @@ pub mod private_link_services_for_scc_powershell {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3688,7 +3838,7 @@ pub mod private_link_services_for_scc_powershell {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        private_link_services_for_scc_powershell_description: &PrivateLinkServicesForSccPowershellDescription,
+        private_link_services_for_scc_powershell_description: &models::PrivateLinkServicesForSccPowershellDescription,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3721,19 +3871,19 @@ pub mod private_link_services_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForSccPowershellDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForSccPowershellDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForSccPowershellDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForSccPowershellDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -3743,11 +3893,11 @@ pub mod private_link_services_for_scc_powershell {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForSccPowershellDescription),
-            Created201(PrivateLinkServicesForSccPowershellDescription),
+            Ok200(models::PrivateLinkServicesForSccPowershellDescription),
+            Created201(models::PrivateLinkServicesForSccPowershellDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3775,7 +3925,7 @@ pub mod private_link_services_for_scc_powershell {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        service_patch_description: &ServicesPatchDescription,
+        service_patch_description: &models::ServicesPatchDescription,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3804,19 +3954,19 @@ pub mod private_link_services_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForSccPowershellDescription =
+                let rsp_value: models::PrivateLinkServicesForSccPowershellDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForSccPowershellDescription =
+                let rsp_value: models::PrivateLinkServicesForSccPowershellDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -3826,11 +3976,11 @@ pub mod private_link_services_for_scc_powershell {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateLinkServicesForSccPowershellDescription),
-            Accepted202(PrivateLinkServicesForSccPowershellDescription),
+            Ok200(models::PrivateLinkServicesForSccPowershellDescription),
+            Accepted202(models::PrivateLinkServicesForSccPowershellDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3888,7 +4038,7 @@ pub mod private_link_services_for_scc_powershell {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3898,7 +4048,7 @@ pub mod private_link_services_for_scc_powershell {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3929,7 +4079,7 @@ pub mod private_link_services_for_scc_powershell {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PrivateLinkServicesForSccPowershellDescriptionListResult, list::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForSccPowershellDescriptionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell",
@@ -3954,13 +4104,13 @@ pub mod private_link_services_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForSccPowershellDescriptionListResult =
+                let rsp_value: models::PrivateLinkServicesForSccPowershellDescriptionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -3970,7 +4120,7 @@ pub mod private_link_services_for_scc_powershell {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3996,7 +4146,7 @@ pub mod private_link_services_for_scc_powershell {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<PrivateLinkServicesForSccPowershellDescriptionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PrivateLinkServicesForSccPowershellDescriptionListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell",
@@ -4027,13 +4177,13 @@ pub mod private_link_services_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkServicesForSccPowershellDescriptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkServicesForSccPowershellDescriptionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -4043,7 +4193,7 @@ pub mod private_link_services_for_scc_powershell {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4067,13 +4217,13 @@ pub mod private_link_services_for_scc_powershell {
     }
 }
 pub mod private_endpoint_connections_for_scc_powershell {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -4097,13 +4247,13 @@ pub mod private_endpoint_connections_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -4113,7 +4263,7 @@ pub mod private_endpoint_connections_for_scc_powershell {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4141,7 +4291,7 @@ pub mod private_endpoint_connections_for_scc_powershell {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -4162,13 +4312,13 @@ pub mod private_endpoint_connections_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4178,7 +4328,7 @@ pub mod private_endpoint_connections_for_scc_powershell {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4206,7 +4356,7 @@ pub mod private_endpoint_connections_for_scc_powershell {
         resource_group_name: &str,
         resource_name: &str,
         private_endpoint_connection_name: &str,
-        properties: &PrivateEndpointConnection,
+        properties: &models::PrivateEndpointConnection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateEndpointConnections/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , private_endpoint_connection_name) ;
@@ -4232,19 +4382,19 @@ pub mod private_endpoint_connections_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -4254,11 +4404,11 @@ pub mod private_endpoint_connections_for_scc_powershell {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
-            Created201(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
+            Created201(models::PrivateEndpointConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4311,7 +4461,7 @@ pub mod private_endpoint_connections_for_scc_powershell {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4321,7 +4471,7 @@ pub mod private_endpoint_connections_for_scc_powershell {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4351,13 +4501,13 @@ pub mod private_endpoint_connections_for_scc_powershell {
     }
 }
 pub mod private_link_resources_for_scc_powershell {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_service(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_service::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateLinkResources" , operation_config . base_path () , subscription_id , resource_group_name , resource_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_service::Error::ParseUrlError)?;
@@ -4381,13 +4531,13 @@ pub mod private_link_resources_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_service::Error::DefaultResponse {
                     status_code,
@@ -4397,7 +4547,7 @@ pub mod private_link_resources_for_scc_powershell {
         }
     }
     pub mod list_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4425,7 +4575,7 @@ pub mod private_link_resources_for_scc_powershell {
         resource_group_name: &str,
         resource_name: &str,
         group_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityAndCompliance/privateLinkServicesForSCCPowershell/{}/privateLinkResources/{}" , operation_config . base_path () , subscription_id , resource_group_name , resource_name , group_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -4446,13 +4596,13 @@ pub mod private_link_resources_for_scc_powershell {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4462,7 +4612,7 @@ pub mod private_link_resources_for_scc_powershell {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

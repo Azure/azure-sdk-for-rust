@@ -6,24 +6,24 @@
 #[cfg(feature = "package-2020-02-preview")]
 pub mod package_2020_02_preview;
 #[cfg(all(feature = "package-2020-02-preview", not(feature = "no-default-version")))]
-pub use package_2020_02_preview::{models, operations};
+pub use package_2020_02_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2019-09")]
 pub mod package_2019_09;
 #[cfg(all(feature = "package-2019-09", not(feature = "no-default-version")))]
-pub use package_2019_09::{models, operations};
+pub use package_2019_09::{models, operations, operations::Error};
 #[cfg(feature = "package-2019-06")]
 pub mod package_2019_06;
 #[cfg(all(feature = "package-2019-06", not(feature = "no-default-version")))]
-pub use package_2019_06::{models, operations};
+pub use package_2019_06::{models, operations, operations::Error};
 #[cfg(feature = "package-2019-04-preview")]
 pub mod package_2019_04_preview;
 #[cfg(all(feature = "package-2019-04-preview", not(feature = "no-default-version")))]
-pub use package_2019_04_preview::{models, operations};
+pub use package_2019_04_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-06-preview")]
 pub mod package_2018_06_preview;
 use azure_core::setters;
 #[cfg(all(feature = "package-2018-06-preview", not(feature = "no-default-version")))]
-pub use package_2018_06_preview::{models, operations};
+pub use package_2018_06_preview::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

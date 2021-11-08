@@ -2,14 +2,55 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ManagementGroups_List(#[from] management_groups::list::Error),
+    #[error(transparent)]
+    ManagementGroups_Get(#[from] management_groups::get::Error),
+    #[error(transparent)]
+    ManagementGroups_CreateOrUpdate(#[from] management_groups::create_or_update::Error),
+    #[error(transparent)]
+    ManagementGroups_Update(#[from] management_groups::update::Error),
+    #[error(transparent)]
+    ManagementGroups_Delete(#[from] management_groups::delete::Error),
+    #[error(transparent)]
+    ManagementGroups_GetDescendants(#[from] management_groups::get_descendants::Error),
+    #[error(transparent)]
+    ManagementGroupSubscriptions_Create(#[from] management_group_subscriptions::create::Error),
+    #[error(transparent)]
+    ManagementGroupSubscriptions_Delete(#[from] management_group_subscriptions::delete::Error),
+    #[error(transparent)]
+    HierarchySettings_List(#[from] hierarchy_settings::list::Error),
+    #[error(transparent)]
+    HierarchySettings_Get(#[from] hierarchy_settings::get::Error),
+    #[error(transparent)]
+    HierarchySettings_CreateOrUpdate(#[from] hierarchy_settings::create_or_update::Error),
+    #[error(transparent)]
+    HierarchySettings_Update(#[from] hierarchy_settings::update::Error),
+    #[error(transparent)]
+    HierarchySettings_Delete(#[from] hierarchy_settings::delete::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    CheckNameAvailability(#[from] check_name_availability::Error),
+    #[error(transparent)]
+    Entities_List(#[from] entities::list::Error),
+    #[error(transparent)]
+    StartTenantBackfill(#[from] start_tenant_backfill::Error),
+    #[error(transparent)]
+    TenantBackfillStatus(#[from] tenant_backfill_status::Error),
+}
 pub mod management_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         cache_control: Option<&str>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<ManagementGroupListResult, list::Error> {
+    ) -> std::result::Result<models::ManagementGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Management/managementGroups", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -36,13 +77,13 @@ pub mod management_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementGroupListResult =
+                let rsp_value: models::ManagementGroupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -52,7 +93,7 @@ pub mod management_groups {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -81,7 +122,7 @@ pub mod management_groups {
         recurse: Option<bool>,
         filter: Option<&str>,
         cache_control: Option<&str>,
-    ) -> std::result::Result<ManagementGroup, get::Error> {
+    ) -> std::result::Result<models::ManagementGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}",
@@ -118,13 +159,13 @@ pub mod management_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementGroup =
+                let rsp_value: models::ManagementGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -134,7 +175,7 @@ pub mod management_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -160,7 +201,7 @@ pub mod management_groups {
         operation_config: &crate::OperationConfig,
         group_id: &str,
         cache_control: Option<&str>,
-        create_management_group_request: &CreateManagementGroupRequest,
+        create_management_group_request: &models::CreateManagementGroupRequest,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -193,19 +234,19 @@ pub mod management_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureAsyncOperationResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AzureAsyncOperationResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -215,11 +256,11 @@ pub mod management_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagementGroup),
-            Accepted202(AzureAsyncOperationResults),
+            Ok200(models::ManagementGroup),
+            Accepted202(models::AzureAsyncOperationResults),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -246,8 +287,8 @@ pub mod management_groups {
         operation_config: &crate::OperationConfig,
         group_id: &str,
         cache_control: Option<&str>,
-        patch_group_request: &PatchManagementGroupRequest,
-    ) -> std::result::Result<ManagementGroup, update::Error> {
+        patch_group_request: &models::PatchManagementGroupRequest,
+    ) -> std::result::Result<models::ManagementGroup, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}",
@@ -276,13 +317,13 @@ pub mod management_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementGroup =
+                let rsp_value: models::ManagementGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -292,7 +333,7 @@ pub mod management_groups {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -346,14 +387,14 @@ pub mod management_groups {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureAsyncOperationResults =
+                let rsp_value: models::AzureAsyncOperationResults =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Accepted202(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -363,10 +404,10 @@ pub mod management_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Accepted202(AzureAsyncOperationResults),
+            Accepted202(models::AzureAsyncOperationResults),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -395,7 +436,7 @@ pub mod management_groups {
         group_id: &str,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> std::result::Result<DescendantListResult, get_descendants::Error> {
+    ) -> std::result::Result<models::DescendantListResult, get_descendants::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/descendants",
@@ -429,13 +470,13 @@ pub mod management_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DescendantListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DescendantListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_descendants::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_descendants::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_descendants::Error::DefaultResponse {
                     status_code,
@@ -445,7 +486,7 @@ pub mod management_groups {
         }
     }
     pub mod get_descendants {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -469,7 +510,7 @@ pub mod management_groups {
     }
 }
 pub mod management_group_subscriptions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         group_id: &str,
@@ -506,7 +547,7 @@ pub mod management_group_subscriptions {
             http::StatusCode::NO_CONTENT => Ok(create::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -516,7 +557,7 @@ pub mod management_group_subscriptions {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -579,7 +620,7 @@ pub mod management_group_subscriptions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -589,7 +630,7 @@ pub mod management_group_subscriptions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -618,11 +659,11 @@ pub mod management_group_subscriptions {
     }
 }
 pub mod hierarchy_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-    ) -> std::result::Result<HierarchySettingsList, list::Error> {
+    ) -> std::result::Result<models::HierarchySettingsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/settings",
@@ -647,13 +688,13 @@ pub mod hierarchy_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HierarchySettingsList =
+                let rsp_value: models::HierarchySettingsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -663,7 +704,7 @@ pub mod hierarchy_settings {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -685,7 +726,10 @@ pub mod hierarchy_settings {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, group_id: &str) -> std::result::Result<HierarchySettings, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        group_id: &str,
+    ) -> std::result::Result<models::HierarchySettings, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/settings/default",
@@ -710,13 +754,13 @@ pub mod hierarchy_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HierarchySettings =
+                let rsp_value: models::HierarchySettings =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -726,7 +770,7 @@ pub mod hierarchy_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -751,8 +795,8 @@ pub mod hierarchy_settings {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-        create_tenant_settings_request: &CreateOrUpdateSettingsRequest,
-    ) -> std::result::Result<HierarchySettings, create_or_update::Error> {
+        create_tenant_settings_request: &models::CreateOrUpdateSettingsRequest,
+    ) -> std::result::Result<models::HierarchySettings, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/settings/default",
@@ -781,13 +825,13 @@ pub mod hierarchy_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HierarchySettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HierarchySettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -797,7 +841,7 @@ pub mod hierarchy_settings {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -822,8 +866,8 @@ pub mod hierarchy_settings {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-        create_tenant_settings_request: &CreateOrUpdateSettingsRequest,
-    ) -> std::result::Result<HierarchySettings, update::Error> {
+        create_tenant_settings_request: &models::CreateOrUpdateSettingsRequest,
+    ) -> std::result::Result<models::HierarchySettings, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/settings/default",
@@ -849,13 +893,13 @@ pub mod hierarchy_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HierarchySettings =
+                let rsp_value: models::HierarchySettings =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -865,7 +909,7 @@ pub mod hierarchy_settings {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -913,7 +957,7 @@ pub mod hierarchy_settings {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -923,7 +967,7 @@ pub mod hierarchy_settings {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -947,8 +991,8 @@ pub mod hierarchy_settings {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Management/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -969,13 +1013,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -985,7 +1029,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1010,8 +1054,8 @@ pub mod operations {
 }
 pub async fn check_name_availability(
     operation_config: &crate::OperationConfig,
-    check_name_availability_request: &CheckNameAvailabilityRequest,
-) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+    check_name_availability_request: &models::CheckNameAvailabilityRequest,
+) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_availability::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Management/checkNameAvailability",
@@ -1041,13 +1085,13 @@ pub async fn check_name_availability(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(check_name_availability::Error::DefaultResponse {
                 status_code,
@@ -1057,7 +1101,7 @@ pub async fn check_name_availability(
     }
 }
 pub mod check_name_availability {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1081,7 +1125,7 @@ pub mod check_name_availability {
 }
 pub async fn start_tenant_backfill(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<TenantBackfillStatusResult, start_tenant_backfill::Error> {
+) -> std::result::Result<models::TenantBackfillStatusResult, start_tenant_backfill::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Management/startTenantBackfill",
@@ -1111,13 +1155,13 @@ pub async fn start_tenant_backfill(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: TenantBackfillStatusResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::TenantBackfillStatusResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| start_tenant_backfill::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| start_tenant_backfill::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(start_tenant_backfill::Error::DefaultResponse {
                 status_code,
@@ -1127,7 +1171,7 @@ pub async fn start_tenant_backfill(
     }
 }
 pub mod start_tenant_backfill {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1151,7 +1195,7 @@ pub mod start_tenant_backfill {
 }
 pub async fn tenant_backfill_status(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<TenantBackfillStatusResult, tenant_backfill_status::Error> {
+) -> std::result::Result<models::TenantBackfillStatusResult, tenant_backfill_status::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Management/tenantBackfillStatus",
@@ -1181,13 +1225,13 @@ pub async fn tenant_backfill_status(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: TenantBackfillStatusResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::TenantBackfillStatusResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| tenant_backfill_status::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| tenant_backfill_status::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(tenant_backfill_status::Error::DefaultResponse {
                 status_code,
@@ -1197,7 +1241,7 @@ pub async fn tenant_backfill_status(
     }
 }
 pub mod tenant_backfill_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1220,7 +1264,7 @@ pub mod tenant_backfill_status {
     }
 }
 pub mod entities {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         skiptoken: Option<&str>,
@@ -1232,7 +1276,7 @@ pub mod entities {
         view: Option<&str>,
         group_name: Option<&str>,
         cache_control: Option<&str>,
-    ) -> std::result::Result<EntityListResult, list::Error> {
+    ) -> std::result::Result<models::EntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Management/getEntities", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1281,13 +1325,13 @@ pub mod entities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EntityListResult =
+                let rsp_value: models::EntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1297,7 +1341,7 @@ pub mod entities {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

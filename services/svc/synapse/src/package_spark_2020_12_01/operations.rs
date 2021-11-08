@@ -2,9 +2,40 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    SparkBatch_GetSparkBatchJobs(#[from] spark_batch::get_spark_batch_jobs::Error),
+    #[error(transparent)]
+    SparkBatch_CreateSparkBatchJob(#[from] spark_batch::create_spark_batch_job::Error),
+    #[error(transparent)]
+    SparkBatch_GetSparkBatchJob(#[from] spark_batch::get_spark_batch_job::Error),
+    #[error(transparent)]
+    SparkBatch_CancelSparkBatchJob(#[from] spark_batch::cancel_spark_batch_job::Error),
+    #[error(transparent)]
+    SparkSession_GetSparkSessions(#[from] spark_session::get_spark_sessions::Error),
+    #[error(transparent)]
+    SparkSession_CreateSparkSession(#[from] spark_session::create_spark_session::Error),
+    #[error(transparent)]
+    SparkSession_GetSparkSession(#[from] spark_session::get_spark_session::Error),
+    #[error(transparent)]
+    SparkSession_CancelSparkSession(#[from] spark_session::cancel_spark_session::Error),
+    #[error(transparent)]
+    SparkSession_ResetSparkSessionTimeout(#[from] spark_session::reset_spark_session_timeout::Error),
+    #[error(transparent)]
+    SparkSession_GetSparkStatements(#[from] spark_session::get_spark_statements::Error),
+    #[error(transparent)]
+    SparkSession_CreateSparkStatement(#[from] spark_session::create_spark_statement::Error),
+    #[error(transparent)]
+    SparkSession_GetSparkStatement(#[from] spark_session::get_spark_statement::Error),
+    #[error(transparent)]
+    SparkSession_CancelSparkStatement(#[from] spark_session::cancel_spark_statement::Error),
+}
 pub mod spark_batch {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_spark_batch_jobs(
         operation_config: &crate::OperationConfig,
         livy_api_version: &str,
@@ -12,7 +43,7 @@ pub mod spark_batch {
         from: Option<i32>,
         size: Option<i32>,
         detailed: Option<bool>,
-    ) -> std::result::Result<SparkBatchJobCollection, get_spark_batch_jobs::Error> {
+    ) -> std::result::Result<models::SparkBatchJobCollection, get_spark_batch_jobs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/batches",
@@ -49,7 +80,7 @@ pub mod spark_batch {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkBatchJobCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkBatchJobCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_spark_batch_jobs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -63,7 +94,7 @@ pub mod spark_batch {
         }
     }
     pub mod get_spark_batch_jobs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -87,8 +118,8 @@ pub mod spark_batch {
         livy_api_version: &str,
         spark_pool_name: &str,
         detailed: Option<bool>,
-        spark_batch_job_options: &SparkBatchJobOptions,
-    ) -> std::result::Result<SparkBatchJob, create_spark_batch_job::Error> {
+        spark_batch_job_options: &models::SparkBatchJobOptions,
+    ) -> std::result::Result<models::SparkBatchJob, create_spark_batch_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/batches",
@@ -122,7 +153,7 @@ pub mod spark_batch {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkBatchJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkBatchJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_spark_batch_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -136,7 +167,7 @@ pub mod spark_batch {
         }
     }
     pub mod create_spark_batch_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -161,7 +192,7 @@ pub mod spark_batch {
         spark_pool_name: &str,
         batch_id: i32,
         detailed: Option<bool>,
-    ) -> std::result::Result<SparkBatchJob, get_spark_batch_job::Error> {
+    ) -> std::result::Result<models::SparkBatchJob, get_spark_batch_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/batches/{}",
@@ -193,7 +224,7 @@ pub mod spark_batch {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkBatchJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkBatchJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_spark_batch_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -207,7 +238,7 @@ pub mod spark_batch {
         }
     }
     pub mod get_spark_batch_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -271,7 +302,7 @@ pub mod spark_batch {
         }
     }
     pub mod cancel_spark_batch_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -292,7 +323,7 @@ pub mod spark_batch {
     }
 }
 pub mod spark_session {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_spark_sessions(
         operation_config: &crate::OperationConfig,
         livy_api_version: &str,
@@ -300,7 +331,7 @@ pub mod spark_session {
         from: Option<i32>,
         size: Option<i32>,
         detailed: Option<bool>,
-    ) -> std::result::Result<SparkSessionCollection, get_spark_sessions::Error> {
+    ) -> std::result::Result<models::SparkSessionCollection, get_spark_sessions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/sessions",
@@ -337,7 +368,7 @@ pub mod spark_session {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkSessionCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkSessionCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_spark_sessions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -351,7 +382,7 @@ pub mod spark_session {
         }
     }
     pub mod get_spark_sessions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -375,8 +406,8 @@ pub mod spark_session {
         livy_api_version: &str,
         spark_pool_name: &str,
         detailed: Option<bool>,
-        spark_session_options: &SparkSessionOptions,
-    ) -> std::result::Result<SparkSession, create_spark_session::Error> {
+        spark_session_options: &models::SparkSessionOptions,
+    ) -> std::result::Result<models::SparkSession, create_spark_session::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/sessions",
@@ -408,7 +439,7 @@ pub mod spark_session {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkSession = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkSession = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_spark_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -422,7 +453,7 @@ pub mod spark_session {
         }
     }
     pub mod create_spark_session {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -447,7 +478,7 @@ pub mod spark_session {
         spark_pool_name: &str,
         session_id: i32,
         detailed: Option<bool>,
-    ) -> std::result::Result<SparkSession, get_spark_session::Error> {
+    ) -> std::result::Result<models::SparkSession, get_spark_session::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}",
@@ -479,7 +510,7 @@ pub mod spark_session {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkSession = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkSession = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_spark_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -493,7 +524,7 @@ pub mod spark_session {
         }
     }
     pub mod get_spark_session {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -555,7 +586,7 @@ pub mod spark_session {
         }
     }
     pub mod cancel_spark_session {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -619,7 +650,7 @@ pub mod spark_session {
         }
     }
     pub mod reset_spark_session_timeout {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -643,7 +674,7 @@ pub mod spark_session {
         livy_api_version: &str,
         spark_pool_name: &str,
         session_id: i32,
-    ) -> std::result::Result<SparkStatementCollection, get_spark_statements::Error> {
+    ) -> std::result::Result<models::SparkStatementCollection, get_spark_statements::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements",
@@ -672,7 +703,7 @@ pub mod spark_session {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkStatementCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkStatementCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_spark_statements::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -686,7 +717,7 @@ pub mod spark_session {
         }
     }
     pub mod get_spark_statements {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -710,8 +741,8 @@ pub mod spark_session {
         livy_api_version: &str,
         spark_pool_name: &str,
         session_id: i32,
-        spark_statement_options: &SparkStatementOptions,
-    ) -> std::result::Result<SparkStatement, create_spark_statement::Error> {
+        spark_statement_options: &models::SparkStatementOptions,
+    ) -> std::result::Result<models::SparkStatement, create_spark_statement::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements",
@@ -743,7 +774,7 @@ pub mod spark_session {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkStatement = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkStatement = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_spark_statement::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -757,7 +788,7 @@ pub mod spark_session {
         }
     }
     pub mod create_spark_statement {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -782,7 +813,7 @@ pub mod spark_session {
         spark_pool_name: &str,
         session_id: i32,
         statement_id: i32,
-    ) -> std::result::Result<SparkStatement, get_spark_statement::Error> {
+    ) -> std::result::Result<models::SparkStatement, get_spark_statement::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements/{}",
@@ -812,7 +843,7 @@ pub mod spark_session {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkStatement = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkStatement = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_spark_statement::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -826,7 +857,7 @@ pub mod spark_session {
         }
     }
     pub mod get_spark_statement {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -851,7 +882,7 @@ pub mod spark_session {
         spark_pool_name: &str,
         session_id: i32,
         statement_id: i32,
-    ) -> std::result::Result<SparkStatementCancellationResult, cancel_spark_statement::Error> {
+    ) -> std::result::Result<models::SparkStatementCancellationResult, cancel_spark_statement::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements/{}/cancel",
@@ -884,7 +915,7 @@ pub mod spark_session {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SparkStatementCancellationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SparkStatementCancellationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_spark_statement::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -898,7 +929,7 @@ pub mod spark_session {
         }
     }
     pub mod cancel_spark_statement {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

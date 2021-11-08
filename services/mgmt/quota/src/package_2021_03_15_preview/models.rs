@@ -171,18 +171,11 @@ pub struct UsagesObject {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LimitObject {
-    pub value: i32,
-    #[serde(rename = "limitObjectType", default, skip_serializing_if = "Option::is_none")]
-    pub limit_object_type: Option<LimitObjectTypes>,
-    #[serde(rename = "limitType", default, skip_serializing_if = "Option::is_none")]
-    pub limit_type: Option<LimitTypes>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LimitValue {
     #[serde(flatten)]
     pub limit_json_object: LimitJsonObject,
-    #[serde(flatten)]
-    pub limit_object: LimitObject,
+    pub value: i32,
+    #[serde(rename = "limitType", default, skip_serializing_if = "Option::is_none")]
+    pub limit_type: Option<LimitTypes>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaRequestOneResourceSubmitResponse {

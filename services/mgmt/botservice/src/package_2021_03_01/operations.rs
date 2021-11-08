@@ -2,15 +2,66 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Bots_Get(#[from] bots::get::Error),
+    #[error(transparent)]
+    Bots_Create(#[from] bots::create::Error),
+    #[error(transparent)]
+    Bots_Update(#[from] bots::update::Error),
+    #[error(transparent)]
+    Bots_Delete(#[from] bots::delete::Error),
+    #[error(transparent)]
+    Bots_ListByResourceGroup(#[from] bots::list_by_resource_group::Error),
+    #[error(transparent)]
+    Bots_List(#[from] bots::list::Error),
+    #[error(transparent)]
+    Channels_Get(#[from] channels::get::Error),
+    #[error(transparent)]
+    Channels_Create(#[from] channels::create::Error),
+    #[error(transparent)]
+    Channels_Update(#[from] channels::update::Error),
+    #[error(transparent)]
+    Channels_Delete(#[from] channels::delete::Error),
+    #[error(transparent)]
+    Channels_ListWithKeys(#[from] channels::list_with_keys::Error),
+    #[error(transparent)]
+    Channels_ListByResourceGroup(#[from] channels::list_by_resource_group::Error),
+    #[error(transparent)]
+    DirectLine_RegenerateKeys(#[from] direct_line::regenerate_keys::Error),
+    #[error(transparent)]
+    Bots_GetCheckNameAvailability(#[from] bots::get_check_name_availability::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    BotConnection_ListServiceProviders(#[from] bot_connection::list_service_providers::Error),
+    #[error(transparent)]
+    BotConnection_ListWithSecrets(#[from] bot_connection::list_with_secrets::Error),
+    #[error(transparent)]
+    BotConnection_Get(#[from] bot_connection::get::Error),
+    #[error(transparent)]
+    BotConnection_Create(#[from] bot_connection::create::Error),
+    #[error(transparent)]
+    BotConnection_Update(#[from] bot_connection::update::Error),
+    #[error(transparent)]
+    BotConnection_Delete(#[from] bot_connection::delete::Error),
+    #[error(transparent)]
+    BotConnection_ListByBotService(#[from] bot_connection::list_by_bot_service::Error),
+    #[error(transparent)]
+    HostSettings_Get(#[from] host_settings::get::Error),
+}
 pub mod bots {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Bot, get::Error> {
+    ) -> std::result::Result<models::Bot, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}",
@@ -37,13 +88,13 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Bot =
+                let rsp_value: models::Bot =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +104,7 @@ pub mod bots {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -79,7 +130,7 @@ pub mod bots {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &Bot,
+        parameters: &models::Bot,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -109,19 +160,19 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Bot =
+                let rsp_value: models::Bot =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Bot =
+                let rsp_value: models::Bot =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -131,11 +182,11 @@ pub mod bots {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Bot),
-            Created201(Bot),
+            Ok200(models::Bot),
+            Created201(models::Bot),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -162,7 +213,7 @@ pub mod bots {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &Bot,
+        parameters: &models::Bot,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -192,19 +243,19 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Bot =
+                let rsp_value: models::Bot =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Bot =
+                let rsp_value: models::Bot =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -214,11 +265,11 @@ pub mod bots {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Bot),
-            Created201(Bot),
+            Ok200(models::Bot),
+            Created201(models::Bot),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -275,7 +326,7 @@ pub mod bots {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -285,7 +336,7 @@ pub mod bots {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -316,7 +367,7 @@ pub mod bots {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BotResponseList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::BotResponseList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices",
@@ -347,13 +398,13 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotResponseList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BotResponseList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -363,7 +414,7 @@ pub mod bots {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -388,7 +439,7 @@ pub mod bots {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<BotResponseList, list::Error> {
+    ) -> std::result::Result<models::BotResponseList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.BotService/botServices",
@@ -413,13 +464,13 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotResponseList =
+                let rsp_value: models::BotResponseList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -429,7 +480,7 @@ pub mod bots {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -453,8 +504,8 @@ pub mod bots {
     }
     pub async fn get_check_name_availability(
         operation_config: &crate::OperationConfig,
-        parameters: &CheckNameAvailabilityRequestBody,
-    ) -> std::result::Result<CheckNameAvailabilityResponseBody, get_check_name_availability::Error> {
+        parameters: &models::CheckNameAvailabilityRequestBody,
+    ) -> std::result::Result<models::CheckNameAvailabilityResponseBody, get_check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.BotService/checkNameAvailability",
@@ -484,13 +535,13 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResponseBody = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResponseBody = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -500,7 +551,7 @@ pub mod bots {
         }
     }
     pub mod get_check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -524,14 +575,14 @@ pub mod bots {
     }
 }
 pub mod channels {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_name: &str,
         channel_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BotChannel, get::Error> {
+    ) -> std::result::Result<models::BotChannel, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/channels/{}",
@@ -559,13 +610,13 @@ pub mod channels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotChannel =
+                let rsp_value: models::BotChannel =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -575,7 +626,7 @@ pub mod channels {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -602,7 +653,7 @@ pub mod channels {
         resource_group_name: &str,
         resource_name: &str,
         channel_name: &str,
-        parameters: &BotChannel,
+        parameters: &models::BotChannel,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -633,19 +684,19 @@ pub mod channels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotChannel =
+                let rsp_value: models::BotChannel =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotChannel =
+                let rsp_value: models::BotChannel =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -655,11 +706,11 @@ pub mod channels {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BotChannel),
-            Created201(BotChannel),
+            Ok200(models::BotChannel),
+            Created201(models::BotChannel),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -687,7 +738,7 @@ pub mod channels {
         resource_group_name: &str,
         resource_name: &str,
         channel_name: &str,
-        parameters: &BotChannel,
+        parameters: &models::BotChannel,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -718,19 +769,19 @@ pub mod channels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotChannel =
+                let rsp_value: models::BotChannel =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotChannel =
+                let rsp_value: models::BotChannel =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -740,11 +791,11 @@ pub mod channels {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BotChannel),
-            Created201(BotChannel),
+            Ok200(models::BotChannel),
+            Created201(models::BotChannel),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -803,7 +854,7 @@ pub mod channels {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -813,7 +864,7 @@ pub mod channels {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -846,7 +897,7 @@ pub mod channels {
         resource_name: &str,
         channel_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BotChannel, list_with_keys::Error> {
+    ) -> std::result::Result<models::BotChannel, list_with_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/channels/{}/listChannelWithKeys",
@@ -878,13 +929,13 @@ pub mod channels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotChannel =
+                let rsp_value: models::BotChannel =
                     serde_json::from_slice(rsp_body).map_err(|source| list_with_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list_with_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_with_keys::Error::DefaultResponse {
                     status_code,
@@ -894,7 +945,7 @@ pub mod channels {
         }
     }
     pub mod list_with_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -921,7 +972,7 @@ pub mod channels {
         resource_group_name: &str,
         resource_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ChannelResponseList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ChannelResponseList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/channels",
@@ -953,13 +1004,13 @@ pub mod channels {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ChannelResponseList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ChannelResponseList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -969,7 +1020,7 @@ pub mod channels {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -993,15 +1044,15 @@ pub mod channels {
     }
 }
 pub mod direct_line {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn regenerate_keys(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         resource_name: &str,
         subscription_id: &str,
         channel_name: &str,
-        parameters: &SiteInfo,
-    ) -> std::result::Result<BotChannel, regenerate_keys::Error> {
+        parameters: &models::SiteInfo,
+    ) -> std::result::Result<models::BotChannel, regenerate_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/channels/{}/regeneratekeys",
@@ -1033,13 +1084,13 @@ pub mod direct_line {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotChannel = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BotChannel = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_keys::Error::DefaultResponse {
                     status_code,
@@ -1049,7 +1100,7 @@ pub mod direct_line {
         }
     }
     pub mod regenerate_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1073,8 +1124,8 @@ pub mod direct_line {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationEntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.BotService/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1095,13 +1146,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationEntityListResult =
+                let rsp_value: models::OperationEntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1111,7 +1162,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1135,11 +1186,11 @@ pub mod operations {
     }
 }
 pub mod bot_connection {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_service_providers(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ServiceProviderResponseList, list_service_providers::Error> {
+    ) -> std::result::Result<models::ServiceProviderResponseList, list_service_providers::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.BotService/listAuthServiceProviders",
@@ -1170,13 +1221,13 @@ pub mod bot_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceProviderResponseList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServiceProviderResponseList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_service_providers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_service_providers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_service_providers::Error::DefaultResponse {
                     status_code,
@@ -1186,7 +1237,7 @@ pub mod bot_connection {
         }
     }
     pub mod list_service_providers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1214,7 +1265,7 @@ pub mod bot_connection {
         resource_name: &str,
         connection_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionSetting, list_with_secrets::Error> {
+    ) -> std::result::Result<models::ConnectionSetting, list_with_secrets::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/connections/{}/listWithSecrets",
@@ -1246,13 +1297,13 @@ pub mod bot_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionSetting = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionSetting = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_with_secrets::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_with_secrets::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_with_secrets::Error::DefaultResponse {
                     status_code,
@@ -1262,7 +1313,7 @@ pub mod bot_connection {
         }
     }
     pub mod list_with_secrets {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1290,7 +1341,7 @@ pub mod bot_connection {
         resource_name: &str,
         connection_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionSetting, get::Error> {
+    ) -> std::result::Result<models::ConnectionSetting, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/connections/{}",
@@ -1318,13 +1369,13 @@ pub mod bot_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionSetting =
+                let rsp_value: models::ConnectionSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1334,7 +1385,7 @@ pub mod bot_connection {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1361,7 +1412,7 @@ pub mod bot_connection {
         resource_group_name: &str,
         resource_name: &str,
         connection_name: &str,
-        parameters: &ConnectionSetting,
+        parameters: &models::ConnectionSetting,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -1392,19 +1443,19 @@ pub mod bot_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionSetting =
+                let rsp_value: models::ConnectionSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionSetting =
+                let rsp_value: models::ConnectionSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1414,11 +1465,11 @@ pub mod bot_connection {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ConnectionSetting),
-            Created201(ConnectionSetting),
+            Ok200(models::ConnectionSetting),
+            Created201(models::ConnectionSetting),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1446,7 +1497,7 @@ pub mod bot_connection {
         resource_group_name: &str,
         resource_name: &str,
         connection_name: &str,
-        parameters: &ConnectionSetting,
+        parameters: &models::ConnectionSetting,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -1477,19 +1528,19 @@ pub mod bot_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionSetting =
+                let rsp_value: models::ConnectionSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionSetting =
+                let rsp_value: models::ConnectionSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1499,11 +1550,11 @@ pub mod bot_connection {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ConnectionSetting),
-            Created201(ConnectionSetting),
+            Ok200(models::ConnectionSetting),
+            Created201(models::ConnectionSetting),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1562,7 +1613,7 @@ pub mod bot_connection {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1572,7 +1623,7 @@ pub mod bot_connection {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1604,7 +1655,7 @@ pub mod bot_connection {
         resource_group_name: &str,
         resource_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionSettingResponseList, list_by_bot_service::Error> {
+    ) -> std::result::Result<models::ConnectionSettingResponseList, list_by_bot_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/connections",
@@ -1634,13 +1685,13 @@ pub mod bot_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionSettingResponseList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionSettingResponseList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_bot_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_bot_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_bot_service::Error::DefaultResponse {
                     status_code,
@@ -1650,7 +1701,7 @@ pub mod bot_connection {
         }
     }
     pub mod list_by_bot_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1674,11 +1725,11 @@ pub mod bot_connection {
     }
 }
 pub mod host_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<HostSettingsResponse, get::Error> {
+    ) -> std::result::Result<models::HostSettingsResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.BotService/hostSettings",
@@ -1703,13 +1754,13 @@ pub mod host_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostSettingsResponse =
+                let rsp_value: models::HostSettingsResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1719,7 +1770,7 @@ pub mod host_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

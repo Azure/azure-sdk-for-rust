@@ -2,14 +2,127 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Accounts_ListBySubscription(#[from] accounts::list_by_subscription::Error),
+    #[error(transparent)]
+    Accounts_Get(#[from] accounts::get::Error),
+    #[error(transparent)]
+    Accounts_Create(#[from] accounts::create::Error),
+    #[error(transparent)]
+    Accounts_Update(#[from] accounts::update::Error),
+    #[error(transparent)]
+    Accounts_Delete(#[from] accounts::delete::Error),
+    #[error(transparent)]
+    Accounts_ListByResourceGroup(#[from] accounts::list_by_resource_group::Error),
+    #[error(transparent)]
+    ConsumerInvitations_ListInvitations(#[from] consumer_invitations::list_invitations::Error),
+    #[error(transparent)]
+    ConsumerInvitations_Get(#[from] consumer_invitations::get::Error),
+    #[error(transparent)]
+    ConsumerInvitations_RejectInvitation(#[from] consumer_invitations::reject_invitation::Error),
+    #[error(transparent)]
+    DataSets_Get(#[from] data_sets::get::Error),
+    #[error(transparent)]
+    DataSets_Create(#[from] data_sets::create::Error),
+    #[error(transparent)]
+    DataSets_Delete(#[from] data_sets::delete::Error),
+    #[error(transparent)]
+    DataSets_ListByShare(#[from] data_sets::list_by_share::Error),
+    #[error(transparent)]
+    DataSetMappings_Get(#[from] data_set_mappings::get::Error),
+    #[error(transparent)]
+    DataSetMappings_Create(#[from] data_set_mappings::create::Error),
+    #[error(transparent)]
+    DataSetMappings_Delete(#[from] data_set_mappings::delete::Error),
+    #[error(transparent)]
+    DataSetMappings_ListByShareSubscription(#[from] data_set_mappings::list_by_share_subscription::Error),
+    #[error(transparent)]
+    EmailRegistrations_ActivateEmail(#[from] email_registrations::activate_email::Error),
+    #[error(transparent)]
+    EmailRegistrations_RegisterEmail(#[from] email_registrations::register_email::Error),
+    #[error(transparent)]
+    Invitations_Get(#[from] invitations::get::Error),
+    #[error(transparent)]
+    Invitations_Create(#[from] invitations::create::Error),
+    #[error(transparent)]
+    Invitations_Delete(#[from] invitations::delete::Error),
+    #[error(transparent)]
+    Invitations_ListByShare(#[from] invitations::list_by_share::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Shares_ListSynchronizationDetails(#[from] shares::list_synchronization_details::Error),
+    #[error(transparent)]
+    Shares_ListSynchronizations(#[from] shares::list_synchronizations::Error),
+    #[error(transparent)]
+    ProviderShareSubscriptions_Adjust(#[from] provider_share_subscriptions::adjust::Error),
+    #[error(transparent)]
+    ProviderShareSubscriptions_Reinstate(#[from] provider_share_subscriptions::reinstate::Error),
+    #[error(transparent)]
+    ProviderShareSubscriptions_Revoke(#[from] provider_share_subscriptions::revoke::Error),
+    #[error(transparent)]
+    ProviderShareSubscriptions_GetByShare(#[from] provider_share_subscriptions::get_by_share::Error),
+    #[error(transparent)]
+    ProviderShareSubscriptions_ListByShare(#[from] provider_share_subscriptions::list_by_share::Error),
+    #[error(transparent)]
+    Shares_Get(#[from] shares::get::Error),
+    #[error(transparent)]
+    Shares_Create(#[from] shares::create::Error),
+    #[error(transparent)]
+    Shares_Delete(#[from] shares::delete::Error),
+    #[error(transparent)]
+    Shares_ListByAccount(#[from] shares::list_by_account::Error),
+    #[error(transparent)]
+    ShareSubscriptions_CancelSynchronization(#[from] share_subscriptions::cancel_synchronization::Error),
+    #[error(transparent)]
+    ConsumerSourceDataSets_ListByShareSubscription(#[from] consumer_source_data_sets::list_by_share_subscription::Error),
+    #[error(transparent)]
+    ShareSubscriptions_ListSourceShareSynchronizationSettings(
+        #[from] share_subscriptions::list_source_share_synchronization_settings::Error,
+    ),
+    #[error(transparent)]
+    ShareSubscriptions_ListSynchronizationDetails(#[from] share_subscriptions::list_synchronization_details::Error),
+    #[error(transparent)]
+    ShareSubscriptions_ListSynchronizations(#[from] share_subscriptions::list_synchronizations::Error),
+    #[error(transparent)]
+    ShareSubscriptions_Synchronize(#[from] share_subscriptions::synchronize::Error),
+    #[error(transparent)]
+    ShareSubscriptions_Get(#[from] share_subscriptions::get::Error),
+    #[error(transparent)]
+    ShareSubscriptions_Create(#[from] share_subscriptions::create::Error),
+    #[error(transparent)]
+    ShareSubscriptions_Delete(#[from] share_subscriptions::delete::Error),
+    #[error(transparent)]
+    ShareSubscriptions_ListByAccount(#[from] share_subscriptions::list_by_account::Error),
+    #[error(transparent)]
+    SynchronizationSettings_Get(#[from] synchronization_settings::get::Error),
+    #[error(transparent)]
+    SynchronizationSettings_Create(#[from] synchronization_settings::create::Error),
+    #[error(transparent)]
+    SynchronizationSettings_Delete(#[from] synchronization_settings::delete::Error),
+    #[error(transparent)]
+    SynchronizationSettings_ListByShare(#[from] synchronization_settings::list_by_share::Error),
+    #[error(transparent)]
+    Triggers_Get(#[from] triggers::get::Error),
+    #[error(transparent)]
+    Triggers_Create(#[from] triggers::create::Error),
+    #[error(transparent)]
+    Triggers_Delete(#[from] triggers::delete::Error),
+    #[error(transparent)]
+    Triggers_ListByShareSubscription(#[from] triggers::list_by_share_subscription::Error),
+}
 pub mod accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<AccountList, list_by_subscription::Error> {
+    ) -> std::result::Result<models::AccountList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataShare/accounts",
@@ -40,13 +153,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccountList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -56,7 +169,7 @@ pub mod accounts {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -83,7 +196,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<Account, get::Error> {
+    ) -> std::result::Result<models::Account, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
@@ -110,13 +223,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Account =
+                let rsp_value: models::Account =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -126,7 +239,7 @@ pub mod accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -153,7 +266,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        account: &Account,
+        account: &models::Account,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -182,19 +295,19 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Account =
+                let rsp_value: models::Account =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Account =
+                let rsp_value: models::Account =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -204,11 +317,11 @@ pub mod accounts {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Account),
-            Ok200(Account),
+            Created201(models::Account),
+            Ok200(models::Account),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -236,8 +349,8 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        account_update_parameters: &AccountUpdateParameters,
-    ) -> std::result::Result<Account, update::Error> {
+        account_update_parameters: &models::AccountUpdateParameters,
+    ) -> std::result::Result<models::Account, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
@@ -265,13 +378,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Account =
+                let rsp_value: models::Account =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -281,7 +394,7 @@ pub mod accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -335,7 +448,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResponse =
+                let rsp_value: models::OperationResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -343,7 +456,7 @@ pub mod accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -353,10 +466,10 @@ pub mod accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationResponse),
+            Ok200(models::OperationResponse),
             Accepted202,
             NoContent204,
         }
@@ -386,7 +499,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<AccountList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AccountList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts",
@@ -420,13 +533,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccountList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -436,7 +549,7 @@ pub mod accounts {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -460,11 +573,11 @@ pub mod accounts {
     }
 }
 pub mod consumer_invitations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_invitations(
         operation_config: &crate::OperationConfig,
         skip_token: Option<&str>,
-    ) -> std::result::Result<ConsumerInvitationList, list_invitations::Error> {
+    ) -> std::result::Result<models::ConsumerInvitationList, list_invitations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataShare/listInvitations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_invitations::Error::ParseUrlError)?;
@@ -491,13 +604,13 @@ pub mod consumer_invitations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsumerInvitationList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConsumerInvitationList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_invitations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_invitations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_invitations::Error::DefaultResponse {
                     status_code,
@@ -507,7 +620,7 @@ pub mod consumer_invitations {
         }
     }
     pub mod list_invitations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -533,7 +646,7 @@ pub mod consumer_invitations {
         operation_config: &crate::OperationConfig,
         location: &str,
         invitation_id: &str,
-    ) -> std::result::Result<ConsumerInvitation, get::Error> {
+    ) -> std::result::Result<models::ConsumerInvitation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.DataShare/locations/{}/consumerInvitations/{}",
@@ -559,13 +672,13 @@ pub mod consumer_invitations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsumerInvitation =
+                let rsp_value: models::ConsumerInvitation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -575,7 +688,7 @@ pub mod consumer_invitations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -600,8 +713,8 @@ pub mod consumer_invitations {
     pub async fn reject_invitation(
         operation_config: &crate::OperationConfig,
         location: &str,
-        invitation: &ConsumerInvitation,
-    ) -> std::result::Result<ConsumerInvitation, reject_invitation::Error> {
+        invitation: &models::ConsumerInvitation,
+    ) -> std::result::Result<models::ConsumerInvitation, reject_invitation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.DataShare/locations/{}/rejectInvitation",
@@ -630,13 +743,13 @@ pub mod consumer_invitations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsumerInvitation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConsumerInvitation = serde_json::from_slice(rsp_body)
                     .map_err(|source| reject_invitation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| reject_invitation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(reject_invitation::Error::DefaultResponse {
                     status_code,
@@ -646,7 +759,7 @@ pub mod consumer_invitations {
         }
     }
     pub mod reject_invitation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -670,7 +783,7 @@ pub mod consumer_invitations {
     }
 }
 pub mod data_sets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -678,7 +791,7 @@ pub mod data_sets {
         account_name: &str,
         share_name: &str,
         data_set_name: &str,
-    ) -> std::result::Result<DataSet, get::Error> {
+    ) -> std::result::Result<models::DataSet, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
@@ -707,13 +820,13 @@ pub mod data_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataSet =
+                let rsp_value: models::DataSet =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -723,7 +836,7 @@ pub mod data_sets {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -752,7 +865,7 @@ pub mod data_sets {
         account_name: &str,
         share_name: &str,
         data_set_name: &str,
-        data_set: &DataSet,
+        data_set: &models::DataSet,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -783,19 +896,19 @@ pub mod data_sets {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataSet =
+                let rsp_value: models::DataSet =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataSet =
+                let rsp_value: models::DataSet =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -805,11 +918,11 @@ pub mod data_sets {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(DataSet),
-            Ok200(DataSet),
+            Created201(models::DataSet),
+            Ok200(models::DataSet),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -871,7 +984,7 @@ pub mod data_sets {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -881,7 +994,7 @@ pub mod data_sets {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -918,7 +1031,7 @@ pub mod data_sets {
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<DataSetList, list_by_share::Error> {
+    ) -> std::result::Result<models::DataSetList, list_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets",
@@ -958,13 +1071,13 @@ pub mod data_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataSetList =
+                let rsp_value: models::DataSetList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_share::Error::DefaultResponse {
                     status_code,
@@ -974,7 +1087,7 @@ pub mod data_sets {
         }
     }
     pub mod list_by_share {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -998,7 +1111,7 @@ pub mod data_sets {
     }
 }
 pub mod data_set_mappings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1006,7 +1119,7 @@ pub mod data_set_mappings {
         account_name: &str,
         share_subscription_name: &str,
         data_set_mapping_name: &str,
-    ) -> std::result::Result<DataSetMapping, get::Error> {
+    ) -> std::result::Result<models::DataSetMapping, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}",
@@ -1035,13 +1148,13 @@ pub mod data_set_mappings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataSetMapping =
+                let rsp_value: models::DataSetMapping =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1051,7 +1164,7 @@ pub mod data_set_mappings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1080,7 +1193,7 @@ pub mod data_set_mappings {
         account_name: &str,
         share_subscription_name: &str,
         data_set_mapping_name: &str,
-        data_set_mapping: &DataSetMapping,
+        data_set_mapping: &models::DataSetMapping,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1111,19 +1224,19 @@ pub mod data_set_mappings {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataSetMapping =
+                let rsp_value: models::DataSetMapping =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataSetMapping =
+                let rsp_value: models::DataSetMapping =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1133,11 +1246,11 @@ pub mod data_set_mappings {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(DataSetMapping),
-            Ok200(DataSetMapping),
+            Created201(models::DataSetMapping),
+            Ok200(models::DataSetMapping),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1198,7 +1311,7 @@ pub mod data_set_mappings {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1208,7 +1321,7 @@ pub mod data_set_mappings {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1244,7 +1357,7 @@ pub mod data_set_mappings {
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<DataSetMappingList, list_by_share_subscription::Error> {
+    ) -> std::result::Result<models::DataSetMappingList, list_by_share_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings",
@@ -1286,13 +1399,13 @@ pub mod data_set_mappings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataSetMappingList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataSetMappingList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_share_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_share_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_share_subscription::Error::DefaultResponse {
                     status_code,
@@ -1302,7 +1415,7 @@ pub mod data_set_mappings {
         }
     }
     pub mod list_by_share_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1326,12 +1439,12 @@ pub mod data_set_mappings {
     }
 }
 pub mod email_registrations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn activate_email(
         operation_config: &crate::OperationConfig,
         location: &str,
-        email_registration: &EmailRegistration,
-    ) -> std::result::Result<EmailRegistration, activate_email::Error> {
+        email_registration: &models::EmailRegistration,
+    ) -> std::result::Result<models::EmailRegistration, activate_email::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.DataShare/locations/{}/activateEmail",
@@ -1360,13 +1473,13 @@ pub mod email_registrations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EmailRegistration =
+                let rsp_value: models::EmailRegistration =
                     serde_json::from_slice(rsp_body).map_err(|source| activate_email::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| activate_email::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(activate_email::Error::DefaultResponse {
                     status_code,
@@ -1376,7 +1489,7 @@ pub mod email_registrations {
         }
     }
     pub mod activate_email {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1401,7 +1514,7 @@ pub mod email_registrations {
     pub async fn register_email(
         operation_config: &crate::OperationConfig,
         location: &str,
-    ) -> std::result::Result<EmailRegistration, register_email::Error> {
+    ) -> std::result::Result<models::EmailRegistration, register_email::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.DataShare/locations/{}/registerEmail",
@@ -1430,13 +1543,13 @@ pub mod email_registrations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EmailRegistration =
+                let rsp_value: models::EmailRegistration =
                     serde_json::from_slice(rsp_body).map_err(|source| register_email::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| register_email::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(register_email::Error::DefaultResponse {
                     status_code,
@@ -1446,7 +1559,7 @@ pub mod email_registrations {
         }
     }
     pub mod register_email {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1470,7 +1583,7 @@ pub mod email_registrations {
     }
 }
 pub mod invitations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1478,7 +1591,7 @@ pub mod invitations {
         account_name: &str,
         share_name: &str,
         invitation_name: &str,
-    ) -> std::result::Result<Invitation, get::Error> {
+    ) -> std::result::Result<models::Invitation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
@@ -1507,13 +1620,13 @@ pub mod invitations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Invitation =
+                let rsp_value: models::Invitation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1523,7 +1636,7 @@ pub mod invitations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1552,7 +1665,7 @@ pub mod invitations {
         account_name: &str,
         share_name: &str,
         invitation_name: &str,
-        invitation: &Invitation,
+        invitation: &models::Invitation,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1583,19 +1696,19 @@ pub mod invitations {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Invitation =
+                let rsp_value: models::Invitation =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Invitation =
+                let rsp_value: models::Invitation =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1605,11 +1718,11 @@ pub mod invitations {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Invitation),
-            Ok200(Invitation),
+            Created201(models::Invitation),
+            Ok200(models::Invitation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1670,7 +1783,7 @@ pub mod invitations {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1680,7 +1793,7 @@ pub mod invitations {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1716,7 +1829,7 @@ pub mod invitations {
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<InvitationList, list_by_share::Error> {
+    ) -> std::result::Result<models::InvitationList, list_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations",
@@ -1756,13 +1869,13 @@ pub mod invitations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InvitationList =
+                let rsp_value: models::InvitationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_share::Error::DefaultResponse {
                     status_code,
@@ -1772,7 +1885,7 @@ pub mod invitations {
         }
     }
     pub mod list_by_share {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1796,8 +1909,8 @@ pub mod invitations {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataShare/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1818,13 +1931,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1834,7 +1947,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1858,18 +1971,18 @@ pub mod operations {
     }
 }
 pub mod shares {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_synchronization_details(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         share_name: &str,
-        share_synchronization: &ShareSynchronization,
+        share_synchronization: &models::ShareSynchronization,
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<SynchronizationDetailsList, list_synchronization_details::Error> {
+    ) -> std::result::Result<models::SynchronizationDetailsList, list_synchronization_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizationDetails",
@@ -1912,13 +2025,13 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SynchronizationDetailsList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SynchronizationDetailsList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_synchronization_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_synchronization_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_synchronization_details::Error::DefaultResponse {
                     status_code,
@@ -1928,7 +2041,7 @@ pub mod shares {
         }
     }
     pub mod list_synchronization_details {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1959,7 +2072,7 @@ pub mod shares {
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<ShareSynchronizationList, list_synchronizations::Error> {
+    ) -> std::result::Result<models::ShareSynchronizationList, list_synchronizations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizations",
@@ -2002,13 +2115,13 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSynchronizationList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShareSynchronizationList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_synchronizations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_synchronizations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_synchronizations::Error::DefaultResponse {
                     status_code,
@@ -2018,7 +2131,7 @@ pub mod shares {
         }
     }
     pub mod list_synchronizations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2046,7 +2159,7 @@ pub mod shares {
         resource_group_name: &str,
         account_name: &str,
         share_name: &str,
-    ) -> std::result::Result<Share, get::Error> {
+    ) -> std::result::Result<models::Share, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
@@ -2074,13 +2187,13 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Share =
+                let rsp_value: models::Share =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2090,7 +2203,7 @@ pub mod shares {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2118,7 +2231,7 @@ pub mod shares {
         resource_group_name: &str,
         account_name: &str,
         share_name: &str,
-        share: &Share,
+        share: &models::Share,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2148,19 +2261,19 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Share =
+                let rsp_value: models::Share =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Share =
+                let rsp_value: models::Share =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -2170,11 +2283,11 @@ pub mod shares {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Share),
-            Ok200(Share),
+            Created201(models::Share),
+            Ok200(models::Share),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2231,7 +2344,7 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResponse =
+                let rsp_value: models::OperationResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -2239,7 +2352,7 @@ pub mod shares {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2249,10 +2362,10 @@ pub mod shares {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationResponse),
+            Ok200(models::OperationResponse),
             Accepted202,
             NoContent204,
         }
@@ -2285,7 +2398,7 @@ pub mod shares {
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<ShareList, list_by_account::Error> {
+    ) -> std::result::Result<models::ShareList, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares",
@@ -2324,13 +2437,13 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShareList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_account::Error::DefaultResponse {
                     status_code,
@@ -2340,7 +2453,7 @@ pub mod shares {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2364,7 +2477,7 @@ pub mod shares {
     }
 }
 pub mod provider_share_subscriptions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn adjust(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2372,8 +2485,8 @@ pub mod provider_share_subscriptions {
         account_name: &str,
         share_name: &str,
         provider_share_subscription_id: &str,
-        provider_share_subscription: &ProviderShareSubscription,
-    ) -> std::result::Result<ProviderShareSubscription, adjust::Error> {
+        provider_share_subscription: &models::ProviderShareSubscription,
+    ) -> std::result::Result<models::ProviderShareSubscription, adjust::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/adjust" , operation_config . base_path () , subscription_id , resource_group_name , account_name , share_name , provider_share_subscription_id) ;
         let mut url = url::Url::parse(url_str).map_err(adjust::Error::ParseUrlError)?;
@@ -2395,13 +2508,13 @@ pub mod provider_share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProviderShareSubscription =
+                let rsp_value: models::ProviderShareSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| adjust::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| adjust::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(adjust::Error::DefaultResponse {
                     status_code,
@@ -2411,7 +2524,7 @@ pub mod provider_share_subscriptions {
         }
     }
     pub mod adjust {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2440,8 +2553,8 @@ pub mod provider_share_subscriptions {
         account_name: &str,
         share_name: &str,
         provider_share_subscription_id: &str,
-        provider_share_subscription: &ProviderShareSubscription,
-    ) -> std::result::Result<ProviderShareSubscription, reinstate::Error> {
+        provider_share_subscription: &models::ProviderShareSubscription,
+    ) -> std::result::Result<models::ProviderShareSubscription, reinstate::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/reinstate" , operation_config . base_path () , subscription_id , resource_group_name , account_name , share_name , provider_share_subscription_id) ;
         let mut url = url::Url::parse(url_str).map_err(reinstate::Error::ParseUrlError)?;
@@ -2466,13 +2579,13 @@ pub mod provider_share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProviderShareSubscription =
+                let rsp_value: models::ProviderShareSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| reinstate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| reinstate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(reinstate::Error::DefaultResponse {
                     status_code,
@@ -2482,7 +2595,7 @@ pub mod provider_share_subscriptions {
         }
     }
     pub mod reinstate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2533,19 +2646,19 @@ pub mod provider_share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProviderShareSubscription =
+                let rsp_value: models::ProviderShareSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| revoke::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(revoke::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProviderShareSubscription =
+                let rsp_value: models::ProviderShareSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| revoke::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(revoke::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| revoke::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(revoke::Error::DefaultResponse {
                     status_code,
@@ -2555,11 +2668,11 @@ pub mod provider_share_subscriptions {
         }
     }
     pub mod revoke {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ProviderShareSubscription),
-            Accepted202(ProviderShareSubscription),
+            Ok200(models::ProviderShareSubscription),
+            Accepted202(models::ProviderShareSubscription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2589,7 +2702,7 @@ pub mod provider_share_subscriptions {
         account_name: &str,
         share_name: &str,
         provider_share_subscription_id: &str,
-    ) -> std::result::Result<ProviderShareSubscription, get_by_share::Error> {
+    ) -> std::result::Result<models::ProviderShareSubscription, get_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}",
@@ -2621,13 +2734,13 @@ pub mod provider_share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProviderShareSubscription =
+                let rsp_value: models::ProviderShareSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_share::Error::DefaultResponse {
                     status_code,
@@ -2637,7 +2750,7 @@ pub mod provider_share_subscriptions {
         }
     }
     pub mod get_by_share {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2666,7 +2779,7 @@ pub mod provider_share_subscriptions {
         account_name: &str,
         share_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<ProviderShareSubscriptionList, list_by_share::Error> {
+    ) -> std::result::Result<models::ProviderShareSubscriptionList, list_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions",
@@ -2700,13 +2813,13 @@ pub mod provider_share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProviderShareSubscriptionList =
+                let rsp_value: models::ProviderShareSubscriptionList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_share::Error::DefaultResponse {
                     status_code,
@@ -2716,7 +2829,7 @@ pub mod provider_share_subscriptions {
         }
     }
     pub mod list_by_share {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2740,14 +2853,14 @@ pub mod provider_share_subscriptions {
     }
 }
 pub mod share_subscriptions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn cancel_synchronization(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        share_subscription_synchronization: &ShareSubscriptionSynchronization,
+        share_subscription_synchronization: &models::ShareSubscriptionSynchronization,
     ) -> std::result::Result<cancel_synchronization::Response, cancel_synchronization::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2782,19 +2895,19 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscriptionSynchronization = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShareSubscriptionSynchronization = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_synchronization::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(cancel_synchronization::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscriptionSynchronization = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShareSubscriptionSynchronization = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_synchronization::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(cancel_synchronization::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_synchronization::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel_synchronization::Error::DefaultResponse {
                     status_code,
@@ -2804,11 +2917,11 @@ pub mod share_subscriptions {
         }
     }
     pub mod cancel_synchronization {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ShareSubscriptionSynchronization),
-            Accepted202(ShareSubscriptionSynchronization),
+            Ok200(models::ShareSubscriptionSynchronization),
+            Accepted202(models::ShareSubscriptionSynchronization),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2838,7 +2951,7 @@ pub mod share_subscriptions {
         account_name: &str,
         share_subscription_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<SourceShareSynchronizationSettingList, list_source_share_synchronization_settings::Error> {
+    ) -> std::result::Result<models::SourceShareSynchronizationSettingList, list_source_share_synchronization_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSourceShareSynchronizationSettings" , operation_config . base_path () , subscription_id , resource_group_name , account_name , share_subscription_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_source_share_synchronization_settings::Error::ParseUrlError)?;
@@ -2868,13 +2981,13 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SourceShareSynchronizationSettingList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SourceShareSynchronizationSettingList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_source_share_synchronization_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_source_share_synchronization_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_source_share_synchronization_settings::Error::DefaultResponse {
                     status_code,
@@ -2884,7 +2997,7 @@ pub mod share_subscriptions {
         }
     }
     pub mod list_source_share_synchronization_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2912,11 +3025,11 @@ pub mod share_subscriptions {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        share_subscription_synchronization: &ShareSubscriptionSynchronization,
+        share_subscription_synchronization: &models::ShareSubscriptionSynchronization,
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<SynchronizationDetailsList, list_synchronization_details::Error> {
+    ) -> std::result::Result<models::SynchronizationDetailsList, list_synchronization_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizationDetails" , operation_config . base_path () , subscription_id , resource_group_name , account_name , share_subscription_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_synchronization_details::Error::ParseUrlError)?;
@@ -2953,13 +3066,13 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SynchronizationDetailsList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SynchronizationDetailsList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_synchronization_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_synchronization_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_synchronization_details::Error::DefaultResponse {
                     status_code,
@@ -2969,7 +3082,7 @@ pub mod share_subscriptions {
         }
     }
     pub mod list_synchronization_details {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3000,7 +3113,7 @@ pub mod share_subscriptions {
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<ShareSubscriptionSynchronizationList, list_synchronizations::Error> {
+    ) -> std::result::Result<models::ShareSubscriptionSynchronizationList, list_synchronizations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizations",
@@ -3043,13 +3156,13 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscriptionSynchronizationList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShareSubscriptionSynchronizationList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_synchronizations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_synchronizations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_synchronizations::Error::DefaultResponse {
                     status_code,
@@ -3059,7 +3172,7 @@ pub mod share_subscriptions {
         }
     }
     pub mod list_synchronizations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3087,7 +3200,7 @@ pub mod share_subscriptions {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        synchronize: &Synchronize,
+        synchronize: &models::Synchronize,
     ) -> std::result::Result<synchronize::Response, synchronize::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3120,19 +3233,19 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscriptionSynchronization =
+                let rsp_value: models::ShareSubscriptionSynchronization =
                     serde_json::from_slice(rsp_body).map_err(|source| synchronize::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(synchronize::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscriptionSynchronization =
+                let rsp_value: models::ShareSubscriptionSynchronization =
                     serde_json::from_slice(rsp_body).map_err(|source| synchronize::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(synchronize::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| synchronize::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(synchronize::Error::DefaultResponse {
                     status_code,
@@ -3142,11 +3255,11 @@ pub mod share_subscriptions {
         }
     }
     pub mod synchronize {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ShareSubscriptionSynchronization),
-            Accepted202(ShareSubscriptionSynchronization),
+            Ok200(models::ShareSubscriptionSynchronization),
+            Accepted202(models::ShareSubscriptionSynchronization),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3175,7 +3288,7 @@ pub mod share_subscriptions {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-    ) -> std::result::Result<ShareSubscription, get::Error> {
+    ) -> std::result::Result<models::ShareSubscription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
@@ -3203,13 +3316,13 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscription =
+                let rsp_value: models::ShareSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3219,7 +3332,7 @@ pub mod share_subscriptions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3247,7 +3360,7 @@ pub mod share_subscriptions {
         resource_group_name: &str,
         account_name: &str,
         share_subscription_name: &str,
-        share_subscription: &ShareSubscription,
+        share_subscription: &models::ShareSubscription,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3277,19 +3390,19 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscription =
+                let rsp_value: models::ShareSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscription =
+                let rsp_value: models::ShareSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -3299,11 +3412,11 @@ pub mod share_subscriptions {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ShareSubscription),
-            Created201(ShareSubscription),
+            Ok200(models::ShareSubscription),
+            Created201(models::ShareSubscription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3360,7 +3473,7 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResponse =
+                let rsp_value: models::OperationResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -3368,7 +3481,7 @@ pub mod share_subscriptions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3378,10 +3491,10 @@ pub mod share_subscriptions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationResponse),
+            Ok200(models::OperationResponse),
             Accepted202,
             NoContent204,
         }
@@ -3414,7 +3527,7 @@ pub mod share_subscriptions {
         skip_token: Option<&str>,
         filter: Option<&str>,
         orderby: Option<&str>,
-    ) -> std::result::Result<ShareSubscriptionList, list_by_account::Error> {
+    ) -> std::result::Result<models::ShareSubscriptionList, list_by_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions",
@@ -3453,13 +3566,13 @@ pub mod share_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareSubscriptionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShareSubscriptionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_account::Error::DefaultResponse {
                     status_code,
@@ -3469,7 +3582,7 @@ pub mod share_subscriptions {
         }
     }
     pub mod list_by_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3493,7 +3606,7 @@ pub mod share_subscriptions {
     }
 }
 pub mod consumer_source_data_sets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_share_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3501,7 +3614,7 @@ pub mod consumer_source_data_sets {
         account_name: &str,
         share_subscription_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<ConsumerSourceDataSetList, list_by_share_subscription::Error> {
+    ) -> std::result::Result<models::ConsumerSourceDataSetList, list_by_share_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/consumerSourceDataSets",
@@ -3537,13 +3650,13 @@ pub mod consumer_source_data_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsumerSourceDataSetList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConsumerSourceDataSetList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_share_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_share_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_share_subscription::Error::DefaultResponse {
                     status_code,
@@ -3553,7 +3666,7 @@ pub mod consumer_source_data_sets {
         }
     }
     pub mod list_by_share_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3577,7 +3690,7 @@ pub mod consumer_source_data_sets {
     }
 }
 pub mod synchronization_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3585,7 +3698,7 @@ pub mod synchronization_settings {
         account_name: &str,
         share_name: &str,
         synchronization_setting_name: &str,
-    ) -> std::result::Result<SynchronizationSetting, get::Error> {
+    ) -> std::result::Result<models::SynchronizationSetting, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}",
@@ -3614,13 +3727,13 @@ pub mod synchronization_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SynchronizationSetting =
+                let rsp_value: models::SynchronizationSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3630,7 +3743,7 @@ pub mod synchronization_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3659,7 +3772,7 @@ pub mod synchronization_settings {
         account_name: &str,
         share_name: &str,
         synchronization_setting_name: &str,
-        synchronization_setting: &SynchronizationSetting,
+        synchronization_setting: &models::SynchronizationSetting,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3690,19 +3803,19 @@ pub mod synchronization_settings {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SynchronizationSetting =
+                let rsp_value: models::SynchronizationSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SynchronizationSetting =
+                let rsp_value: models::SynchronizationSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -3712,11 +3825,11 @@ pub mod synchronization_settings {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(SynchronizationSetting),
-            Ok200(SynchronizationSetting),
+            Created201(models::SynchronizationSetting),
+            Ok200(models::SynchronizationSetting),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3775,7 +3888,7 @@ pub mod synchronization_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResponse =
+                let rsp_value: models::OperationResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -3783,7 +3896,7 @@ pub mod synchronization_settings {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3793,10 +3906,10 @@ pub mod synchronization_settings {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationResponse),
+            Ok200(models::OperationResponse),
             Accepted202,
             NoContent204,
         }
@@ -3828,7 +3941,7 @@ pub mod synchronization_settings {
         account_name: &str,
         share_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<SynchronizationSettingList, list_by_share::Error> {
+    ) -> std::result::Result<models::SynchronizationSettingList, list_by_share::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings",
@@ -3862,13 +3975,13 @@ pub mod synchronization_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SynchronizationSettingList =
+                let rsp_value: models::SynchronizationSettingList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_share::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_share::Error::DefaultResponse {
                     status_code,
@@ -3878,7 +3991,7 @@ pub mod synchronization_settings {
         }
     }
     pub mod list_by_share {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3902,7 +4015,7 @@ pub mod synchronization_settings {
     }
 }
 pub mod triggers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3910,7 +4023,7 @@ pub mod triggers {
         account_name: &str,
         share_subscription_name: &str,
         trigger_name: &str,
-    ) -> std::result::Result<Trigger, get::Error> {
+    ) -> std::result::Result<models::Trigger, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
@@ -3939,13 +4052,13 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Trigger =
+                let rsp_value: models::Trigger =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3955,7 +4068,7 @@ pub mod triggers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3984,7 +4097,7 @@ pub mod triggers {
         account_name: &str,
         share_subscription_name: &str,
         trigger_name: &str,
-        trigger: &Trigger,
+        trigger: &models::Trigger,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4015,19 +4128,19 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Trigger =
+                let rsp_value: models::Trigger =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Trigger =
+                let rsp_value: models::Trigger =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -4037,11 +4150,11 @@ pub mod triggers {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Trigger),
-            Ok200(Trigger),
+            Created201(models::Trigger),
+            Ok200(models::Trigger),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4100,7 +4213,7 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResponse =
+                let rsp_value: models::OperationResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -4108,7 +4221,7 @@ pub mod triggers {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError =
+                let rsp_value: models::DataShareError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4118,10 +4231,10 @@ pub mod triggers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationResponse),
+            Ok200(models::OperationResponse),
             Accepted202,
             NoContent204,
         }
@@ -4153,7 +4266,7 @@ pub mod triggers {
         account_name: &str,
         share_subscription_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<TriggerList, list_by_share_subscription::Error> {
+    ) -> std::result::Result<models::TriggerList, list_by_share_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers",
@@ -4189,13 +4302,13 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggerList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggerList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_share_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataShareError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataShareError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_share_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_share_subscription::Error::DefaultResponse {
                     status_code,
@@ -4205,7 +4318,7 @@ pub mod triggers {
         }
     }
     pub mod list_by_share_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,10 +2,49 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Jobs_List(#[from] jobs::list::Error),
+    #[error(transparent)]
+    Mitigate(#[from] mitigate::Error),
+    #[error(transparent)]
+    Service_ListAvailableSkusByResourceGroup(#[from] service::list_available_skus_by_resource_group::Error),
+    #[error(transparent)]
+    Service_ValidateAddress(#[from] service::validate_address::Error),
+    #[error(transparent)]
+    Service_ValidateInputsByResourceGroup(#[from] service::validate_inputs_by_resource_group::Error),
+    #[error(transparent)]
+    Service_ValidateInputs(#[from] service::validate_inputs::Error),
+    #[error(transparent)]
+    Jobs_ListByResourceGroup(#[from] jobs::list_by_resource_group::Error),
+    #[error(transparent)]
+    Jobs_Get(#[from] jobs::get::Error),
+    #[error(transparent)]
+    Jobs_Create(#[from] jobs::create::Error),
+    #[error(transparent)]
+    Jobs_Update(#[from] jobs::update::Error),
+    #[error(transparent)]
+    Jobs_Delete(#[from] jobs::delete::Error),
+    #[error(transparent)]
+    Jobs_BookShipmentPickUp(#[from] jobs::book_shipment_pick_up::Error),
+    #[error(transparent)]
+    Jobs_Cancel(#[from] jobs::cancel::Error),
+    #[error(transparent)]
+    Jobs_ListCredentials(#[from] jobs::list_credentials::Error),
+    #[error(transparent)]
+    Service_RegionConfiguration(#[from] service::region_configuration::Error),
+    #[error(transparent)]
+    Service_RegionConfigurationByResourceGroup(#[from] service::region_configuration_by_resource_group::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataBox/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +65,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +81,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,12 +105,12 @@ pub mod operations {
     }
 }
 pub mod jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<JobResourceList, list::Error> {
+    ) -> std::result::Result<models::JobResourceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataBox/jobs",
@@ -99,13 +138,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResourceList =
+                let rsp_value: models::JobResourceList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -115,7 +154,7 @@ pub mod jobs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -142,7 +181,7 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<JobResourceList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::JobResourceList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs",
@@ -176,13 +215,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResourceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobResourceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -192,7 +231,7 @@ pub mod jobs {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -220,7 +259,7 @@ pub mod jobs {
         resource_group_name: &str,
         job_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<JobResource, get::Error> {
+    ) -> std::result::Result<models::JobResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}",
@@ -250,13 +289,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResource =
+                let rsp_value: models::JobResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -266,7 +305,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -293,7 +332,7 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-        job_resource: &JobResource,
+        job_resource: &models::JobResource,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -322,14 +361,14 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResource =
+                let rsp_value: models::JobResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -339,10 +378,10 @@ pub mod jobs {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobResource),
+            Ok200(models::JobResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -372,7 +411,7 @@ pub mod jobs {
         resource_group_name: &str,
         job_name: &str,
         if_match: Option<&str>,
-        job_resource_update_parameter: &JobResourceUpdateParameter,
+        job_resource_update_parameter: &models::JobResourceUpdateParameter,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -404,14 +443,14 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResource =
+                let rsp_value: models::JobResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -421,10 +460,10 @@ pub mod jobs {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobResource),
+            Ok200(models::JobResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -483,7 +522,7 @@ pub mod jobs {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -493,7 +532,7 @@ pub mod jobs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -526,8 +565,8 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-        shipment_pick_up_request: &ShipmentPickUpRequest,
-    ) -> std::result::Result<ShipmentPickUpResponse, book_shipment_pick_up::Error> {
+        shipment_pick_up_request: &models::ShipmentPickUpRequest,
+    ) -> std::result::Result<models::ShipmentPickUpResponse, book_shipment_pick_up::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/bookShipmentPickUp",
@@ -560,13 +599,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShipmentPickUpResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShipmentPickUpResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| book_shipment_pick_up::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| book_shipment_pick_up::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(book_shipment_pick_up::Error::DefaultResponse {
                     status_code,
@@ -576,7 +615,7 @@ pub mod jobs {
         }
     }
     pub mod book_shipment_pick_up {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -603,7 +642,7 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-        cancellation_reason: &CancellationReason,
+        cancellation_reason: &models::CancellationReason,
     ) -> std::result::Result<(), cancel::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -633,7 +672,7 @@ pub mod jobs {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel::Error::DefaultResponse {
                     status_code,
@@ -643,7 +682,7 @@ pub mod jobs {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -670,7 +709,7 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-    ) -> std::result::Result<UnencryptedCredentialsList, list_credentials::Error> {
+    ) -> std::result::Result<models::UnencryptedCredentialsList, list_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/jobs/{}/listCredentials",
@@ -701,13 +740,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnencryptedCredentialsList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UnencryptedCredentialsList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_credentials::Error::DefaultResponse {
                     status_code,
@@ -717,7 +756,7 @@ pub mod jobs {
         }
     }
     pub mod list_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -745,7 +784,7 @@ pub async fn mitigate(
     job_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    mitigate_job_request: &MitigateJobRequest,
+    mitigate_job_request: &models::MitigateJobRequest,
 ) -> std::result::Result<(), mitigate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -778,7 +817,7 @@ pub async fn mitigate(
         http::StatusCode::NO_CONTENT => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ApiError =
+            let rsp_value: models::ApiError =
                 serde_json::from_slice(rsp_body).map_err(|source| mitigate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(mitigate::Error::DefaultResponse {
                 status_code,
@@ -788,7 +827,7 @@ pub async fn mitigate(
     }
 }
 pub mod mitigate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -811,14 +850,14 @@ pub mod mitigate {
     }
 }
 pub mod service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_available_skus_by_resource_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         location: &str,
-        available_sku_request: &AvailableSkuRequest,
-    ) -> std::result::Result<AvailableSkusResult, list_available_skus_by_resource_group::Error> {
+        available_sku_request: &models::AvailableSkuRequest,
+    ) -> std::result::Result<models::AvailableSkusResult, list_available_skus_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/availableSkus",
@@ -851,13 +890,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailableSkusResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailableSkusResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_available_skus_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_available_skus_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_available_skus_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -867,7 +906,7 @@ pub mod service {
         }
     }
     pub mod list_available_skus_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -893,8 +932,8 @@ pub mod service {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        validate_address: &ValidateAddress,
-    ) -> std::result::Result<AddressValidationOutput, validate_address::Error> {
+        validate_address: &models::ValidateAddress,
+    ) -> std::result::Result<models::AddressValidationOutput, validate_address::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/validateAddress",
@@ -924,13 +963,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AddressValidationOutput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AddressValidationOutput = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_address::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_address::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate_address::Error::DefaultResponse {
                     status_code,
@@ -940,7 +979,7 @@ pub mod service {
         }
     }
     pub mod validate_address {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -967,8 +1006,8 @@ pub mod service {
         subscription_id: &str,
         resource_group_name: &str,
         location: &str,
-        validation_request: &ValidationRequest,
-    ) -> std::result::Result<ValidationResponse, validate_inputs_by_resource_group::Error> {
+        validation_request: &models::ValidationRequest,
+    ) -> std::result::Result<models::ValidationResponse, validate_inputs_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/validateInputs",
@@ -1001,13 +1040,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ValidationResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ValidationResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_inputs_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_inputs_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate_inputs_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1017,7 +1056,7 @@ pub mod service {
         }
     }
     pub mod validate_inputs_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1043,8 +1082,8 @@ pub mod service {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        validation_request: &ValidationRequest,
-    ) -> std::result::Result<ValidationResponse, validate_inputs::Error> {
+        validation_request: &models::ValidationRequest,
+    ) -> std::result::Result<models::ValidationResponse, validate_inputs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/validateInputs",
@@ -1074,13 +1113,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ValidationResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ValidationResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_inputs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_inputs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate_inputs::Error::DefaultResponse {
                     status_code,
@@ -1090,7 +1129,7 @@ pub mod service {
         }
     }
     pub mod validate_inputs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1116,8 +1155,8 @@ pub mod service {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        region_configuration_request: &RegionConfigurationRequest,
-    ) -> std::result::Result<RegionConfigurationResponse, region_configuration::Error> {
+        region_configuration_request: &models::RegionConfigurationRequest,
+    ) -> std::result::Result<models::RegionConfigurationResponse, region_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataBox/locations/{}/regionConfiguration",
@@ -1147,13 +1186,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegionConfigurationResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RegionConfigurationResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| region_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| region_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(region_configuration::Error::DefaultResponse {
                     status_code,
@@ -1163,7 +1202,7 @@ pub mod service {
         }
     }
     pub mod region_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1190,8 +1229,8 @@ pub mod service {
         subscription_id: &str,
         resource_group_name: &str,
         location: &str,
-        region_configuration_request: &RegionConfigurationRequest,
-    ) -> std::result::Result<RegionConfigurationResponse, region_configuration_by_resource_group::Error> {
+        region_configuration_request: &models::RegionConfigurationRequest,
+    ) -> std::result::Result<models::RegionConfigurationResponse, region_configuration_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBox/locations/{}/regionConfiguration",
@@ -1225,13 +1264,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegionConfigurationResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RegionConfigurationResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| region_configuration_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| region_configuration_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(region_configuration_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1241,7 +1280,7 @@ pub mod service {
         }
     }
     pub mod region_configuration_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

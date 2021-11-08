@@ -2,9 +2,22 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    DiagnosticOperations_Read(#[from] diagnostic_operations::read::Error),
+    #[error(transparent)]
+    DiskInspection_Create(#[from] disk_inspection::create::Error),
+    #[error(transparent)]
+    Diagnostics_List(#[from] diagnostics::list::Error),
+    #[error(transparent)]
+    DiskInspection_Get(#[from] disk_inspection::get::Error),
+}
 pub mod diagnostic_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn read(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -38,7 +51,7 @@ pub mod diagnostic_operations {
             http::StatusCode::ACCEPTED => Ok(read::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| read::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(read::Error::DefaultResponse {
                     status_code,
@@ -48,7 +61,7 @@ pub mod diagnostic_operations {
         }
     }
     pub mod read {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -77,12 +90,12 @@ pub mod diagnostic_operations {
     }
 }
 pub mod disk_inspection {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        run_disk_inspection_input: &RunDiskInspectionInput,
+        run_disk_inspection_input: &models::RunDiskInspectionInput,
     ) -> std::result::Result<String, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -116,7 +129,7 @@ pub mod disk_inspection {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -126,7 +139,7 @@ pub mod disk_inspection {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -152,7 +165,7 @@ pub mod disk_inspection {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<ComputeDiagnosticBase, get::Error> {
+    ) -> std::result::Result<models::ComputeDiagnosticBase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/diagnostics/diskInspection",
@@ -177,13 +190,13 @@ pub mod disk_inspection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputeDiagnosticBase =
+                let rsp_value: models::ComputeDiagnosticBase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -193,7 +206,7 @@ pub mod disk_inspection {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -217,12 +230,12 @@ pub mod disk_inspection {
     }
 }
 pub mod diagnostics {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<ComputeDiagnosticsList, list::Error> {
+    ) -> std::result::Result<models::ComputeDiagnosticsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/diagnostics",
@@ -247,13 +260,13 @@ pub mod diagnostics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputeDiagnosticsList =
+                let rsp_value: models::ComputeDiagnosticsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -263,7 +276,7 @@ pub mod diagnostics {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -6,12 +6,12 @@
 #[cfg(feature = "package-composite-v1")]
 pub mod package_composite_v1;
 #[cfg(all(feature = "package-composite-v1", not(feature = "no-default-version")))]
-pub use package_composite_v1::{models, operations};
+pub use package_composite_v1::{models, operations, operations::Error};
 #[cfg(feature = "package-2021-03-03")]
 pub mod package_2021_03_03;
 use azure_core::setters;
 #[cfg(all(feature = "package-2021-03-03", not(feature = "no-default-version")))]
-pub use package_2021_03_03::{models, operations};
+pub use package_2021_03_03::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

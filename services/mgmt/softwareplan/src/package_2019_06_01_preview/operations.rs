@@ -2,9 +2,30 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    SoftwarePlan_Register(#[from] software_plan::register::Error),
+    #[error(transparent)]
+    HybridUseBenefit_List(#[from] hybrid_use_benefit::list::Error),
+    #[error(transparent)]
+    HybridUseBenefit_Get(#[from] hybrid_use_benefit::get::Error),
+    #[error(transparent)]
+    HybridUseBenefit_Create(#[from] hybrid_use_benefit::create::Error),
+    #[error(transparent)]
+    HybridUseBenefit_Update(#[from] hybrid_use_benefit::update::Error),
+    #[error(transparent)]
+    HybridUseBenefit_Delete(#[from] hybrid_use_benefit::delete::Error),
+    #[error(transparent)]
+    HybridUseBenefitRevision_List(#[from] hybrid_use_benefit_revision::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod software_plan {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn register(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<(), register::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -35,7 +56,7 @@ pub mod software_plan {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| register::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(register::Error::DefaultResponse {
                     status_code,
@@ -45,7 +66,7 @@ pub mod software_plan {
         }
     }
     pub mod register {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -69,12 +90,12 @@ pub mod software_plan {
     }
 }
 pub mod hybrid_use_benefit {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<HybridUseBenefitListResult, list::Error> {
+    ) -> std::result::Result<models::HybridUseBenefitListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits",
@@ -102,13 +123,13 @@ pub mod hybrid_use_benefit {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridUseBenefitListResult =
+                let rsp_value: models::HybridUseBenefitListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -118,7 +139,7 @@ pub mod hybrid_use_benefit {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -144,7 +165,7 @@ pub mod hybrid_use_benefit {
         operation_config: &crate::OperationConfig,
         scope: &str,
         plan_id: &str,
-    ) -> std::result::Result<HybridUseBenefitModel, get::Error> {
+    ) -> std::result::Result<models::HybridUseBenefitModel, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}",
@@ -170,13 +191,13 @@ pub mod hybrid_use_benefit {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridUseBenefitModel =
+                let rsp_value: models::HybridUseBenefitModel =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -186,7 +207,7 @@ pub mod hybrid_use_benefit {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -212,8 +233,8 @@ pub mod hybrid_use_benefit {
         operation_config: &crate::OperationConfig,
         scope: &str,
         plan_id: &str,
-        body: &HybridUseBenefitModel,
-    ) -> std::result::Result<HybridUseBenefitModel, create::Error> {
+        body: &models::HybridUseBenefitModel,
+    ) -> std::result::Result<models::HybridUseBenefitModel, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}",
@@ -240,13 +261,13 @@ pub mod hybrid_use_benefit {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridUseBenefitModel =
+                let rsp_value: models::HybridUseBenefitModel =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -256,7 +277,7 @@ pub mod hybrid_use_benefit {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -282,8 +303,8 @@ pub mod hybrid_use_benefit {
         operation_config: &crate::OperationConfig,
         scope: &str,
         plan_id: &str,
-        body: &HybridUseBenefitModel,
-    ) -> std::result::Result<HybridUseBenefitModel, update::Error> {
+        body: &models::HybridUseBenefitModel,
+    ) -> std::result::Result<models::HybridUseBenefitModel, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}",
@@ -310,13 +331,13 @@ pub mod hybrid_use_benefit {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridUseBenefitModel =
+                let rsp_value: models::HybridUseBenefitModel =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -326,7 +347,7 @@ pub mod hybrid_use_benefit {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -380,7 +401,7 @@ pub mod hybrid_use_benefit {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -390,7 +411,7 @@ pub mod hybrid_use_benefit {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -419,12 +440,12 @@ pub mod hybrid_use_benefit {
     }
 }
 pub mod hybrid_use_benefit_revision {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
         plan_id: &str,
-    ) -> std::result::Result<HybridUseBenefitListResult, list::Error> {
+    ) -> std::result::Result<models::HybridUseBenefitListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}/revisions",
@@ -450,13 +471,13 @@ pub mod hybrid_use_benefit_revision {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridUseBenefitListResult =
+                let rsp_value: models::HybridUseBenefitListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -466,7 +487,7 @@ pub mod hybrid_use_benefit_revision {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -490,8 +511,8 @@ pub mod hybrid_use_benefit_revision {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<OperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.SoftwarePlan/operations",
@@ -516,13 +537,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -532,7 +553,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

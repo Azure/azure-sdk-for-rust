@@ -2,10 +2,37 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ListOperations(#[from] list_operations::Error),
+    #[error(transparent)]
+    Features_ListAll(#[from] features::list_all::Error),
+    #[error(transparent)]
+    Features_List(#[from] features::list::Error),
+    #[error(transparent)]
+    Features_Get(#[from] features::get::Error),
+    #[error(transparent)]
+    Features_Register(#[from] features::register::Error),
+    #[error(transparent)]
+    Features_Unregister(#[from] features::unregister::Error),
+    #[error(transparent)]
+    SubscriptionFeatureRegistrations_Get(#[from] subscription_feature_registrations::get::Error),
+    #[error(transparent)]
+    SubscriptionFeatureRegistrations_CreateOrUpdate(#[from] subscription_feature_registrations::create_or_update::Error),
+    #[error(transparent)]
+    SubscriptionFeatureRegistrations_Delete(#[from] subscription_feature_registrations::delete::Error),
+    #[error(transparent)]
+    SubscriptionFeatureRegistrations_ListBySubscription(#[from] subscription_feature_registrations::list_by_subscription::Error),
+    #[error(transparent)]
+    SubscriptionFeatureRegistrations_ListAllBySubscription(#[from] subscription_feature_registrations::list_all_by_subscription::Error),
+}
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<OperationListResult, list_operations::Error> {
+) -> std::result::Result<models::OperationListResult, list_operations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.Features/operations", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(list_operations::Error::ParseUrlError)?;
@@ -29,13 +56,13 @@ pub async fn list_operations(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OperationListResult =
+            let rsp_value: models::OperationListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_operations::Error::DefaultResponse {
                 status_code,
@@ -45,7 +72,7 @@ pub async fn list_operations(
     }
 }
 pub mod list_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -68,11 +95,11 @@ pub mod list_operations {
     }
 }
 pub mod features {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<FeatureOperationsListResult, list_all::Error> {
+    ) -> std::result::Result<models::FeatureOperationsListResult, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/features",
@@ -100,13 +127,13 @@ pub mod features {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FeatureOperationsListResult =
+                let rsp_value: models::FeatureOperationsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_all::Error::DefaultResponse {
                     status_code,
@@ -116,7 +143,7 @@ pub mod features {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -142,7 +169,7 @@ pub mod features {
         operation_config: &crate::OperationConfig,
         resource_provider_namespace: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FeatureOperationsListResult, list::Error> {
+    ) -> std::result::Result<models::FeatureOperationsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features",
@@ -168,13 +195,13 @@ pub mod features {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FeatureOperationsListResult =
+                let rsp_value: models::FeatureOperationsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -184,7 +211,7 @@ pub mod features {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -211,7 +238,7 @@ pub mod features {
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FeatureResult, get::Error> {
+    ) -> std::result::Result<models::FeatureResult, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}",
@@ -238,13 +265,13 @@ pub mod features {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FeatureResult =
+                let rsp_value: models::FeatureResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -254,7 +281,7 @@ pub mod features {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -281,7 +308,7 @@ pub mod features {
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FeatureResult, register::Error> {
+    ) -> std::result::Result<models::FeatureResult, register::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/register",
@@ -312,13 +339,13 @@ pub mod features {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FeatureResult =
+                let rsp_value: models::FeatureResult =
                     serde_json::from_slice(rsp_body).map_err(|source| register::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| register::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(register::Error::DefaultResponse {
                     status_code,
@@ -328,7 +355,7 @@ pub mod features {
         }
     }
     pub mod register {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -355,7 +382,7 @@ pub mod features {
         resource_provider_namespace: &str,
         feature_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FeatureResult, unregister::Error> {
+    ) -> std::result::Result<models::FeatureResult, unregister::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/unregister",
@@ -386,13 +413,13 @@ pub mod features {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FeatureResult =
+                let rsp_value: models::FeatureResult =
                     serde_json::from_slice(rsp_body).map_err(|source| unregister::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| unregister::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(unregister::Error::DefaultResponse {
                     status_code,
@@ -402,7 +429,7 @@ pub mod features {
         }
     }
     pub mod unregister {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -426,13 +453,13 @@ pub mod features {
     }
 }
 pub mod subscription_feature_registrations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         provider_namespace: &str,
         feature_name: &str,
-    ) -> std::result::Result<SubscriptionFeatureRegistration, get::Error> {
+    ) -> std::result::Result<models::SubscriptionFeatureRegistration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
@@ -459,13 +486,13 @@ pub mod subscription_feature_registrations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionFeatureRegistration =
+                let rsp_value: models::SubscriptionFeatureRegistration =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -475,7 +502,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -502,8 +529,8 @@ pub mod subscription_feature_registrations {
         subscription_id: &str,
         provider_namespace: &str,
         feature_name: &str,
-        subscription_feature_registration_type: Option<&SubscriptionFeatureRegistration>,
-    ) -> std::result::Result<SubscriptionFeatureRegistration, create_or_update::Error> {
+        subscription_feature_registration_type: Option<&models::SubscriptionFeatureRegistration>,
+    ) -> std::result::Result<models::SubscriptionFeatureRegistration, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
@@ -538,13 +565,13 @@ pub mod subscription_feature_registrations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionFeatureRegistration = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SubscriptionFeatureRegistration = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -554,7 +581,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -610,7 +637,7 @@ pub mod subscription_feature_registrations {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -620,7 +647,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -651,7 +678,7 @@ pub mod subscription_feature_registrations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         provider_namespace: &str,
-    ) -> std::result::Result<SubscriptionFeatureRegistrationList, list_by_subscription::Error> {
+    ) -> std::result::Result<models::SubscriptionFeatureRegistrationList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations",
@@ -680,13 +707,13 @@ pub mod subscription_feature_registrations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionFeatureRegistrationList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SubscriptionFeatureRegistrationList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -696,7 +723,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -721,7 +748,7 @@ pub mod subscription_feature_registrations {
     pub async fn list_all_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<SubscriptionFeatureRegistrationList, list_all_by_subscription::Error> {
+    ) -> std::result::Result<models::SubscriptionFeatureRegistrationList, list_all_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Features/subscriptionFeatureRegistrations",
@@ -751,13 +778,13 @@ pub mod subscription_feature_registrations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionFeatureRegistrationList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SubscriptionFeatureRegistrationList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_all_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_all_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_all_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -767,7 +794,7 @@ pub mod subscription_feature_registrations {
         }
     }
     pub mod list_all_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

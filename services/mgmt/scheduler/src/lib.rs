@@ -6,16 +6,16 @@
 #[cfg(feature = "package-2016-03")]
 pub mod package_2016_03;
 #[cfg(all(feature = "package-2016-03", not(feature = "no-default-version")))]
-pub use package_2016_03::{models, operations};
+pub use package_2016_03::{models, operations, operations::Error};
 #[cfg(feature = "package-2016-01")]
 pub mod package_2016_01;
 #[cfg(all(feature = "package-2016-01", not(feature = "no-default-version")))]
-pub use package_2016_01::{models, operations};
+pub use package_2016_01::{models, operations, operations::Error};
 #[cfg(feature = "package-2014-08-preview")]
 pub mod package_2014_08_preview;
 use azure_core::setters;
 #[cfg(all(feature = "package-2014-08-preview", not(feature = "no-default-version")))]
-pub use package_2014_08_preview::{models, operations};
+pub use package_2014_08_preview::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

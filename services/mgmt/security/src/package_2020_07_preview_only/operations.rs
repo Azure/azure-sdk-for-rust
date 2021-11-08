@@ -2,15 +2,38 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentScans_Get(#[from] sql_vulnerability_assessment_scans::get::Error),
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentScans_List(#[from] sql_vulnerability_assessment_scans::list::Error),
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentScanResults_Get(#[from] sql_vulnerability_assessment_scan_results::get::Error),
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentScanResults_List(#[from] sql_vulnerability_assessment_scan_results::list::Error),
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentBaselineRules_Get(#[from] sql_vulnerability_assessment_baseline_rules::get::Error),
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentBaselineRules_CreateOrUpdate(#[from] sql_vulnerability_assessment_baseline_rules::create_or_update::Error),
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentBaselineRules_Delete(#[from] sql_vulnerability_assessment_baseline_rules::delete::Error),
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentBaselineRules_List(#[from] sql_vulnerability_assessment_baseline_rules::list::Error),
+    #[error(transparent)]
+    SqlVulnerabilityAssessmentBaselineRules_Add(#[from] sql_vulnerability_assessment_baseline_rules::add::Error),
+}
 pub mod sql_vulnerability_assessment_scans {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scan_id: &str,
         workspace_id: &str,
         resource_id: &str,
-    ) -> std::result::Result<Scan, get::Error> {
+    ) -> std::result::Result<models::Scan, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}",
@@ -37,13 +60,13 @@ pub mod sql_vulnerability_assessment_scans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Scan =
+                let rsp_value: models::Scan =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +76,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -79,7 +102,7 @@ pub mod sql_vulnerability_assessment_scans {
         operation_config: &crate::OperationConfig,
         workspace_id: &str,
         resource_id: &str,
-    ) -> std::result::Result<Scans, list::Error> {
+    ) -> std::result::Result<models::Scans, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans",
@@ -105,13 +128,13 @@ pub mod sql_vulnerability_assessment_scans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Scans =
+                let rsp_value: models::Scans =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -121,7 +144,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -145,14 +168,14 @@ pub mod sql_vulnerability_assessment_scans {
     }
 }
 pub mod sql_vulnerability_assessment_scan_results {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scan_id: &str,
         scan_result_id: &str,
         workspace_id: &str,
         resource_id: &str,
-    ) -> std::result::Result<ScanResult, get::Error> {
+    ) -> std::result::Result<models::ScanResult, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}/scanResults/{}",
@@ -180,13 +203,13 @@ pub mod sql_vulnerability_assessment_scan_results {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScanResult =
+                let rsp_value: models::ScanResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -196,7 +219,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -223,7 +246,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         scan_id: &str,
         workspace_id: &str,
         resource_id: &str,
-    ) -> std::result::Result<ScanResults, list::Error> {
+    ) -> std::result::Result<models::ScanResults, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}/scanResults",
@@ -250,13 +273,13 @@ pub mod sql_vulnerability_assessment_scan_results {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScanResults =
+                let rsp_value: models::ScanResults =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -266,7 +289,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -290,13 +313,13 @@ pub mod sql_vulnerability_assessment_scan_results {
     }
 }
 pub mod sql_vulnerability_assessment_baseline_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         rule_id: &str,
         workspace_id: &str,
         resource_id: &str,
-    ) -> std::result::Result<RuleResults, get::Error> {
+    ) -> std::result::Result<models::RuleResults, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
@@ -323,13 +346,13 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RuleResults =
+                let rsp_value: models::RuleResults =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -339,7 +362,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -366,8 +389,8 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         rule_id: &str,
         workspace_id: &str,
         resource_id: &str,
-        body: Option<&RuleResultsInput>,
-    ) -> std::result::Result<RuleResults, create_or_update::Error> {
+        body: Option<&models::RuleResultsInput>,
+    ) -> std::result::Result<models::RuleResults, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
@@ -402,13 +425,13 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RuleResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RuleResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -418,7 +441,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -474,7 +497,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -484,7 +507,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -515,7 +538,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         operation_config: &crate::OperationConfig,
         workspace_id: &str,
         resource_id: &str,
-    ) -> std::result::Result<RulesResults, list::Error> {
+    ) -> std::result::Result<models::RulesResults, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules",
@@ -541,13 +564,13 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RulesResults =
+                let rsp_value: models::RulesResults =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -557,7 +580,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -583,8 +606,8 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         operation_config: &crate::OperationConfig,
         workspace_id: &str,
         resource_id: &str,
-        body: Option<&RulesResultsInput>,
-    ) -> std::result::Result<RulesResults, add::Error> {
+        body: Option<&models::RulesResultsInput>,
+    ) -> std::result::Result<models::RulesResults, add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules",
@@ -615,13 +638,13 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RulesResults =
+                let rsp_value: models::RulesResults =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -631,7 +654,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

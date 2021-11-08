@@ -1,21 +1,39 @@
 use crate::{
-    codegen::{
-        create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, require, AsReference,
-        Error,
-    },
+    codegen::{create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, require, Error},
     codegen::{parse_params, PARAM_RE},
     identifier::ident,
-    spec::{self, WebOperation, WebVerb},
+    spec::{WebOperation, WebVerb},
     status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen,
 };
 use autorust_openapi::{CollectionFormat, DataType, Parameter, ParameterType, Response};
+use heck::CamelCase;
 use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::{collections::HashSet, path::Path};
+
+fn error_variant(operation: &WebOperation) -> Result<TokenStream, Error> {
+    let function = operation.rust_function_name().to_camel_case();
+    if let Some(module) = operation.rust_module_name() {
+        let module = module.to_camel_case();
+        ident(&format!("{}_{}", module, function)).map_err(Error::EnumVariantName)
+    } else {
+        ident(&function).map_err(Error::ModuleName)
+    }
+}
+
+fn error_fqn(operation: &WebOperation) -> Result<TokenStream, Error> {
+    let function = ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
+    if let Some(module) = operation.rust_module_name() {
+        let module = ident(&module).map_err(Error::ModuleName)?;
+        Ok(quote! { #module::#function::Error })
+    } else {
+        Ok(quote! { #function::Error })
+    }
+}
 
 pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
@@ -24,42 +42,55 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use super::{API_VERSION, models, models::*};
-
+        use super::{API_VERSION, models};
     });
     let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
-    for (doc_file, doc) in cg.spec.docs() {
-        // only operations from listed input files
-        // println!("doc_file {:?}", doc_file);
-        if cg.spec.is_input_file(&doc_file) {
-            let paths = cg.spec.resolve_path_map(doc_file, doc.paths())?;
-            for (path, item) in &paths {
-                for operation in spec::path_operations(path, item) {
-                    let module_name = operation.rust_module_name();
-                    let function = create_function(cg, doc_file, &operation)?;
-                    if modules.contains_key(&module_name) {}
-                    match modules.get_mut(&module_name) {
-                        Some(module) => {
-                            module.extend(function);
-                        }
-                        None => {
-                            let mut module = TokenStream::new();
-                            module.extend(function);
-                            modules.insert(module_name, module);
-                        }
-                    }
-                }
+
+    let operations = cg.spec.operations()?;
+
+    let mut errors = TokenStream::new();
+    for operation in &operations {
+        let variant = error_variant(operation)?;
+        let fqn = error_fqn(operation)?;
+        errors.extend(quote! {
+            #[error(transparent)]
+            #variant(#[from] #fqn),
+        });
+    }
+
+    file.extend(quote! {
+        #[non_exhaustive]
+        #[derive(Debug, thiserror::Error)]
+        #[allow(non_camel_case_types)]
+        pub enum Error {
+            #errors
+        }
+    });
+
+    for operation in &operations {
+        let module_name = operation.rust_module_name();
+        let function = create_function(cg, operation)?;
+        if modules.contains_key(&module_name) {}
+        match modules.get_mut(&module_name) {
+            Some(module) => {
+                module.extend(function);
+            }
+            None => {
+                let mut module = TokenStream::new();
+                module.extend(function);
+                modules.insert(module_name, module);
             }
         }
     }
+
     for (module_name, module) in modules {
         match module_name {
             Some(module_name) => {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use super::{API_VERSION, models, models::*};
+                        use super::{API_VERSION, models};
 
                         #module
                     }
@@ -74,7 +105,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
 }
 
 // Create a Rust function for the web operation
-fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> Result<TokenStream, Error> {
+fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream, Error> {
     let fname = ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
 
     let params = parse_params(&operation.path);
@@ -85,7 +116,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
 
     let fpath = format!("{{}}{}", &format_path(&operation.path));
 
-    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(doc_file, &operation.parameters)?;
+    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(&operation.doc_file, &operation.parameters)?;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
@@ -94,7 +125,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
     }
     let parameters: Vec<_> = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
 
-    let fparams = create_function_params(cg, doc_file, &parameters)?;
+    let fparams = create_function_params(cg, &operation.doc_file, &parameters)?;
 
     // see if there is a body parameter
     // let fresponse = create_function_return(operation_verb)?;
@@ -316,7 +347,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
     for (status_code, rsp) in &error_responses {
         let tp = create_response_type(rsp)?;
         let tp = match tp {
-            Some(tp) => quote! { value: models::#tp, },
+            Some(tp) => quote! { value: #tp, },
             None => quote! {},
         };
         let response_type = &get_response_type_name(status_code)?;
@@ -473,7 +504,7 @@ fn create_function(cg: &CodeGen, doc_file: &Path, operation: &WebOperation) -> R
             }
         }
         pub mod #fname {
-            use super::{API_VERSION, models, models::*};
+            use super::{API_VERSION, models};
 
             #response_enum
 
@@ -534,11 +565,11 @@ fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
     let is_required = param.required.unwrap_or(false);
     let is_array = is_array(&param.common);
     let tp = if let Some(_param_type) = &param.common.type_ {
-        get_type_name_for_schema(&param.common, AsReference::True)?
+        get_type_name_for_schema(&param.common)?.to_token_stream(true, true)?
     } else if let Some(schema) = &param.schema {
-        get_type_name_for_schema_ref(schema, AsReference::True)?
+        get_type_name_for_schema_ref(schema)?.to_token_stream(true, true)?
     } else {
-        eprintln!("WARN unkown param type for {}", &param.name);
+        eprintln!("WARN unknown param type for {}", &param.name);
         quote! { &serde_json::Value }
     };
     Ok(require(is_required || is_array, tp))
@@ -546,7 +577,7 @@ fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
 
 fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
     if let Some(schema) = &rsp.schema {
-        Ok(Some(get_type_name_for_schema_ref(schema, AsReference::False)?))
+        Ok(Some(get_type_name_for_schema_ref(schema)?.to_token_stream(false, true)?))
     } else {
         Ok(None)
     }

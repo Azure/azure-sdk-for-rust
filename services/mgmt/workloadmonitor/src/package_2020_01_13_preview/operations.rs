@@ -2,10 +2,25 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    HealthMonitors_List(#[from] health_monitors::list::Error),
+    #[error(transparent)]
+    HealthMonitors_Get(#[from] health_monitors::get::Error),
+    #[error(transparent)]
+    HealthMonitors_ListStateChanges(#[from] health_monitors::list_state_changes::Error),
+    #[error(transparent)]
+    HealthMonitors_GetStateChange(#[from] health_monitors::get_state_change::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.WorkloadMonitor/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +41,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +57,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,7 +81,7 @@ pub mod operations {
     }
 }
 pub mod health_monitors {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -76,7 +91,7 @@ pub mod health_monitors {
         resource_name: &str,
         filter: Option<&str>,
         expand: Option<&str>,
-    ) -> std::result::Result<HealthMonitorList, list::Error> {
+    ) -> std::result::Result<models::HealthMonitorList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors",
@@ -111,13 +126,13 @@ pub mod health_monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HealthMonitorList =
+                let rsp_value: models::HealthMonitorList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -127,7 +142,7 @@ pub mod health_monitors {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -158,7 +173,7 @@ pub mod health_monitors {
         resource_name: &str,
         monitor_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<HealthMonitor, get::Error> {
+    ) -> std::result::Result<models::HealthMonitor, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}",
@@ -191,13 +206,13 @@ pub mod health_monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HealthMonitor =
+                let rsp_value: models::HealthMonitor =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -207,7 +222,7 @@ pub mod health_monitors {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -241,7 +256,7 @@ pub mod health_monitors {
         expand: Option<&str>,
         start_timestamp_utc: Option<&str>,
         end_timestamp_utc: Option<&str>,
-    ) -> std::result::Result<HealthMonitorStateChangeList, list_state_changes::Error> {
+    ) -> std::result::Result<models::HealthMonitorStateChangeList, list_state_changes::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}/history",
@@ -286,13 +301,13 @@ pub mod health_monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HealthMonitorStateChangeList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HealthMonitorStateChangeList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_state_changes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_state_changes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_state_changes::Error::DefaultResponse {
                     status_code,
@@ -302,7 +317,7 @@ pub mod health_monitors {
         }
     }
     pub mod list_state_changes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -334,7 +349,7 @@ pub mod health_monitors {
         monitor_id: &str,
         timestamp_unix: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<HealthMonitorStateChange, get_state_change::Error> {
+    ) -> std::result::Result<models::HealthMonitorStateChange, get_state_change::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.WorkloadMonitor/monitors/{}/history/{}",
@@ -371,13 +386,13 @@ pub mod health_monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HealthMonitorStateChange = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HealthMonitorStateChange = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_state_change::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_state_change::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_state_change::Error::DefaultResponse {
                     status_code,
@@ -387,7 +402,7 @@ pub mod health_monitors {
         }
     }
     pub mod get_state_change {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

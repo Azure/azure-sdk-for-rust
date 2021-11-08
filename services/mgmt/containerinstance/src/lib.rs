@@ -6,56 +6,56 @@
 #[cfg(feature = "package-2021-09")]
 pub mod package_2021_09;
 #[cfg(all(feature = "package-2021-09", not(feature = "no-default-version")))]
-pub use package_2021_09::{models, operations};
+pub use package_2021_09::{models, operations, operations::Error};
 #[cfg(feature = "package-2021-07")]
 pub mod package_2021_07;
 #[cfg(all(feature = "package-2021-07", not(feature = "no-default-version")))]
-pub use package_2021_07::{models, operations};
+pub use package_2021_07::{models, operations, operations::Error};
 #[cfg(feature = "package-2021-03")]
 pub mod package_2021_03;
 #[cfg(all(feature = "package-2021-03", not(feature = "no-default-version")))]
-pub use package_2021_03::{models, operations};
+pub use package_2021_03::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-11")]
 pub mod package_2020_11;
 #[cfg(all(feature = "package-2020-11", not(feature = "no-default-version")))]
-pub use package_2020_11::{models, operations};
+pub use package_2020_11::{models, operations, operations::Error};
 #[cfg(feature = "package-2019-12")]
 pub mod package_2019_12;
 #[cfg(all(feature = "package-2019-12", not(feature = "no-default-version")))]
-pub use package_2019_12::{models, operations};
+pub use package_2019_12::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-10")]
 pub mod package_2018_10;
 #[cfg(all(feature = "package-2018-10", not(feature = "no-default-version")))]
-pub use package_2018_10::{models, operations};
+pub use package_2018_10::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-09")]
 pub mod package_2018_09;
 #[cfg(all(feature = "package-2018-09", not(feature = "no-default-version")))]
-pub use package_2018_09::{models, operations};
+pub use package_2018_09::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-06")]
 pub mod package_2018_06;
 #[cfg(all(feature = "package-2018-06", not(feature = "no-default-version")))]
-pub use package_2018_06::{models, operations};
+pub use package_2018_06::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-04")]
 pub mod package_2018_04;
 #[cfg(all(feature = "package-2018-04", not(feature = "no-default-version")))]
-pub use package_2018_04::{models, operations};
+pub use package_2018_04::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-02-preview")]
 pub mod package_2018_02_preview;
 #[cfg(all(feature = "package-2018-02-preview", not(feature = "no-default-version")))]
-pub use package_2018_02_preview::{models, operations};
+pub use package_2018_02_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2017-12-preview")]
 pub mod package_2017_12_preview;
 #[cfg(all(feature = "package-2017-12-preview", not(feature = "no-default-version")))]
-pub use package_2017_12_preview::{models, operations};
+pub use package_2017_12_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2017-10-preview")]
 pub mod package_2017_10_preview;
 #[cfg(all(feature = "package-2017-10-preview", not(feature = "no-default-version")))]
-pub use package_2017_10_preview::{models, operations};
+pub use package_2017_10_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2017-08-preview")]
 pub mod package_2017_08_preview;
 use azure_core::setters;
 #[cfg(all(feature = "package-2017-08-preview", not(feature = "no-default-version")))]
-pub use package_2017_08_preview::{models, operations};
+pub use package_2017_08_preview::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

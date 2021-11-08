@@ -2,9 +2,80 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForManagementGroup(#[from] policy_events::list_query_results_for_management_group::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForSubscription(#[from] policy_events::list_query_results_for_subscription::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForResourceGroup(#[from] policy_events::list_query_results_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForResource(#[from] policy_events::list_query_results_for_resource::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForPolicySetDefinition(#[from] policy_events::list_query_results_for_policy_set_definition::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForPolicyDefinition(#[from] policy_events::list_query_results_for_policy_definition::Error),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForSubscriptionLevelPolicyAssignment(
+        #[from] policy_events::list_query_results_for_subscription_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyEvents_ListQueryResultsForResourceGroupLevelPolicyAssignment(
+        #[from] policy_events::list_query_results_for_resource_group_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyEvents_GetMetadata(#[from] policy_events::get_metadata::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForManagementGroup(#[from] policy_states::list_query_results_for_management_group::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForManagementGroup(#[from] policy_states::summarize_for_management_group::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForSubscription(#[from] policy_states::list_query_results_for_subscription::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForSubscription(#[from] policy_states::summarize_for_subscription::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForResourceGroup(#[from] policy_states::list_query_results_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForResourceGroup(#[from] policy_states::summarize_for_resource_group::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForResource(#[from] policy_states::list_query_results_for_resource::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForResource(#[from] policy_states::summarize_for_resource::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForPolicySetDefinition(#[from] policy_states::list_query_results_for_policy_set_definition::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForPolicySetDefinition(#[from] policy_states::summarize_for_policy_set_definition::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForPolicyDefinition(#[from] policy_states::list_query_results_for_policy_definition::Error),
+    #[error(transparent)]
+    PolicyStates_SummarizeForPolicyDefinition(#[from] policy_states::summarize_for_policy_definition::Error),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForSubscriptionLevelPolicyAssignment(
+        #[from] policy_states::list_query_results_for_subscription_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyStates_SummarizeForSubscriptionLevelPolicyAssignment(
+        #[from] policy_states::summarize_for_subscription_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyStates_ListQueryResultsForResourceGroupLevelPolicyAssignment(
+        #[from] policy_states::list_query_results_for_resource_group_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    PolicyStates_SummarizeForResourceGroupLevelPolicyAssignment(
+        #[from] policy_states::summarize_for_resource_group_level_policy_assignment::Error,
+    ),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    PolicyStates_GetMetadata(#[from] policy_states::get_metadata::Error),
+}
 pub mod policy_events {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_query_results_for_management_group(
         operation_config: &crate::OperationConfig,
         policy_events_resource: &str,
@@ -17,7 +88,7 @@ pub mod policy_events {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyEventsQueryResults, list_query_results_for_management_group::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, list_query_results_for_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
@@ -71,13 +142,13 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_management_group::Error::DefaultResponse {
                     status_code,
@@ -87,7 +158,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -120,7 +191,7 @@ pub mod policy_events {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyEventsQueryResults, list_query_results_for_subscription::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, list_query_results_for_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
@@ -173,13 +244,13 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_subscription::Error::DefaultResponse {
                     status_code,
@@ -189,7 +260,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -223,7 +294,7 @@ pub mod policy_events {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyEventsQueryResults, list_query_results_for_resource_group::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, list_query_results_for_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
@@ -277,13 +348,13 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_resource_group::Error::DefaultResponse {
                     status_code,
@@ -293,7 +364,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -326,7 +397,7 @@ pub mod policy_events {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyEventsQueryResults, list_query_results_for_resource::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, list_query_results_for_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
@@ -379,13 +450,13 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_resource::Error::DefaultResponse {
                     status_code,
@@ -395,7 +466,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -430,7 +501,7 @@ pub mod policy_events {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyEventsQueryResults, list_query_results_for_policy_set_definition::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, list_query_results_for_policy_set_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
@@ -485,13 +556,13 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_policy_set_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_policy_set_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_policy_set_definition::Error::DefaultResponse {
                     status_code,
@@ -501,7 +572,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_policy_set_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -536,7 +607,7 @@ pub mod policy_events {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyEventsQueryResults, list_query_results_for_policy_definition::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, list_query_results_for_policy_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
@@ -591,13 +662,13 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyEventsQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_policy_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_policy_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_policy_definition::Error::DefaultResponse {
                     status_code,
@@ -607,7 +678,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_policy_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -642,7 +713,7 @@ pub mod policy_events {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyEventsQueryResults, list_query_results_for_subscription_level_policy_assignment::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, list_query_results_for_subscription_level_policy_assignment::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
@@ -698,14 +769,14 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::PolicyEventsQueryResults = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_query_results_for_subscription_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_query_results_for_subscription_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Err(
@@ -718,7 +789,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_subscription_level_policy_assignment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -754,7 +825,7 @@ pub mod policy_events {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyEventsQueryResults, list_query_results_for_resource_group_level_policy_assignment::Error> {
+    ) -> std::result::Result<models::PolicyEventsQueryResults, list_query_results_for_resource_group_level_policy_assignment::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , operation_config . base_path () , subscription_id , resource_group_name , authorization_namespace , policy_assignment_name , policy_events_resource) ;
         let mut url =
@@ -803,14 +874,14 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyEventsQueryResults = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::PolicyEventsQueryResults = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_query_results_for_resource_group_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_query_results_for_resource_group_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Err(
@@ -823,7 +894,7 @@ pub mod policy_events {
         }
     }
     pub mod list_query_results_for_resource_group_level_policy_assignment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -848,7 +919,7 @@ pub mod policy_events {
     pub async fn get_metadata(
         operation_config: &crate::OperationConfig,
         scope: &str,
-    ) -> std::result::Result<MetadataDocument, get_metadata::Error> {
+    ) -> std::result::Result<models::MetadataDocument, get_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/policyEvents/$metadata",
@@ -876,13 +947,13 @@ pub mod policy_events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataDocument =
+                let rsp_value: models::MetadataDocument =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure =
+                let rsp_value: models::QueryFailure =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::DefaultResponse {
                     status_code,
@@ -892,7 +963,7 @@ pub mod policy_events {
         }
     }
     pub mod get_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -916,7 +987,7 @@ pub mod policy_events {
     }
 }
 pub mod policy_states {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_query_results_for_management_group(
         operation_config: &crate::OperationConfig,
         policy_states_resource: &str,
@@ -929,7 +1000,7 @@ pub mod policy_states {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyStatesQueryResults, list_query_results_for_management_group::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, list_query_results_for_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
@@ -983,13 +1054,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_management_group::Error::DefaultResponse {
                     status_code,
@@ -999,7 +1070,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1030,7 +1101,7 @@ pub mod policy_states {
         from: Option<&str>,
         to: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<SummarizeResults, summarize_for_management_group::Error> {
+    ) -> std::result::Result<models::SummarizeResults, summarize_for_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
@@ -1075,13 +1146,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SummarizeResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SummarizeResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(summarize_for_management_group::Error::DefaultResponse {
                     status_code,
@@ -1091,7 +1162,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1124,7 +1195,7 @@ pub mod policy_states {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyStatesQueryResults, list_query_results_for_subscription::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, list_query_results_for_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
@@ -1177,13 +1248,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_subscription::Error::DefaultResponse {
                     status_code,
@@ -1193,7 +1264,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1223,7 +1294,7 @@ pub mod policy_states {
         from: Option<&str>,
         to: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<SummarizeResults, summarize_for_subscription::Error> {
+    ) -> std::result::Result<models::SummarizeResults, summarize_for_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
@@ -1267,13 +1338,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SummarizeResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SummarizeResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(summarize_for_subscription::Error::DefaultResponse {
                     status_code,
@@ -1283,7 +1354,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1317,7 +1388,7 @@ pub mod policy_states {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyStatesQueryResults, list_query_results_for_resource_group::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, list_query_results_for_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
@@ -1371,13 +1442,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1387,7 +1458,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1418,7 +1489,7 @@ pub mod policy_states {
         from: Option<&str>,
         to: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<SummarizeResults, summarize_for_resource_group::Error> {
+    ) -> std::result::Result<models::SummarizeResults, summarize_for_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
@@ -1463,13 +1534,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SummarizeResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SummarizeResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(summarize_for_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1479,7 +1550,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1512,7 +1583,7 @@ pub mod policy_states {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyStatesQueryResults, list_query_results_for_resource::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, list_query_results_for_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
@@ -1565,13 +1636,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_resource::Error::DefaultResponse {
                     status_code,
@@ -1581,7 +1652,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1611,7 +1682,7 @@ pub mod policy_states {
         from: Option<&str>,
         to: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<SummarizeResults, summarize_for_resource::Error> {
+    ) -> std::result::Result<models::SummarizeResults, summarize_for_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
@@ -1655,13 +1726,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SummarizeResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SummarizeResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(summarize_for_resource::Error::DefaultResponse {
                     status_code,
@@ -1671,7 +1742,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1706,7 +1777,7 @@ pub mod policy_states {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyStatesQueryResults, list_query_results_for_policy_set_definition::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, list_query_results_for_policy_set_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
@@ -1761,13 +1832,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_policy_set_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_policy_set_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_policy_set_definition::Error::DefaultResponse {
                     status_code,
@@ -1777,7 +1848,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_policy_set_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1809,7 +1880,7 @@ pub mod policy_states {
         from: Option<&str>,
         to: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<SummarizeResults, summarize_for_policy_set_definition::Error> {
+    ) -> std::result::Result<models::SummarizeResults, summarize_for_policy_set_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
@@ -1855,13 +1926,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SummarizeResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SummarizeResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_policy_set_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_policy_set_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(summarize_for_policy_set_definition::Error::DefaultResponse {
                     status_code,
@@ -1871,7 +1942,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_policy_set_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1906,7 +1977,7 @@ pub mod policy_states {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyStatesQueryResults, list_query_results_for_policy_definition::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, list_query_results_for_policy_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
@@ -1961,13 +2032,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PolicyStatesQueryResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_policy_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_query_results_for_policy_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_query_results_for_policy_definition::Error::DefaultResponse {
                     status_code,
@@ -1977,7 +2048,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_policy_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2009,7 +2080,7 @@ pub mod policy_states {
         from: Option<&str>,
         to: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<SummarizeResults, summarize_for_policy_definition::Error> {
+    ) -> std::result::Result<models::SummarizeResults, summarize_for_policy_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
@@ -2055,13 +2126,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SummarizeResults = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SummarizeResults = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_policy_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body)
                     .map_err(|source| summarize_for_policy_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(summarize_for_policy_definition::Error::DefaultResponse {
                     status_code,
@@ -2071,7 +2142,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_policy_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2106,7 +2177,7 @@ pub mod policy_states {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyStatesQueryResults, list_query_results_for_subscription_level_policy_assignment::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, list_query_results_for_subscription_level_policy_assignment::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
@@ -2162,14 +2233,14 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::PolicyStatesQueryResults = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_query_results_for_subscription_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_query_results_for_subscription_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Err(
@@ -2182,7 +2253,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_subscription_level_policy_assignment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2214,7 +2285,7 @@ pub mod policy_states {
         from: Option<&str>,
         to: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<SummarizeResults, summarize_for_subscription_level_policy_assignment::Error> {
+    ) -> std::result::Result<models::SummarizeResults, summarize_for_subscription_level_policy_assignment::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
@@ -2260,14 +2331,14 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SummarizeResults = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::SummarizeResults = serde_json::from_slice(rsp_body).map_err(|source| {
                     summarize_for_subscription_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
                     summarize_for_subscription_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Err(summarize_for_subscription_level_policy_assignment::Error::DefaultResponse {
@@ -2278,7 +2349,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_subscription_level_policy_assignment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2314,7 +2385,7 @@ pub mod policy_states {
         to: Option<&str>,
         filter: Option<&str>,
         apply: Option<&str>,
-    ) -> std::result::Result<PolicyStatesQueryResults, list_query_results_for_resource_group_level_policy_assignment::Error> {
+    ) -> std::result::Result<models::PolicyStatesQueryResults, list_query_results_for_resource_group_level_policy_assignment::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , operation_config . base_path () , subscription_id , resource_group_name , authorization_namespace , policy_assignment_name , policy_states_resource) ;
         let mut url =
@@ -2363,14 +2434,14 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyStatesQueryResults = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::PolicyStatesQueryResults = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_query_results_for_resource_group_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_query_results_for_resource_group_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Err(
@@ -2383,7 +2454,7 @@ pub mod policy_states {
         }
     }
     pub mod list_query_results_for_resource_group_level_policy_assignment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2416,7 +2487,7 @@ pub mod policy_states {
         from: Option<&str>,
         to: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<SummarizeResults, summarize_for_resource_group_level_policy_assignment::Error> {
+    ) -> std::result::Result<models::SummarizeResults, summarize_for_resource_group_level_policy_assignment::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , operation_config . base_path () , subscription_id , resource_group_name , authorization_namespace , policy_assignment_name , policy_states_summary_resource) ;
         let mut url = url::Url::parse(url_str).map_err(summarize_for_resource_group_level_policy_assignment::Error::ParseUrlError)?;
@@ -2455,14 +2526,14 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SummarizeResults = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::SummarizeResults = serde_json::from_slice(rsp_body).map_err(|source| {
                     summarize_for_resource_group_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::QueryFailure = serde_json::from_slice(rsp_body).map_err(|source| {
                     summarize_for_resource_group_level_policy_assignment::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Err(summarize_for_resource_group_level_policy_assignment::Error::DefaultResponse {
@@ -2473,7 +2544,7 @@ pub mod policy_states {
         }
     }
     pub mod summarize_for_resource_group_level_policy_assignment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2498,7 +2569,7 @@ pub mod policy_states {
     pub async fn get_metadata(
         operation_config: &crate::OperationConfig,
         scope: &str,
-    ) -> std::result::Result<MetadataDocument, get_metadata::Error> {
+    ) -> std::result::Result<models::MetadataDocument, get_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.PolicyInsights/policyStates/$metadata",
@@ -2526,13 +2597,13 @@ pub mod policy_states {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetadataDocument =
+                let rsp_value: models::MetadataDocument =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure =
+                let rsp_value: models::QueryFailure =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_metadata::Error::DefaultResponse {
                     status_code,
@@ -2542,7 +2613,7 @@ pub mod policy_states {
         }
     }
     pub mod get_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2566,8 +2637,8 @@ pub mod policy_states {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsListResults, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsListResults, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.PolicyInsights/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2588,13 +2659,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsListResults =
+                let rsp_value: models::OperationsListResults =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryFailure =
+                let rsp_value: models::QueryFailure =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2604,7 +2675,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

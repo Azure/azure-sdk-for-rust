@@ -2,16 +2,95 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Functions_Get(#[from] functions::get::Error),
+    #[error(transparent)]
+    Functions_CreateOrReplace(#[from] functions::create_or_replace::Error),
+    #[error(transparent)]
+    Functions_Update(#[from] functions::update::Error),
+    #[error(transparent)]
+    Functions_Delete(#[from] functions::delete::Error),
+    #[error(transparent)]
+    Functions_ListByStreamingJob(#[from] functions::list_by_streaming_job::Error),
+    #[error(transparent)]
+    Functions_Test(#[from] functions::test::Error),
+    #[error(transparent)]
+    Functions_RetrieveDefaultDefinition(#[from] functions::retrieve_default_definition::Error),
+    #[error(transparent)]
+    Inputs_Get(#[from] inputs::get::Error),
+    #[error(transparent)]
+    Inputs_CreateOrReplace(#[from] inputs::create_or_replace::Error),
+    #[error(transparent)]
+    Inputs_Update(#[from] inputs::update::Error),
+    #[error(transparent)]
+    Inputs_Delete(#[from] inputs::delete::Error),
+    #[error(transparent)]
+    Inputs_ListByStreamingJob(#[from] inputs::list_by_streaming_job::Error),
+    #[error(transparent)]
+    Inputs_Test(#[from] inputs::test::Error),
+    #[error(transparent)]
+    Outputs_Get(#[from] outputs::get::Error),
+    #[error(transparent)]
+    Outputs_CreateOrReplace(#[from] outputs::create_or_replace::Error),
+    #[error(transparent)]
+    Outputs_Update(#[from] outputs::update::Error),
+    #[error(transparent)]
+    Outputs_Delete(#[from] outputs::delete::Error),
+    #[error(transparent)]
+    Outputs_ListByStreamingJob(#[from] outputs::list_by_streaming_job::Error),
+    #[error(transparent)]
+    Outputs_Test(#[from] outputs::test::Error),
+    #[error(transparent)]
+    StreamingJobs_Get(#[from] streaming_jobs::get::Error),
+    #[error(transparent)]
+    StreamingJobs_CreateOrReplace(#[from] streaming_jobs::create_or_replace::Error),
+    #[error(transparent)]
+    StreamingJobs_Update(#[from] streaming_jobs::update::Error),
+    #[error(transparent)]
+    StreamingJobs_Delete(#[from] streaming_jobs::delete::Error),
+    #[error(transparent)]
+    StreamingJobs_ListByResourceGroup(#[from] streaming_jobs::list_by_resource_group::Error),
+    #[error(transparent)]
+    StreamingJobs_List(#[from] streaming_jobs::list::Error),
+    #[error(transparent)]
+    StreamingJobs_Start(#[from] streaming_jobs::start::Error),
+    #[error(transparent)]
+    StreamingJobs_Stop(#[from] streaming_jobs::stop::Error),
+    #[error(transparent)]
+    Transformations_Get(#[from] transformations::get::Error),
+    #[error(transparent)]
+    Transformations_CreateOrReplace(#[from] transformations::create_or_replace::Error),
+    #[error(transparent)]
+    Transformations_Update(#[from] transformations::update::Error),
+    #[error(transparent)]
+    Subscriptions_ListQuotas(#[from] subscriptions::list_quotas::Error),
+    #[error(transparent)]
+    Subscriptions_TestQuery(#[from] subscriptions::test_query::Error),
+    #[error(transparent)]
+    Subscriptions_CompileQuery(#[from] subscriptions::compile_query::Error),
+    #[error(transparent)]
+    Subscriptions_SampleInput(#[from] subscriptions::sample_input::Error),
+    #[error(transparent)]
+    Subscriptions_TestInput(#[from] subscriptions::test_input::Error),
+    #[error(transparent)]
+    Subscriptions_TestOutput(#[from] subscriptions::test_output::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod functions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         function_name: &str,
-    ) -> std::result::Result<Function, get::Error> {
+    ) -> std::result::Result<models::Function, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/functions/{}",
@@ -39,13 +118,13 @@ pub mod functions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Function =
+                let rsp_value: models::Function =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -55,7 +134,7 @@ pub mod functions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -79,7 +158,7 @@ pub mod functions {
     }
     pub async fn create_or_replace(
         operation_config: &crate::OperationConfig,
-        function: &Function,
+        function: &models::Function,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
         subscription_id: &str,
@@ -124,19 +203,19 @@ pub mod functions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Function = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Function = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Function = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Function = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_replace::Error::DefaultResponse {
                     status_code,
@@ -146,11 +225,11 @@ pub mod functions {
         }
     }
     pub mod create_or_replace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Function),
-            Created201(Function),
+            Ok200(models::Function),
+            Created201(models::Function),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -175,13 +254,13 @@ pub mod functions {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        function: &Function,
+        function: &models::Function,
         if_match: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         function_name: &str,
-    ) -> std::result::Result<Function, update::Error> {
+    ) -> std::result::Result<models::Function, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/functions/{}",
@@ -213,13 +292,13 @@ pub mod functions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Function =
+                let rsp_value: models::Function =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -229,7 +308,7 @@ pub mod functions {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -287,7 +366,7 @@ pub mod functions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -297,7 +376,7 @@ pub mod functions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -330,7 +409,7 @@ pub mod functions {
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-    ) -> std::result::Result<FunctionListResult, list_by_streaming_job::Error> {
+    ) -> std::result::Result<models::FunctionListResult, list_by_streaming_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/functions",
@@ -365,13 +444,13 @@ pub mod functions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_streaming_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_streaming_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_streaming_job::Error::DefaultResponse {
                     status_code,
@@ -381,7 +460,7 @@ pub mod functions {
         }
     }
     pub mod list_by_streaming_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -405,7 +484,7 @@ pub mod functions {
     }
     pub async fn test(
         operation_config: &crate::OperationConfig,
-        function: Option<&Function>,
+        function: Option<&models::Function>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
@@ -443,14 +522,14 @@ pub mod functions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceTestStatus =
+                let rsp_value: models::ResourceTestStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| test::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(test::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(test::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| test::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(test::Error::DefaultResponse {
                     status_code,
@@ -460,10 +539,10 @@ pub mod functions {
         }
     }
     pub mod test {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ResourceTestStatus),
+            Ok200(models::ResourceTestStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -489,12 +568,12 @@ pub mod functions {
     }
     pub async fn retrieve_default_definition(
         operation_config: &crate::OperationConfig,
-        function_retrieve_default_definition_parameters: Option<&FunctionRetrieveDefaultDefinitionParameters>,
+        function_retrieve_default_definition_parameters: Option<&models::FunctionRetrieveDefaultDefinitionParameters>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         function_name: &str,
-    ) -> std::result::Result<Function, retrieve_default_definition::Error> {
+    ) -> std::result::Result<models::Function, retrieve_default_definition::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/functions/{}/retrieveDefaultDefinition" , operation_config . base_path () , subscription_id , resource_group_name , job_name , function_name) ;
         let mut url = url::Url::parse(url_str).map_err(retrieve_default_definition::Error::ParseUrlError)?;
@@ -526,13 +605,13 @@ pub mod functions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Function = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Function = serde_json::from_slice(rsp_body)
                     .map_err(|source| retrieve_default_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| retrieve_default_definition::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(retrieve_default_definition::Error::DefaultResponse {
                     status_code,
@@ -542,7 +621,7 @@ pub mod functions {
         }
     }
     pub mod retrieve_default_definition {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -566,14 +645,14 @@ pub mod functions {
     }
 }
 pub mod inputs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         input_name: &str,
-    ) -> std::result::Result<Input, get::Error> {
+    ) -> std::result::Result<models::Input, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/inputs/{}",
@@ -601,13 +680,13 @@ pub mod inputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Input =
+                let rsp_value: models::Input =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -617,7 +696,7 @@ pub mod inputs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -641,7 +720,7 @@ pub mod inputs {
     }
     pub async fn create_or_replace(
         operation_config: &crate::OperationConfig,
-        input: &Input,
+        input: &models::Input,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
         subscription_id: &str,
@@ -686,19 +765,19 @@ pub mod inputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Input = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Input = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Input = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Input = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_replace::Error::DefaultResponse {
                     status_code,
@@ -708,11 +787,11 @@ pub mod inputs {
         }
     }
     pub mod create_or_replace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Input),
-            Created201(Input),
+            Ok200(models::Input),
+            Created201(models::Input),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -737,13 +816,13 @@ pub mod inputs {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        input: &Input,
+        input: &models::Input,
         if_match: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         input_name: &str,
-    ) -> std::result::Result<Input, update::Error> {
+    ) -> std::result::Result<models::Input, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/inputs/{}",
@@ -775,13 +854,13 @@ pub mod inputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Input =
+                let rsp_value: models::Input =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -791,7 +870,7 @@ pub mod inputs {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -849,7 +928,7 @@ pub mod inputs {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -859,7 +938,7 @@ pub mod inputs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -892,7 +971,7 @@ pub mod inputs {
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-    ) -> std::result::Result<InputListResult, list_by_streaming_job::Error> {
+    ) -> std::result::Result<models::InputListResult, list_by_streaming_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/inputs",
@@ -927,13 +1006,13 @@ pub mod inputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: InputListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::InputListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_streaming_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_streaming_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_streaming_job::Error::DefaultResponse {
                     status_code,
@@ -943,7 +1022,7 @@ pub mod inputs {
         }
     }
     pub mod list_by_streaming_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -967,7 +1046,7 @@ pub mod inputs {
     }
     pub async fn test(
         operation_config: &crate::OperationConfig,
-        input: Option<&Input>,
+        input: Option<&models::Input>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
@@ -1005,14 +1084,14 @@ pub mod inputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceTestStatus =
+                let rsp_value: models::ResourceTestStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| test::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(test::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(test::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| test::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(test::Error::DefaultResponse {
                     status_code,
@@ -1022,10 +1101,10 @@ pub mod inputs {
         }
     }
     pub mod test {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ResourceTestStatus),
+            Ok200(models::ResourceTestStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1051,14 +1130,14 @@ pub mod inputs {
     }
 }
 pub mod outputs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         output_name: &str,
-    ) -> std::result::Result<Output, get::Error> {
+    ) -> std::result::Result<models::Output, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/outputs/{}",
@@ -1086,13 +1165,13 @@ pub mod outputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Output =
+                let rsp_value: models::Output =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1102,7 +1181,7 @@ pub mod outputs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1126,7 +1205,7 @@ pub mod outputs {
     }
     pub async fn create_or_replace(
         operation_config: &crate::OperationConfig,
-        output: &Output,
+        output: &models::Output,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
         subscription_id: &str,
@@ -1171,19 +1250,19 @@ pub mod outputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Output = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Output = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Output = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Output = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_replace::Error::DefaultResponse {
                     status_code,
@@ -1193,11 +1272,11 @@ pub mod outputs {
         }
     }
     pub mod create_or_replace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Output),
-            Created201(Output),
+            Ok200(models::Output),
+            Created201(models::Output),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1222,13 +1301,13 @@ pub mod outputs {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        output: &Output,
+        output: &models::Output,
         if_match: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         output_name: &str,
-    ) -> std::result::Result<Output, update::Error> {
+    ) -> std::result::Result<models::Output, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/outputs/{}",
@@ -1260,13 +1339,13 @@ pub mod outputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Output =
+                let rsp_value: models::Output =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1276,7 +1355,7 @@ pub mod outputs {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1334,7 +1413,7 @@ pub mod outputs {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1344,7 +1423,7 @@ pub mod outputs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1377,7 +1456,7 @@ pub mod outputs {
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-    ) -> std::result::Result<OutputListResult, list_by_streaming_job::Error> {
+    ) -> std::result::Result<models::OutputListResult, list_by_streaming_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/outputs",
@@ -1412,13 +1491,13 @@ pub mod outputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OutputListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OutputListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_streaming_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_streaming_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_streaming_job::Error::DefaultResponse {
                     status_code,
@@ -1428,7 +1507,7 @@ pub mod outputs {
         }
     }
     pub mod list_by_streaming_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1452,7 +1531,7 @@ pub mod outputs {
     }
     pub async fn test(
         operation_config: &crate::OperationConfig,
-        output: Option<&Output>,
+        output: Option<&models::Output>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
@@ -1490,14 +1569,14 @@ pub mod outputs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceTestStatus =
+                let rsp_value: models::ResourceTestStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| test::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(test::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(test::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| test::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(test::Error::DefaultResponse {
                     status_code,
@@ -1507,10 +1586,10 @@ pub mod outputs {
         }
     }
     pub mod test {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ResourceTestStatus),
+            Ok200(models::ResourceTestStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1536,14 +1615,14 @@ pub mod outputs {
     }
 }
 pub mod streaming_jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         expand: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-    ) -> std::result::Result<StreamingJob, get::Error> {
+    ) -> std::result::Result<models::StreamingJob, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}",
@@ -1573,13 +1652,13 @@ pub mod streaming_jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StreamingJob =
+                let rsp_value: models::StreamingJob =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1589,7 +1668,7 @@ pub mod streaming_jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1613,7 +1692,7 @@ pub mod streaming_jobs {
     }
     pub async fn create_or_replace(
         operation_config: &crate::OperationConfig,
-        streaming_job: &StreamingJob,
+        streaming_job: &models::StreamingJob,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
         subscription_id: &str,
@@ -1656,19 +1735,19 @@ pub mod streaming_jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StreamingJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StreamingJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: StreamingJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StreamingJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_replace::Error::DefaultResponse {
                     status_code,
@@ -1678,11 +1757,11 @@ pub mod streaming_jobs {
         }
     }
     pub mod create_or_replace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(StreamingJob),
-            Created201(StreamingJob),
+            Ok200(models::StreamingJob),
+            Created201(models::StreamingJob),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1707,12 +1786,12 @@ pub mod streaming_jobs {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        streaming_job: &StreamingJob,
+        streaming_job: &models::StreamingJob,
         if_match: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
-    ) -> std::result::Result<StreamingJob, update::Error> {
+    ) -> std::result::Result<models::StreamingJob, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}",
@@ -1743,13 +1822,13 @@ pub mod streaming_jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StreamingJob =
+                let rsp_value: models::StreamingJob =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1759,7 +1838,7 @@ pub mod streaming_jobs {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1816,7 +1895,7 @@ pub mod streaming_jobs {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1826,7 +1905,7 @@ pub mod streaming_jobs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1859,7 +1938,7 @@ pub mod streaming_jobs {
         expand: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<StreamingJobListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::StreamingJobListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs",
@@ -1893,13 +1972,13 @@ pub mod streaming_jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StreamingJobListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StreamingJobListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1909,7 +1988,7 @@ pub mod streaming_jobs {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1935,7 +2014,7 @@ pub mod streaming_jobs {
         operation_config: &crate::OperationConfig,
         expand: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<StreamingJobListResult, list::Error> {
+    ) -> std::result::Result<models::StreamingJobListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StreamAnalytics/streamingjobs",
@@ -1963,13 +2042,13 @@ pub mod streaming_jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StreamingJobListResult =
+                let rsp_value: models::StreamingJobListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1979,7 +2058,7 @@ pub mod streaming_jobs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2003,7 +2082,7 @@ pub mod streaming_jobs {
     }
     pub async fn start(
         operation_config: &crate::OperationConfig,
-        start_job_parameters: Option<&StartStreamingJobParameters>,
+        start_job_parameters: Option<&models::StartStreamingJobParameters>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
@@ -2041,7 +2120,7 @@ pub mod streaming_jobs {
             http::StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start::Error::DefaultResponse {
                     status_code,
@@ -2051,7 +2130,7 @@ pub mod streaming_jobs {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2113,7 +2192,7 @@ pub mod streaming_jobs {
             http::StatusCode::ACCEPTED => Ok(stop::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| stop::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop::Error::DefaultResponse {
                     status_code,
@@ -2123,7 +2202,7 @@ pub mod streaming_jobs {
         }
     }
     pub mod stop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2152,14 +2231,14 @@ pub mod streaming_jobs {
     }
 }
 pub mod transformations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         transformation_name: &str,
-    ) -> std::result::Result<Transformation, get::Error> {
+    ) -> std::result::Result<models::Transformation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/transformations/{}",
@@ -2187,13 +2266,13 @@ pub mod transformations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Transformation =
+                let rsp_value: models::Transformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2203,7 +2282,7 @@ pub mod transformations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2227,7 +2306,7 @@ pub mod transformations {
     }
     pub async fn create_or_replace(
         operation_config: &crate::OperationConfig,
-        transformation: &Transformation,
+        transformation: &models::Transformation,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
         subscription_id: &str,
@@ -2272,19 +2351,19 @@ pub mod transformations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Transformation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Transformation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Transformation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Transformation = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_replace::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_replace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_replace::Error::DefaultResponse {
                     status_code,
@@ -2294,11 +2373,11 @@ pub mod transformations {
         }
     }
     pub mod create_or_replace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Transformation),
-            Created201(Transformation),
+            Ok200(models::Transformation),
+            Created201(models::Transformation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2323,13 +2402,13 @@ pub mod transformations {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        transformation: &Transformation,
+        transformation: &models::Transformation,
         if_match: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
         transformation_name: &str,
-    ) -> std::result::Result<Transformation, update::Error> {
+    ) -> std::result::Result<models::Transformation, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.StreamAnalytics/streamingjobs/{}/transformations/{}",
@@ -2361,13 +2440,13 @@ pub mod transformations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Transformation =
+                let rsp_value: models::Transformation =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2377,7 +2456,7 @@ pub mod transformations {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2401,12 +2480,12 @@ pub mod transformations {
     }
 }
 pub mod subscriptions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_quotas(
         operation_config: &crate::OperationConfig,
         location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SubscriptionQuotasListResult, list_quotas::Error> {
+    ) -> std::result::Result<models::SubscriptionQuotasListResult, list_quotas::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StreamAnalytics/locations/{}/quotas",
@@ -2435,13 +2514,13 @@ pub mod subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionQuotasListResult =
+                let rsp_value: models::SubscriptionQuotasListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_quotas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list_quotas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_quotas::Error::DefaultResponse {
                     status_code,
@@ -2451,7 +2530,7 @@ pub mod subscriptions {
         }
     }
     pub mod list_quotas {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2475,7 +2554,7 @@ pub mod subscriptions {
     }
     pub async fn test_query(
         operation_config: &crate::OperationConfig,
-        test_query: &TestQuery,
+        test_query: &models::TestQuery,
         location: &str,
         subscription_id: &str,
     ) -> std::result::Result<test_query::Response, test_query::Error> {
@@ -2508,14 +2587,14 @@ pub mod subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryTestingResult =
+                let rsp_value: models::QueryTestingResult =
                     serde_json::from_slice(rsp_body).map_err(|source| test_query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(test_query::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(test_query::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| test_query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(test_query::Error::DefaultResponse {
                     status_code,
@@ -2525,10 +2604,10 @@ pub mod subscriptions {
         }
     }
     pub mod test_query {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(QueryTestingResult),
+            Ok200(models::QueryTestingResult),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2554,10 +2633,10 @@ pub mod subscriptions {
     }
     pub async fn compile_query(
         operation_config: &crate::OperationConfig,
-        compile_query: &CompileQuery,
+        compile_query: &models::CompileQuery,
         location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<QueryCompilationResult, compile_query::Error> {
+    ) -> std::result::Result<models::QueryCompilationResult, compile_query::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StreamAnalytics/locations/{}/compileQuery",
@@ -2587,13 +2666,13 @@ pub mod subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryCompilationResult =
+                let rsp_value: models::QueryCompilationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| compile_query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| compile_query::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(compile_query::Error::DefaultResponse {
                     status_code,
@@ -2603,7 +2682,7 @@ pub mod subscriptions {
         }
     }
     pub mod compile_query {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2627,10 +2706,10 @@ pub mod subscriptions {
     }
     pub async fn sample_input(
         operation_config: &crate::OperationConfig,
-        sample_input: &SampleInput,
+        sample_input: &models::SampleInput,
         location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SampleInputResult, sample_input::Error> {
+    ) -> std::result::Result<models::SampleInputResult, sample_input::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StreamAnalytics/locations/{}/sampleInput",
@@ -2660,13 +2739,13 @@ pub mod subscriptions {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SampleInputResult =
+                let rsp_value: models::SampleInputResult =
                     serde_json::from_slice(rsp_body).map_err(|source| sample_input::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| sample_input::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(sample_input::Error::DefaultResponse {
                     status_code,
@@ -2676,7 +2755,7 @@ pub mod subscriptions {
         }
     }
     pub mod sample_input {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2700,10 +2779,10 @@ pub mod subscriptions {
     }
     pub async fn test_input(
         operation_config: &crate::OperationConfig,
-        test_input: &TestInput,
+        test_input: &models::TestInput,
         location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TestDatasourceResult, test_input::Error> {
+    ) -> std::result::Result<models::TestDatasourceResult, test_input::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StreamAnalytics/locations/{}/testInput",
@@ -2733,13 +2812,13 @@ pub mod subscriptions {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: TestDatasourceResult =
+                let rsp_value: models::TestDatasourceResult =
                     serde_json::from_slice(rsp_body).map_err(|source| test_input::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| test_input::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(test_input::Error::DefaultResponse {
                     status_code,
@@ -2749,7 +2828,7 @@ pub mod subscriptions {
         }
     }
     pub mod test_input {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2773,10 +2852,10 @@ pub mod subscriptions {
     }
     pub async fn test_output(
         operation_config: &crate::OperationConfig,
-        test_output: &TestOutput,
+        test_output: &models::TestOutput,
         location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TestDatasourceResult, test_output::Error> {
+    ) -> std::result::Result<models::TestDatasourceResult, test_output::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StreamAnalytics/locations/{}/testOutput",
@@ -2806,13 +2885,13 @@ pub mod subscriptions {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: TestDatasourceResult =
+                let rsp_value: models::TestDatasourceResult =
                     serde_json::from_slice(rsp_body).map_err(|source| test_output::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| test_output::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(test_output::Error::DefaultResponse {
                     status_code,
@@ -2822,7 +2901,7 @@ pub mod subscriptions {
         }
     }
     pub mod test_output {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2846,8 +2925,8 @@ pub mod subscriptions {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.StreamAnalytics/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2868,13 +2947,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2884,7 +2963,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,10 +2,63 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    CheckNameAvailability(#[from] check_name_availability::Error),
+    #[error(transparent)]
+    CheckFilePathAvailability(#[from] check_file_path_availability::Error),
+    #[error(transparent)]
+    Accounts_List(#[from] accounts::list::Error),
+    #[error(transparent)]
+    Accounts_Get(#[from] accounts::get::Error),
+    #[error(transparent)]
+    Accounts_CreateOrUpdate(#[from] accounts::create_or_update::Error),
+    #[error(transparent)]
+    Accounts_Update(#[from] accounts::update::Error),
+    #[error(transparent)]
+    Accounts_Delete(#[from] accounts::delete::Error),
+    #[error(transparent)]
+    Pools_List(#[from] pools::list::Error),
+    #[error(transparent)]
+    Pools_Get(#[from] pools::get::Error),
+    #[error(transparent)]
+    Pools_CreateOrUpdate(#[from] pools::create_or_update::Error),
+    #[error(transparent)]
+    Pools_Update(#[from] pools::update::Error),
+    #[error(transparent)]
+    Pools_Delete(#[from] pools::delete::Error),
+    #[error(transparent)]
+    Volumes_List(#[from] volumes::list::Error),
+    #[error(transparent)]
+    Volumes_Get(#[from] volumes::get::Error),
+    #[error(transparent)]
+    Volumes_CreateOrUpdate(#[from] volumes::create_or_update::Error),
+    #[error(transparent)]
+    Volumes_Update(#[from] volumes::update::Error),
+    #[error(transparent)]
+    Volumes_Delete(#[from] volumes::delete::Error),
+    #[error(transparent)]
+    MountTargets_List(#[from] mount_targets::list::Error),
+    #[error(transparent)]
+    Snapshots_List(#[from] snapshots::list::Error),
+    #[error(transparent)]
+    Snapshots_Get(#[from] snapshots::get::Error),
+    #[error(transparent)]
+    Snapshots_Create(#[from] snapshots::create::Error),
+    #[error(transparent)]
+    Snapshots_Update(#[from] snapshots::update::Error),
+    #[error(transparent)]
+    Snapshots_Delete(#[from] snapshots::delete::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.NetApp/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +79,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -34,7 +87,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -56,10 +109,10 @@ pub mod operations {
 }
 pub async fn check_name_availability(
     operation_config: &crate::OperationConfig,
-    body: &ResourceNameAvailabilityRequest,
+    body: &models::ResourceNameAvailabilityRequest,
     subscription_id: &str,
     location: &str,
-) -> std::result::Result<ResourceNameAvailability, check_name_availability::Error> {
+) -> std::result::Result<models::ResourceNameAvailability, check_name_availability::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.NetApp/locations/{}/checkNameAvailability",
@@ -91,7 +144,7 @@ pub async fn check_name_availability(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: ResourceNameAvailability = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ResourceNameAvailability = serde_json::from_slice(rsp_body)
                 .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
@@ -99,7 +152,7 @@ pub async fn check_name_availability(
     }
 }
 pub mod check_name_availability {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -120,10 +173,10 @@ pub mod check_name_availability {
 }
 pub async fn check_file_path_availability(
     operation_config: &crate::OperationConfig,
-    body: &ResourceNameAvailabilityRequest,
+    body: &models::ResourceNameAvailabilityRequest,
     subscription_id: &str,
     location: &str,
-) -> std::result::Result<ResourceNameAvailability, check_file_path_availability::Error> {
+) -> std::result::Result<models::ResourceNameAvailability, check_file_path_availability::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.NetApp/locations/{}/checkFilePathAvailability",
@@ -155,7 +208,7 @@ pub async fn check_file_path_availability(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: ResourceNameAvailability = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ResourceNameAvailability = serde_json::from_slice(rsp_body)
                 .map_err(|source| check_file_path_availability::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
@@ -163,7 +216,7 @@ pub async fn check_file_path_availability(
     }
 }
 pub mod check_file_path_availability {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -183,12 +236,12 @@ pub mod check_file_path_availability {
     }
 }
 pub mod accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<NetAppAccountList, list::Error> {
+    ) -> std::result::Result<models::NetAppAccountList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts",
@@ -214,7 +267,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetAppAccountList =
+                let rsp_value: models::NetAppAccountList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -222,7 +275,7 @@ pub mod accounts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -246,7 +299,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<NetAppAccount, get::Error> {
+    ) -> std::result::Result<models::NetAppAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}",
@@ -273,7 +326,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetAppAccount =
+                let rsp_value: models::NetAppAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -281,7 +334,7 @@ pub mod accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -305,7 +358,7 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        body: &NetAppAccount,
+        body: &models::NetAppAccount,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -337,13 +390,13 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetAppAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NetAppAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetAppAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NetAppAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -352,11 +405,11 @@ pub mod accounts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(NetAppAccount),
-            Created201(NetAppAccount),
+            Ok200(models::NetAppAccount),
+            Created201(models::NetAppAccount),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -382,8 +435,8 @@ pub mod accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        body: &NetAppAccountPatch,
-    ) -> std::result::Result<NetAppAccount, update::Error> {
+        body: &models::NetAppAccountPatch,
+    ) -> std::result::Result<models::NetAppAccount, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}",
@@ -411,7 +464,7 @@ pub mod accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetAppAccount =
+                let rsp_value: models::NetAppAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -419,7 +472,7 @@ pub mod accounts {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -474,7 +527,7 @@ pub mod accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -500,13 +553,13 @@ pub mod accounts {
     }
 }
 pub mod pools {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<CapacityPoolList, list::Error> {
+    ) -> std::result::Result<models::CapacityPoolList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools",
@@ -533,7 +586,7 @@ pub mod pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapacityPoolList =
+                let rsp_value: models::CapacityPoolList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -541,7 +594,7 @@ pub mod pools {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -566,7 +619,7 @@ pub mod pools {
         resource_group_name: &str,
         account_name: &str,
         pool_name: &str,
-    ) -> std::result::Result<CapacityPool, get::Error> {
+    ) -> std::result::Result<models::CapacityPool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}",
@@ -594,7 +647,7 @@ pub mod pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapacityPool =
+                let rsp_value: models::CapacityPool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -602,7 +655,7 @@ pub mod pools {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -627,7 +680,7 @@ pub mod pools {
         resource_group_name: &str,
         account_name: &str,
         pool_name: &str,
-        body: &CapacityPool,
+        body: &models::CapacityPool,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -660,13 +713,13 @@ pub mod pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapacityPool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CapacityPool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapacityPool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CapacityPool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -675,11 +728,11 @@ pub mod pools {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CapacityPool),
-            Created201(CapacityPool),
+            Ok200(models::CapacityPool),
+            Created201(models::CapacityPool),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -706,8 +759,8 @@ pub mod pools {
         resource_group_name: &str,
         account_name: &str,
         pool_name: &str,
-        body: &CapacityPoolPatch,
-    ) -> std::result::Result<CapacityPool, update::Error> {
+        body: &models::CapacityPoolPatch,
+    ) -> std::result::Result<models::CapacityPool, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}",
@@ -736,7 +789,7 @@ pub mod pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapacityPool =
+                let rsp_value: models::CapacityPool =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -744,7 +797,7 @@ pub mod pools {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -801,7 +854,7 @@ pub mod pools {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -827,14 +880,14 @@ pub mod pools {
     }
 }
 pub mod volumes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         pool_name: &str,
-    ) -> std::result::Result<VolumeList, list::Error> {
+    ) -> std::result::Result<models::VolumeList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}/volumes",
@@ -862,7 +915,7 @@ pub mod volumes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VolumeList =
+                let rsp_value: models::VolumeList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -870,7 +923,7 @@ pub mod volumes {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -896,7 +949,7 @@ pub mod volumes {
         account_name: &str,
         pool_name: &str,
         volume_name: &str,
-    ) -> std::result::Result<Volume, get::Error> {
+    ) -> std::result::Result<models::Volume, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}/volumes/{}",
@@ -925,7 +978,7 @@ pub mod volumes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Volume =
+                let rsp_value: models::Volume =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -933,7 +986,7 @@ pub mod volumes {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -959,7 +1012,7 @@ pub mod volumes {
         account_name: &str,
         pool_name: &str,
         volume_name: &str,
-        body: &Volume,
+        body: &models::Volume,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -993,13 +1046,13 @@ pub mod volumes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Volume = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Volume = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Volume = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Volume = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -1008,11 +1061,11 @@ pub mod volumes {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Volume),
-            Created201(Volume),
+            Ok200(models::Volume),
+            Created201(models::Volume),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1040,8 +1093,8 @@ pub mod volumes {
         account_name: &str,
         pool_name: &str,
         volume_name: &str,
-        body: &VolumePatch,
-    ) -> std::result::Result<Volume, update::Error> {
+        body: &models::VolumePatch,
+    ) -> std::result::Result<models::Volume, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}/volumes/{}",
@@ -1071,7 +1124,7 @@ pub mod volumes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Volume =
+                let rsp_value: models::Volume =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1079,7 +1132,7 @@ pub mod volumes {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1138,7 +1191,7 @@ pub mod volumes {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1164,7 +1217,7 @@ pub mod volumes {
     }
 }
 pub mod mount_targets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1172,7 +1225,7 @@ pub mod mount_targets {
         account_name: &str,
         pool_name: &str,
         volume_name: &str,
-    ) -> std::result::Result<MountTargetList, list::Error> {
+    ) -> std::result::Result<models::MountTargetList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}/volumes/{}/mountTargets",
@@ -1201,7 +1254,7 @@ pub mod mount_targets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MountTargetList =
+                let rsp_value: models::MountTargetList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1209,7 +1262,7 @@ pub mod mount_targets {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1230,7 +1283,7 @@ pub mod mount_targets {
     }
 }
 pub mod snapshots {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1238,7 +1291,7 @@ pub mod snapshots {
         account_name: &str,
         pool_name: &str,
         volume_name: &str,
-    ) -> std::result::Result<SnapshotsList, list::Error> {
+    ) -> std::result::Result<models::SnapshotsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}/volumes/{}/snapshots",
@@ -1267,7 +1320,7 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SnapshotsList =
+                let rsp_value: models::SnapshotsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1275,7 +1328,7 @@ pub mod snapshots {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1302,7 +1355,7 @@ pub mod snapshots {
         pool_name: &str,
         volume_name: &str,
         snapshot_name: &str,
-    ) -> std::result::Result<Snapshot, get::Error> {
+    ) -> std::result::Result<models::Snapshot, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}/volumes/{}/snapshots/{}",
@@ -1332,7 +1385,7 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Snapshot =
+                let rsp_value: models::Snapshot =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1340,7 +1393,7 @@ pub mod snapshots {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1367,7 +1420,7 @@ pub mod snapshots {
         pool_name: &str,
         volume_name: &str,
         snapshot_name: &str,
-        body: &Snapshot,
+        body: &models::Snapshot,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1399,7 +1452,7 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Snapshot =
+                let rsp_value: models::Snapshot =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
@@ -1408,10 +1461,10 @@ pub mod snapshots {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Snapshot),
+            Created201(models::Snapshot),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1440,8 +1493,8 @@ pub mod snapshots {
         pool_name: &str,
         volume_name: &str,
         snapshot_name: &str,
-        body: &SnapshotPatch,
-    ) -> std::result::Result<Snapshot, update::Error> {
+        body: &models::SnapshotPatch,
+    ) -> std::result::Result<models::Snapshot, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NetApp/netAppAccounts/{}/capacityPools/{}/volumes/{}/snapshots/{}",
@@ -1472,7 +1525,7 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Snapshot =
+                let rsp_value: models::Snapshot =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1480,7 +1533,7 @@ pub mod snapshots {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1542,7 +1595,7 @@ pub mod snapshots {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

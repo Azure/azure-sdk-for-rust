@@ -2,8 +2,81 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
-pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::result::Result<LocationCollection, get_locations::Error> {
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    GetLocations(#[from] get_locations::Error),
+    #[error(transparent)]
+    GetLocationByHostName(#[from] get_location_by_host_name::Error),
+    #[error(transparent)]
+    GetApps(#[from] get_apps::Error),
+    #[error(transparent)]
+    Ios_GetMamPolicies(#[from] ios::get_mam_policies::Error),
+    #[error(transparent)]
+    Android_GetMamPolicies(#[from] android::get_mam_policies::Error),
+    #[error(transparent)]
+    Ios_GetMamPolicyByName(#[from] ios::get_mam_policy_by_name::Error),
+    #[error(transparent)]
+    Ios_CreateOrUpdateMamPolicy(#[from] ios::create_or_update_mam_policy::Error),
+    #[error(transparent)]
+    Ios_PatchMamPolicy(#[from] ios::patch_mam_policy::Error),
+    #[error(transparent)]
+    Ios_DeleteMamPolicy(#[from] ios::delete_mam_policy::Error),
+    #[error(transparent)]
+    Android_GetMamPolicyByName(#[from] android::get_mam_policy_by_name::Error),
+    #[error(transparent)]
+    Android_CreateOrUpdateMamPolicy(#[from] android::create_or_update_mam_policy::Error),
+    #[error(transparent)]
+    Android_PatchMamPolicy(#[from] android::patch_mam_policy::Error),
+    #[error(transparent)]
+    Android_DeleteMamPolicy(#[from] android::delete_mam_policy::Error),
+    #[error(transparent)]
+    Ios_GetAppForMamPolicy(#[from] ios::get_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_GetAppForMamPolicy(#[from] android::get_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_AddAppForMamPolicy(#[from] ios::add_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_DeleteAppForMamPolicy(#[from] ios::delete_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_AddAppForMamPolicy(#[from] android::add_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_DeleteAppForMamPolicy(#[from] android::delete_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_GetGroupsForMamPolicy(#[from] ios::get_groups_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_GetGroupsForMamPolicy(#[from] android::get_groups_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_AddGroupForMamPolicy(#[from] ios::add_group_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_DeleteGroupForMamPolicy(#[from] ios::delete_group_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_AddGroupForMamPolicy(#[from] android::add_group_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_DeleteGroupForMamPolicy(#[from] android::delete_group_for_mam_policy::Error),
+    #[error(transparent)]
+    GetMamUserDevices(#[from] get_mam_user_devices::Error),
+    #[error(transparent)]
+    GetMamUserDeviceByDeviceName(#[from] get_mam_user_device_by_device_name::Error),
+    #[error(transparent)]
+    WipeMamUserDevice(#[from] wipe_mam_user_device::Error),
+    #[error(transparent)]
+    GetOperationResults(#[from] get_operation_results::Error),
+    #[error(transparent)]
+    GetMamStatuses(#[from] get_mam_statuses::Error),
+    #[error(transparent)]
+    GetMamFlaggedUsers(#[from] get_mam_flagged_users::Error),
+    #[error(transparent)]
+    GetMamFlaggedUserByName(#[from] get_mam_flagged_user_by_name::Error),
+    #[error(transparent)]
+    GetMamUserFlaggedEnrolledApps(#[from] get_mam_user_flagged_enrolled_apps::Error),
+}
+pub async fn get_locations(
+    operation_config: &crate::OperationConfig,
+) -> std::result::Result<models::LocationCollection, get_locations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.Intune/locations", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_locations::Error::ParseUrlError)?;
@@ -27,13 +100,13 @@ pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::re
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: LocationCollection =
+            let rsp_value: models::LocationCollection =
                 serde_json::from_slice(rsp_body).map_err(|source| get_locations::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_locations::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_locations::Error::DefaultResponse {
                 status_code,
@@ -43,7 +116,7 @@ pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::re
     }
 }
 pub mod get_locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -67,7 +140,7 @@ pub mod get_locations {
 }
 pub async fn get_location_by_host_name(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<Location, get_location_by_host_name::Error> {
+) -> std::result::Result<models::Location, get_location_by_host_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_location_by_host_name::Error::ParseUrlError)?;
@@ -93,13 +166,13 @@ pub async fn get_location_by_host_name(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Location = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Location = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_location_by_host_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_location_by_host_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_location_by_host_name::Error::DefaultResponse {
                 status_code,
@@ -109,7 +182,7 @@ pub async fn get_location_by_host_name(
     }
 }
 pub mod get_location_by_host_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -137,7 +210,7 @@ pub async fn get_apps(
     filter: Option<&str>,
     top: Option<i32>,
     select: Option<&str>,
-) -> std::result::Result<ApplicationCollection, get_apps::Error> {
+) -> std::result::Result<models::ApplicationCollection, get_apps::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/apps",
@@ -174,13 +247,13 @@ pub async fn get_apps(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: ApplicationCollection =
+            let rsp_value: models::ApplicationCollection =
                 serde_json::from_slice(rsp_body).map_err(|source| get_apps::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_apps::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_apps::Error::DefaultResponse {
                 status_code,
@@ -190,7 +263,7 @@ pub async fn get_apps(
     }
 }
 pub mod get_apps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -219,7 +292,7 @@ pub async fn get_mam_user_devices(
     filter: Option<&str>,
     top: Option<i32>,
     select: Option<&str>,
-) -> std::result::Result<DeviceCollection, get_mam_user_devices::Error> {
+) -> std::result::Result<models::DeviceCollection, get_mam_user_devices::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices",
@@ -257,13 +330,13 @@ pub async fn get_mam_user_devices(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeviceCollection = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeviceCollection = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_user_devices::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_user_devices::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_mam_user_devices::Error::DefaultResponse {
                 status_code,
@@ -273,7 +346,7 @@ pub async fn get_mam_user_devices(
     }
 }
 pub mod get_mam_user_devices {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -301,7 +374,7 @@ pub async fn get_mam_user_device_by_device_name(
     user_name: &str,
     device_name: &str,
     select: Option<&str>,
-) -> std::result::Result<Device, get_mam_user_device_by_device_name::Error> {
+) -> std::result::Result<models::Device, get_mam_user_device_by_device_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
@@ -336,13 +409,13 @@ pub async fn get_mam_user_device_by_device_name(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Device = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Device = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_user_device_by_device_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_user_device_by_device_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_mam_user_device_by_device_name::Error::DefaultResponse {
                 status_code,
@@ -352,7 +425,7 @@ pub async fn get_mam_user_device_by_device_name(
     }
 }
 pub mod get_mam_user_device_by_device_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -379,7 +452,7 @@ pub async fn wipe_mam_user_device(
     host_name: &str,
     user_name: &str,
     device_name: &str,
-) -> std::result::Result<WipeDeviceOperationResult, wipe_mam_user_device::Error> {
+) -> std::result::Result<models::WipeDeviceOperationResult, wipe_mam_user_device::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
@@ -410,13 +483,13 @@ pub async fn wipe_mam_user_device(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: WipeDeviceOperationResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::WipeDeviceOperationResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| wipe_mam_user_device::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| wipe_mam_user_device::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(wipe_mam_user_device::Error::DefaultResponse {
                 status_code,
@@ -426,7 +499,7 @@ pub async fn wipe_mam_user_device(
     }
 }
 pub mod wipe_mam_user_device {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -454,7 +527,7 @@ pub async fn get_operation_results(
     filter: Option<&str>,
     top: Option<i32>,
     select: Option<&str>,
-) -> std::result::Result<OperationResultCollection, get_operation_results::Error> {
+) -> std::result::Result<models::OperationResultCollection, get_operation_results::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/operationResults",
@@ -493,13 +566,13 @@ pub async fn get_operation_results(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OperationResultCollection = serde_json::from_slice(rsp_body)
+            let rsp_value: models::OperationResultCollection = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_operation_results::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_operation_results::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_operation_results::Error::DefaultResponse {
                 status_code,
@@ -509,7 +582,7 @@ pub async fn get_operation_results(
     }
 }
 pub mod get_operation_results {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -534,7 +607,7 @@ pub mod get_operation_results {
 pub async fn get_mam_statuses(
     operation_config: &crate::OperationConfig,
     host_name: &str,
-) -> std::result::Result<StatusesDefault, get_mam_statuses::Error> {
+) -> std::result::Result<models::StatusesDefault, get_mam_statuses::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/statuses/default",
@@ -562,13 +635,13 @@ pub async fn get_mam_statuses(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StatusesDefault =
+            let rsp_value: models::StatusesDefault =
                 serde_json::from_slice(rsp_body).map_err(|source| get_mam_statuses::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error =
+            let rsp_value: models::Error =
                 serde_json::from_slice(rsp_body).map_err(|source| get_mam_statuses::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_mam_statuses::Error::DefaultResponse {
                 status_code,
@@ -578,7 +651,7 @@ pub async fn get_mam_statuses(
     }
 }
 pub mod get_mam_statuses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -606,7 +679,7 @@ pub async fn get_mam_flagged_users(
     filter: Option<&str>,
     top: Option<i32>,
     select: Option<&str>,
-) -> std::result::Result<FlaggedUserCollection, get_mam_flagged_users::Error> {
+) -> std::result::Result<models::FlaggedUserCollection, get_mam_flagged_users::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers",
@@ -645,13 +718,13 @@ pub async fn get_mam_flagged_users(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: FlaggedUserCollection = serde_json::from_slice(rsp_body)
+            let rsp_value: models::FlaggedUserCollection = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_flagged_users::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_flagged_users::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_mam_flagged_users::Error::DefaultResponse {
                 status_code,
@@ -661,7 +734,7 @@ pub async fn get_mam_flagged_users(
     }
 }
 pub mod get_mam_flagged_users {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -688,7 +761,7 @@ pub async fn get_mam_flagged_user_by_name(
     host_name: &str,
     user_name: &str,
     select: Option<&str>,
-) -> std::result::Result<FlaggedUser, get_mam_flagged_user_by_name::Error> {
+) -> std::result::Result<models::FlaggedUser, get_mam_flagged_user_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
@@ -722,13 +795,13 @@ pub async fn get_mam_flagged_user_by_name(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: FlaggedUser = serde_json::from_slice(rsp_body)
+            let rsp_value: models::FlaggedUser = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_flagged_user_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_flagged_user_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_mam_flagged_user_by_name::Error::DefaultResponse {
                 status_code,
@@ -738,7 +811,7 @@ pub async fn get_mam_flagged_user_by_name(
     }
 }
 pub mod get_mam_flagged_user_by_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -767,7 +840,7 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     filter: Option<&str>,
     top: Option<i32>,
     select: Option<&str>,
-) -> std::result::Result<FlaggedEnrolledAppCollection, get_mam_user_flagged_enrolled_apps::Error> {
+) -> std::result::Result<models::FlaggedEnrolledAppCollection, get_mam_user_flagged_enrolled_apps::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
@@ -807,13 +880,13 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: FlaggedEnrolledAppCollection = serde_json::from_slice(rsp_body)
+            let rsp_value: models::FlaggedEnrolledAppCollection = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_user_flagged_enrolled_apps::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_mam_user_flagged_enrolled_apps::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_mam_user_flagged_enrolled_apps::Error::DefaultResponse {
                 status_code,
@@ -823,7 +896,7 @@ pub async fn get_mam_user_flagged_enrolled_apps(
     }
 }
 pub mod get_mam_user_flagged_enrolled_apps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -846,14 +919,14 @@ pub mod get_mam_user_flagged_enrolled_apps {
     }
 }
 pub mod ios {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
         host_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
         select: Option<&str>,
-    ) -> std::result::Result<IosmamPolicyCollection, get_mam_policies::Error> {
+    ) -> std::result::Result<models::IosmamPolicyCollection, get_mam_policies::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies",
@@ -890,13 +963,13 @@ pub mod ios {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IosmamPolicyCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IosmamPolicyCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mam_policies::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mam_policies::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_mam_policies::Error::DefaultResponse {
                     status_code,
@@ -906,7 +979,7 @@ pub mod ios {
         }
     }
     pub mod get_mam_policies {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -933,7 +1006,7 @@ pub mod ios {
         host_name: &str,
         policy_name: &str,
         select: Option<&str>,
-    ) -> std::result::Result<IOsmamPolicy, get_mam_policy_by_name::Error> {
+    ) -> std::result::Result<models::IOsmamPolicy, get_mam_policy_by_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
@@ -967,13 +1040,13 @@ pub mod ios {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IOsmamPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IOsmamPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mam_policy_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mam_policy_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_mam_policy_by_name::Error::DefaultResponse {
                     status_code,
@@ -983,7 +1056,7 @@ pub mod ios {
         }
     }
     pub mod get_mam_policy_by_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1009,8 +1082,8 @@ pub mod ios {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-        parameters: &IOsmamPolicy,
-    ) -> std::result::Result<IOsmamPolicy, create_or_update_mam_policy::Error> {
+        parameters: &models::IOsmamPolicy,
+    ) -> std::result::Result<models::IOsmamPolicy, create_or_update_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
@@ -1042,13 +1115,13 @@ pub mod ios {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IOsmamPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IOsmamPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1058,7 +1131,7 @@ pub mod ios {
         }
     }
     pub mod create_or_update_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1084,8 +1157,8 @@ pub mod ios {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-        parameters: &IOsmamPolicy,
-    ) -> std::result::Result<IOsmamPolicy, patch_mam_policy::Error> {
+        parameters: &models::IOsmamPolicy,
+    ) -> std::result::Result<models::IOsmamPolicy, patch_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
@@ -1115,13 +1188,13 @@ pub mod ios {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IOsmamPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IOsmamPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| patch_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| patch_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(patch_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1131,7 +1204,7 @@ pub mod ios {
         }
     }
     pub mod patch_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1188,7 +1261,7 @@ pub mod ios {
             http::StatusCode::NO_CONTENT => Ok(delete_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1198,7 +1271,7 @@ pub mod ios {
         }
     }
     pub mod delete_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1232,7 +1305,7 @@ pub mod ios {
         filter: Option<&str>,
         top: Option<i32>,
         select: Option<&str>,
-    ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
+    ) -> std::result::Result<models::ApplicationCollection, get_app_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
@@ -1272,13 +1345,13 @@ pub mod ios {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApplicationCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_app_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1288,7 +1361,7 @@ pub mod ios {
         }
     }
     pub mod get_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1315,7 +1388,7 @@ pub mod ios {
         host_name: &str,
         policy_name: &str,
         app_name: &str,
-        parameters: &MamPolicyAppIdOrGroupIdPayload,
+        parameters: &models::MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_app_for_mam_policy::Response, add_app_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1351,7 +1424,7 @@ pub mod ios {
             http::StatusCode::NO_CONTENT => Ok(add_app_for_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_app_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1361,7 +1434,7 @@ pub mod ios {
         }
     }
     pub mod add_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1427,7 +1500,7 @@ pub mod ios {
             http::StatusCode::NO_CONTENT => Ok(delete_app_for_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_app_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1437,7 +1510,7 @@ pub mod ios {
         }
     }
     pub mod delete_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1468,7 +1541,7 @@ pub mod ios {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-    ) -> std::result::Result<GroupsCollection, get_groups_for_mam_policy::Error> {
+    ) -> std::result::Result<models::GroupsCollection, get_groups_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
@@ -1499,13 +1572,13 @@ pub mod ios {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GroupsCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GroupsCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_groups_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_groups_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_groups_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1515,7 +1588,7 @@ pub mod ios {
         }
     }
     pub mod get_groups_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1542,7 +1615,7 @@ pub mod ios {
         host_name: &str,
         policy_name: &str,
         group_id: &str,
-        parameters: &MamPolicyAppIdOrGroupIdPayload,
+        parameters: &models::MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_group_for_mam_policy::Response, add_group_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1578,7 +1651,7 @@ pub mod ios {
             http::StatusCode::NO_CONTENT => Ok(add_group_for_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_group_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_group_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1588,7 +1661,7 @@ pub mod ios {
         }
     }
     pub mod add_group_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1654,7 +1727,7 @@ pub mod ios {
             http::StatusCode::NO_CONTENT => Ok(delete_group_for_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_group_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_group_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1664,7 +1737,7 @@ pub mod ios {
         }
     }
     pub mod delete_group_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1693,14 +1766,14 @@ pub mod ios {
     }
 }
 pub mod android {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_mam_policies(
         operation_config: &crate::OperationConfig,
         host_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
         select: Option<&str>,
-    ) -> std::result::Result<AndroidMamPolicyCollection, get_mam_policies::Error> {
+    ) -> std::result::Result<models::AndroidMamPolicyCollection, get_mam_policies::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies",
@@ -1737,13 +1810,13 @@ pub mod android {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AndroidMamPolicyCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AndroidMamPolicyCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mam_policies::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mam_policies::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_mam_policies::Error::DefaultResponse {
                     status_code,
@@ -1753,7 +1826,7 @@ pub mod android {
         }
     }
     pub mod get_mam_policies {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1780,7 +1853,7 @@ pub mod android {
         host_name: &str,
         policy_name: &str,
         select: Option<&str>,
-    ) -> std::result::Result<AndroidMamPolicy, get_mam_policy_by_name::Error> {
+    ) -> std::result::Result<models::AndroidMamPolicy, get_mam_policy_by_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
@@ -1814,13 +1887,13 @@ pub mod android {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AndroidMamPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AndroidMamPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mam_policy_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mam_policy_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_mam_policy_by_name::Error::DefaultResponse {
                     status_code,
@@ -1830,7 +1903,7 @@ pub mod android {
         }
     }
     pub mod get_mam_policy_by_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1856,8 +1929,8 @@ pub mod android {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-        parameters: &AndroidMamPolicy,
-    ) -> std::result::Result<AndroidMamPolicy, create_or_update_mam_policy::Error> {
+        parameters: &models::AndroidMamPolicy,
+    ) -> std::result::Result<models::AndroidMamPolicy, create_or_update_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
@@ -1889,13 +1962,13 @@ pub mod android {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AndroidMamPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AndroidMamPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1905,7 +1978,7 @@ pub mod android {
         }
     }
     pub mod create_or_update_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1931,8 +2004,8 @@ pub mod android {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-        parameters: &AndroidMamPolicy,
-    ) -> std::result::Result<AndroidMamPolicy, patch_mam_policy::Error> {
+        parameters: &models::AndroidMamPolicy,
+    ) -> std::result::Result<models::AndroidMamPolicy, patch_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
@@ -1962,13 +2035,13 @@ pub mod android {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AndroidMamPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AndroidMamPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| patch_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| patch_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(patch_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -1978,7 +2051,7 @@ pub mod android {
         }
     }
     pub mod patch_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2035,7 +2108,7 @@ pub mod android {
             http::StatusCode::NO_CONTENT => Ok(delete_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -2045,7 +2118,7 @@ pub mod android {
         }
     }
     pub mod delete_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2079,7 +2152,7 @@ pub mod android {
         filter: Option<&str>,
         top: Option<i32>,
         select: Option<&str>,
-    ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
+    ) -> std::result::Result<models::ApplicationCollection, get_app_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
@@ -2119,13 +2192,13 @@ pub mod android {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApplicationCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_app_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -2135,7 +2208,7 @@ pub mod android {
         }
     }
     pub mod get_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2162,7 +2235,7 @@ pub mod android {
         host_name: &str,
         policy_name: &str,
         app_name: &str,
-        parameters: &MamPolicyAppIdOrGroupIdPayload,
+        parameters: &models::MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_app_for_mam_policy::Response, add_app_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2198,7 +2271,7 @@ pub mod android {
             http::StatusCode::NO_CONTENT => Ok(add_app_for_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_app_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -2208,7 +2281,7 @@ pub mod android {
         }
     }
     pub mod add_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2274,7 +2347,7 @@ pub mod android {
             http::StatusCode::NO_CONTENT => Ok(delete_app_for_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_app_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -2284,7 +2357,7 @@ pub mod android {
         }
     }
     pub mod delete_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2315,7 +2388,7 @@ pub mod android {
         operation_config: &crate::OperationConfig,
         host_name: &str,
         policy_name: &str,
-    ) -> std::result::Result<GroupsCollection, get_groups_for_mam_policy::Error> {
+    ) -> std::result::Result<models::GroupsCollection, get_groups_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
@@ -2346,13 +2419,13 @@ pub mod android {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GroupsCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GroupsCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_groups_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_groups_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_groups_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -2362,7 +2435,7 @@ pub mod android {
         }
     }
     pub mod get_groups_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2389,7 +2462,7 @@ pub mod android {
         host_name: &str,
         policy_name: &str,
         group_id: &str,
-        parameters: &MamPolicyAppIdOrGroupIdPayload,
+        parameters: &models::MamPolicyAppIdOrGroupIdPayload,
     ) -> std::result::Result<add_group_for_mam_policy::Response, add_group_for_mam_policy::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2425,7 +2498,7 @@ pub mod android {
             http::StatusCode::NO_CONTENT => Ok(add_group_for_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_group_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_group_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -2435,7 +2508,7 @@ pub mod android {
         }
     }
     pub mod add_group_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2501,7 +2574,7 @@ pub mod android {
             http::StatusCode::NO_CONTENT => Ok(delete_group_for_mam_policy::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_group_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_group_for_mam_policy::Error::DefaultResponse {
                     status_code,
@@ -2511,7 +2584,7 @@ pub mod android {
         }
     }
     pub mod delete_group_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

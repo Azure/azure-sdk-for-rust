@@ -46,8 +46,8 @@ pub mod security_connector_properties {
         pub parent_hierarchy_id: Option<String>,
         #[serde(rename = "stacksetName", default, skip_serializing_if = "Option::is_none")]
         pub stackset_name: Option<String>,
-        #[serde(rename = "excludedAccountId", default, skip_serializing_if = "Vec::is_empty")]
-        pub excluded_account_id: Vec<String>,
+        #[serde(rename = "excludedAccountIds", default, skip_serializing_if = "Vec::is_empty")]
+        pub excluded_account_ids: Vec<String>,
     }
     pub mod organizational_data {
         use super::*;

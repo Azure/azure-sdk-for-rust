@@ -6,36 +6,36 @@
 #[cfg(feature = "package-2021-07-01")]
 pub mod package_2021_07_01;
 #[cfg(all(feature = "package-2021-07-01", not(feature = "no-default-version")))]
-pub use package_2021_07_01::{models, operations};
+pub use package_2021_07_01::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-10-25")]
 pub mod package_2020_10_25;
 #[cfg(all(feature = "package-2020-10-25", not(feature = "no-default-version")))]
-pub use package_2020_10_25::{models, operations};
+pub use package_2020_10_25::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-11-preview")]
 pub mod package_2020_11_preview;
 #[cfg(all(feature = "package-2020-11-preview", not(feature = "no-default-version")))]
-pub use package_2020_11_preview::{models, operations};
+pub use package_2020_11_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2020-10-preview")]
 pub mod package_2020_10_preview;
 #[cfg(all(feature = "package-2020-10-preview", not(feature = "no-default-version")))]
-pub use package_2020_10_preview::{models, operations};
+pub use package_2020_10_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-preview-2019-07-19")]
 pub mod package_preview_2019_07_19;
 #[cfg(all(feature = "package-preview-2019-07-19", not(feature = "no-default-version")))]
-pub use package_preview_2019_07_19::{models, operations};
+pub use package_preview_2019_07_19::{models, operations, operations::Error};
 #[cfg(feature = "package-preview-2019-04")]
 pub mod package_preview_2019_04;
 #[cfg(all(feature = "package-preview-2019-04", not(feature = "no-default-version")))]
-pub use package_preview_2019_04::{models, operations};
+pub use package_preview_2019_04::{models, operations, operations::Error};
 #[cfg(feature = "package-2018-06")]
 pub mod package_2018_06;
 #[cfg(all(feature = "package-2018-06", not(feature = "no-default-version")))]
-pub use package_2018_06::{models, operations};
+pub use package_2018_06::{models, operations, operations::Error};
 #[cfg(feature = "package-2017-11")]
 pub mod package_2017_11;
 use azure_core::setters;
 #[cfg(all(feature = "package-2017-11", not(feature = "no-default-version")))]
-pub use package_2017_11::{models, operations};
+pub use package_2017_11::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

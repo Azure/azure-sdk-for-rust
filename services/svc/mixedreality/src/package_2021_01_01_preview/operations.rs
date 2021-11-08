@@ -2,14 +2,35 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    RemoteRendering_GetConversion(#[from] remote_rendering::get_conversion::Error),
+    #[error(transparent)]
+    RemoteRendering_CreateConversion(#[from] remote_rendering::create_conversion::Error),
+    #[error(transparent)]
+    RemoteRendering_ListConversions(#[from] remote_rendering::list_conversions::Error),
+    #[error(transparent)]
+    RemoteRendering_GetSession(#[from] remote_rendering::get_session::Error),
+    #[error(transparent)]
+    RemoteRendering_CreateSession(#[from] remote_rendering::create_session::Error),
+    #[error(transparent)]
+    RemoteRendering_UpdateSession(#[from] remote_rendering::update_session::Error),
+    #[error(transparent)]
+    RemoteRendering_StopSession(#[from] remote_rendering::stop_session::Error),
+    #[error(transparent)]
+    RemoteRendering_ListSessions(#[from] remote_rendering::list_sessions::Error),
+}
 pub mod remote_rendering {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_conversion(
         operation_config: &crate::OperationConfig,
         account_id: &str,
         conversion_id: &str,
-    ) -> std::result::Result<Conversion, get_conversion::Error> {
+    ) -> std::result::Result<models::Conversion, get_conversion::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/accounts/{}/conversions/{}",
@@ -38,7 +59,7 @@ pub mod remote_rendering {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Conversion =
+                let rsp_value: models::Conversion =
                     serde_json::from_slice(rsp_body).map_err(|source| get_conversion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -48,7 +69,7 @@ pub mod remote_rendering {
             http::StatusCode::TOO_MANY_REQUESTS => Err(get_conversion::Error::TooManyRequests429 {}),
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_conversion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_conversion::Error::InternalServerError500 { value: rsp_value })
             }
@@ -62,7 +83,7 @@ pub mod remote_rendering {
         }
     }
     pub mod get_conversion {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -95,7 +116,7 @@ pub mod remote_rendering {
         operation_config: &crate::OperationConfig,
         account_id: &str,
         conversion_id: &str,
-        body: &CreateConversionSettings,
+        body: &models::CreateConversionSettings,
     ) -> std::result::Result<create_conversion::Response, create_conversion::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -126,19 +147,19 @@ pub mod remote_rendering {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Conversion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Conversion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_conversion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_conversion::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Conversion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Conversion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_conversion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_conversion::Response::Created201(rsp_value))
             }
             http::StatusCode::BAD_REQUEST => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_conversion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_conversion::Error::BadRequest400 { value: rsp_value })
             }
@@ -146,14 +167,14 @@ pub mod remote_rendering {
             http::StatusCode::FORBIDDEN => Err(create_conversion::Error::Forbidden403 {}),
             http::StatusCode::CONFLICT => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_conversion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_conversion::Error::Conflict409 { value: rsp_value })
             }
             http::StatusCode::TOO_MANY_REQUESTS => Err(create_conversion::Error::TooManyRequests429 {}),
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_conversion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_conversion::Error::InternalServerError500 { value: rsp_value })
             }
@@ -167,11 +188,11 @@ pub mod remote_rendering {
         }
     }
     pub mod create_conversion {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Conversion),
-            Created201(Conversion),
+            Ok200(models::Conversion),
+            Created201(models::Conversion),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -206,7 +227,7 @@ pub mod remote_rendering {
     pub async fn list_conversions(
         operation_config: &crate::OperationConfig,
         account_id: &str,
-    ) -> std::result::Result<ConversionList, list_conversions::Error> {
+    ) -> std::result::Result<models::ConversionList, list_conversions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/accounts/{}/conversions", operation_config.base_path(), account_id);
         let mut url = url::Url::parse(url_str).map_err(list_conversions::Error::ParseUrlError)?;
@@ -230,7 +251,7 @@ pub mod remote_rendering {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConversionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConversionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_conversions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -239,7 +260,7 @@ pub mod remote_rendering {
             http::StatusCode::TOO_MANY_REQUESTS => Err(list_conversions::Error::TooManyRequests429 {}),
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_conversions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_conversions::Error::InternalServerError500 { value: rsp_value })
             }
@@ -253,7 +274,7 @@ pub mod remote_rendering {
         }
     }
     pub mod list_conversions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -284,7 +305,7 @@ pub mod remote_rendering {
         operation_config: &crate::OperationConfig,
         account_id: &str,
         session_id: &str,
-    ) -> std::result::Result<SessionProperties, get_session::Error> {
+    ) -> std::result::Result<models::SessionProperties, get_session::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/accounts/{}/sessions/{}", operation_config.base_path(), account_id, session_id);
         let mut url = url::Url::parse(url_str).map_err(get_session::Error::ParseUrlError)?;
@@ -308,7 +329,7 @@ pub mod remote_rendering {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SessionProperties =
+                let rsp_value: models::SessionProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| get_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -318,7 +339,7 @@ pub mod remote_rendering {
             http::StatusCode::TOO_MANY_REQUESTS => Err(get_session::Error::TooManyRequests429 {}),
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_session::Error::InternalServerError500 { value: rsp_value })
             }
@@ -332,7 +353,7 @@ pub mod remote_rendering {
         }
     }
     pub mod get_session {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -365,7 +386,7 @@ pub mod remote_rendering {
         operation_config: &crate::OperationConfig,
         account_id: &str,
         session_id: &str,
-        body: &CreateSessionSettings,
+        body: &models::CreateSessionSettings,
     ) -> std::result::Result<create_session::Response, create_session::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/accounts/{}/sessions/{}", operation_config.base_path(), account_id, session_id);
@@ -391,19 +412,19 @@ pub mod remote_rendering {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SessionProperties =
+                let rsp_value: models::SessionProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| create_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_session::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SessionProperties =
+                let rsp_value: models::SessionProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| create_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_session::Response::Created201(rsp_value))
             }
             http::StatusCode::BAD_REQUEST => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_session::Error::BadRequest400 { value: rsp_value })
             }
@@ -411,14 +432,14 @@ pub mod remote_rendering {
             http::StatusCode::FORBIDDEN => Err(create_session::Error::Forbidden403 {}),
             http::StatusCode::CONFLICT => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_session::Error::Conflict409 { value: rsp_value })
             }
             http::StatusCode::TOO_MANY_REQUESTS => Err(create_session::Error::TooManyRequests429 {}),
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_session::Error::InternalServerError500 { value: rsp_value })
             }
@@ -432,11 +453,11 @@ pub mod remote_rendering {
         }
     }
     pub mod create_session {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SessionProperties),
-            Created201(SessionProperties),
+            Ok200(models::SessionProperties),
+            Created201(models::SessionProperties),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -472,8 +493,8 @@ pub mod remote_rendering {
         operation_config: &crate::OperationConfig,
         account_id: &str,
         session_id: &str,
-        body: &UpdateSessionSettings,
-    ) -> std::result::Result<SessionProperties, update_session::Error> {
+        body: &models::UpdateSessionSettings,
+    ) -> std::result::Result<models::SessionProperties, update_session::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/accounts/{}/sessions/{}", operation_config.base_path(), account_id, session_id);
         let mut url = url::Url::parse(url_str).map_err(update_session::Error::ParseUrlError)?;
@@ -498,7 +519,7 @@ pub mod remote_rendering {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SessionProperties =
+                let rsp_value: models::SessionProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| update_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -508,13 +529,13 @@ pub mod remote_rendering {
             http::StatusCode::TOO_MANY_REQUESTS => Err(update_session::Error::TooManyRequests429 {}),
             http::StatusCode::UNPROCESSABLE_ENTITY => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_session::Error::UnprocessableEntity422 { value: rsp_value })
             }
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_session::Error::InternalServerError500 { value: rsp_value })
             }
@@ -528,7 +549,7 @@ pub mod remote_rendering {
         }
     }
     pub mod update_session {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -598,7 +619,7 @@ pub mod remote_rendering {
             http::StatusCode::TOO_MANY_REQUESTS => Err(stop_session::Error::TooManyRequests429 {}),
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| stop_session::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop_session::Error::InternalServerError500 { value: rsp_value })
             }
@@ -612,7 +633,7 @@ pub mod remote_rendering {
         }
     }
     pub mod stop_session {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -644,7 +665,7 @@ pub mod remote_rendering {
     pub async fn list_sessions(
         operation_config: &crate::OperationConfig,
         account_id: &str,
-    ) -> std::result::Result<SessionsList, list_sessions::Error> {
+    ) -> std::result::Result<models::SessionsList, list_sessions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/accounts/{}/sessions", operation_config.base_path(), account_id);
         let mut url = url::Url::parse(url_str).map_err(list_sessions::Error::ParseUrlError)?;
@@ -668,7 +689,7 @@ pub mod remote_rendering {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SessionsList =
+                let rsp_value: models::SessionsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_sessions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -677,7 +698,7 @@ pub mod remote_rendering {
             http::StatusCode::TOO_MANY_REQUESTS => Err(list_sessions::Error::TooManyRequests429 {}),
             http::StatusCode::INTERNAL_SERVER_ERROR => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_sessions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_sessions::Error::InternalServerError500 { value: rsp_value })
             }
@@ -691,7 +712,7 @@ pub mod remote_rendering {
         }
     }
     pub mod list_sessions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

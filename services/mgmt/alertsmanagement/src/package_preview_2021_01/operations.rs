@@ -2,10 +2,19 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    MigrateFromSmartDetection_StartMigration(#[from] migrate_from_smart_detection::start_migration::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.AlertsManagement/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +35,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsList =
+                let rsp_value: models::OperationsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +49,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,11 +70,11 @@ pub mod operations {
     }
 }
 pub mod migrate_from_smart_detection {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn start_migration(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        smart_detection_migration_request: &SmartDetectionMigrationRequest,
+        smart_detection_migration_request: &models::SmartDetectionMigrationRequest,
     ) -> std::result::Result<start_migration::Response, start_migration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -95,19 +104,19 @@ pub mod migrate_from_smart_detection {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrationStatusResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrationStatusResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| start_migration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(start_migration::Response::Accepted202(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrationStatusResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrationStatusResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| start_migration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(start_migration::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrationErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrationErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| start_migration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start_migration::Error::DefaultResponse {
                     status_code,
@@ -117,11 +126,11 @@ pub mod migrate_from_smart_detection {
         }
     }
     pub mod start_migration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Accepted202(MigrationStatusResponse),
-            Ok200(MigrationStatusResponse),
+            Accepted202(models::MigrationStatusResponse),
+            Ok200(models::MigrationStatusResponse),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

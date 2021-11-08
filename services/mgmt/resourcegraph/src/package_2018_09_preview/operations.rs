@@ -2,11 +2,34 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Resources(#[from] resources::Error),
+    #[error(transparent)]
+    ResourceChanges(#[from] resource_changes::Error),
+    #[error(transparent)]
+    ResourceChangeDetails(#[from] resource_change_details::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    GraphQuery_List(#[from] graph_query::list::Error),
+    #[error(transparent)]
+    GraphQuery_Get(#[from] graph_query::get::Error),
+    #[error(transparent)]
+    GraphQuery_CreateOrUpdate(#[from] graph_query::create_or_update::Error),
+    #[error(transparent)]
+    GraphQuery_Update(#[from] graph_query::update::Error),
+    #[error(transparent)]
+    GraphQuery_Delete(#[from] graph_query::delete::Error),
+}
 pub async fn resources(
     operation_config: &crate::OperationConfig,
-    query: &QueryRequest,
-) -> std::result::Result<QueryResponse, resources::Error> {
+    query: &models::QueryRequest,
+) -> std::result::Result<models::QueryResponse, resources::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.ResourceGraph/resources", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(resources::Error::ParseUrlError)?;
@@ -31,13 +54,13 @@ pub async fn resources(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: QueryResponse =
+            let rsp_value: models::QueryResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| resources::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| resources::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(resources::Error::DefaultResponse {
                 status_code,
@@ -47,7 +70,7 @@ pub async fn resources(
     }
 }
 pub mod resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -71,8 +94,8 @@ pub mod resources {
 }
 pub async fn resource_changes(
     operation_config: &crate::OperationConfig,
-    parameters: &ResourceChangesRequestParameters,
-) -> std::result::Result<ResourceChangeList, resource_changes::Error> {
+    parameters: &models::ResourceChangesRequestParameters,
+) -> std::result::Result<models::ResourceChangeList, resource_changes::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.ResourceGraph/resourceChanges", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(resource_changes::Error::ParseUrlError)?;
@@ -97,13 +120,13 @@ pub async fn resource_changes(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: ResourceChangeList =
+            let rsp_value: models::ResourceChangeList =
                 serde_json::from_slice(rsp_body).map_err(|source| resource_changes::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| resource_changes::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(resource_changes::Error::DefaultResponse {
                 status_code,
@@ -113,7 +136,7 @@ pub async fn resource_changes(
     }
 }
 pub mod resource_changes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -137,8 +160,8 @@ pub mod resource_changes {
 }
 pub async fn resource_change_details(
     operation_config: &crate::OperationConfig,
-    parameters: &ResourceChangeDetailsRequestParameters,
-) -> std::result::Result<ResourceChangeData, resource_change_details::Error> {
+    parameters: &models::ResourceChangeDetailsRequestParameters,
+) -> std::result::Result<models::ResourceChangeData, resource_change_details::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.ResourceGraph/resourceChangeDetails",
@@ -168,13 +191,13 @@ pub async fn resource_change_details(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: ResourceChangeData = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ResourceChangeData = serde_json::from_slice(rsp_body)
                 .map_err(|source| resource_change_details::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| resource_change_details::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(resource_change_details::Error::DefaultResponse {
                 status_code,
@@ -184,7 +207,7 @@ pub async fn resource_change_details(
     }
 }
 pub mod resource_change_details {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -207,8 +230,8 @@ pub mod resource_change_details {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ResourceGraph/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -229,7 +252,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -243,7 +266,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -264,12 +287,12 @@ pub mod operations {
     }
 }
 pub mod graph_query {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<GraphQueryListResult, list::Error> {
+    ) -> std::result::Result<models::GraphQueryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries",
@@ -295,13 +318,13 @@ pub mod graph_query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryListResult =
+                let rsp_value: models::GraphQueryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryError =
+                let rsp_value: models::GraphQueryError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -311,7 +334,7 @@ pub mod graph_query {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -338,7 +361,7 @@ pub mod graph_query {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<GraphQueryResource, get::Error> {
+    ) -> std::result::Result<models::GraphQueryResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries/{}",
@@ -365,13 +388,13 @@ pub mod graph_query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryResource =
+                let rsp_value: models::GraphQueryResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryError =
+                let rsp_value: models::GraphQueryError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -381,7 +404,7 @@ pub mod graph_query {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -408,8 +431,8 @@ pub mod graph_query {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        properties: &GraphQueryResource,
-    ) -> std::result::Result<GraphQueryResource, create_or_update::Error> {
+        properties: &models::GraphQueryResource,
+    ) -> std::result::Result<models::GraphQueryResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries/{}",
@@ -440,13 +463,13 @@ pub mod graph_query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GraphQueryResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GraphQueryError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -456,7 +479,7 @@ pub mod graph_query {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -483,8 +506,8 @@ pub mod graph_query {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        body: &GraphQueryUpdateParameters,
-    ) -> std::result::Result<GraphQueryResource, update::Error> {
+        body: &models::GraphQueryUpdateParameters,
+    ) -> std::result::Result<models::GraphQueryResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceGraph/queries/{}",
@@ -512,13 +535,13 @@ pub mod graph_query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryResource =
+                let rsp_value: models::GraphQueryResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryError =
+                let rsp_value: models::GraphQueryError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -528,7 +551,7 @@ pub mod graph_query {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -584,7 +607,7 @@ pub mod graph_query {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: GraphQueryError =
+                let rsp_value: models::GraphQueryError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -594,7 +617,7 @@ pub mod graph_query {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

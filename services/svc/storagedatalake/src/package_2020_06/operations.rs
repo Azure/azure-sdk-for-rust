@@ -2,9 +2,52 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Service_ListFileSystems(#[from] service::list_file_systems::Error),
+    #[error(transparent)]
+    FileSystem_Create(#[from] file_system::create::Error),
+    #[error(transparent)]
+    FileSystem_SetProperties(#[from] file_system::set_properties::Error),
+    #[error(transparent)]
+    FileSystem_Delete(#[from] file_system::delete::Error),
+    #[error(transparent)]
+    FileSystem_GetProperties(#[from] file_system::get_properties::Error),
+    #[error(transparent)]
+    FileSystem_ListPaths(#[from] file_system::list_paths::Error),
+    #[error(transparent)]
+    FileSystem_ListBlobHierarchySegment(#[from] file_system::list_blob_hierarchy_segment::Error),
+    #[error(transparent)]
+    Path_Read(#[from] path::read::Error),
+    #[error(transparent)]
+    Path_Lease(#[from] path::lease::Error),
+    #[error(transparent)]
+    Path_Create(#[from] path::create::Error),
+    #[error(transparent)]
+    Path_Update(#[from] path::update::Error),
+    #[error(transparent)]
+    Path_Delete(#[from] path::delete::Error),
+    #[error(transparent)]
+    Path_GetProperties(#[from] path::get_properties::Error),
+    #[error(transparent)]
+    Path_SetAccessControl(#[from] path::set_access_control::Error),
+    #[error(transparent)]
+    Path_SetAccessControlRecursive(#[from] path::set_access_control_recursive::Error),
+    #[error(transparent)]
+    Path_FlushData(#[from] path::flush_data::Error),
+    #[error(transparent)]
+    Path_AppendData(#[from] path::append_data::Error),
+    #[error(transparent)]
+    Path_SetExpiry(#[from] path::set_expiry::Error),
+    #[error(transparent)]
+    Path_Undelete(#[from] path::undelete::Error),
+}
 pub mod service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_file_systems(
         operation_config: &crate::OperationConfig,
         resource: &str,
@@ -14,7 +57,7 @@ pub mod service {
         x_ms_client_request_id: Option<&str>,
         timeout: Option<i64>,
         x_ms_version: &str,
-    ) -> std::result::Result<FileSystemList, list_file_systems::Error> {
+    ) -> std::result::Result<models::FileSystemList, list_file_systems::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_file_systems::Error::ParseUrlError)?;
@@ -54,13 +97,13 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FileSystemList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FileSystemList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_file_systems::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_file_systems::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_file_systems::Error::DefaultResponse {
                     status_code,
@@ -70,7 +113,7 @@ pub mod service {
         }
     }
     pub mod list_file_systems {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -94,7 +137,7 @@ pub mod service {
     }
 }
 pub mod file_system {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         filesystem: &str,
@@ -135,7 +178,7 @@ pub mod file_system {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -145,7 +188,7 @@ pub mod file_system {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -218,7 +261,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| set_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_properties::Error::DefaultResponse {
                     status_code,
@@ -228,7 +271,7 @@ pub mod file_system {
         }
     }
     pub mod set_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -294,7 +337,7 @@ pub mod file_system {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -304,7 +347,7 @@ pub mod file_system {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -365,7 +408,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_properties::Error::DefaultResponse {
                     status_code,
@@ -375,7 +418,7 @@ pub mod file_system {
         }
     }
     pub mod get_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -409,7 +452,7 @@ pub mod file_system {
         recursive: bool,
         max_results: Option<i32>,
         upn: Option<bool>,
-    ) -> std::result::Result<PathList, list_paths::Error> {
+    ) -> std::result::Result<models::PathList, list_paths::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}?resource=filesystem", operation_config.base_path(), filesystem);
         let mut url = url::Url::parse(url_str).map_err(list_paths::Error::ParseUrlError)?;
@@ -453,13 +496,13 @@ pub mod file_system {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PathList =
+                let rsp_value: models::PathList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_paths::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_paths::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_paths::Error::DefaultResponse {
                     status_code,
@@ -469,7 +512,7 @@ pub mod file_system {
         }
     }
     pub mod list_paths {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -505,7 +548,7 @@ pub mod file_system {
         timeout: Option<i64>,
         x_ms_version: &str,
         x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<ListBlobsHierarchySegmentResponse, list_blob_hierarchy_segment::Error> {
+    ) -> std::result::Result<models::ListBlobsHierarchySegmentResponse, list_blob_hierarchy_segment::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}?restype=container&comp=list&hierarchy",
@@ -558,13 +601,13 @@ pub mod file_system {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListBlobsHierarchySegmentResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListBlobsHierarchySegmentResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_blob_hierarchy_segment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_blob_hierarchy_segment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_blob_hierarchy_segment::Error::DefaultResponse {
                     status_code,
@@ -574,7 +617,7 @@ pub mod file_system {
         }
     }
     pub mod list_blob_hierarchy_segment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -598,7 +641,7 @@ pub mod file_system {
     }
 }
 pub mod path {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn read(
         operation_config: &crate::OperationConfig,
         filesystem: &str,
@@ -673,7 +716,7 @@ pub mod path {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| read::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(read::Error::DefaultResponse {
                     status_code,
@@ -683,7 +726,7 @@ pub mod path {
         }
     }
     pub mod read {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200(serde_json::Value),
@@ -782,7 +825,7 @@ pub mod path {
             http::StatusCode::ACCEPTED => Ok(lease::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| lease::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(lease::Error::DefaultResponse {
                     status_code,
@@ -792,7 +835,7 @@ pub mod path {
         }
     }
     pub mod lease {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -943,7 +986,7 @@ pub mod path {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -953,7 +996,7 @@ pub mod path {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1108,14 +1151,14 @@ pub mod path {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SetAccessControlRecursiveResponse =
+                let rsp_value: models::SetAccessControlRecursiveResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1125,10 +1168,10 @@ pub mod path {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SetAccessControlRecursiveResponse),
+            Ok200(models::SetAccessControlRecursiveResponse),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1215,7 +1258,7 @@ pub mod path {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1225,7 +1268,7 @@ pub mod path {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1313,7 +1356,7 @@ pub mod path {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_properties::Error::DefaultResponse {
                     status_code,
@@ -1323,7 +1366,7 @@ pub mod path {
         }
     }
     pub mod get_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1421,7 +1464,7 @@ pub mod path {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
                     .map_err(|source| set_access_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_access_control::Error::DefaultResponse {
                     status_code,
@@ -1431,7 +1474,7 @@ pub mod path {
         }
     }
     pub mod set_access_control {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1466,7 +1509,7 @@ pub mod path {
         x_ms_acl: Option<&str>,
         x_ms_client_request_id: Option<&str>,
         x_ms_version: &str,
-    ) -> std::result::Result<SetAccessControlRecursiveResponse, set_access_control_recursive::Error> {
+    ) -> std::result::Result<models::SetAccessControlRecursiveResponse, set_access_control_recursive::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/{}?action=setAccessControlRecursive",
@@ -1517,13 +1560,13 @@ pub mod path {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SetAccessControlRecursiveResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SetAccessControlRecursiveResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| set_access_control_recursive::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
                     .map_err(|source| set_access_control_recursive::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_access_control_recursive::Error::DefaultResponse {
                     status_code,
@@ -1533,7 +1576,7 @@ pub mod path {
         }
     }
     pub mod set_access_control_recursive {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1656,7 +1699,7 @@ pub mod path {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| flush_data::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(flush_data::Error::DefaultResponse {
                     status_code,
@@ -1666,7 +1709,7 @@ pub mod path {
         }
     }
     pub mod flush_data {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1750,7 +1793,7 @@ pub mod path {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| append_data::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(append_data::Error::DefaultResponse {
                     status_code,
@@ -1760,7 +1803,7 @@ pub mod path {
         }
     }
     pub mod append_data {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1828,7 +1871,7 @@ pub mod path {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| set_expiry::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_expiry::Error::DefaultResponse {
                     status_code,
@@ -1838,7 +1881,7 @@ pub mod path {
         }
     }
     pub mod set_expiry {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1904,7 +1947,7 @@ pub mod path {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageError =
+                let rsp_value: models::StorageError =
                     serde_json::from_slice(rsp_body).map_err(|source| undelete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(undelete::Error::DefaultResponse {
                     status_code,
@@ -1914,7 +1957,7 @@ pub mod path {
         }
     }
     pub mod undelete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

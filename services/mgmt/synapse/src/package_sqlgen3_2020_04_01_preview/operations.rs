@@ -2,10 +2,45 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    SqlV3Operations_List(#[from] sql_v3_operations::list::Error),
+    #[error(transparent)]
+    SqlV3Operations_GetLocationHeaderResult(#[from] sql_v3_operations::get_location_header_result::Error),
+    #[error(transparent)]
+    SqlV3Operations_GetAzureAsyncHeaderResult(#[from] sql_v3_operations::get_azure_async_header_result::Error),
+    #[error(transparent)]
+    SqlPoolsV3_Get(#[from] sql_pools_v3::get::Error),
+    #[error(transparent)]
+    SqlPoolsV3_CreateOrUpdate(#[from] sql_pools_v3::create_or_update::Error),
+    #[error(transparent)]
+    SqlPoolsV3_Update(#[from] sql_pools_v3::update::Error),
+    #[error(transparent)]
+    SqlPoolsV3_Delete(#[from] sql_pools_v3::delete::Error),
+    #[error(transparent)]
+    SqlPoolsV3_Deactivate(#[from] sql_pools_v3::deactivate::Error),
+    #[error(transparent)]
+    SqlPoolsV3_Activate(#[from] sql_pools_v3::activate::Error),
+    #[error(transparent)]
+    SqlPoolsV3_ListByWorkspace(#[from] sql_pools_v3::list_by_workspace::Error),
+    #[error(transparent)]
+    SqlDatabases_Get(#[from] sql_databases::get::Error),
+    #[error(transparent)]
+    SqlDatabases_CreateOrUpdate(#[from] sql_databases::create_or_update::Error),
+    #[error(transparent)]
+    SqlDatabases_Update(#[from] sql_databases::update::Error),
+    #[error(transparent)]
+    SqlDatabases_Delete(#[from] sql_databases::delete::Error),
+    #[error(transparent)]
+    SqlDatabases_ListByWorkspace(#[from] sql_databases::list_by_workspace::Error),
+}
 pub mod sql_v3_operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<Vec<AvailableRpOperation>, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<Vec<models::AvailableRpOperation>, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Synapse/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -25,13 +60,13 @@ pub mod sql_v3_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<AvailableRpOperation> =
+                let rsp_value: Vec<models::AvailableRpOperation> =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -41,7 +76,7 @@ pub mod sql_v3_operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -104,7 +139,7 @@ pub mod sql_v3_operations {
             http::StatusCode::NO_CONTENT => Ok(get_location_header_result::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_location_header_result::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_location_header_result::Error::DefaultResponse {
                     status_code,
@@ -114,7 +149,7 @@ pub mod sql_v3_operations {
         }
     }
     pub mod get_location_header_result {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -147,7 +182,7 @@ pub mod sql_v3_operations {
         resource_group_name: &str,
         workspace_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<OperationResource, get_azure_async_header_result::Error> {
+    ) -> std::result::Result<models::OperationResource, get_azure_async_header_result::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/operationStatuses/{}",
@@ -180,13 +215,13 @@ pub mod sql_v3_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OperationResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_header_result::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_header_result::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_azure_async_header_result::Error::DefaultResponse {
                     status_code,
@@ -196,7 +231,7 @@ pub mod sql_v3_operations {
         }
     }
     pub mod get_azure_async_header_result {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -220,14 +255,14 @@ pub mod sql_v3_operations {
     }
 }
 pub mod sql_pools_v3 {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         sql_pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SqlPoolV3, get::Error> {
+    ) -> std::result::Result<models::SqlPoolV3, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}",
@@ -255,13 +290,13 @@ pub mod sql_pools_v3 {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlPoolV3 =
+                let rsp_value: models::SqlPoolV3 =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -271,7 +306,7 @@ pub mod sql_pools_v3 {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -298,7 +333,7 @@ pub mod sql_pools_v3 {
         resource_group_name: &str,
         workspace_name: &str,
         sql_pool_name: &str,
-        parameters: &SqlPoolV3,
+        parameters: &models::SqlPoolV3,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -332,20 +367,20 @@ pub mod sql_pools_v3 {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlPoolV3 = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlPoolV3 = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlPoolV3 = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlPoolV3 = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -355,12 +390,12 @@ pub mod sql_pools_v3 {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SqlPoolV3),
+            Ok200(models::SqlPoolV3),
             Accepted202,
-            Created201(SqlPoolV3),
+            Created201(models::SqlPoolV3),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -389,7 +424,7 @@ pub mod sql_pools_v3 {
         resource_group_name: &str,
         workspace_name: &str,
         sql_pool_name: &str,
-        parameters: &SqlPoolUpdate,
+        parameters: &models::SqlPoolUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -419,14 +454,14 @@ pub mod sql_pools_v3 {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlPoolV3 =
+                let rsp_value: models::SqlPoolV3 =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -436,10 +471,10 @@ pub mod sql_pools_v3 {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SqlPoolV3),
+            Ok200(models::SqlPoolV3),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -500,7 +535,7 @@ pub mod sql_pools_v3 {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -510,7 +545,7 @@ pub mod sql_pools_v3 {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -578,7 +613,7 @@ pub mod sql_pools_v3 {
             http::StatusCode::NO_CONTENT => Ok(deactivate::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| deactivate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(deactivate::Error::DefaultResponse {
                     status_code,
@@ -588,7 +623,7 @@ pub mod sql_pools_v3 {
         }
     }
     pub mod deactivate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -655,7 +690,7 @@ pub mod sql_pools_v3 {
             http::StatusCode::NO_CONTENT => Ok(activate::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| activate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(activate::Error::DefaultResponse {
                     status_code,
@@ -665,7 +700,7 @@ pub mod sql_pools_v3 {
         }
     }
     pub mod activate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -697,7 +732,7 @@ pub mod sql_pools_v3 {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<SqlPoolListResult, list_by_workspace::Error> {
+    ) -> std::result::Result<models::SqlPoolListResult, list_by_workspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools",
@@ -727,13 +762,13 @@ pub mod sql_pools_v3 {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlPoolListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlPoolListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_workspace::Error::DefaultResponse {
                     status_code,
@@ -743,7 +778,7 @@ pub mod sql_pools_v3 {
         }
     }
     pub mod list_by_workspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -767,14 +802,14 @@ pub mod sql_pools_v3 {
     }
 }
 pub mod sql_databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         workspace_name: &str,
         sql_database_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SqlDatabase, get::Error> {
+    ) -> std::result::Result<models::SqlDatabase, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlDatabases/{}",
@@ -802,13 +837,13 @@ pub mod sql_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlDatabase =
+                let rsp_value: models::SqlDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -818,7 +853,7 @@ pub mod sql_databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -845,7 +880,7 @@ pub mod sql_databases {
         resource_group_name: &str,
         workspace_name: &str,
         sql_database_name: &str,
-        parameters: &SqlDatabase,
+        parameters: &models::SqlDatabase,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -879,20 +914,20 @@ pub mod sql_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -902,12 +937,12 @@ pub mod sql_databases {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SqlDatabase),
+            Ok200(models::SqlDatabase),
             Accepted202,
-            Created201(SqlDatabase),
+            Created201(models::SqlDatabase),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -935,7 +970,7 @@ pub mod sql_databases {
         resource_group_name: &str,
         workspace_name: &str,
         sql_database_name: &str,
-        parameters: &SqlDatabaseUpdate,
+        parameters: &models::SqlDatabaseUpdate,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -966,14 +1001,14 @@ pub mod sql_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlDatabase =
+                let rsp_value: models::SqlDatabase =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -983,10 +1018,10 @@ pub mod sql_databases {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SqlDatabase),
+            Ok200(models::SqlDatabase),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1047,7 +1082,7 @@ pub mod sql_databases {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1057,7 +1092,7 @@ pub mod sql_databases {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1090,7 +1125,7 @@ pub mod sql_databases {
         resource_group_name: &str,
         workspace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SqlDatabaseListResult, list_by_workspace::Error> {
+    ) -> std::result::Result<models::SqlDatabaseListResult, list_by_workspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlDatabases",
@@ -1120,13 +1155,13 @@ pub mod sql_databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_workspace::Error::DefaultResponse {
                     status_code,
@@ -1136,7 +1171,7 @@ pub mod sql_databases {
         }
     }
     pub mod list_by_workspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,13 +2,30 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    OpenShiftManagedClusters_List(#[from] open_shift_managed_clusters::list::Error),
+    #[error(transparent)]
+    OpenShiftManagedClusters_ListByResourceGroup(#[from] open_shift_managed_clusters::list_by_resource_group::Error),
+    #[error(transparent)]
+    OpenShiftManagedClusters_Get(#[from] open_shift_managed_clusters::get::Error),
+    #[error(transparent)]
+    OpenShiftManagedClusters_CreateOrUpdate(#[from] open_shift_managed_clusters::create_or_update::Error),
+    #[error(transparent)]
+    OpenShiftManagedClusters_UpdateTags(#[from] open_shift_managed_clusters::update_tags::Error),
+    #[error(transparent)]
+    OpenShiftManagedClusters_Delete(#[from] open_shift_managed_clusters::delete::Error),
+}
 pub mod open_shift_managed_clusters {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<OpenShiftManagedClusterListResult, list::Error> {
+    ) -> std::result::Result<models::OpenShiftManagedClusterListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerService/openShiftManagedClusters",
@@ -33,7 +50,7 @@ pub mod open_shift_managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OpenShiftManagedClusterListResult =
+                let rsp_value: models::OpenShiftManagedClusterListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -47,7 +64,7 @@ pub mod open_shift_managed_clusters {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -70,7 +87,7 @@ pub mod open_shift_managed_clusters {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<OpenShiftManagedClusterListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::OpenShiftManagedClusterListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/openShiftManagedClusters",
@@ -101,7 +118,7 @@ pub mod open_shift_managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OpenShiftManagedClusterListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OpenShiftManagedClusterListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -115,7 +132,7 @@ pub mod open_shift_managed_clusters {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -139,7 +156,7 @@ pub mod open_shift_managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<OpenShiftManagedCluster, get::Error> {
+    ) -> std::result::Result<models::OpenShiftManagedCluster, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/openShiftManagedClusters/{}",
@@ -166,13 +183,13 @@ pub mod open_shift_managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OpenShiftManagedCluster =
+                let rsp_value: models::OpenShiftManagedCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -182,7 +199,7 @@ pub mod open_shift_managed_clusters {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -209,7 +226,7 @@ pub mod open_shift_managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &OpenShiftManagedCluster,
+        parameters: &models::OpenShiftManagedCluster,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -241,19 +258,19 @@ pub mod open_shift_managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OpenShiftManagedCluster = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OpenShiftManagedCluster = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: OpenShiftManagedCluster = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OpenShiftManagedCluster = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -263,11 +280,11 @@ pub mod open_shift_managed_clusters {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OpenShiftManagedCluster),
-            Created201(OpenShiftManagedCluster),
+            Ok200(models::OpenShiftManagedCluster),
+            Created201(models::OpenShiftManagedCluster),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -295,8 +312,8 @@ pub mod open_shift_managed_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &TagsObject,
-    ) -> std::result::Result<OpenShiftManagedCluster, update_tags::Error> {
+        parameters: &models::TagsObject,
+    ) -> std::result::Result<models::OpenShiftManagedCluster, update_tags::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerService/openShiftManagedClusters/{}",
@@ -327,13 +344,13 @@ pub mod open_shift_managed_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OpenShiftManagedCluster =
+                let rsp_value: models::OpenShiftManagedCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| update_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update_tags::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_tags::Error::DefaultResponse {
                     status_code,
@@ -343,7 +360,7 @@ pub mod open_shift_managed_clusters {
         }
     }
     pub mod update_tags {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -399,7 +416,7 @@ pub mod open_shift_managed_clusters {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -409,7 +426,7 @@ pub mod open_shift_managed_clusters {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,

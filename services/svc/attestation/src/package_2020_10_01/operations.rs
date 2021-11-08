@@ -2,10 +2,40 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Policy_Get(#[from] policy::get::Error),
+    #[error(transparent)]
+    Policy_Set(#[from] policy::set::Error),
+    #[error(transparent)]
+    Policy_Reset(#[from] policy::reset::Error),
+    #[error(transparent)]
+    PolicyCertificates_Get(#[from] policy_certificates::get::Error),
+    #[error(transparent)]
+    PolicyCertificates_Add(#[from] policy_certificates::add::Error),
+    #[error(transparent)]
+    PolicyCertificates_Remove(#[from] policy_certificates::remove::Error),
+    #[error(transparent)]
+    Attestation_AttestOpenEnclave(#[from] attestation::attest_open_enclave::Error),
+    #[error(transparent)]
+    Attestation_AttestSgxEnclave(#[from] attestation::attest_sgx_enclave::Error),
+    #[error(transparent)]
+    Attestation_AttestTpm(#[from] attestation::attest_tpm::Error),
+    #[error(transparent)]
+    SigningCertificates_Get(#[from] signing_certificates::get::Error),
+    #[error(transparent)]
+    MetadataConfiguration_Get(#[from] metadata_configuration::get::Error),
+}
 pub mod policy {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, attestation_type: &str) -> std::result::Result<PolicyResponse, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        attestation_type: &str,
+    ) -> std::result::Result<models::PolicyResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/policies/{}", operation_config.base_path(), attestation_type);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -26,13 +56,13 @@ pub mod policy {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyResponse =
+                let rsp_value: models::PolicyResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -42,7 +72,7 @@ pub mod policy {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -67,8 +97,8 @@ pub mod policy {
     pub async fn set(
         operation_config: &crate::OperationConfig,
         attestation_type: &str,
-        new_attestation_policy: &JsonWebToken,
-    ) -> std::result::Result<PolicyResponse, set::Error> {
+        new_attestation_policy: &models::JsonWebToken,
+    ) -> std::result::Result<models::PolicyResponse, set::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/policies/{}", operation_config.base_path(), attestation_type);
         let mut url = url::Url::parse(url_str).map_err(set::Error::ParseUrlError)?;
@@ -90,13 +120,13 @@ pub mod policy {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyResponse =
+                let rsp_value: models::PolicyResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| set::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| set::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set::Error::DefaultResponse {
                     status_code,
@@ -106,7 +136,7 @@ pub mod policy {
         }
     }
     pub mod set {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -131,8 +161,8 @@ pub mod policy {
     pub async fn reset(
         operation_config: &crate::OperationConfig,
         attestation_type: &str,
-        policy_jws: &JsonWebToken,
-    ) -> std::result::Result<PolicyResponse, reset::Error> {
+        policy_jws: &models::JsonWebToken,
+    ) -> std::result::Result<models::PolicyResponse, reset::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/policies/{}:reset", operation_config.base_path(), attestation_type);
         let mut url = url::Url::parse(url_str).map_err(reset::Error::ParseUrlError)?;
@@ -154,13 +184,13 @@ pub mod policy {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyResponse =
+                let rsp_value: models::PolicyResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| reset::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| reset::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(reset::Error::DefaultResponse {
                     status_code,
@@ -170,7 +200,7 @@ pub mod policy {
         }
     }
     pub mod reset {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -194,8 +224,8 @@ pub mod policy {
     }
 }
 pub mod policy_certificates {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<PolicyCertificatesResponse, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<models::PolicyCertificatesResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certificates", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -216,13 +246,13 @@ pub mod policy_certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyCertificatesResponse =
+                let rsp_value: models::PolicyCertificatesResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -232,7 +262,7 @@ pub mod policy_certificates {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -256,8 +286,8 @@ pub mod policy_certificates {
     }
     pub async fn add(
         operation_config: &crate::OperationConfig,
-        policy_certificate_to_add: &JsonWebToken,
-    ) -> std::result::Result<PolicyCertificatesModifyResponse, add::Error> {
+        policy_certificate_to_add: &models::JsonWebToken,
+    ) -> std::result::Result<models::PolicyCertificatesModifyResponse, add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certificates:add", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
@@ -279,13 +309,13 @@ pub mod policy_certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyCertificatesModifyResponse =
+                let rsp_value: models::PolicyCertificatesModifyResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -295,7 +325,7 @@ pub mod policy_certificates {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -319,8 +349,8 @@ pub mod policy_certificates {
     }
     pub async fn remove(
         operation_config: &crate::OperationConfig,
-        policy_certificate_to_remove: &JsonWebToken,
-    ) -> std::result::Result<PolicyCertificatesModifyResponse, remove::Error> {
+        policy_certificate_to_remove: &models::JsonWebToken,
+    ) -> std::result::Result<models::PolicyCertificatesModifyResponse, remove::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certificates:remove", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(remove::Error::ParseUrlError)?;
@@ -342,13 +372,13 @@ pub mod policy_certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PolicyCertificatesModifyResponse =
+                let rsp_value: models::PolicyCertificatesModifyResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| remove::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| remove::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(remove::Error::DefaultResponse {
                     status_code,
@@ -358,7 +388,7 @@ pub mod policy_certificates {
         }
     }
     pub mod remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -382,11 +412,11 @@ pub mod policy_certificates {
     }
 }
 pub mod attestation {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn attest_open_enclave(
         operation_config: &crate::OperationConfig,
-        request: &AttestOpenEnclaveRequest,
-    ) -> std::result::Result<AttestationResponse, attest_open_enclave::Error> {
+        request: &models::AttestOpenEnclaveRequest,
+    ) -> std::result::Result<models::AttestationResponse, attest_open_enclave::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/attest/OpenEnclave", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(attest_open_enclave::Error::ParseUrlError)?;
@@ -411,13 +441,13 @@ pub mod attestation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AttestationResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| attest_open_enclave::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| attest_open_enclave::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(attest_open_enclave::Error::DefaultResponse {
                     status_code,
@@ -427,7 +457,7 @@ pub mod attestation {
         }
     }
     pub mod attest_open_enclave {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -451,8 +481,8 @@ pub mod attestation {
     }
     pub async fn attest_sgx_enclave(
         operation_config: &crate::OperationConfig,
-        request: &AttestSgxEnclaveRequest,
-    ) -> std::result::Result<AttestationResponse, attest_sgx_enclave::Error> {
+        request: &models::AttestSgxEnclaveRequest,
+    ) -> std::result::Result<models::AttestationResponse, attest_sgx_enclave::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/attest/SgxEnclave", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(attest_sgx_enclave::Error::ParseUrlError)?;
@@ -477,13 +507,13 @@ pub mod attestation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AttestationResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AttestationResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| attest_sgx_enclave::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| attest_sgx_enclave::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(attest_sgx_enclave::Error::DefaultResponse {
                     status_code,
@@ -493,7 +523,7 @@ pub mod attestation {
         }
     }
     pub mod attest_sgx_enclave {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -517,8 +547,8 @@ pub mod attestation {
     }
     pub async fn attest_tpm(
         operation_config: &crate::OperationConfig,
-        request: &TpmAttestationRequest,
-    ) -> std::result::Result<TpmAttestationResponse, attest_tpm::Error> {
+        request: &models::TpmAttestationRequest,
+    ) -> std::result::Result<models::TpmAttestationResponse, attest_tpm::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/attest/Tpm", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(attest_tpm::Error::ParseUrlError)?;
@@ -543,13 +573,13 @@ pub mod attestation {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TpmAttestationResponse =
+                let rsp_value: models::TpmAttestationResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| attest_tpm::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| attest_tpm::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(attest_tpm::Error::DefaultResponse {
                     status_code,
@@ -559,7 +589,7 @@ pub mod attestation {
         }
     }
     pub mod attest_tpm {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -583,8 +613,8 @@ pub mod attestation {
     }
 }
 pub mod signing_certificates {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<JsonWebKeySet, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<models::JsonWebKeySet, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certs", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -604,13 +634,13 @@ pub mod signing_certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JsonWebKeySet =
+                let rsp_value: models::JsonWebKeySet =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -620,7 +650,7 @@ pub mod signing_certificates {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -644,7 +674,7 @@ pub mod signing_certificates {
     }
 }
 pub mod metadata_configuration {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<serde_json::Value, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/.well-known/openid-configuration", operation_config.base_path(),);
@@ -671,7 +701,7 @@ pub mod metadata_configuration {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -681,7 +711,7 @@ pub mod metadata_configuration {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

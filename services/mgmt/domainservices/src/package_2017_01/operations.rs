@@ -2,10 +2,29 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    DomainServiceOperations_List(#[from] domain_service_operations::list::Error),
+    #[error(transparent)]
+    DomainServices_List(#[from] domain_services::list::Error),
+    #[error(transparent)]
+    DomainServices_ListByResourceGroup(#[from] domain_services::list_by_resource_group::Error),
+    #[error(transparent)]
+    DomainServices_Get(#[from] domain_services::get::Error),
+    #[error(transparent)]
+    DomainServices_CreateOrUpdate(#[from] domain_services::create_or_update::Error),
+    #[error(transparent)]
+    DomainServices_Update(#[from] domain_services::update::Error),
+    #[error(transparent)]
+    DomainServices_Delete(#[from] domain_services::delete::Error),
+}
 pub mod domain_service_operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationEntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.AAD/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +45,7 @@ pub mod domain_service_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationEntityListResult =
+                let rsp_value: models::OperationEntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +59,7 @@ pub mod domain_service_operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,11 +80,11 @@ pub mod domain_service_operations {
     }
 }
 pub mod domain_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DomainServiceListResult, list::Error> {
+    ) -> std::result::Result<models::DomainServiceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.AAD/domainServices",
@@ -90,7 +109,7 @@ pub mod domain_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainServiceListResult =
+                let rsp_value: models::DomainServiceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -104,7 +123,7 @@ pub mod domain_services {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -127,7 +146,7 @@ pub mod domain_services {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DomainServiceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DomainServiceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AAD/domainServices",
@@ -158,7 +177,7 @@ pub mod domain_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainServiceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DomainServiceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -172,7 +191,7 @@ pub mod domain_services {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -196,7 +215,7 @@ pub mod domain_services {
         subscription_id: &str,
         resource_group_name: &str,
         domain_service_name: &str,
-    ) -> std::result::Result<DomainService, get::Error> {
+    ) -> std::result::Result<models::DomainService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AAD/domainServices/{}",
@@ -223,7 +242,7 @@ pub mod domain_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainService =
+                let rsp_value: models::DomainService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -237,7 +256,7 @@ pub mod domain_services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -261,7 +280,7 @@ pub mod domain_services {
         subscription_id: &str,
         resource_group_name: &str,
         domain_service_name: &str,
-        domain_service: &DomainService,
+        domain_service: &models::DomainService,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -293,19 +312,19 @@ pub mod domain_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DomainService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DomainService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DomainService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
@@ -319,12 +338,12 @@ pub mod domain_services {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DomainService),
-            Created201(DomainService),
-            Accepted202(DomainService),
+            Ok200(models::DomainService),
+            Created201(models::DomainService),
+            Accepted202(models::DomainService),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -349,7 +368,7 @@ pub mod domain_services {
         subscription_id: &str,
         resource_group_name: &str,
         domain_service_name: &str,
-        domain_service: &DomainService,
+        domain_service: &models::DomainService,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -378,13 +397,13 @@ pub mod domain_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainService =
+                let rsp_value: models::DomainService =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainService =
+                let rsp_value: models::DomainService =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
@@ -398,11 +417,11 @@ pub mod domain_services {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DomainService),
-            Accepted202(DomainService),
+            Ok200(models::DomainService),
+            Accepted202(models::DomainService),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -464,7 +483,7 @@ pub mod domain_services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,

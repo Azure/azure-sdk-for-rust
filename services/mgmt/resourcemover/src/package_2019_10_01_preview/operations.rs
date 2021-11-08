@@ -2,15 +2,58 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    MoveCollections_Get(#[from] move_collections::get::Error),
+    #[error(transparent)]
+    MoveCollections_Create(#[from] move_collections::create::Error),
+    #[error(transparent)]
+    MoveCollections_Update(#[from] move_collections::update::Error),
+    #[error(transparent)]
+    MoveCollections_Delete(#[from] move_collections::delete::Error),
+    #[error(transparent)]
+    MoveCollections_Prepare(#[from] move_collections::prepare::Error),
+    #[error(transparent)]
+    MoveCollections_InitiateMove(#[from] move_collections::initiate_move::Error),
+    #[error(transparent)]
+    MoveCollections_Commit(#[from] move_collections::commit::Error),
+    #[error(transparent)]
+    MoveCollections_Discard(#[from] move_collections::discard::Error),
+    #[error(transparent)]
+    MoveCollections_ResolveDependencies(#[from] move_collections::resolve_dependencies::Error),
+    #[error(transparent)]
+    MoveResources_List(#[from] move_resources::list::Error),
+    #[error(transparent)]
+    UnresolvedDependencies_Get(#[from] unresolved_dependencies::get::Error),
+    #[error(transparent)]
+    MoveCollections_BulkRemove(#[from] move_collections::bulk_remove::Error),
+    #[error(transparent)]
+    MoveResources_Get(#[from] move_resources::get::Error),
+    #[error(transparent)]
+    MoveResources_Create(#[from] move_resources::create::Error),
+    #[error(transparent)]
+    MoveResources_Delete(#[from] move_resources::delete::Error),
+    #[error(transparent)]
+    OperationsDiscovery_Get(#[from] operations_discovery::get::Error),
+    #[error(transparent)]
+    MoveCollections_ListMoveCollectionsBySubscription(#[from] move_collections::list_move_collections_by_subscription::Error),
+    #[error(transparent)]
+    MoveCollections_ListMoveCollectionsByResourceGroup(#[from] move_collections::list_move_collections_by_resource_group::Error),
+    #[error(transparent)]
+    MoveCollections_ListRequiredFor(#[from] move_collections::list_required_for::Error),
+}
 pub mod move_collections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-    ) -> std::result::Result<MoveCollection, get::Error> {
+    ) -> std::result::Result<models::MoveCollection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/moveCollections/{}",
@@ -37,13 +80,13 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveCollection =
+                let rsp_value: models::MoveCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +96,7 @@ pub mod move_collections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,7 +123,7 @@ pub mod move_collections {
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-        body: Option<&MoveCollection>,
+        body: Option<&models::MoveCollection>,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -113,19 +156,19 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveCollection =
+                let rsp_value: models::MoveCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveCollection =
+                let rsp_value: models::MoveCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -135,11 +178,11 @@ pub mod move_collections {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(MoveCollection),
-            Ok200(MoveCollection),
+            Created201(models::MoveCollection),
+            Ok200(models::MoveCollection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -167,8 +210,8 @@ pub mod move_collections {
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-        body: Option<&UpdateMoveCollectionRequest>,
-    ) -> std::result::Result<MoveCollection, update::Error> {
+        body: Option<&models::UpdateMoveCollectionRequest>,
+    ) -> std::result::Result<models::MoveCollection, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/moveCollections/{}",
@@ -200,13 +243,13 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveCollection =
+                let rsp_value: models::MoveCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -216,7 +259,7 @@ pub mod move_collections {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -270,7 +313,7 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -278,7 +321,7 @@ pub mod move_collections {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -288,10 +331,10 @@ pub mod move_collections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationStatus),
+            Ok200(models::OperationStatus),
             Accepted202,
             NoContent204,
         }
@@ -321,7 +364,7 @@ pub mod move_collections {
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-        body: Option<&PrepareRequest>,
+        body: Option<&models::PrepareRequest>,
     ) -> std::result::Result<prepare::Response, prepare::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -357,14 +400,14 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| prepare::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(prepare::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(prepare::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| prepare::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(prepare::Error::DefaultResponse {
                     status_code,
@@ -374,10 +417,10 @@ pub mod move_collections {
         }
     }
     pub mod prepare {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationStatus),
+            Ok200(models::OperationStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -406,7 +449,7 @@ pub mod move_collections {
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-        body: Option<&ResourceMoveRequest>,
+        body: Option<&models::ResourceMoveRequest>,
     ) -> std::result::Result<initiate_move::Response, initiate_move::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -442,14 +485,14 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| initiate_move::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(initiate_move::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(initiate_move::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| initiate_move::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(initiate_move::Error::DefaultResponse {
                     status_code,
@@ -459,10 +502,10 @@ pub mod move_collections {
         }
     }
     pub mod initiate_move {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationStatus),
+            Ok200(models::OperationStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -491,7 +534,7 @@ pub mod move_collections {
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-        body: Option<&CommitRequest>,
+        body: Option<&models::CommitRequest>,
     ) -> std::result::Result<commit::Response, commit::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -524,14 +567,14 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| commit::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(commit::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(commit::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| commit::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(commit::Error::DefaultResponse {
                     status_code,
@@ -541,10 +584,10 @@ pub mod move_collections {
         }
     }
     pub mod commit {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationStatus),
+            Ok200(models::OperationStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -573,7 +616,7 @@ pub mod move_collections {
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-        body: Option<&DiscardRequest>,
+        body: Option<&models::DiscardRequest>,
     ) -> std::result::Result<discard::Response, discard::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -609,14 +652,14 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| discard::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(discard::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(discard::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| discard::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(discard::Error::DefaultResponse {
                     status_code,
@@ -626,10 +669,10 @@ pub mod move_collections {
         }
     }
     pub mod discard {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationStatus),
+            Ok200(models::OperationStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -689,14 +732,14 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OperationStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| resolve_dependencies::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(resolve_dependencies::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(resolve_dependencies::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| resolve_dependencies::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(resolve_dependencies::Error::DefaultResponse {
                     status_code,
@@ -706,10 +749,10 @@ pub mod move_collections {
         }
     }
     pub mod resolve_dependencies {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationStatus),
+            Ok200(models::OperationStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -738,7 +781,7 @@ pub mod move_collections {
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-        body: Option<&BulkRemoveRequest>,
+        body: Option<&models::BulkRemoveRequest>,
     ) -> std::result::Result<bulk_remove::Response, bulk_remove::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -774,14 +817,14 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| bulk_remove::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(bulk_remove::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(bulk_remove::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| bulk_remove::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(bulk_remove::Error::DefaultResponse {
                     status_code,
@@ -791,10 +834,10 @@ pub mod move_collections {
         }
     }
     pub mod bulk_remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationStatus),
+            Ok200(models::OperationStatus),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -821,7 +864,7 @@ pub mod move_collections {
     pub async fn list_move_collections_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<MoveCollectionResultList, list_move_collections_by_subscription::Error> {
+    ) -> std::result::Result<models::MoveCollectionResultList, list_move_collections_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Migrate/moveCollections",
@@ -851,13 +894,13 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveCollectionResultList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MoveCollectionResultList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_move_collections_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_move_collections_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_move_collections_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -867,7 +910,7 @@ pub mod move_collections {
         }
     }
     pub mod list_move_collections_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -893,7 +936,7 @@ pub mod move_collections {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<MoveCollectionResultList, list_move_collections_by_resource_group::Error> {
+    ) -> std::result::Result<models::MoveCollectionResultList, list_move_collections_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/moveCollections",
@@ -924,13 +967,13 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveCollectionResultList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MoveCollectionResultList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_move_collections_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_move_collections_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_move_collections_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -940,7 +983,7 @@ pub mod move_collections {
         }
     }
     pub mod list_move_collections_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -968,7 +1011,7 @@ pub mod move_collections {
         resource_group_name: &str,
         move_collection_name: &str,
         source_id: &str,
-    ) -> std::result::Result<RequiredForResourcesCollection, list_required_for::Error> {
+    ) -> std::result::Result<models::RequiredForResourcesCollection, list_required_for::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/moveCollections/{}/requiredFor",
@@ -999,13 +1042,13 @@ pub mod move_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RequiredForResourcesCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RequiredForResourcesCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_required_for::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_required_for::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_required_for::Error::DefaultResponse {
                     status_code,
@@ -1015,7 +1058,7 @@ pub mod move_collections {
         }
     }
     pub mod list_required_for {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1039,14 +1082,14 @@ pub mod move_collections {
     }
 }
 pub mod move_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<MoveResourceCollection, list::Error> {
+    ) -> std::result::Result<models::MoveResourceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/moveCollections/{}/moveResources",
@@ -1076,13 +1119,13 @@ pub mod move_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveResourceCollection =
+                let rsp_value: models::MoveResourceCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1092,7 +1135,7 @@ pub mod move_resources {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1120,7 +1163,7 @@ pub mod move_resources {
         resource_group_name: &str,
         move_collection_name: &str,
         move_resource_name: &str,
-    ) -> std::result::Result<MoveResource, get::Error> {
+    ) -> std::result::Result<models::MoveResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/moveCollections/{}/moveResources/{}",
@@ -1148,13 +1191,13 @@ pub mod move_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveResource =
+                let rsp_value: models::MoveResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1164,7 +1207,7 @@ pub mod move_resources {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1192,7 +1235,7 @@ pub mod move_resources {
         resource_group_name: &str,
         move_collection_name: &str,
         move_resource_name: &str,
-        body: Option<&MoveResource>,
+        body: Option<&models::MoveResource>,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1227,13 +1270,13 @@ pub mod move_resources {
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MoveResource =
+                let rsp_value: models::MoveResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1243,11 +1286,11 @@ pub mod move_resources {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(MoveResource),
+            Ok200(models::MoveResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1304,7 +1347,7 @@ pub mod move_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -1312,7 +1355,7 @@ pub mod move_resources {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1322,10 +1365,10 @@ pub mod move_resources {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationStatus),
+            Ok200(models::OperationStatus),
             Accepted202,
             NoContent204,
         }
@@ -1352,7 +1395,7 @@ pub mod move_resources {
     }
 }
 pub mod unresolved_dependencies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1361,7 +1404,7 @@ pub mod unresolved_dependencies {
         dependency_level: Option<&str>,
         orderby: Option<&str>,
         filter: Option<&str>,
-    ) -> std::result::Result<UnresolvedDependencyCollection, get::Error> {
+    ) -> std::result::Result<models::UnresolvedDependencyCollection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/moveCollections/{}/unresolvedDependencies",
@@ -1397,13 +1440,13 @@ pub mod unresolved_dependencies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnresolvedDependencyCollection =
+                let rsp_value: models::UnresolvedDependencyCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1413,7 +1456,7 @@ pub mod unresolved_dependencies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1437,8 +1480,8 @@ pub mod unresolved_dependencies {
     }
 }
 pub mod operations_discovery {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsDiscoveryCollection, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsDiscoveryCollection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Migrate/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1459,13 +1502,13 @@ pub mod operations_discovery {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsDiscoveryCollection =
+                let rsp_value: models::OperationsDiscoveryCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1475,7 +1518,7 @@ pub mod operations_discovery {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

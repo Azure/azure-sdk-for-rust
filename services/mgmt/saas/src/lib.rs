@@ -7,7 +7,7 @@
 pub mod package_2018_03_01_beta;
 use azure_core::setters;
 #[cfg(all(feature = "package-2018-03-01-beta", not(feature = "no-default-version")))]
-pub use package_2018_03_01_beta::{models, operations};
+pub use package_2018_03_01_beta::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

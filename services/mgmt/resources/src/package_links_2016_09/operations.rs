@@ -2,10 +2,27 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    ResourceLinks_Get(#[from] resource_links::get::Error),
+    #[error(transparent)]
+    ResourceLinks_CreateOrUpdate(#[from] resource_links::create_or_update::Error),
+    #[error(transparent)]
+    ResourceLinks_Delete(#[from] resource_links::delete::Error),
+    #[error(transparent)]
+    ResourceLinks_ListAtSubscription(#[from] resource_links::list_at_subscription::Error),
+    #[error(transparent)]
+    ResourceLinks_ListAtSourceScope(#[from] resource_links::list_at_source_scope::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Resources/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +43,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +57,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,8 +78,8 @@ pub mod operations {
     }
 }
 pub mod resource_links {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, link_id: &str) -> std::result::Result<ResourceLink, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig, link_id: &str) -> std::result::Result<models::ResourceLink, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}", operation_config.base_path(), link_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -83,7 +100,7 @@ pub mod resource_links {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceLink =
+                let rsp_value: models::ResourceLink =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -97,7 +114,7 @@ pub mod resource_links {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -119,7 +136,7 @@ pub mod resource_links {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         link_id: &str,
-        parameters: &ResourceLink,
+        parameters: &models::ResourceLink,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}", operation_config.base_path(), link_id);
@@ -145,13 +162,13 @@ pub mod resource_links {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceLink = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ResourceLink = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceLink = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ResourceLink = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -165,11 +182,11 @@ pub mod resource_links {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(ResourceLink),
-            Ok200(ResourceLink),
+            Created201(models::ResourceLink),
+            Ok200(models::ResourceLink),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -220,7 +237,7 @@ pub mod resource_links {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -248,7 +265,7 @@ pub mod resource_links {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceLinkResult, list_at_subscription::Error> {
+    ) -> std::result::Result<models::ResourceLinkResult, list_at_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Resources/links",
@@ -279,7 +296,7 @@ pub mod resource_links {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceLinkResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ResourceLinkResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_at_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -293,7 +310,7 @@ pub mod resource_links {
         }
     }
     pub mod list_at_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -316,7 +333,7 @@ pub mod resource_links {
         operation_config: &crate::OperationConfig,
         scope: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<ResourceLinkResult, list_at_source_scope::Error> {
+    ) -> std::result::Result<models::ResourceLinkResult, list_at_source_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/providers/Microsoft.Resources/links", operation_config.base_path(), scope);
         let mut url = url::Url::parse(url_str).map_err(list_at_source_scope::Error::ParseUrlError)?;
@@ -343,7 +360,7 @@ pub mod resource_links {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceLinkResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ResourceLinkResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_at_source_scope::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -357,7 +374,7 @@ pub mod resource_links {
         }
     }
     pub mod list_at_source_scope {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

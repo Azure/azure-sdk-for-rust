@@ -2,10 +2,27 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    AdcOperations_List(#[from] adc_operations::list::Error),
+    #[error(transparent)]
+    AdcCatalogs_ListtByResourceGroup(#[from] adc_catalogs::listt_by_resource_group::Error),
+    #[error(transparent)]
+    AdcCatalogs_Get(#[from] adc_catalogs::get::Error),
+    #[error(transparent)]
+    AdcCatalogs_CreateOrUpdate(#[from] adc_catalogs::create_or_update::Error),
+    #[error(transparent)]
+    AdcCatalogs_Update(#[from] adc_catalogs::update::Error),
+    #[error(transparent)]
+    AdcCatalogs_Delete(#[from] adc_catalogs::delete::Error),
+}
 pub mod adc_operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationEntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataCatalog/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +43,7 @@ pub mod adc_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationEntityListResult =
+                let rsp_value: models::OperationEntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +57,7 @@ pub mod adc_operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,12 +78,12 @@ pub mod adc_operations {
     }
 }
 pub mod adc_catalogs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn listt_by_resource_group(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<AdcCatalogsListResult, listt_by_resource_group::Error> {
+    ) -> std::result::Result<models::AdcCatalogsListResult, listt_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataCatalog/catalogs",
@@ -97,7 +114,7 @@ pub mod adc_catalogs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdcCatalogsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdcCatalogsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| listt_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -111,7 +128,7 @@ pub mod adc_catalogs {
         }
     }
     pub mod listt_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -135,7 +152,7 @@ pub mod adc_catalogs {
         subscription_id: &str,
         resource_group_name: &str,
         catalog_name: &str,
-    ) -> std::result::Result<AdcCatalog, get::Error> {
+    ) -> std::result::Result<models::AdcCatalog, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataCatalog/catalogs/{}",
@@ -162,7 +179,7 @@ pub mod adc_catalogs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdcCatalog =
+                let rsp_value: models::AdcCatalog =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -176,7 +193,7 @@ pub mod adc_catalogs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -200,7 +217,7 @@ pub mod adc_catalogs {
         subscription_id: &str,
         resource_group_name: &str,
         catalog_name: &str,
-        properties: &AdcCatalog,
+        properties: &models::AdcCatalog,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -232,13 +249,13 @@ pub mod adc_catalogs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdcCatalog = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdcCatalog = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdcCatalog = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdcCatalog = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -252,11 +269,11 @@ pub mod adc_catalogs {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AdcCatalog),
-            Created201(AdcCatalog),
+            Ok200(models::AdcCatalog),
+            Created201(models::AdcCatalog),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -281,8 +298,8 @@ pub mod adc_catalogs {
         subscription_id: &str,
         resource_group_name: &str,
         catalog_name: &str,
-        properties: &AdcCatalog,
-    ) -> std::result::Result<AdcCatalog, update::Error> {
+        properties: &models::AdcCatalog,
+    ) -> std::result::Result<models::AdcCatalog, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataCatalog/catalogs/{}",
@@ -310,7 +327,7 @@ pub mod adc_catalogs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdcCatalog =
+                let rsp_value: models::AdcCatalog =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -324,7 +341,7 @@ pub mod adc_catalogs {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -386,7 +403,7 @@ pub mod adc_catalogs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

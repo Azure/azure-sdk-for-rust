@@ -1,7 +1,7 @@
 use crate::{
     codegen::{
         create_generated_by_header, enum_values_as_strings, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref,
-        is_array, is_basic_type, is_local_enum, is_local_struct, is_vec, require, AsReference, Error,
+        is_array, is_basic_type, is_local_enum, is_local_struct, is_vec, require, Error,
     },
     identifier::{ident, CamelCaseIdent},
     spec, CodeGen, PropertyName, ResolvedSchema,
@@ -51,8 +51,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     }
 
     // any referenced schemas from other files
-    for (doc_file, doc) in cg.spec.input_docs() {
-        for reference in openapi::get_api_schema_references(doc) {
+    for (doc_file, api) in cg.spec.input_docs() {
+        for reference in openapi::get_api_schema_references(doc_file, api) {
             add_schema_refs(cg, &mut all_schemas, doc_file, reference)?;
         }
     }
@@ -86,7 +86,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
 
 fn create_basic_type_alias(property_name: &str, property: &ResolvedSchema) -> Result<(TokenStream, TokenStream), Error> {
     let id = ident(&property_name.to_camel_case()).map_err(Error::StructName)?;
-    let value = get_type_name_for_schema(&property.schema.common, AsReference::False)?;
+    let value = get_type_name_for_schema(&property.schema.common)?.to_token_stream(false, false)?;
     Ok((id, value))
 }
 
@@ -158,7 +158,7 @@ fn create_enum(
 fn create_vec_alias(alias_name: &str, schema: &ResolvedSchema) -> Result<TokenStream, Error> {
     let items = get_schema_array_items(&schema.schema.common)?;
     let typ = ident(&alias_name.to_camel_case()).map_err(Error::VecAliasName)?;
-    let items_typ = get_type_name_for_schema_ref(items, AsReference::False)?;
+    let items_typ = get_type_name_for_schema_ref(items)?.to_token_stream(false, false)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
@@ -172,7 +172,7 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
     let required: HashSet<&str> = schema.schema.required.iter().map(String::as_str).collect();
 
     for schema in &schema.schema.all_of {
-        let type_name = get_type_name_for_schema_ref(schema, AsReference::False)?;
+        let type_name = get_type_name_for_schema_ref(schema)?.to_token_stream(false, false)?;
         let field_name = ident(&type_name.to_string().to_snake_case()).map_err(Error::StructFieldName)?;
         props.extend(quote! {
             #[serde(flatten)]
@@ -285,7 +285,10 @@ fn create_struct_field_type(
                 // println!("creating local struct {:?} {}", tp_name, tps.len());
                 Ok((tp_name, tps))
             } else {
-                Ok((get_type_name_for_schema(&property.schema.common, AsReference::False)?, Vec::new()))
+                Ok((
+                    get_type_name_for_schema(&property.schema.common)?.to_token_stream(false, false)?,
+                    Vec::new(),
+                ))
             }
         }
     }

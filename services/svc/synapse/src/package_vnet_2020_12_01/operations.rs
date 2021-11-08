@@ -2,14 +2,27 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ManagedPrivateEndpoints_Get(#[from] managed_private_endpoints::get::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_Create(#[from] managed_private_endpoints::create::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_Delete(#[from] managed_private_endpoints::delete::Error),
+    #[error(transparent)]
+    ManagedPrivateEndpoints_List(#[from] managed_private_endpoints::list::Error),
+}
 pub mod managed_private_endpoints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         managed_virtual_network_name: &str,
         managed_private_endpoint_name: &str,
-    ) -> std::result::Result<ManagedPrivateEndpoint, get::Error> {
+    ) -> std::result::Result<models::ManagedPrivateEndpoint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
@@ -35,7 +48,7 @@ pub mod managed_private_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedPrivateEndpoint =
+                let rsp_value: models::ManagedPrivateEndpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -49,7 +62,7 @@ pub mod managed_private_endpoints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -72,8 +85,8 @@ pub mod managed_private_endpoints {
         operation_config: &crate::OperationConfig,
         managed_virtual_network_name: &str,
         managed_private_endpoint_name: &str,
-        managed_private_endpoint: &ManagedPrivateEndpoint,
-    ) -> std::result::Result<ManagedPrivateEndpoint, create::Error> {
+        managed_private_endpoint: &models::ManagedPrivateEndpoint,
+    ) -> std::result::Result<models::ManagedPrivateEndpoint, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
@@ -100,7 +113,7 @@ pub mod managed_private_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedPrivateEndpoint =
+                let rsp_value: models::ManagedPrivateEndpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -114,7 +127,7 @@ pub mod managed_private_endpoints {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -173,7 +186,7 @@ pub mod managed_private_endpoints {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -200,7 +213,7 @@ pub mod managed_private_endpoints {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         managed_virtual_network_name: &str,
-    ) -> std::result::Result<ManagedPrivateEndpointListResponse, list::Error> {
+    ) -> std::result::Result<models::ManagedPrivateEndpointListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/managedVirtualNetworks/{}/managedPrivateEndpoints",
@@ -225,7 +238,7 @@ pub mod managed_private_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedPrivateEndpointListResponse =
+                let rsp_value: models::ManagedPrivateEndpointListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -239,7 +252,7 @@ pub mod managed_private_endpoints {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

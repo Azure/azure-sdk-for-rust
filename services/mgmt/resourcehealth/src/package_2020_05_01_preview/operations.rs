@@ -2,15 +2,30 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    AvailabilityStatuses_ListBySubscriptionId(#[from] availability_statuses::list_by_subscription_id::Error),
+    #[error(transparent)]
+    AvailabilityStatuses_ListByResourceGroup(#[from] availability_statuses::list_by_resource_group::Error),
+    #[error(transparent)]
+    AvailabilityStatuses_GetByResource(#[from] availability_statuses::get_by_resource::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    AvailabilityStatuses_List(#[from] availability_statuses::list::Error),
+}
 pub mod availability_statuses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription_id(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<AvailabilityStatusListResult, list_by_subscription_id::Error> {
+    ) -> std::result::Result<models::AvailabilityStatusListResult, list_by_subscription_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ResourceHealth/availabilityStatuses",
@@ -46,13 +61,13 @@ pub mod availability_statuses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityStatusListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailabilityStatusListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription_id::Error::DefaultResponse {
                     status_code,
@@ -62,7 +77,7 @@ pub mod availability_statuses {
         }
     }
     pub mod list_by_subscription_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -90,7 +105,7 @@ pub mod availability_statuses {
         resource_group_name: &str,
         filter: Option<&str>,
         expand: Option<&str>,
-    ) -> std::result::Result<AvailabilityStatusListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AvailabilityStatusListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceHealth/availabilityStatuses",
@@ -127,13 +142,13 @@ pub mod availability_statuses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityStatusListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailabilityStatusListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -143,7 +158,7 @@ pub mod availability_statuses {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -170,7 +185,7 @@ pub mod availability_statuses {
         resource_uri: &str,
         filter: Option<&str>,
         expand: Option<&str>,
-    ) -> std::result::Result<AvailabilityStatus, get_by_resource::Error> {
+    ) -> std::result::Result<models::AvailabilityStatus, get_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.ResourceHealth/availabilityStatuses/current",
@@ -204,13 +219,13 @@ pub mod availability_statuses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailabilityStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_resource::Error::DefaultResponse {
                     status_code,
@@ -220,7 +235,7 @@ pub mod availability_statuses {
         }
     }
     pub mod get_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -247,7 +262,7 @@ pub mod availability_statuses {
         resource_uri: &str,
         filter: Option<&str>,
         expand: Option<&str>,
-    ) -> std::result::Result<AvailabilityStatusListResult, list::Error> {
+    ) -> std::result::Result<models::AvailabilityStatusListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.ResourceHealth/availabilityStatuses",
@@ -278,13 +293,13 @@ pub mod availability_statuses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityStatusListResult =
+                let rsp_value: models::AvailabilityStatusListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -294,7 +309,7 @@ pub mod availability_statuses {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -318,8 +333,8 @@ pub mod availability_statuses {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ResourceHealth/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -340,13 +355,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -356,7 +371,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

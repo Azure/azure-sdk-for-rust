@@ -2,9 +2,60 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    DatabaseInstances_EnumerateDatabaseInstances(#[from] database_instances::enumerate_database_instances::Error),
+    #[error(transparent)]
+    DatabaseInstances_GetDatabaseInstance(#[from] database_instances::get_database_instance::Error),
+    #[error(transparent)]
+    Databases_EnumerateDatabases(#[from] databases::enumerate_databases::Error),
+    #[error(transparent)]
+    Databases_GetDatabase(#[from] databases::get_database::Error),
+    #[error(transparent)]
+    Events_EnumerateEvents(#[from] events::enumerate_events::Error),
+    #[error(transparent)]
+    Events_GetEvent(#[from] events::get_event::Error),
+    #[error(transparent)]
+    Events_DeleteEvent(#[from] events::delete_event::Error),
+    #[error(transparent)]
+    Machines_EnumerateMachines(#[from] machines::enumerate_machines::Error),
+    #[error(transparent)]
+    Machines_GetMachine(#[from] machines::get_machine::Error),
+    #[error(transparent)]
+    MigrateProjects_GetMigrateProject(#[from] migrate_projects::get_migrate_project::Error),
+    #[error(transparent)]
+    MigrateProjects_PutMigrateProject(#[from] migrate_projects::put_migrate_project::Error),
+    #[error(transparent)]
+    MigrateProjects_PatchMigrateProject(#[from] migrate_projects::patch_migrate_project::Error),
+    #[error(transparent)]
+    MigrateProjects_DeleteMigrateProject(#[from] migrate_projects::delete_migrate_project::Error),
+    #[error(transparent)]
+    MigrateProjects_RegisterTool(#[from] migrate_projects::register_tool::Error),
+    #[error(transparent)]
+    MigrateProjects_RefreshMigrateProjectSummary(#[from] migrate_projects::refresh_migrate_project_summary::Error),
+    #[error(transparent)]
+    Solutions_GetSolution(#[from] solutions::get_solution::Error),
+    #[error(transparent)]
+    Solutions_PutSolution(#[from] solutions::put_solution::Error),
+    #[error(transparent)]
+    Solutions_PatchSolution(#[from] solutions::patch_solution::Error),
+    #[error(transparent)]
+    Solutions_DeleteSolution(#[from] solutions::delete_solution::Error),
+    #[error(transparent)]
+    Solutions_EnumerateSolutions(#[from] solutions::enumerate_solutions::Error),
+    #[error(transparent)]
+    Solutions_GetConfig(#[from] solutions::get_config::Error),
+    #[error(transparent)]
+    Solutions_CleanupSolutionData(#[from] solutions::cleanup_solution_data::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod database_instances {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn enumerate_database_instances(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -13,7 +64,7 @@ pub mod database_instances {
         continuation_token: Option<&str>,
         page_size: Option<i64>,
         accept_language: Option<&str>,
-    ) -> std::result::Result<DatabaseInstanceCollection, enumerate_database_instances::Error> {
+    ) -> std::result::Result<models::DatabaseInstanceCollection, enumerate_database_instances::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/databaseInstances",
@@ -54,7 +105,7 @@ pub mod database_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseInstanceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseInstanceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| enumerate_database_instances::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -68,7 +119,7 @@ pub mod database_instances {
         }
     }
     pub mod enumerate_database_instances {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -94,7 +145,7 @@ pub mod database_instances {
         migrate_project_name: &str,
         database_instance_name: &str,
         accept_language: Option<&str>,
-    ) -> std::result::Result<DatabaseInstance, get_database_instance::Error> {
+    ) -> std::result::Result<models::DatabaseInstance, get_database_instance::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/databaseInstances/{}",
@@ -130,7 +181,7 @@ pub mod database_instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseInstance = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseInstance = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_database_instance::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -144,7 +195,7 @@ pub mod database_instances {
         }
     }
     pub mod get_database_instance {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -165,7 +216,7 @@ pub mod database_instances {
     }
 }
 pub mod databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn enumerate_databases(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -174,7 +225,7 @@ pub mod databases {
         continuation_token: Option<&str>,
         page_size: Option<i64>,
         accept_language: Option<&str>,
-    ) -> std::result::Result<DatabaseCollection, enumerate_databases::Error> {
+    ) -> std::result::Result<models::DatabaseCollection, enumerate_databases::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/databases",
@@ -213,7 +264,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| enumerate_databases::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -227,7 +278,7 @@ pub mod databases {
         }
     }
     pub mod enumerate_databases {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -253,7 +304,7 @@ pub mod databases {
         migrate_project_name: &str,
         database_name: &str,
         accept_language: Option<&str>,
-    ) -> std::result::Result<Database, get_database::Error> {
+    ) -> std::result::Result<models::Database, get_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/databases/{}",
@@ -287,7 +338,7 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| get_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -301,7 +352,7 @@ pub mod databases {
         }
     }
     pub mod get_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -322,7 +373,7 @@ pub mod databases {
     }
 }
 pub mod events {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn enumerate_events(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -331,7 +382,7 @@ pub mod events {
         continuation_token: Option<&str>,
         page_size: Option<i64>,
         accept_language: Option<&str>,
-    ) -> std::result::Result<EventCollection, enumerate_events::Error> {
+    ) -> std::result::Result<models::EventCollection, enumerate_events::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/migrateEvents",
@@ -370,7 +421,7 @@ pub mod events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| enumerate_events::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -384,7 +435,7 @@ pub mod events {
         }
     }
     pub mod enumerate_events {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -409,7 +460,7 @@ pub mod events {
         resource_group_name: &str,
         migrate_project_name: &str,
         event_name: &str,
-    ) -> std::result::Result<MigrateEvent, get_event::Error> {
+    ) -> std::result::Result<models::MigrateEvent, get_event::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/migrateEvents/{}",
@@ -440,7 +491,7 @@ pub mod events {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateEvent =
+                let rsp_value: models::MigrateEvent =
                     serde_json::from_slice(rsp_body).map_err(|source| get_event::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -454,7 +505,7 @@ pub mod events {
         }
     }
     pub mod get_event {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -519,7 +570,7 @@ pub mod events {
         }
     }
     pub mod delete_event {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -540,7 +591,7 @@ pub mod events {
     }
 }
 pub mod machines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn enumerate_machines(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -548,7 +599,7 @@ pub mod machines {
         migrate_project_name: &str,
         continuation_token: Option<&str>,
         page_size: Option<i64>,
-    ) -> std::result::Result<MachineCollection, enumerate_machines::Error> {
+    ) -> std::result::Result<models::MachineCollection, enumerate_machines::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/machines",
@@ -584,7 +635,7 @@ pub mod machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MachineCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MachineCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| enumerate_machines::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -598,7 +649,7 @@ pub mod machines {
         }
     }
     pub mod enumerate_machines {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -623,7 +674,7 @@ pub mod machines {
         resource_group_name: &str,
         migrate_project_name: &str,
         machine_name: &str,
-    ) -> std::result::Result<Machine, get_machine::Error> {
+    ) -> std::result::Result<models::Machine, get_machine::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/machines/{}",
@@ -654,7 +705,7 @@ pub mod machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Machine =
+                let rsp_value: models::Machine =
                     serde_json::from_slice(rsp_body).map_err(|source| get_machine::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -668,7 +719,7 @@ pub mod machines {
         }
     }
     pub mod get_machine {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -689,13 +740,13 @@ pub mod machines {
     }
 }
 pub mod migrate_projects {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_migrate_project(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-    ) -> std::result::Result<MigrateProject, get_migrate_project::Error> {
+    ) -> std::result::Result<models::MigrateProject, get_migrate_project::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}",
@@ -725,7 +776,7 @@ pub mod migrate_projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateProject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateProject = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -739,7 +790,7 @@ pub mod migrate_projects {
         }
     }
     pub mod get_migrate_project {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -763,7 +814,7 @@ pub mod migrate_projects {
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-        body: &MigrateProject,
+        body: &models::MigrateProject,
         accept_language: Option<&str>,
     ) -> std::result::Result<put_migrate_project::Response, put_migrate_project::Error> {
         let http_client = operation_config.http_client();
@@ -799,13 +850,13 @@ pub mod migrate_projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateProject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateProject = serde_json::from_slice(rsp_body)
                     .map_err(|source| put_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put_migrate_project::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateProject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateProject = serde_json::from_slice(rsp_body)
                     .map_err(|source| put_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put_migrate_project::Response::Created201(rsp_value))
             }
@@ -819,11 +870,11 @@ pub mod migrate_projects {
         }
     }
     pub mod put_migrate_project {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(MigrateProject),
-            Created201(MigrateProject),
+            Ok200(models::MigrateProject),
+            Created201(models::MigrateProject),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -848,9 +899,9 @@ pub mod migrate_projects {
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-        body: &MigrateProject,
+        body: &models::MigrateProject,
         accept_language: Option<&str>,
-    ) -> std::result::Result<MigrateProject, patch_migrate_project::Error> {
+    ) -> std::result::Result<models::MigrateProject, patch_migrate_project::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}",
@@ -886,7 +937,7 @@ pub mod migrate_projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateProject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateProject = serde_json::from_slice(rsp_body)
                     .map_err(|source| patch_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -900,7 +951,7 @@ pub mod migrate_projects {
         }
     }
     pub mod patch_migrate_project {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -969,7 +1020,7 @@ pub mod migrate_projects {
         }
     }
     pub mod delete_migrate_project {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -993,9 +1044,9 @@ pub mod migrate_projects {
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-        input: &RegisterToolInput,
+        input: &models::RegisterToolInput,
         accept_language: Option<&str>,
-    ) -> std::result::Result<RegistrationResult, register_tool::Error> {
+    ) -> std::result::Result<models::RegistrationResult, register_tool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/registerTool",
@@ -1029,7 +1080,7 @@ pub mod migrate_projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegistrationResult =
+                let rsp_value: models::RegistrationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| register_tool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1043,7 +1094,7 @@ pub mod migrate_projects {
         }
     }
     pub mod register_tool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1067,8 +1118,8 @@ pub mod migrate_projects {
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-        input: &RefreshSummaryInput,
-    ) -> std::result::Result<RefreshSummaryResult, refresh_migrate_project_summary::Error> {
+        input: &models::RefreshSummaryInput,
+    ) -> std::result::Result<models::RefreshSummaryResult, refresh_migrate_project_summary::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/refreshSummary",
@@ -1101,7 +1152,7 @@ pub mod migrate_projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RefreshSummaryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RefreshSummaryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| refresh_migrate_project_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1115,7 +1166,7 @@ pub mod migrate_projects {
         }
     }
     pub mod refresh_migrate_project_summary {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1136,14 +1187,14 @@ pub mod migrate_projects {
     }
 }
 pub mod solutions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_solution(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
         solution_name: &str,
-    ) -> std::result::Result<Solution, get_solution::Error> {
+    ) -> std::result::Result<models::Solution, get_solution::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/solutions/{}",
@@ -1174,7 +1225,7 @@ pub mod solutions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Solution =
+                let rsp_value: models::Solution =
                     serde_json::from_slice(rsp_body).map_err(|source| get_solution::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1188,7 +1239,7 @@ pub mod solutions {
         }
     }
     pub mod get_solution {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1213,7 +1264,7 @@ pub mod solutions {
         resource_group_name: &str,
         migrate_project_name: &str,
         solution_name: &str,
-        solution_input: &Solution,
+        solution_input: &models::Solution,
     ) -> std::result::Result<put_solution::Response, put_solution::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1246,13 +1297,13 @@ pub mod solutions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Solution =
+                let rsp_value: models::Solution =
                     serde_json::from_slice(rsp_body).map_err(|source| put_solution::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put_solution::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Solution =
+                let rsp_value: models::Solution =
                     serde_json::from_slice(rsp_body).map_err(|source| put_solution::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put_solution::Response::Created201(rsp_value))
             }
@@ -1266,11 +1317,11 @@ pub mod solutions {
         }
     }
     pub mod put_solution {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Solution),
-            Created201(Solution),
+            Ok200(models::Solution),
+            Created201(models::Solution),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1296,8 +1347,8 @@ pub mod solutions {
         resource_group_name: &str,
         migrate_project_name: &str,
         solution_name: &str,
-        solution_input: &Solution,
-    ) -> std::result::Result<Solution, patch_solution::Error> {
+        solution_input: &models::Solution,
+    ) -> std::result::Result<models::Solution, patch_solution::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/solutions/{}",
@@ -1329,7 +1380,7 @@ pub mod solutions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Solution =
+                let rsp_value: models::Solution =
                     serde_json::from_slice(rsp_body).map_err(|source| patch_solution::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1343,7 +1394,7 @@ pub mod solutions {
         }
     }
     pub mod patch_solution {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1412,7 +1463,7 @@ pub mod solutions {
         }
     }
     pub mod delete_solution {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1436,7 +1487,7 @@ pub mod solutions {
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-    ) -> std::result::Result<SolutionsCollection, enumerate_solutions::Error> {
+    ) -> std::result::Result<models::SolutionsCollection, enumerate_solutions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/solutions",
@@ -1466,7 +1517,7 @@ pub mod solutions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SolutionsCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SolutionsCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| enumerate_solutions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1480,7 +1531,7 @@ pub mod solutions {
         }
     }
     pub mod enumerate_solutions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1505,7 +1556,7 @@ pub mod solutions {
         resource_group_name: &str,
         migrate_project_name: &str,
         solution_name: &str,
-    ) -> std::result::Result<SolutionConfig, get_config::Error> {
+    ) -> std::result::Result<models::SolutionConfig, get_config::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/solutions/{}/getConfig",
@@ -1537,7 +1588,7 @@ pub mod solutions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SolutionConfig =
+                let rsp_value: models::SolutionConfig =
                     serde_json::from_slice(rsp_body).map_err(|source| get_config::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1551,7 +1602,7 @@ pub mod solutions {
         }
     }
     pub mod get_config {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1619,7 +1670,7 @@ pub mod solutions {
         }
     }
     pub mod cleanup_solution_data {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1640,8 +1691,8 @@ pub mod solutions {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationResultList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationResultList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Migrate/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1661,7 +1712,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResultList =
+                let rsp_value: models::OperationResultList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1675,7 +1726,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

@@ -2,10 +2,57 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ListOperations(#[from] list_operations::Error),
+    #[error(transparent)]
+    ListAddressesAtSubscriptionLevel(#[from] list_addresses_at_subscription_level::Error),
+    #[error(transparent)]
+    ListProductFamilies(#[from] list_product_families::Error),
+    #[error(transparent)]
+    ListConfigurations(#[from] list_configurations::Error),
+    #[error(transparent)]
+    ListProductFamiliesMetadata(#[from] list_product_families_metadata::Error),
+    #[error(transparent)]
+    ListOrderAtSubscriptionLevel(#[from] list_order_at_subscription_level::Error),
+    #[error(transparent)]
+    ListOrderItemsAtSubscriptionLevel(#[from] list_order_items_at_subscription_level::Error),
+    #[error(transparent)]
+    ListAddressesAtResourceGroupLevel(#[from] list_addresses_at_resource_group_level::Error),
+    #[error(transparent)]
+    GetAddressByName(#[from] get_address_by_name::Error),
+    #[error(transparent)]
+    CreateAddress(#[from] create_address::Error),
+    #[error(transparent)]
+    UpdateAddress(#[from] update_address::Error),
+    #[error(transparent)]
+    DeleteAddressByName(#[from] delete_address_by_name::Error),
+    #[error(transparent)]
+    ListOrderAtResourceGroupLevel(#[from] list_order_at_resource_group_level::Error),
+    #[error(transparent)]
+    GetOrderByName(#[from] get_order_by_name::Error),
+    #[error(transparent)]
+    ListOrderItemsAtResourceGroupLevel(#[from] list_order_items_at_resource_group_level::Error),
+    #[error(transparent)]
+    GetOrderItemByName(#[from] get_order_item_by_name::Error),
+    #[error(transparent)]
+    CreateOrderItem(#[from] create_order_item::Error),
+    #[error(transparent)]
+    UpdateOrderItem(#[from] update_order_item::Error),
+    #[error(transparent)]
+    DeleteOrderItemByName(#[from] delete_order_item_by_name::Error),
+    #[error(transparent)]
+    CancelOrderItem(#[from] cancel_order_item::Error),
+    #[error(transparent)]
+    ReturnOrderItem(#[from] return_order_item::Error),
+}
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<OperationListResult, list_operations::Error> {
+) -> std::result::Result<models::OperationListResult, list_operations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.EdgeOrder/operations", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(list_operations::Error::ParseUrlError)?;
@@ -29,13 +76,13 @@ pub async fn list_operations(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OperationListResult =
+            let rsp_value: models::OperationListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_operations::Error::DefaultResponse {
                 status_code,
@@ -45,7 +92,7 @@ pub async fn list_operations(
     }
 }
 pub mod list_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -72,7 +119,7 @@ pub async fn list_addresses_at_subscription_level(
     subscription_id: &str,
     filter: Option<&str>,
     skip_token: Option<&str>,
-) -> std::result::Result<AddressResourceList, list_addresses_at_subscription_level::Error> {
+) -> std::result::Result<models::AddressResourceList, list_addresses_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/addresses",
@@ -108,13 +155,13 @@ pub async fn list_addresses_at_subscription_level(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AddressResourceList = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AddressResourceList = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_addresses_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_addresses_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_addresses_at_subscription_level::Error::DefaultResponse {
                 status_code,
@@ -124,7 +171,7 @@ pub async fn list_addresses_at_subscription_level(
     }
 }
 pub mod list_addresses_at_subscription_level {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -151,8 +198,8 @@ pub async fn list_product_families(
     subscription_id: &str,
     expand: Option<&str>,
     skip_token: Option<&str>,
-    product_families_request: &ProductFamiliesRequest,
-) -> std::result::Result<ProductFamilies, list_product_families::Error> {
+    product_families_request: &models::ProductFamiliesRequest,
+) -> std::result::Result<models::ProductFamilies, list_product_families::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/listProductFamilies",
@@ -189,13 +236,13 @@ pub async fn list_product_families(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: ProductFamilies = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ProductFamilies = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_product_families::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_product_families::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_product_families::Error::DefaultResponse {
                 status_code,
@@ -205,7 +252,7 @@ pub async fn list_product_families(
     }
 }
 pub mod list_product_families {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -231,8 +278,8 @@ pub async fn list_configurations(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     skip_token: Option<&str>,
-    configurations_request: &ConfigurationsRequest,
-) -> std::result::Result<Configurations, list_configurations::Error> {
+    configurations_request: &models::ConfigurationsRequest,
+) -> std::result::Result<models::Configurations, list_configurations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/listConfigurations",
@@ -264,13 +311,13 @@ pub async fn list_configurations(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Configurations = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Configurations = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_configurations::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_configurations::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_configurations::Error::DefaultResponse {
                 status_code,
@@ -280,7 +327,7 @@ pub async fn list_configurations(
     }
 }
 pub mod list_configurations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -306,7 +353,7 @@ pub async fn list_product_families_metadata(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     skip_token: Option<&str>,
-) -> std::result::Result<ProductFamiliesMetadata, list_product_families_metadata::Error> {
+) -> std::result::Result<models::ProductFamiliesMetadata, list_product_families_metadata::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/productFamiliesMetadata",
@@ -340,13 +387,13 @@ pub async fn list_product_families_metadata(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: ProductFamiliesMetadata = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ProductFamiliesMetadata = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_product_families_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_product_families_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_product_families_metadata::Error::DefaultResponse {
                 status_code,
@@ -356,7 +403,7 @@ pub async fn list_product_families_metadata(
     }
 }
 pub mod list_product_families_metadata {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -382,7 +429,7 @@ pub async fn list_order_at_subscription_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     skip_token: Option<&str>,
-) -> std::result::Result<OrderResourceList, list_order_at_subscription_level::Error> {
+) -> std::result::Result<models::OrderResourceList, list_order_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/orders",
@@ -415,13 +462,13 @@ pub async fn list_order_at_subscription_level(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderResourceList = serde_json::from_slice(rsp_body)
+            let rsp_value: models::OrderResourceList = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_order_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_order_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_order_at_subscription_level::Error::DefaultResponse {
                 status_code,
@@ -431,7 +478,7 @@ pub async fn list_order_at_subscription_level(
     }
 }
 pub mod list_order_at_subscription_level {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -459,7 +506,7 @@ pub async fn list_order_items_at_subscription_level(
     filter: Option<&str>,
     expand: Option<&str>,
     skip_token: Option<&str>,
-) -> std::result::Result<OrderItemResourceList, list_order_items_at_subscription_level::Error> {
+) -> std::result::Result<models::OrderItemResourceList, list_order_items_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/orderItems",
@@ -498,13 +545,13 @@ pub async fn list_order_items_at_subscription_level(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderItemResourceList = serde_json::from_slice(rsp_body)
+            let rsp_value: models::OrderItemResourceList = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_order_items_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_order_items_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_order_items_at_subscription_level::Error::DefaultResponse {
                 status_code,
@@ -514,7 +561,7 @@ pub async fn list_order_items_at_subscription_level(
     }
 }
 pub mod list_order_items_at_subscription_level {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -542,7 +589,7 @@ pub async fn list_addresses_at_resource_group_level(
     resource_group_name: &str,
     filter: Option<&str>,
     skip_token: Option<&str>,
-) -> std::result::Result<AddressResourceList, list_addresses_at_resource_group_level::Error> {
+) -> std::result::Result<models::AddressResourceList, list_addresses_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/addresses",
@@ -579,13 +626,13 @@ pub async fn list_addresses_at_resource_group_level(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AddressResourceList = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AddressResourceList = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_addresses_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_addresses_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_addresses_at_resource_group_level::Error::DefaultResponse {
                 status_code,
@@ -595,7 +642,7 @@ pub async fn list_addresses_at_resource_group_level(
     }
 }
 pub mod list_addresses_at_resource_group_level {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -622,7 +669,7 @@ pub async fn get_address_by_name(
     address_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-) -> std::result::Result<AddressResource, get_address_by_name::Error> {
+) -> std::result::Result<models::AddressResource, get_address_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/addresses/{}",
@@ -652,13 +699,13 @@ pub async fn get_address_by_name(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AddressResource = serde_json::from_slice(rsp_body)
+            let rsp_value: models::AddressResource = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_address_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_address_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_address_by_name::Error::DefaultResponse {
                 status_code,
@@ -668,7 +715,7 @@ pub async fn get_address_by_name(
     }
 }
 pub mod get_address_by_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -695,7 +742,7 @@ pub async fn create_address(
     address_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    address_resource: &AddressResource,
+    address_resource: &models::AddressResource,
 ) -> std::result::Result<create_address::Response, create_address::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -727,14 +774,14 @@ pub async fn create_address(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AddressResource =
+            let rsp_value: models::AddressResource =
                 serde_json::from_slice(rsp_body).map_err(|source| create_address::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(create_address::Response::Ok200(rsp_value))
         }
         http::StatusCode::ACCEPTED => Ok(create_address::Response::Accepted202),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| create_address::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(create_address::Error::DefaultResponse {
                 status_code,
@@ -744,10 +791,10 @@ pub async fn create_address(
     }
 }
 pub mod create_address {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
-        Ok200(AddressResource),
+        Ok200(models::AddressResource),
         Accepted202,
     }
     #[derive(Debug, thiserror :: Error)]
@@ -777,7 +824,7 @@ pub async fn update_address(
     subscription_id: &str,
     resource_group_name: &str,
     if_match: Option<&str>,
-    address_update_parameter: &AddressUpdateParameter,
+    address_update_parameter: &models::AddressUpdateParameter,
 ) -> std::result::Result<update_address::Response, update_address::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -813,13 +860,13 @@ pub async fn update_address(
         http::StatusCode::ACCEPTED => Ok(update_address::Response::Accepted202),
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: AddressResource =
+            let rsp_value: models::AddressResource =
                 serde_json::from_slice(rsp_body).map_err(|source| update_address::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(update_address::Response::Ok200(rsp_value))
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| update_address::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_address::Error::DefaultResponse {
                 status_code,
@@ -829,11 +876,11 @@ pub async fn update_address(
     }
 }
 pub mod update_address {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Accepted202,
-        Ok200(AddressResource),
+        Ok200(models::AddressResource),
     }
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
@@ -896,7 +943,7 @@ pub async fn delete_address_by_name(
         http::StatusCode::NO_CONTENT => Ok(delete_address_by_name::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_address_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_address_by_name::Error::DefaultResponse {
                 status_code,
@@ -906,7 +953,7 @@ pub async fn delete_address_by_name(
     }
 }
 pub mod delete_address_by_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -939,7 +986,7 @@ pub async fn list_order_at_resource_group_level(
     subscription_id: &str,
     resource_group_name: &str,
     skip_token: Option<&str>,
-) -> std::result::Result<OrderResourceList, list_order_at_resource_group_level::Error> {
+) -> std::result::Result<models::OrderResourceList, list_order_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders",
@@ -973,13 +1020,13 @@ pub async fn list_order_at_resource_group_level(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderResourceList = serde_json::from_slice(rsp_body)
+            let rsp_value: models::OrderResourceList = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_order_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_order_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_order_at_resource_group_level::Error::DefaultResponse {
                 status_code,
@@ -989,7 +1036,7 @@ pub async fn list_order_at_resource_group_level(
     }
 }
 pub mod list_order_at_resource_group_level {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1017,7 +1064,7 @@ pub async fn get_order_by_name(
     subscription_id: &str,
     resource_group_name: &str,
     location: &str,
-) -> std::result::Result<OrderResource, get_order_by_name::Error> {
+) -> std::result::Result<models::OrderResource, get_order_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/locations/{}/orders/{}",
@@ -1048,13 +1095,13 @@ pub async fn get_order_by_name(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderResource =
+            let rsp_value: models::OrderResource =
                 serde_json::from_slice(rsp_body).map_err(|source| get_order_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| get_order_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_order_by_name::Error::DefaultResponse {
                 status_code,
@@ -1064,7 +1111,7 @@ pub async fn get_order_by_name(
     }
 }
 pub mod get_order_by_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1093,7 +1140,7 @@ pub async fn list_order_items_at_resource_group_level(
     filter: Option<&str>,
     expand: Option<&str>,
     skip_token: Option<&str>,
-) -> std::result::Result<OrderItemResourceList, list_order_items_at_resource_group_level::Error> {
+) -> std::result::Result<models::OrderItemResourceList, list_order_items_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems",
@@ -1133,13 +1180,13 @@ pub async fn list_order_items_at_resource_group_level(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderItemResourceList = serde_json::from_slice(rsp_body)
+            let rsp_value: models::OrderItemResourceList = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_order_items_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_order_items_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_order_items_at_resource_group_level::Error::DefaultResponse {
                 status_code,
@@ -1149,7 +1196,7 @@ pub async fn list_order_items_at_resource_group_level(
     }
 }
 pub mod list_order_items_at_resource_group_level {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1177,7 +1224,7 @@ pub async fn get_order_item_by_name(
     subscription_id: &str,
     resource_group_name: &str,
     expand: Option<&str>,
-) -> std::result::Result<OrderItemResource, get_order_item_by_name::Error> {
+) -> std::result::Result<models::OrderItemResource, get_order_item_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
@@ -1212,13 +1259,13 @@ pub async fn get_order_item_by_name(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderItemResource = serde_json::from_slice(rsp_body)
+            let rsp_value: models::OrderItemResource = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_order_item_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_order_item_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_order_item_by_name::Error::DefaultResponse {
                 status_code,
@@ -1228,7 +1275,7 @@ pub async fn get_order_item_by_name(
     }
 }
 pub mod get_order_item_by_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1255,7 +1302,7 @@ pub async fn create_order_item(
     order_item_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    order_item_resource: &OrderItemResource,
+    order_item_resource: &models::OrderItemResource,
 ) -> std::result::Result<create_order_item::Response, create_order_item::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -1287,14 +1334,14 @@ pub async fn create_order_item(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderItemResource =
+            let rsp_value: models::OrderItemResource =
                 serde_json::from_slice(rsp_body).map_err(|source| create_order_item::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(create_order_item::Response::Ok200(rsp_value))
         }
         http::StatusCode::ACCEPTED => Ok(create_order_item::Response::Accepted202),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| create_order_item::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(create_order_item::Error::DefaultResponse {
                 status_code,
@@ -1304,10 +1351,10 @@ pub async fn create_order_item(
     }
 }
 pub mod create_order_item {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
-        Ok200(OrderItemResource),
+        Ok200(models::OrderItemResource),
         Accepted202,
     }
     #[derive(Debug, thiserror :: Error)]
@@ -1337,7 +1384,7 @@ pub async fn update_order_item(
     subscription_id: &str,
     resource_group_name: &str,
     if_match: Option<&str>,
-    order_item_update_parameter: &OrderItemUpdateParameter,
+    order_item_update_parameter: &models::OrderItemUpdateParameter,
 ) -> std::result::Result<update_order_item::Response, update_order_item::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -1373,13 +1420,13 @@ pub async fn update_order_item(
         http::StatusCode::ACCEPTED => Ok(update_order_item::Response::Accepted202),
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OrderItemResource =
+            let rsp_value: models::OrderItemResource =
                 serde_json::from_slice(rsp_body).map_err(|source| update_order_item::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(update_order_item::Response::Ok200(rsp_value))
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| update_order_item::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_order_item::Error::DefaultResponse {
                 status_code,
@@ -1389,11 +1436,11 @@ pub async fn update_order_item(
     }
 }
 pub mod update_order_item {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Accepted202,
-        Ok200(OrderItemResource),
+        Ok200(models::OrderItemResource),
     }
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
@@ -1456,7 +1503,7 @@ pub async fn delete_order_item_by_name(
         http::StatusCode::NO_CONTENT => Ok(delete_order_item_by_name::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_order_item_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_order_item_by_name::Error::DefaultResponse {
                 status_code,
@@ -1466,7 +1513,7 @@ pub async fn delete_order_item_by_name(
     }
 }
 pub mod delete_order_item_by_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -1499,7 +1546,7 @@ pub async fn cancel_order_item(
     order_item_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    cancellation_reason: &CancellationReason,
+    cancellation_reason: &models::CancellationReason,
 ) -> std::result::Result<cancel_order_item::Response, cancel_order_item::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -1533,7 +1580,7 @@ pub async fn cancel_order_item(
         http::StatusCode::NO_CONTENT => Ok(cancel_order_item::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| cancel_order_item::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(cancel_order_item::Error::DefaultResponse {
                 status_code,
@@ -1543,7 +1590,7 @@ pub async fn cancel_order_item(
     }
 }
 pub mod cancel_order_item {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -1575,7 +1622,7 @@ pub async fn return_order_item(
     order_item_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    return_order_item_details: &ReturnOrderItemDetails,
+    return_order_item_details: &models::ReturnOrderItemDetails,
 ) -> std::result::Result<return_order_item::Response, return_order_item::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -1609,7 +1656,7 @@ pub async fn return_order_item(
         http::StatusCode::ACCEPTED => Ok(return_order_item::Response::Accepted202),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| return_order_item::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(return_order_item::Error::DefaultResponse {
                 status_code,
@@ -1619,7 +1666,7 @@ pub async fn return_order_item(
     }
 }
 pub mod return_order_item {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,

@@ -7,7 +7,7 @@
 pub mod package_2016_03_30;
 use azure_core::setters;
 #[cfg(all(feature = "package-2016-03-30", not(feature = "no-default-version")))]
-pub use package_2016_03_30::{models, operations};
+pub use package_2016_03_30::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

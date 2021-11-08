@@ -2,15 +2,158 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Disks_Get(#[from] disks::get::Error),
+    #[error(transparent)]
+    Disks_CreateOrUpdate(#[from] disks::create_or_update::Error),
+    #[error(transparent)]
+    Disks_Update(#[from] disks::update::Error),
+    #[error(transparent)]
+    Disks_Delete(#[from] disks::delete::Error),
+    #[error(transparent)]
+    Disks_ListByResourceGroup(#[from] disks::list_by_resource_group::Error),
+    #[error(transparent)]
+    Disks_List(#[from] disks::list::Error),
+    #[error(transparent)]
+    Disks_GrantAccess(#[from] disks::grant_access::Error),
+    #[error(transparent)]
+    Disks_RevokeAccess(#[from] disks::revoke_access::Error),
+    #[error(transparent)]
+    Snapshots_Get(#[from] snapshots::get::Error),
+    #[error(transparent)]
+    Snapshots_CreateOrUpdate(#[from] snapshots::create_or_update::Error),
+    #[error(transparent)]
+    Snapshots_Update(#[from] snapshots::update::Error),
+    #[error(transparent)]
+    Snapshots_Delete(#[from] snapshots::delete::Error),
+    #[error(transparent)]
+    Snapshots_ListByResourceGroup(#[from] snapshots::list_by_resource_group::Error),
+    #[error(transparent)]
+    Snapshots_List(#[from] snapshots::list::Error),
+    #[error(transparent)]
+    Snapshots_GrantAccess(#[from] snapshots::grant_access::Error),
+    #[error(transparent)]
+    Snapshots_RevokeAccess(#[from] snapshots::revoke_access::Error),
+    #[error(transparent)]
+    DiskEncryptionSets_Get(#[from] disk_encryption_sets::get::Error),
+    #[error(transparent)]
+    DiskEncryptionSets_CreateOrUpdate(#[from] disk_encryption_sets::create_or_update::Error),
+    #[error(transparent)]
+    DiskEncryptionSets_Update(#[from] disk_encryption_sets::update::Error),
+    #[error(transparent)]
+    DiskEncryptionSets_Delete(#[from] disk_encryption_sets::delete::Error),
+    #[error(transparent)]
+    DiskEncryptionSets_ListByResourceGroup(#[from] disk_encryption_sets::list_by_resource_group::Error),
+    #[error(transparent)]
+    DiskEncryptionSets_List(#[from] disk_encryption_sets::list::Error),
+    #[error(transparent)]
+    DiskEncryptionSets_ListAssociatedResources(#[from] disk_encryption_sets::list_associated_resources::Error),
+    #[error(transparent)]
+    DiskAccesses_Get(#[from] disk_accesses::get::Error),
+    #[error(transparent)]
+    DiskAccesses_CreateOrUpdate(#[from] disk_accesses::create_or_update::Error),
+    #[error(transparent)]
+    DiskAccesses_Update(#[from] disk_accesses::update::Error),
+    #[error(transparent)]
+    DiskAccesses_Delete(#[from] disk_accesses::delete::Error),
+    #[error(transparent)]
+    DiskAccesses_ListByResourceGroup(#[from] disk_accesses::list_by_resource_group::Error),
+    #[error(transparent)]
+    DiskAccesses_List(#[from] disk_accesses::list::Error),
+    #[error(transparent)]
+    DiskAccesses_GetPrivateLinkResources(#[from] disk_accesses::get_private_link_resources::Error),
+    #[error(transparent)]
+    DiskAccesses_GetAPrivateEndpointConnection(#[from] disk_accesses::get_a_private_endpoint_connection::Error),
+    #[error(transparent)]
+    DiskAccesses_UpdateAPrivateEndpointConnection(#[from] disk_accesses::update_a_private_endpoint_connection::Error),
+    #[error(transparent)]
+    DiskAccesses_DeleteAPrivateEndpointConnection(#[from] disk_accesses::delete_a_private_endpoint_connection::Error),
+    #[error(transparent)]
+    DiskAccesses_ListPrivateEndpointConnections(#[from] disk_accesses::list_private_endpoint_connections::Error),
+    #[error(transparent)]
+    DiskRestorePoint_Get(#[from] disk_restore_point::get::Error),
+    #[error(transparent)]
+    DiskRestorePoint_ListByRestorePoint(#[from] disk_restore_point::list_by_restore_point::Error),
+    #[error(transparent)]
+    Galleries_Get(#[from] galleries::get::Error),
+    #[error(transparent)]
+    Galleries_CreateOrUpdate(#[from] galleries::create_or_update::Error),
+    #[error(transparent)]
+    Galleries_Update(#[from] galleries::update::Error),
+    #[error(transparent)]
+    Galleries_Delete(#[from] galleries::delete::Error),
+    #[error(transparent)]
+    GalleryImages_Get(#[from] gallery_images::get::Error),
+    #[error(transparent)]
+    GalleryImages_CreateOrUpdate(#[from] gallery_images::create_or_update::Error),
+    #[error(transparent)]
+    GalleryImages_Update(#[from] gallery_images::update::Error),
+    #[error(transparent)]
+    GalleryImages_Delete(#[from] gallery_images::delete::Error),
+    #[error(transparent)]
+    GalleryImageVersions_Get(#[from] gallery_image_versions::get::Error),
+    #[error(transparent)]
+    GalleryImageVersions_CreateOrUpdate(#[from] gallery_image_versions::create_or_update::Error),
+    #[error(transparent)]
+    GalleryImageVersions_Update(#[from] gallery_image_versions::update::Error),
+    #[error(transparent)]
+    GalleryImageVersions_Delete(#[from] gallery_image_versions::delete::Error),
+    #[error(transparent)]
+    GalleryApplications_Get(#[from] gallery_applications::get::Error),
+    #[error(transparent)]
+    GalleryApplications_CreateOrUpdate(#[from] gallery_applications::create_or_update::Error),
+    #[error(transparent)]
+    GalleryApplications_Update(#[from] gallery_applications::update::Error),
+    #[error(transparent)]
+    GalleryApplications_Delete(#[from] gallery_applications::delete::Error),
+    #[error(transparent)]
+    GalleryApplicationVersions_Get(#[from] gallery_application_versions::get::Error),
+    #[error(transparent)]
+    GalleryApplicationVersions_CreateOrUpdate(#[from] gallery_application_versions::create_or_update::Error),
+    #[error(transparent)]
+    GalleryApplicationVersions_Update(#[from] gallery_application_versions::update::Error),
+    #[error(transparent)]
+    GalleryApplicationVersions_Delete(#[from] gallery_application_versions::delete::Error),
+    #[error(transparent)]
+    Galleries_ListByResourceGroup(#[from] galleries::list_by_resource_group::Error),
+    #[error(transparent)]
+    Galleries_List(#[from] galleries::list::Error),
+    #[error(transparent)]
+    GalleryImages_ListByGallery(#[from] gallery_images::list_by_gallery::Error),
+    #[error(transparent)]
+    GalleryImageVersions_ListByGalleryImage(#[from] gallery_image_versions::list_by_gallery_image::Error),
+    #[error(transparent)]
+    GalleryApplications_ListByGallery(#[from] gallery_applications::list_by_gallery::Error),
+    #[error(transparent)]
+    GalleryApplicationVersions_ListByGalleryApplication(#[from] gallery_application_versions::list_by_gallery_application::Error),
+    #[error(transparent)]
+    GallerySharingProfile_Update(#[from] gallery_sharing_profile::update::Error),
+    #[error(transparent)]
+    SharedGalleries_List(#[from] shared_galleries::list::Error),
+    #[error(transparent)]
+    SharedGalleryImages_List(#[from] shared_gallery_images::list::Error),
+    #[error(transparent)]
+    SharedGalleryImageVersions_List(#[from] shared_gallery_image_versions::list::Error),
+    #[error(transparent)]
+    SharedGalleries_Get(#[from] shared_galleries::get::Error),
+    #[error(transparent)]
+    SharedGalleryImages_Get(#[from] shared_gallery_images::get::Error),
+    #[error(transparent)]
+    SharedGalleryImageVersions_Get(#[from] shared_gallery_image_versions::get::Error),
+}
 pub mod disks {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         disk_name: &str,
-    ) -> std::result::Result<Disk, get::Error> {
+    ) -> std::result::Result<models::Disk, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/disks/{}",
@@ -37,7 +180,7 @@ pub mod disks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Disk =
+                let rsp_value: models::Disk =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -51,7 +194,7 @@ pub mod disks {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -75,7 +218,7 @@ pub mod disks {
         subscription_id: &str,
         resource_group_name: &str,
         disk_name: &str,
-        disk: &Disk,
+        disk: &models::Disk,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -107,13 +250,13 @@ pub mod disks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Disk = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Disk = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Disk = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Disk = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
@@ -127,11 +270,11 @@ pub mod disks {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Disk),
-            Accepted202(Disk),
+            Ok200(models::Disk),
+            Accepted202(models::Disk),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -156,7 +299,7 @@ pub mod disks {
         subscription_id: &str,
         resource_group_name: &str,
         disk_name: &str,
-        disk: &DiskUpdate,
+        disk: &models::DiskUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -185,13 +328,13 @@ pub mod disks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Disk =
+                let rsp_value: models::Disk =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Disk =
+                let rsp_value: models::Disk =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
@@ -205,11 +348,11 @@ pub mod disks {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Disk),
-            Accepted202(Disk),
+            Ok200(models::Disk),
+            Accepted202(models::Disk),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -272,7 +415,7 @@ pub mod disks {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -301,7 +444,7 @@ pub mod disks {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DiskList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DiskList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/disks",
@@ -332,7 +475,7 @@ pub mod disks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -346,7 +489,7 @@ pub mod disks {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -365,7 +508,10 @@ pub mod disks {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<DiskList, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<models::DiskList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/disks",
@@ -390,7 +536,7 @@ pub mod disks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskList =
+                let rsp_value: models::DiskList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -404,7 +550,7 @@ pub mod disks {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -428,7 +574,7 @@ pub mod disks {
         subscription_id: &str,
         resource_group_name: &str,
         disk_name: &str,
-        grant_access_data: &GrantAccessData,
+        grant_access_data: &models::GrantAccessData,
     ) -> std::result::Result<grant_access::Response, grant_access::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -460,7 +606,7 @@ pub mod disks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccessUri =
+                let rsp_value: models::AccessUri =
                     serde_json::from_slice(rsp_body).map_err(|source| grant_access::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(grant_access::Response::Ok200(rsp_value))
             }
@@ -475,10 +621,10 @@ pub mod disks {
         }
     }
     pub mod grant_access {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AccessUri),
+            Ok200(models::AccessUri),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -545,7 +691,7 @@ pub mod disks {
         }
     }
     pub mod revoke_access {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -571,13 +717,13 @@ pub mod disks {
     }
 }
 pub mod snapshots {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         snapshot_name: &str,
-    ) -> std::result::Result<Snapshot, get::Error> {
+    ) -> std::result::Result<models::Snapshot, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/snapshots/{}",
@@ -604,7 +750,7 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Snapshot =
+                let rsp_value: models::Snapshot =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -618,7 +764,7 @@ pub mod snapshots {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -642,7 +788,7 @@ pub mod snapshots {
         subscription_id: &str,
         resource_group_name: &str,
         snapshot_name: &str,
-        snapshot: &Snapshot,
+        snapshot: &models::Snapshot,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -674,13 +820,13 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Snapshot = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Snapshot = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Snapshot = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Snapshot = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
@@ -694,11 +840,11 @@ pub mod snapshots {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Snapshot),
-            Accepted202(Snapshot),
+            Ok200(models::Snapshot),
+            Accepted202(models::Snapshot),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -723,7 +869,7 @@ pub mod snapshots {
         subscription_id: &str,
         resource_group_name: &str,
         snapshot_name: &str,
-        snapshot: &SnapshotUpdate,
+        snapshot: &models::SnapshotUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -752,13 +898,13 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Snapshot =
+                let rsp_value: models::Snapshot =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Snapshot =
+                let rsp_value: models::Snapshot =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
@@ -772,11 +918,11 @@ pub mod snapshots {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Snapshot),
-            Accepted202(Snapshot),
+            Ok200(models::Snapshot),
+            Accepted202(models::Snapshot),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -839,7 +985,7 @@ pub mod snapshots {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -868,7 +1014,7 @@ pub mod snapshots {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<SnapshotList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::SnapshotList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/snapshots",
@@ -899,7 +1045,7 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SnapshotList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SnapshotList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -913,7 +1059,7 @@ pub mod snapshots {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -932,7 +1078,10 @@ pub mod snapshots {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<SnapshotList, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<models::SnapshotList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/snapshots",
@@ -957,7 +1106,7 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SnapshotList =
+                let rsp_value: models::SnapshotList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -971,7 +1120,7 @@ pub mod snapshots {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -995,7 +1144,7 @@ pub mod snapshots {
         subscription_id: &str,
         resource_group_name: &str,
         snapshot_name: &str,
-        grant_access_data: &GrantAccessData,
+        grant_access_data: &models::GrantAccessData,
     ) -> std::result::Result<grant_access::Response, grant_access::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1027,7 +1176,7 @@ pub mod snapshots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccessUri =
+                let rsp_value: models::AccessUri =
                     serde_json::from_slice(rsp_body).map_err(|source| grant_access::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(grant_access::Response::Ok200(rsp_value))
             }
@@ -1042,10 +1191,10 @@ pub mod snapshots {
         }
     }
     pub mod grant_access {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AccessUri),
+            Ok200(models::AccessUri),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1112,7 +1261,7 @@ pub mod snapshots {
         }
     }
     pub mod revoke_access {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1138,13 +1287,13 @@ pub mod snapshots {
     }
 }
 pub mod disk_encryption_sets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         disk_encryption_set_name: &str,
-    ) -> std::result::Result<DiskEncryptionSet, get::Error> {
+    ) -> std::result::Result<models::DiskEncryptionSet, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskEncryptionSets/{}",
@@ -1171,13 +1320,13 @@ pub mod disk_encryption_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskEncryptionSet =
+                let rsp_value: models::DiskEncryptionSet =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1187,7 +1336,7 @@ pub mod disk_encryption_sets {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1214,7 +1363,7 @@ pub mod disk_encryption_sets {
         subscription_id: &str,
         resource_group_name: &str,
         disk_encryption_set_name: &str,
-        disk_encryption_set: &DiskEncryptionSet,
+        disk_encryption_set: &models::DiskEncryptionSet,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1246,19 +1395,19 @@ pub mod disk_encryption_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskEncryptionSet = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskEncryptionSet = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskEncryptionSet = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskEncryptionSet = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1268,11 +1417,11 @@ pub mod disk_encryption_sets {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DiskEncryptionSet),
-            Accepted202(DiskEncryptionSet),
+            Ok200(models::DiskEncryptionSet),
+            Accepted202(models::DiskEncryptionSet),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1300,7 +1449,7 @@ pub mod disk_encryption_sets {
         subscription_id: &str,
         resource_group_name: &str,
         disk_encryption_set_name: &str,
-        disk_encryption_set: &DiskEncryptionSetUpdate,
+        disk_encryption_set: &models::DiskEncryptionSetUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1329,19 +1478,19 @@ pub mod disk_encryption_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskEncryptionSet =
+                let rsp_value: models::DiskEncryptionSet =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskEncryptionSet =
+                let rsp_value: models::DiskEncryptionSet =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1351,11 +1500,11 @@ pub mod disk_encryption_sets {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DiskEncryptionSet),
-            Accepted202(DiskEncryptionSet),
+            Ok200(models::DiskEncryptionSet),
+            Accepted202(models::DiskEncryptionSet),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1413,7 +1562,7 @@ pub mod disk_encryption_sets {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1423,7 +1572,7 @@ pub mod disk_encryption_sets {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1455,7 +1604,7 @@ pub mod disk_encryption_sets {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DiskEncryptionSetList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DiskEncryptionSetList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskEncryptionSets",
@@ -1486,13 +1635,13 @@ pub mod disk_encryption_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskEncryptionSetList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskEncryptionSetList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1502,7 +1651,7 @@ pub mod disk_encryption_sets {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1527,7 +1676,7 @@ pub mod disk_encryption_sets {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DiskEncryptionSetList, list::Error> {
+    ) -> std::result::Result<models::DiskEncryptionSetList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/diskEncryptionSets",
@@ -1552,13 +1701,13 @@ pub mod disk_encryption_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskEncryptionSetList =
+                let rsp_value: models::DiskEncryptionSetList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1568,7 +1717,7 @@ pub mod disk_encryption_sets {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1595,7 +1744,7 @@ pub mod disk_encryption_sets {
         subscription_id: &str,
         resource_group_name: &str,
         disk_encryption_set_name: &str,
-    ) -> std::result::Result<ResourceUriList, list_associated_resources::Error> {
+    ) -> std::result::Result<models::ResourceUriList, list_associated_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskEncryptionSets/{}/associatedResources",
@@ -1627,13 +1776,13 @@ pub mod disk_encryption_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceUriList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ResourceUriList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_associated_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_associated_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_associated_resources::Error::DefaultResponse {
                     status_code,
@@ -1643,7 +1792,7 @@ pub mod disk_encryption_sets {
         }
     }
     pub mod list_associated_resources {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1667,13 +1816,13 @@ pub mod disk_encryption_sets {
     }
 }
 pub mod disk_accesses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         disk_access_name: &str,
-    ) -> std::result::Result<DiskAccess, get::Error> {
+    ) -> std::result::Result<models::DiskAccess, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskAccesses/{}",
@@ -1700,13 +1849,13 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskAccess =
+                let rsp_value: models::DiskAccess =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1716,7 +1865,7 @@ pub mod disk_accesses {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1743,7 +1892,7 @@ pub mod disk_accesses {
         subscription_id: &str,
         resource_group_name: &str,
         disk_access_name: &str,
-        disk_access: &DiskAccess,
+        disk_access: &models::DiskAccess,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1775,19 +1924,19 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskAccess = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskAccess = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskAccess = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskAccess = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1797,11 +1946,11 @@ pub mod disk_accesses {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DiskAccess),
-            Accepted202(DiskAccess),
+            Ok200(models::DiskAccess),
+            Accepted202(models::DiskAccess),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1829,7 +1978,7 @@ pub mod disk_accesses {
         subscription_id: &str,
         resource_group_name: &str,
         disk_access_name: &str,
-        disk_access: &DiskAccessUpdate,
+        disk_access: &models::DiskAccessUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1858,19 +2007,19 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskAccess =
+                let rsp_value: models::DiskAccess =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskAccess =
+                let rsp_value: models::DiskAccess =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1880,11 +2029,11 @@ pub mod disk_accesses {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DiskAccess),
-            Accepted202(DiskAccess),
+            Ok200(models::DiskAccess),
+            Accepted202(models::DiskAccess),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1942,7 +2091,7 @@ pub mod disk_accesses {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1952,7 +2101,7 @@ pub mod disk_accesses {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1984,7 +2133,7 @@ pub mod disk_accesses {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DiskAccessList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DiskAccessList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskAccesses",
@@ -2015,13 +2164,13 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskAccessList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskAccessList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -2031,7 +2180,7 @@ pub mod disk_accesses {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2056,7 +2205,7 @@ pub mod disk_accesses {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DiskAccessList, list::Error> {
+    ) -> std::result::Result<models::DiskAccessList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/diskAccesses",
@@ -2081,13 +2230,13 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskAccessList =
+                let rsp_value: models::DiskAccessList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2097,7 +2246,7 @@ pub mod disk_accesses {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2124,7 +2273,7 @@ pub mod disk_accesses {
         subscription_id: &str,
         resource_group_name: &str,
         disk_access_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, get_private_link_resources::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, get_private_link_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskAccesses/{}/privateLinkResources",
@@ -2156,7 +2305,7 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_link_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2170,7 +2319,7 @@ pub mod disk_accesses {
         }
     }
     pub mod get_private_link_resources {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2195,7 +2344,7 @@ pub mod disk_accesses {
         resource_group_name: &str,
         disk_access_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get_a_private_endpoint_connection::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get_a_private_endpoint_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskAccesses/{}/privateEndpointConnections/{}",
@@ -2228,13 +2377,13 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_a_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_a_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_a_private_endpoint_connection::Error::DefaultResponse {
                     status_code,
@@ -2244,7 +2393,7 @@ pub mod disk_accesses {
         }
     }
     pub mod get_a_private_endpoint_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2272,7 +2421,7 @@ pub mod disk_accesses {
         resource_group_name: &str,
         disk_access_name: &str,
         private_endpoint_connection_name: &str,
-        private_endpoint_connection: &PrivateEndpointConnection,
+        private_endpoint_connection: &models::PrivateEndpointConnection,
     ) -> std::result::Result<update_a_private_endpoint_connection::Response, update_a_private_endpoint_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2308,19 +2457,19 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_a_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_a_private_endpoint_connection::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_a_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_a_private_endpoint_connection::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_a_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_a_private_endpoint_connection::Error::DefaultResponse {
                     status_code,
@@ -2330,11 +2479,11 @@ pub mod disk_accesses {
         }
     }
     pub mod update_a_private_endpoint_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
-            Accepted202(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
+            Accepted202(models::PrivateEndpointConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2399,7 +2548,7 @@ pub mod disk_accesses {
             http::StatusCode::NO_CONTENT => Ok(delete_a_private_endpoint_connection::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_a_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_a_private_endpoint_connection::Error::DefaultResponse {
                     status_code,
@@ -2409,7 +2558,7 @@ pub mod disk_accesses {
         }
     }
     pub mod delete_a_private_endpoint_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2442,7 +2591,7 @@ pub mod disk_accesses {
         subscription_id: &str,
         resource_group_name: &str,
         disk_access_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_private_endpoint_connections::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_private_endpoint_connections::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/diskAccesses/{}/privateEndpointConnections",
@@ -2474,13 +2623,13 @@ pub mod disk_accesses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_private_endpoint_connections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_private_endpoint_connections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_private_endpoint_connections::Error::DefaultResponse {
                     status_code,
@@ -2490,7 +2639,7 @@ pub mod disk_accesses {
         }
     }
     pub mod list_private_endpoint_connections {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2514,7 +2663,7 @@ pub mod disk_accesses {
     }
 }
 pub mod disk_restore_point {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2522,7 +2671,7 @@ pub mod disk_restore_point {
         restore_point_collection_name: &str,
         vm_restore_point_name: &str,
         disk_restore_point_name: &str,
-    ) -> std::result::Result<DiskRestorePoint, get::Error> {
+    ) -> std::result::Result<models::DiskRestorePoint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/restorePointCollections/{}/restorePoints/{}/diskRestorePoints/{}" , operation_config . base_path () , subscription_id , resource_group_name , restore_point_collection_name , vm_restore_point_name , disk_restore_point_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -2543,13 +2692,13 @@ pub mod disk_restore_point {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskRestorePoint =
+                let rsp_value: models::DiskRestorePoint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2559,7 +2708,7 @@ pub mod disk_restore_point {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2587,7 +2736,7 @@ pub mod disk_restore_point {
         resource_group_name: &str,
         restore_point_collection_name: &str,
         vm_restore_point_name: &str,
-    ) -> std::result::Result<DiskRestorePointList, list_by_restore_point::Error> {
+    ) -> std::result::Result<models::DiskRestorePointList, list_by_restore_point::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/restorePointCollections/{}/restorePoints/{}/diskRestorePoints" , operation_config . base_path () , subscription_id , resource_group_name , restore_point_collection_name , vm_restore_point_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_restore_point::Error::ParseUrlError)?;
@@ -2613,13 +2762,13 @@ pub mod disk_restore_point {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskRestorePointList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskRestorePointList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_restore_point::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_restore_point::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_restore_point::Error::DefaultResponse {
                     status_code,
@@ -2629,7 +2778,7 @@ pub mod disk_restore_point {
         }
     }
     pub mod list_by_restore_point {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2653,14 +2802,14 @@ pub mod disk_restore_point {
     }
 }
 pub mod galleries {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
         select: Option<&str>,
-    ) -> std::result::Result<Gallery, get::Error> {
+    ) -> std::result::Result<models::Gallery, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}",
@@ -2690,13 +2839,13 @@ pub mod galleries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Gallery =
+                let rsp_value: models::Gallery =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2706,7 +2855,7 @@ pub mod galleries {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2733,7 +2882,7 @@ pub mod galleries {
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
-        gallery: &Gallery,
+        gallery: &models::Gallery,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2765,25 +2914,25 @@ pub mod galleries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Gallery = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Gallery = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Gallery = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Gallery = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Gallery = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Gallery = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2793,12 +2942,12 @@ pub mod galleries {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Gallery),
-            Created201(Gallery),
-            Accepted202(Gallery),
+            Ok200(models::Gallery),
+            Created201(models::Gallery),
+            Accepted202(models::Gallery),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2826,8 +2975,8 @@ pub mod galleries {
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
-        gallery: &GalleryUpdate,
-    ) -> std::result::Result<Gallery, update::Error> {
+        gallery: &models::GalleryUpdate,
+    ) -> std::result::Result<models::Gallery, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}",
@@ -2855,13 +3004,13 @@ pub mod galleries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Gallery =
+                let rsp_value: models::Gallery =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2871,7 +3020,7 @@ pub mod galleries {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2928,7 +3077,7 @@ pub mod galleries {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2938,7 +3087,7 @@ pub mod galleries {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2970,7 +3119,7 @@ pub mod galleries {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<GalleryList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::GalleryList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries",
@@ -3001,13 +3150,13 @@ pub mod galleries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -3017,7 +3166,7 @@ pub mod galleries {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3039,7 +3188,10 @@ pub mod galleries {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<GalleryList, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<models::GalleryList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/galleries",
@@ -3064,13 +3216,13 @@ pub mod galleries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryList =
+                let rsp_value: models::GalleryList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -3080,7 +3232,7 @@ pub mod galleries {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3104,14 +3256,14 @@ pub mod galleries {
     }
 }
 pub mod gallery_images {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
         gallery_image_name: &str,
-    ) -> std::result::Result<GalleryImage, get::Error> {
+    ) -> std::result::Result<models::GalleryImage, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/images/{}",
@@ -3139,13 +3291,13 @@ pub mod gallery_images {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImage =
+                let rsp_value: models::GalleryImage =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3155,7 +3307,7 @@ pub mod gallery_images {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3183,7 +3335,7 @@ pub mod gallery_images {
         resource_group_name: &str,
         gallery_name: &str,
         gallery_image_name: &str,
-        gallery_image: &GalleryImage,
+        gallery_image: &models::GalleryImage,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3216,25 +3368,25 @@ pub mod gallery_images {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImage = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryImage = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImage = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryImage = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImage = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryImage = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -3244,12 +3396,12 @@ pub mod gallery_images {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(GalleryImage),
-            Created201(GalleryImage),
-            Accepted202(GalleryImage),
+            Ok200(models::GalleryImage),
+            Created201(models::GalleryImage),
+            Accepted202(models::GalleryImage),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3278,8 +3430,8 @@ pub mod gallery_images {
         resource_group_name: &str,
         gallery_name: &str,
         gallery_image_name: &str,
-        gallery_image: &GalleryImageUpdate,
-    ) -> std::result::Result<GalleryImage, update::Error> {
+        gallery_image: &models::GalleryImageUpdate,
+    ) -> std::result::Result<models::GalleryImage, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/images/{}",
@@ -3308,13 +3460,13 @@ pub mod gallery_images {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImage =
+                let rsp_value: models::GalleryImage =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -3324,7 +3476,7 @@ pub mod gallery_images {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3383,7 +3535,7 @@ pub mod gallery_images {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3393,7 +3545,7 @@ pub mod gallery_images {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3426,7 +3578,7 @@ pub mod gallery_images {
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
-    ) -> std::result::Result<GalleryImageList, list_by_gallery::Error> {
+    ) -> std::result::Result<models::GalleryImageList, list_by_gallery::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/images",
@@ -3456,13 +3608,13 @@ pub mod gallery_images {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImageList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryImageList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_gallery::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_gallery::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_gallery::Error::DefaultResponse {
                     status_code,
@@ -3472,7 +3624,7 @@ pub mod gallery_images {
         }
     }
     pub mod list_by_gallery {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3496,7 +3648,7 @@ pub mod gallery_images {
     }
 }
 pub mod gallery_image_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3505,7 +3657,7 @@ pub mod gallery_image_versions {
         gallery_image_name: &str,
         gallery_image_version_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<GalleryImageVersion, get::Error> {
+    ) -> std::result::Result<models::GalleryImageVersion, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/images/{}/versions/{}",
@@ -3537,13 +3689,13 @@ pub mod gallery_image_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImageVersion =
+                let rsp_value: models::GalleryImageVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3553,7 +3705,7 @@ pub mod gallery_image_versions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3582,7 +3734,7 @@ pub mod gallery_image_versions {
         gallery_name: &str,
         gallery_image_name: &str,
         gallery_image_version_name: &str,
-        gallery_image_version: &GalleryImageVersion,
+        gallery_image_version: &models::GalleryImageVersion,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3616,25 +3768,25 @@ pub mod gallery_image_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImageVersion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryImageVersion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImageVersion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryImageVersion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImageVersion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryImageVersion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -3644,12 +3796,12 @@ pub mod gallery_image_versions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(GalleryImageVersion),
-            Created201(GalleryImageVersion),
-            Accepted202(GalleryImageVersion),
+            Ok200(models::GalleryImageVersion),
+            Created201(models::GalleryImageVersion),
+            Accepted202(models::GalleryImageVersion),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3679,8 +3831,8 @@ pub mod gallery_image_versions {
         gallery_name: &str,
         gallery_image_name: &str,
         gallery_image_version_name: &str,
-        gallery_image_version: &GalleryImageVersionUpdate,
-    ) -> std::result::Result<GalleryImageVersion, update::Error> {
+        gallery_image_version: &models::GalleryImageVersionUpdate,
+    ) -> std::result::Result<models::GalleryImageVersion, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/images/{}/versions/{}",
@@ -3710,13 +3862,13 @@ pub mod gallery_image_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImageVersion =
+                let rsp_value: models::GalleryImageVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -3726,7 +3878,7 @@ pub mod gallery_image_versions {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3787,7 +3939,7 @@ pub mod gallery_image_versions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3797,7 +3949,7 @@ pub mod gallery_image_versions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3831,7 +3983,7 @@ pub mod gallery_image_versions {
         resource_group_name: &str,
         gallery_name: &str,
         gallery_image_name: &str,
-    ) -> std::result::Result<GalleryImageVersionList, list_by_gallery_image::Error> {
+    ) -> std::result::Result<models::GalleryImageVersionList, list_by_gallery_image::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/images/{}/versions",
@@ -3864,13 +4016,13 @@ pub mod gallery_image_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryImageVersionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryImageVersionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_gallery_image::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_gallery_image::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_gallery_image::Error::DefaultResponse {
                     status_code,
@@ -3880,7 +4032,7 @@ pub mod gallery_image_versions {
         }
     }
     pub mod list_by_gallery_image {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3904,14 +4056,14 @@ pub mod gallery_image_versions {
     }
 }
 pub mod gallery_applications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
         gallery_application_name: &str,
-    ) -> std::result::Result<GalleryApplication, get::Error> {
+    ) -> std::result::Result<models::GalleryApplication, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/applications/{}",
@@ -3939,13 +4091,13 @@ pub mod gallery_applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplication =
+                let rsp_value: models::GalleryApplication =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3955,7 +4107,7 @@ pub mod gallery_applications {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3983,7 +4135,7 @@ pub mod gallery_applications {
         resource_group_name: &str,
         gallery_name: &str,
         gallery_application_name: &str,
-        gallery_application: &GalleryApplication,
+        gallery_application: &models::GalleryApplication,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4016,25 +4168,25 @@ pub mod gallery_applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplication = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryApplication = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplication = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryApplication = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplication = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryApplication = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -4044,12 +4196,12 @@ pub mod gallery_applications {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(GalleryApplication),
-            Created201(GalleryApplication),
-            Accepted202(GalleryApplication),
+            Ok200(models::GalleryApplication),
+            Created201(models::GalleryApplication),
+            Accepted202(models::GalleryApplication),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4078,8 +4230,8 @@ pub mod gallery_applications {
         resource_group_name: &str,
         gallery_name: &str,
         gallery_application_name: &str,
-        gallery_application: &GalleryApplicationUpdate,
-    ) -> std::result::Result<GalleryApplication, update::Error> {
+        gallery_application: &models::GalleryApplicationUpdate,
+    ) -> std::result::Result<models::GalleryApplication, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/applications/{}",
@@ -4108,13 +4260,13 @@ pub mod gallery_applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplication =
+                let rsp_value: models::GalleryApplication =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -4124,7 +4276,7 @@ pub mod gallery_applications {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4183,7 +4335,7 @@ pub mod gallery_applications {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4193,7 +4345,7 @@ pub mod gallery_applications {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4226,7 +4378,7 @@ pub mod gallery_applications {
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
-    ) -> std::result::Result<GalleryApplicationList, list_by_gallery::Error> {
+    ) -> std::result::Result<models::GalleryApplicationList, list_by_gallery::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/applications",
@@ -4256,13 +4408,13 @@ pub mod gallery_applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplicationList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryApplicationList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_gallery::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_gallery::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_gallery::Error::DefaultResponse {
                     status_code,
@@ -4272,7 +4424,7 @@ pub mod gallery_applications {
         }
     }
     pub mod list_by_gallery {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4296,7 +4448,7 @@ pub mod gallery_applications {
     }
 }
 pub mod gallery_application_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -4305,7 +4457,7 @@ pub mod gallery_application_versions {
         gallery_application_name: &str,
         gallery_application_version_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<GalleryApplicationVersion, get::Error> {
+    ) -> std::result::Result<models::GalleryApplicationVersion, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/applications/{}/versions/{}",
@@ -4337,13 +4489,13 @@ pub mod gallery_application_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplicationVersion =
+                let rsp_value: models::GalleryApplicationVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4353,7 +4505,7 @@ pub mod gallery_application_versions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4382,7 +4534,7 @@ pub mod gallery_application_versions {
         gallery_name: &str,
         gallery_application_name: &str,
         gallery_application_version_name: &str,
-        gallery_application_version: &GalleryApplicationVersion,
+        gallery_application_version: &models::GalleryApplicationVersion,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4416,25 +4568,25 @@ pub mod gallery_application_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplicationVersion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryApplicationVersion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplicationVersion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryApplicationVersion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplicationVersion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryApplicationVersion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -4444,12 +4596,12 @@ pub mod gallery_application_versions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(GalleryApplicationVersion),
-            Created201(GalleryApplicationVersion),
-            Accepted202(GalleryApplicationVersion),
+            Ok200(models::GalleryApplicationVersion),
+            Created201(models::GalleryApplicationVersion),
+            Accepted202(models::GalleryApplicationVersion),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4479,8 +4631,8 @@ pub mod gallery_application_versions {
         gallery_name: &str,
         gallery_application_name: &str,
         gallery_application_version_name: &str,
-        gallery_application_version: &GalleryApplicationVersionUpdate,
-    ) -> std::result::Result<GalleryApplicationVersion, update::Error> {
+        gallery_application_version: &models::GalleryApplicationVersionUpdate,
+    ) -> std::result::Result<models::GalleryApplicationVersion, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/applications/{}/versions/{}",
@@ -4510,13 +4662,13 @@ pub mod gallery_application_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplicationVersion =
+                let rsp_value: models::GalleryApplicationVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -4526,7 +4678,7 @@ pub mod gallery_application_versions {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4587,7 +4739,7 @@ pub mod gallery_application_versions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4597,7 +4749,7 @@ pub mod gallery_application_versions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4631,7 +4783,7 @@ pub mod gallery_application_versions {
         resource_group_name: &str,
         gallery_name: &str,
         gallery_application_name: &str,
-    ) -> std::result::Result<GalleryApplicationVersionList, list_by_gallery_application::Error> {
+    ) -> std::result::Result<models::GalleryApplicationVersionList, list_by_gallery_application::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/galleries/{}/applications/{}/versions",
@@ -4664,13 +4816,13 @@ pub mod gallery_application_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GalleryApplicationVersionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GalleryApplicationVersionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_gallery_application::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_gallery_application::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_gallery_application::Error::DefaultResponse {
                     status_code,
@@ -4680,7 +4832,7 @@ pub mod gallery_application_versions {
         }
     }
     pub mod list_by_gallery_application {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4704,13 +4856,13 @@ pub mod gallery_application_versions {
     }
 }
 pub mod gallery_sharing_profile {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         gallery_name: &str,
-        sharing_update: &SharingUpdate,
+        sharing_update: &models::SharingUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4739,19 +4891,19 @@ pub mod gallery_sharing_profile {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharingUpdate =
+                let rsp_value: models::SharingUpdate =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharingUpdate =
+                let rsp_value: models::SharingUpdate =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -4761,11 +4913,11 @@ pub mod gallery_sharing_profile {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SharingUpdate),
-            Accepted202(SharingUpdate),
+            Ok200(models::SharingUpdate),
+            Accepted202(models::SharingUpdate),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4790,13 +4942,13 @@ pub mod gallery_sharing_profile {
     }
 }
 pub mod shared_galleries {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
         shared_to: Option<&str>,
-    ) -> std::result::Result<SharedGalleryList, list::Error> {
+    ) -> std::result::Result<models::SharedGalleryList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/sharedGalleries",
@@ -4825,13 +4977,13 @@ pub mod shared_galleries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedGalleryList =
+                let rsp_value: models::SharedGalleryList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -4841,7 +4993,7 @@ pub mod shared_galleries {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4868,7 +5020,7 @@ pub mod shared_galleries {
         subscription_id: &str,
         location: &str,
         gallery_unique_name: &str,
-    ) -> std::result::Result<SharedGallery, get::Error> {
+    ) -> std::result::Result<models::SharedGallery, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/sharedGalleries/{}",
@@ -4895,13 +5047,13 @@ pub mod shared_galleries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedGallery =
+                let rsp_value: models::SharedGallery =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4911,7 +5063,7 @@ pub mod shared_galleries {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4935,14 +5087,14 @@ pub mod shared_galleries {
     }
 }
 pub mod shared_gallery_images {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
         gallery_unique_name: &str,
         shared_to: Option<&str>,
-    ) -> std::result::Result<SharedGalleryImageList, list::Error> {
+    ) -> std::result::Result<models::SharedGalleryImageList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/sharedGalleries/{}/images",
@@ -4972,13 +5124,13 @@ pub mod shared_gallery_images {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedGalleryImageList =
+                let rsp_value: models::SharedGalleryImageList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -4988,7 +5140,7 @@ pub mod shared_gallery_images {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5016,7 +5168,7 @@ pub mod shared_gallery_images {
         location: &str,
         gallery_unique_name: &str,
         gallery_image_name: &str,
-    ) -> std::result::Result<SharedGalleryImage, get::Error> {
+    ) -> std::result::Result<models::SharedGalleryImage, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/sharedGalleries/{}/images/{}",
@@ -5044,13 +5196,13 @@ pub mod shared_gallery_images {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedGalleryImage =
+                let rsp_value: models::SharedGalleryImage =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -5060,7 +5212,7 @@ pub mod shared_gallery_images {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5084,7 +5236,7 @@ pub mod shared_gallery_images {
     }
 }
 pub mod shared_gallery_image_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5092,7 +5244,7 @@ pub mod shared_gallery_image_versions {
         gallery_unique_name: &str,
         gallery_image_name: &str,
         shared_to: Option<&str>,
-    ) -> std::result::Result<SharedGalleryImageVersionList, list::Error> {
+    ) -> std::result::Result<models::SharedGalleryImageVersionList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/sharedGalleries/{}/images/{}/versions",
@@ -5123,13 +5275,13 @@ pub mod shared_gallery_image_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedGalleryImageVersionList =
+                let rsp_value: models::SharedGalleryImageVersionList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -5139,7 +5291,7 @@ pub mod shared_gallery_image_versions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5168,7 +5320,7 @@ pub mod shared_gallery_image_versions {
         gallery_unique_name: &str,
         gallery_image_name: &str,
         gallery_image_version_name: &str,
-    ) -> std::result::Result<SharedGalleryImageVersion, get::Error> {
+    ) -> std::result::Result<models::SharedGalleryImageVersion, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Compute/locations/{}/sharedGalleries/{}/images/{}/versions/{}",
@@ -5197,13 +5349,13 @@ pub mod shared_gallery_image_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedGalleryImageVersion =
+                let rsp_value: models::SharedGalleryImageVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -5213,7 +5365,7 @@ pub mod shared_gallery_image_versions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

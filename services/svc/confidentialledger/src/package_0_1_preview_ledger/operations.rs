@@ -2,10 +2,41 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ConfidentialLedger_GetConstitution(#[from] confidential_ledger::get_constitution::Error),
+    #[error(transparent)]
+    ConfidentialLedger_GetConsortiumMembers(#[from] confidential_ledger::get_consortium_members::Error),
+    #[error(transparent)]
+    ConfidentialLedger_GetEnclaveQuotes(#[from] confidential_ledger::get_enclave_quotes::Error),
+    #[error(transparent)]
+    ConfidentialLedger_GetLedgerEntries(#[from] confidential_ledger::get_ledger_entries::Error),
+    #[error(transparent)]
+    ConfidentialLedger_PostLedgerEntry(#[from] confidential_ledger::post_ledger_entry::Error),
+    #[error(transparent)]
+    ConfidentialLedger_GetLedgerEntry(#[from] confidential_ledger::get_ledger_entry::Error),
+    #[error(transparent)]
+    ConfidentialLedger_GetReceipt(#[from] confidential_ledger::get_receipt::Error),
+    #[error(transparent)]
+    ConfidentialLedger_GetTransactionStatus(#[from] confidential_ledger::get_transaction_status::Error),
+    #[error(transparent)]
+    ConfidentialLedger_GetCurrentLedgerEntry(#[from] confidential_ledger::get_current_ledger_entry::Error),
+    #[error(transparent)]
+    ConfidentialLedger_GetUser(#[from] confidential_ledger::get_user::Error),
+    #[error(transparent)]
+    ConfidentialLedger_CreateOrUpdateUser(#[from] confidential_ledger::create_or_update_user::Error),
+    #[error(transparent)]
+    ConfidentialLedger_DeleteUser(#[from] confidential_ledger::delete_user::Error),
+}
 pub mod confidential_ledger {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_constitution(operation_config: &crate::OperationConfig) -> std::result::Result<Constitution, get_constitution::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get_constitution(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::Constitution, get_constitution::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/governance/constitution", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_constitution::Error::ParseUrlError)?;
@@ -29,13 +60,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Constitution = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Constitution = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_constitution::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_constitution::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_constitution::Error::DefaultResponse {
                     status_code,
@@ -45,7 +76,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_constitution {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -69,7 +100,7 @@ pub mod confidential_ledger {
     }
     pub async fn get_consortium_members(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<Consortium, get_consortium_members::Error> {
+    ) -> std::result::Result<models::Consortium, get_consortium_members::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/governance/members", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_consortium_members::Error::ParseUrlError)?;
@@ -95,13 +126,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Consortium = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Consortium = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_consortium_members::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_consortium_members::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_consortium_members::Error::DefaultResponse {
                     status_code,
@@ -111,7 +142,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_consortium_members {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -135,7 +166,7 @@ pub mod confidential_ledger {
     }
     pub async fn get_enclave_quotes(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<ConfidentialLedgerEnclaves, get_enclave_quotes::Error> {
+    ) -> std::result::Result<models::ConfidentialLedgerEnclaves, get_enclave_quotes::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/enclaveQuotes", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_enclave_quotes::Error::ParseUrlError)?;
@@ -159,13 +190,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerEnclaves = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerEnclaves = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_enclave_quotes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_enclave_quotes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_enclave_quotes::Error::DefaultResponse {
                     status_code,
@@ -175,7 +206,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_enclave_quotes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -202,7 +233,7 @@ pub mod confidential_ledger {
         sub_ledger_id: Option<&str>,
         from_transaction_id: Option<&str>,
         to_transaction_id: Option<&str>,
-    ) -> std::result::Result<PagedLedgerEntries, get_ledger_entries::Error> {
+    ) -> std::result::Result<models::PagedLedgerEntries, get_ledger_entries::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/transactions", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_ledger_entries::Error::ParseUrlError)?;
@@ -235,13 +266,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PagedLedgerEntries = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PagedLedgerEntries = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ledger_entries::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ledger_entries::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_ledger_entries::Error::DefaultResponse {
                     status_code,
@@ -251,7 +282,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_ledger_entries {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -276,8 +307,8 @@ pub mod confidential_ledger {
     pub async fn post_ledger_entry(
         operation_config: &crate::OperationConfig,
         sub_ledger_id: Option<&str>,
-        entry: Option<&LedgerEntry>,
-    ) -> std::result::Result<LedgerWriteResult, post_ledger_entry::Error> {
+        entry: Option<&models::LedgerEntry>,
+    ) -> std::result::Result<models::LedgerWriteResult, post_ledger_entry::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/transactions", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(post_ledger_entry::Error::ParseUrlError)?;
@@ -309,13 +340,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LedgerWriteResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LedgerWriteResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_ledger_entry::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_ledger_entry::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(post_ledger_entry::Error::DefaultResponse {
                     status_code,
@@ -325,7 +356,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod post_ledger_entry {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -351,7 +382,7 @@ pub mod confidential_ledger {
         operation_config: &crate::OperationConfig,
         sub_ledger_id: Option<&str>,
         transaction_id: &str,
-    ) -> std::result::Result<LedgerQueryResult, get_ledger_entry::Error> {
+    ) -> std::result::Result<models::LedgerQueryResult, get_ledger_entry::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/transactions/{}", operation_config.base_path(), transaction_id);
         let mut url = url::Url::parse(url_str).map_err(get_ledger_entry::Error::ParseUrlError)?;
@@ -378,13 +409,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LedgerQueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LedgerQueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ledger_entry::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ledger_entry::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_ledger_entry::Error::DefaultResponse {
                     status_code,
@@ -394,7 +425,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_ledger_entry {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -419,7 +450,7 @@ pub mod confidential_ledger {
     pub async fn get_receipt(
         operation_config: &crate::OperationConfig,
         transaction_id: &str,
-    ) -> std::result::Result<TransactionReceipt, get_receipt::Error> {
+    ) -> std::result::Result<models::TransactionReceipt, get_receipt::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/transactions/{}/receipt", operation_config.base_path(), transaction_id);
         let mut url = url::Url::parse(url_str).map_err(get_receipt::Error::ParseUrlError)?;
@@ -443,13 +474,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionReceipt =
+                let rsp_value: models::TransactionReceipt =
                     serde_json::from_slice(rsp_body).map_err(|source| get_receipt::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError =
+                let rsp_value: models::ConfidentialLedgerError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_receipt::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_receipt::Error::DefaultResponse {
                     status_code,
@@ -459,7 +490,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_receipt {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -484,7 +515,7 @@ pub mod confidential_ledger {
     pub async fn get_transaction_status(
         operation_config: &crate::OperationConfig,
         transaction_id: &str,
-    ) -> std::result::Result<TransactionStatus, get_transaction_status::Error> {
+    ) -> std::result::Result<models::TransactionStatus, get_transaction_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/transactions/{}/status", operation_config.base_path(), transaction_id);
         let mut url = url::Url::parse(url_str).map_err(get_transaction_status::Error::ParseUrlError)?;
@@ -510,13 +541,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TransactionStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TransactionStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_transaction_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_transaction_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_transaction_status::Error::DefaultResponse {
                     status_code,
@@ -526,7 +557,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_transaction_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -551,7 +582,7 @@ pub mod confidential_ledger {
     pub async fn get_current_ledger_entry(
         operation_config: &crate::OperationConfig,
         sub_ledger_id: Option<&str>,
-    ) -> std::result::Result<LedgerEntry, get_current_ledger_entry::Error> {
+    ) -> std::result::Result<models::LedgerEntry, get_current_ledger_entry::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/transactions/current", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_current_ledger_entry::Error::ParseUrlError)?;
@@ -580,13 +611,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LedgerEntry = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LedgerEntry = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_current_ledger_entry::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_current_ledger_entry::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_current_ledger_entry::Error::DefaultResponse {
                     status_code,
@@ -596,7 +627,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_current_ledger_entry {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -618,7 +649,10 @@ pub mod confidential_ledger {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get_user(operation_config: &crate::OperationConfig, user_id: &str) -> std::result::Result<LedgerUser, get_user::Error> {
+    pub async fn get_user(
+        operation_config: &crate::OperationConfig,
+        user_id: &str,
+    ) -> std::result::Result<models::LedgerUser, get_user::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/users/{}", operation_config.base_path(), user_id);
         let mut url = url::Url::parse(url_str).map_err(get_user::Error::ParseUrlError)?;
@@ -642,13 +676,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LedgerUser =
+                let rsp_value: models::LedgerUser =
                     serde_json::from_slice(rsp_body).map_err(|source| get_user::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError =
+                let rsp_value: models::ConfidentialLedgerError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_user::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_user::Error::DefaultResponse {
                     status_code,
@@ -658,7 +692,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod get_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -683,8 +717,8 @@ pub mod confidential_ledger {
     pub async fn create_or_update_user(
         operation_config: &crate::OperationConfig,
         user_id: &str,
-        user_details: &LedgerUser,
-    ) -> std::result::Result<LedgerUser, create_or_update_user::Error> {
+        user_details: &models::LedgerUser,
+    ) -> std::result::Result<models::LedgerUser, create_or_update_user::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/app/users/{}", operation_config.base_path(), user_id);
         let mut url = url::Url::parse(url_str).map_err(create_or_update_user::Error::ParseUrlError)?;
@@ -711,13 +745,13 @@ pub mod confidential_ledger {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LedgerUser = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LedgerUser = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_user::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_user::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_user::Error::DefaultResponse {
                     status_code,
@@ -727,7 +761,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod create_or_update_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -774,7 +808,7 @@ pub mod confidential_ledger {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError =
+                let rsp_value: models::ConfidentialLedgerError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete_user::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_user::Error::DefaultResponse {
                     status_code,
@@ -784,7 +818,7 @@ pub mod confidential_ledger {
         }
     }
     pub mod delete_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

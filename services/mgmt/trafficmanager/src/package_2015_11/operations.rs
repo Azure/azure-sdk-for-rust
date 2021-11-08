@@ -2,9 +2,36 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Endpoints_Get(#[from] endpoints::get::Error),
+    #[error(transparent)]
+    Endpoints_CreateOrUpdate(#[from] endpoints::create_or_update::Error),
+    #[error(transparent)]
+    Endpoints_Update(#[from] endpoints::update::Error),
+    #[error(transparent)]
+    Endpoints_Delete(#[from] endpoints::delete::Error),
+    #[error(transparent)]
+    Profiles_CheckTrafficManagerRelativeDnsNameAvailability(#[from] profiles::check_traffic_manager_relative_dns_name_availability::Error),
+    #[error(transparent)]
+    Profiles_ListAllInResourceGroup(#[from] profiles::list_all_in_resource_group::Error),
+    #[error(transparent)]
+    Profiles_ListAll(#[from] profiles::list_all::Error),
+    #[error(transparent)]
+    Profiles_Get(#[from] profiles::get::Error),
+    #[error(transparent)]
+    Profiles_CreateOrUpdate(#[from] profiles::create_or_update::Error),
+    #[error(transparent)]
+    Profiles_Update(#[from] profiles::update::Error),
+    #[error(transparent)]
+    Profiles_Delete(#[from] profiles::delete::Error),
+}
 pub mod endpoints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -12,7 +39,7 @@ pub mod endpoints {
         endpoint_type: &str,
         endpoint_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Endpoint, get::Error> {
+    ) -> std::result::Result<models::Endpoint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}/{}/{}",
@@ -41,7 +68,7 @@ pub mod endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Endpoint =
+                let rsp_value: models::Endpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -55,7 +82,7 @@ pub mod endpoints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -80,7 +107,7 @@ pub mod endpoints {
         profile_name: &str,
         endpoint_type: &str,
         endpoint_name: &str,
-        parameters: &Endpoint,
+        parameters: &models::Endpoint,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -115,13 +142,13 @@ pub mod endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Endpoint = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Endpoint = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Endpoint = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Endpoint = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -135,11 +162,11 @@ pub mod endpoints {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Endpoint),
-            Created201(Endpoint),
+            Ok200(models::Endpoint),
+            Created201(models::Endpoint),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -165,9 +192,9 @@ pub mod endpoints {
         profile_name: &str,
         endpoint_type: &str,
         endpoint_name: &str,
-        parameters: &Endpoint,
+        parameters: &models::Endpoint,
         subscription_id: &str,
-    ) -> std::result::Result<Endpoint, update::Error> {
+    ) -> std::result::Result<models::Endpoint, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}/{}/{}",
@@ -197,7 +224,7 @@ pub mod endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Endpoint =
+                let rsp_value: models::Endpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -211,7 +238,7 @@ pub mod endpoints {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -276,7 +303,7 @@ pub mod endpoints {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -302,11 +329,11 @@ pub mod endpoints {
     }
 }
 pub mod profiles {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_traffic_manager_relative_dns_name_availability(
         operation_config: &crate::OperationConfig,
-        parameters: &CheckTrafficManagerRelativeDnsNameAvailabilityParameters,
-    ) -> std::result::Result<TrafficManagerNameAvailability, check_traffic_manager_relative_dns_name_availability::Error> {
+        parameters: &models::CheckTrafficManagerRelativeDnsNameAvailabilityParameters,
+    ) -> std::result::Result<models::TrafficManagerNameAvailability, check_traffic_manager_relative_dns_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Network/checkTrafficManagerNameAvailability",
@@ -337,7 +364,7 @@ pub mod profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TrafficManagerNameAvailability = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::TrafficManagerNameAvailability = serde_json::from_slice(rsp_body).map_err(|source| {
                     check_traffic_manager_relative_dns_name_availability::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
@@ -352,7 +379,7 @@ pub mod profiles {
         }
     }
     pub mod check_traffic_manager_relative_dns_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -375,7 +402,7 @@ pub mod profiles {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProfileListResult, list_all_in_resource_group::Error> {
+    ) -> std::result::Result<models::ProfileListResult, list_all_in_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles",
@@ -406,7 +433,7 @@ pub mod profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProfileListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProfileListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_all_in_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -420,7 +447,7 @@ pub mod profiles {
         }
     }
     pub mod list_all_in_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -442,7 +469,7 @@ pub mod profiles {
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ProfileListResult, list_all::Error> {
+    ) -> std::result::Result<models::ProfileListResult, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/trafficmanagerprofiles",
@@ -470,7 +497,7 @@ pub mod profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProfileListResult =
+                let rsp_value: models::ProfileListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -484,7 +511,7 @@ pub mod profiles {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -508,7 +535,7 @@ pub mod profiles {
         resource_group_name: &str,
         profile_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Profile, get::Error> {
+    ) -> std::result::Result<models::Profile, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}",
@@ -535,7 +562,7 @@ pub mod profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Profile =
+                let rsp_value: models::Profile =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -549,7 +576,7 @@ pub mod profiles {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -572,7 +599,7 @@ pub mod profiles {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         profile_name: &str,
-        parameters: &Profile,
+        parameters: &models::Profile,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -605,13 +632,13 @@ pub mod profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Profile = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Profile = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Profile = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Profile = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -625,11 +652,11 @@ pub mod profiles {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Profile),
-            Created201(Profile),
+            Ok200(models::Profile),
+            Created201(models::Profile),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -653,9 +680,9 @@ pub mod profiles {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         profile_name: &str,
-        parameters: &Profile,
+        parameters: &models::Profile,
         subscription_id: &str,
-    ) -> std::result::Result<Profile, update::Error> {
+    ) -> std::result::Result<models::Profile, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}",
@@ -683,7 +710,7 @@ pub mod profiles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Profile =
+                let rsp_value: models::Profile =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -697,7 +724,7 @@ pub mod profiles {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -758,7 +785,7 @@ pub mod profiles {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

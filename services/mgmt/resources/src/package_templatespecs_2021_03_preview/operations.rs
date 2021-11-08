@@ -2,16 +2,43 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    TemplateSpecs_Get(#[from] template_specs::get::Error),
+    #[error(transparent)]
+    TemplateSpecs_CreateOrUpdate(#[from] template_specs::create_or_update::Error),
+    #[error(transparent)]
+    TemplateSpecs_Update(#[from] template_specs::update::Error),
+    #[error(transparent)]
+    TemplateSpecs_Delete(#[from] template_specs::delete::Error),
+    #[error(transparent)]
+    TemplateSpecs_ListBySubscription(#[from] template_specs::list_by_subscription::Error),
+    #[error(transparent)]
+    TemplateSpecs_ListByResourceGroup(#[from] template_specs::list_by_resource_group::Error),
+    #[error(transparent)]
+    TemplateSpecVersions_Get(#[from] template_spec_versions::get::Error),
+    #[error(transparent)]
+    TemplateSpecVersions_CreateOrUpdate(#[from] template_spec_versions::create_or_update::Error),
+    #[error(transparent)]
+    TemplateSpecVersions_Update(#[from] template_spec_versions::update::Error),
+    #[error(transparent)]
+    TemplateSpecVersions_Delete(#[from] template_spec_versions::delete::Error),
+    #[error(transparent)]
+    TemplateSpecVersions_List(#[from] template_spec_versions::list::Error),
+}
 pub mod template_specs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         template_spec_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<TemplateSpec, get::Error> {
+    ) -> std::result::Result<models::TemplateSpec, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}",
@@ -41,13 +68,13 @@ pub mod template_specs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpec =
+                let rsp_value: models::TemplateSpec =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError =
+                let rsp_value: models::TemplateSpecsError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -57,7 +84,7 @@ pub mod template_specs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -84,7 +111,7 @@ pub mod template_specs {
         subscription_id: &str,
         resource_group_name: &str,
         template_spec_name: &str,
-        template_spec: &TemplateSpec,
+        template_spec: &models::TemplateSpec,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -116,19 +143,19 @@ pub mod template_specs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpec = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpec = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpec = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpec = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpecsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -138,11 +165,11 @@ pub mod template_specs {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(TemplateSpec),
-            Created201(TemplateSpec),
+            Ok200(models::TemplateSpec),
+            Created201(models::TemplateSpec),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -170,8 +197,8 @@ pub mod template_specs {
         subscription_id: &str,
         resource_group_name: &str,
         template_spec_name: &str,
-        template_spec: Option<&TemplateSpecUpdateModel>,
-    ) -> std::result::Result<TemplateSpec, update::Error> {
+        template_spec: Option<&models::TemplateSpecUpdateModel>,
+    ) -> std::result::Result<models::TemplateSpec, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}",
@@ -203,13 +230,13 @@ pub mod template_specs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpec =
+                let rsp_value: models::TemplateSpec =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError =
+                let rsp_value: models::TemplateSpecsError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -219,7 +246,7 @@ pub mod template_specs {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -275,7 +302,7 @@ pub mod template_specs {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError =
+                let rsp_value: models::TemplateSpecsError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -285,7 +312,7 @@ pub mod template_specs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -316,7 +343,7 @@ pub mod template_specs {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<TemplateSpecsListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::TemplateSpecsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Resources/templateSpecs/",
@@ -347,13 +374,13 @@ pub mod template_specs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpecsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpecsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -363,7 +390,7 @@ pub mod template_specs {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -390,7 +417,7 @@ pub mod template_specs {
         subscription_id: &str,
         resource_group_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<TemplateSpecsListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::TemplateSpecsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/",
@@ -424,13 +451,13 @@ pub mod template_specs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpecsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpecsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -440,7 +467,7 @@ pub mod template_specs {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -464,14 +491,14 @@ pub mod template_specs {
     }
 }
 pub mod template_spec_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         template_spec_name: &str,
         template_spec_version: &str,
-    ) -> std::result::Result<TemplateSpecVersion, get::Error> {
+    ) -> std::result::Result<models::TemplateSpecVersion, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}/versions/{}",
@@ -499,13 +526,13 @@ pub mod template_spec_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecVersion =
+                let rsp_value: models::TemplateSpecVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError =
+                let rsp_value: models::TemplateSpecsError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -515,7 +542,7 @@ pub mod template_spec_versions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -543,7 +570,7 @@ pub mod template_spec_versions {
         resource_group_name: &str,
         template_spec_name: &str,
         template_spec_version: &str,
-        template_spec_version_model: &TemplateSpecVersion,
+        template_spec_version_model: &models::TemplateSpecVersion,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -576,19 +603,19 @@ pub mod template_spec_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecVersion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpecVersion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecVersion = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpecVersion = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TemplateSpecsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -598,11 +625,11 @@ pub mod template_spec_versions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(TemplateSpecVersion),
-            Created201(TemplateSpecVersion),
+            Ok200(models::TemplateSpecVersion),
+            Created201(models::TemplateSpecVersion),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -631,8 +658,8 @@ pub mod template_spec_versions {
         resource_group_name: &str,
         template_spec_name: &str,
         template_spec_version: &str,
-        template_spec_version_update_model: Option<&TemplateSpecVersionUpdateModel>,
-    ) -> std::result::Result<TemplateSpecVersion, update::Error> {
+        template_spec_version_update_model: Option<&models::TemplateSpecVersionUpdateModel>,
+    ) -> std::result::Result<models::TemplateSpecVersion, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}/versions/{}",
@@ -665,13 +692,13 @@ pub mod template_spec_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecVersion =
+                let rsp_value: models::TemplateSpecVersion =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError =
+                let rsp_value: models::TemplateSpecsError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -681,7 +708,7 @@ pub mod template_spec_versions {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -739,7 +766,7 @@ pub mod template_spec_versions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError =
+                let rsp_value: models::TemplateSpecsError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -749,7 +776,7 @@ pub mod template_spec_versions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -781,7 +808,7 @@ pub mod template_spec_versions {
         subscription_id: &str,
         resource_group_name: &str,
         template_spec_name: &str,
-    ) -> std::result::Result<TemplateSpecVersionsListResult, list::Error> {
+    ) -> std::result::Result<models::TemplateSpecVersionsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Resources/templateSpecs/{}/versions",
@@ -808,13 +835,13 @@ pub mod template_spec_versions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecVersionsListResult =
+                let rsp_value: models::TemplateSpecVersionsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: TemplateSpecsError =
+                let rsp_value: models::TemplateSpecsError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -824,7 +851,7 @@ pub mod template_spec_versions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

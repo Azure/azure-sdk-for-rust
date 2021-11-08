@@ -2,10 +2,43 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    AdminKeys_Get(#[from] admin_keys::get::Error),
+    #[error(transparent)]
+    AdminKeys_Regenerate(#[from] admin_keys::regenerate::Error),
+    #[error(transparent)]
+    QueryKeys_Create(#[from] query_keys::create::Error),
+    #[error(transparent)]
+    QueryKeys_ListBySearchServiceGet(#[from] query_keys::list_by_search_service_get::Error),
+    #[error(transparent)]
+    QueryKeys_ListBySearchService(#[from] query_keys::list_by_search_service::Error),
+    #[error(transparent)]
+    QueryKeys_Delete(#[from] query_keys::delete::Error),
+    #[error(transparent)]
+    Services_Get(#[from] services::get::Error),
+    #[error(transparent)]
+    Services_CreateOrUpdate(#[from] services::create_or_update::Error),
+    #[error(transparent)]
+    Services_Update(#[from] services::update::Error),
+    #[error(transparent)]
+    Services_Delete(#[from] services::delete::Error),
+    #[error(transparent)]
+    Services_ListByResourceGroup(#[from] services::list_by_resource_group::Error),
+    #[error(transparent)]
+    Services_ListBySubscription(#[from] services::list_by_subscription::Error),
+    #[error(transparent)]
+    Services_CheckNameAvailability(#[from] services::check_name_availability::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Search/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +59,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +73,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,14 +94,14 @@ pub mod operations {
     }
 }
 pub mod admin_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         search_service_name: &str,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<AdminKeyResult, get::Error> {
+    ) -> std::result::Result<models::AdminKeyResult, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Search/searchServices/{}/listAdminKeys",
@@ -99,13 +132,13 @@ pub mod admin_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdminKeyResult =
+                let rsp_value: models::AdminKeyResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -115,7 +148,7 @@ pub mod admin_keys {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -144,7 +177,7 @@ pub mod admin_keys {
         key_kind: &str,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<AdminKeyResult, regenerate::Error> {
+    ) -> std::result::Result<models::AdminKeyResult, regenerate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Search/searchServices/{}/regenerateAdminKey/{}",
@@ -179,13 +212,13 @@ pub mod admin_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdminKeyResult =
+                let rsp_value: models::AdminKeyResult =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate::Error::DefaultResponse {
                     status_code,
@@ -195,7 +228,7 @@ pub mod admin_keys {
         }
     }
     pub mod regenerate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -219,7 +252,7 @@ pub mod admin_keys {
     }
 }
 pub mod query_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn create(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -227,7 +260,7 @@ pub mod query_keys {
         name: &str,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<QueryKey, create::Error> {
+    ) -> std::result::Result<models::QueryKey, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Search/searchServices/{}/createQueryKey/{}",
@@ -259,13 +292,13 @@ pub mod query_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryKey =
+                let rsp_value: models::QueryKey =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -275,7 +308,7 @@ pub mod query_keys {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -303,7 +336,7 @@ pub mod query_keys {
         search_service_name: &str,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ListQueryKeysResult, list_by_search_service_get::Error> {
+    ) -> std::result::Result<models::ListQueryKeysResult, list_by_search_service_get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Search/searchServices/{}/listQueryKeys",
@@ -338,13 +371,13 @@ pub mod query_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListQueryKeysResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListQueryKeysResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_search_service_get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_search_service_get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_search_service_get::Error::DefaultResponse {
                     status_code,
@@ -354,7 +387,7 @@ pub mod query_keys {
         }
     }
     pub mod list_by_search_service_get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -382,7 +415,7 @@ pub mod query_keys {
         search_service_name: &str,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ListQueryKeysResult, list_by_search_service::Error> {
+    ) -> std::result::Result<models::ListQueryKeysResult, list_by_search_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Search/searchServices/{}/listQueryKeys",
@@ -418,13 +451,13 @@ pub mod query_keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListQueryKeysResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListQueryKeysResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_search_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_search_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_search_service::Error::DefaultResponse {
                     status_code,
@@ -434,7 +467,7 @@ pub mod query_keys {
         }
     }
     pub mod list_by_search_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -497,7 +530,7 @@ pub mod query_keys {
             http::StatusCode::NOT_FOUND => Err(delete::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -507,7 +540,7 @@ pub mod query_keys {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -538,14 +571,14 @@ pub mod query_keys {
     }
 }
 pub mod services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         search_service_name: &str,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SearchService, get::Error> {
+    ) -> std::result::Result<models::SearchService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Search/searchServices/{}",
@@ -575,13 +608,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SearchService =
+                let rsp_value: models::SearchService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -591,7 +624,7 @@ pub mod services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -617,7 +650,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         search_service_name: &str,
-        service: &SearchService,
+        service: &models::SearchService,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -654,19 +687,19 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SearchService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SearchService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SearchService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SearchService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -676,11 +709,11 @@ pub mod services {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SearchService),
-            Created201(SearchService),
+            Ok200(models::SearchService),
+            Created201(models::SearchService),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -707,10 +740,10 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         search_service_name: &str,
-        service: &SearchService,
+        service: &models::SearchService,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SearchService, update::Error> {
+    ) -> std::result::Result<models::SearchService, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Search/searchServices/{}",
@@ -741,13 +774,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SearchService =
+                let rsp_value: models::SearchService =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -757,7 +790,7 @@ pub mod services {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -818,7 +851,7 @@ pub mod services {
             http::StatusCode::NOT_FOUND => Err(delete::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -828,7 +861,7 @@ pub mod services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -862,7 +895,7 @@ pub mod services {
         resource_group_name: &str,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SearchServiceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::SearchServiceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Search/searchServices",
@@ -896,13 +929,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SearchServiceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SearchServiceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -912,7 +945,7 @@ pub mod services {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -938,7 +971,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SearchServiceListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::SearchServiceListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Search/searchServices",
@@ -969,13 +1002,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SearchServiceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SearchServiceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -985,7 +1018,7 @@ pub mod services {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1009,10 +1042,10 @@ pub mod services {
     }
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
-        check_name_availability_input: &CheckNameAvailabilityInput,
+        check_name_availability_input: &models::CheckNameAvailabilityInput,
         x_ms_client_request_id: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<CheckNameAvailabilityOutput, check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckNameAvailabilityOutput, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Search/checkNameAvailability",
@@ -1046,13 +1079,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -1062,7 +1095,7 @@ pub mod services {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

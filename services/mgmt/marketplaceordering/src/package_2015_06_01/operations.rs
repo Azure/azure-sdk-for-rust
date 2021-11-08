@@ -2,9 +2,28 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    MarketplaceAgreements_Get(#[from] marketplace_agreements::get::Error),
+    #[error(transparent)]
+    MarketplaceAgreements_Create(#[from] marketplace_agreements::create::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    MarketplaceAgreements_Sign(#[from] marketplace_agreements::sign::Error),
+    #[error(transparent)]
+    MarketplaceAgreements_Cancel(#[from] marketplace_agreements::cancel::Error),
+    #[error(transparent)]
+    MarketplaceAgreements_GetAgreement(#[from] marketplace_agreements::get_agreement::Error),
+    #[error(transparent)]
+    MarketplaceAgreements_List(#[from] marketplace_agreements::list::Error),
+}
 pub mod marketplace_agreements {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -12,7 +31,7 @@ pub mod marketplace_agreements {
         publisher_id: &str,
         offer_id: &str,
         plan_id: &str,
-    ) -> std::result::Result<AgreementTerms, get::Error> {
+    ) -> std::result::Result<models::AgreementTerms, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current",
@@ -41,19 +60,19 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AgreementTerms =
+                let rsp_value: models::AgreementTerms =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                let rsp_value: models::UnsupportedMediaTypeErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::UnsupportedMediaType415 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -63,7 +82,7 @@ pub mod marketplace_agreements {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -94,8 +113,8 @@ pub mod marketplace_agreements {
         publisher_id: &str,
         offer_id: &str,
         plan_id: &str,
-        parameters: &AgreementTerms,
-    ) -> std::result::Result<AgreementTerms, create::Error> {
+        parameters: &models::AgreementTerms,
+    ) -> std::result::Result<models::AgreementTerms, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current",
@@ -125,19 +144,19 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AgreementTerms =
+                let rsp_value: models::AgreementTerms =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                let rsp_value: models::UnsupportedMediaTypeErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::UnsupportedMediaType415 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -147,7 +166,7 @@ pub mod marketplace_agreements {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -177,7 +196,7 @@ pub mod marketplace_agreements {
         publisher_id: &str,
         offer_id: &str,
         plan_id: &str,
-    ) -> std::result::Result<OldAgreementTerms, sign::Error> {
+    ) -> std::result::Result<models::OldAgreementTerms, sign::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/sign",
@@ -206,19 +225,19 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OldAgreementTerms =
+                let rsp_value: models::OldAgreementTerms =
                     serde_json::from_slice(rsp_body).map_err(|source| sign::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                let rsp_value: models::UnsupportedMediaTypeErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| sign::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(sign::Error::UnsupportedMediaType415 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| sign::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(sign::Error::DefaultResponse {
                     status_code,
@@ -228,7 +247,7 @@ pub mod marketplace_agreements {
         }
     }
     pub mod sign {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -258,7 +277,7 @@ pub mod marketplace_agreements {
         publisher_id: &str,
         offer_id: &str,
         plan_id: &str,
-    ) -> std::result::Result<OldAgreementTerms, cancel::Error> {
+    ) -> std::result::Result<models::OldAgreementTerms, cancel::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/cancel",
@@ -287,19 +306,19 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OldAgreementTerms =
+                let rsp_value: models::OldAgreementTerms =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                let rsp_value: models::UnsupportedMediaTypeErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel::Error::UnsupportedMediaType415 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel::Error::DefaultResponse {
                     status_code,
@@ -309,7 +328,7 @@ pub mod marketplace_agreements {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -339,7 +358,7 @@ pub mod marketplace_agreements {
         publisher_id: &str,
         offer_id: &str,
         plan_id: &str,
-    ) -> std::result::Result<OldAgreementTerms, get_agreement::Error> {
+    ) -> std::result::Result<models::OldAgreementTerms, get_agreement::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}",
@@ -370,19 +389,19 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OldAgreementTerms =
+                let rsp_value: models::OldAgreementTerms =
                     serde_json::from_slice(rsp_body).map_err(|source| get_agreement::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                let rsp_value: models::UnsupportedMediaTypeErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_agreement::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_agreement::Error::UnsupportedMediaType415 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_agreement::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_agreement::Error::DefaultResponse {
                     status_code,
@@ -392,7 +411,7 @@ pub mod marketplace_agreements {
         }
     }
     pub mod get_agreement {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -419,7 +438,7 @@ pub mod marketplace_agreements {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AgreementTermsList, list::Error> {
+    ) -> std::result::Result<models::AgreementTermsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements",
@@ -444,19 +463,19 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AgreementTermsList =
+                let rsp_value: models::AgreementTermsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                let rsp_value: models::UnsupportedMediaTypeErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::UnsupportedMediaType415 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -466,7 +485,7 @@ pub mod marketplace_agreements {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -492,8 +511,8 @@ pub mod marketplace_agreements {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.MarketplaceOrdering/operations",
@@ -517,19 +536,19 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
                 let rsp_body = rsp.body();
-                let rsp_value: UnsupportedMediaTypeErrorResponse =
+                let rsp_value: models::UnsupportedMediaTypeErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::UnsupportedMediaType415 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -539,7 +558,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

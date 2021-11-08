@@ -2,14 +2,35 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Bots_GetCheckNameAvailability(#[from] bots::get_check_name_availability::Error),
+    #[error(transparent)]
+    Get_Bot(#[from] get::bot::Error),
+    #[error(transparent)]
+    Create_Bot(#[from] create::bot::Error),
+    #[error(transparent)]
+    Patch_Bot(#[from] patch::bot::Error),
+    #[error(transparent)]
+    Delete_Bot(#[from] delete::bot::Error),
+    #[error(transparent)]
+    Bots_ListByResourceGroup(#[from] bots::list_by_resource_group::Error),
+    #[error(transparent)]
+    Bots_List(#[from] bots::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod bots {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_check_name_availability(
         operation_config: &crate::OperationConfig,
-        parameters: &CheckNameAvailabilityRequestBody,
+        parameters: &models::CheckNameAvailabilityRequestBody,
         subscription_id: &str,
-    ) -> std::result::Result<CheckNameAvailabilityResponseBody, get_check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckNameAvailabilityResponseBody, get_check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HealthBot/checkNameAvailability",
@@ -40,13 +61,13 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResponseBody = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResponseBody = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -56,7 +77,7 @@ pub mod bots {
         }
     }
     pub mod get_check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -82,7 +103,7 @@ pub mod bots {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BotResponseList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::BotResponseList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HealthBot/healthBots",
@@ -113,13 +134,13 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotResponseList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BotResponseList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -129,7 +150,7 @@ pub mod bots {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -154,7 +175,7 @@ pub mod bots {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<BotResponseList, list::Error> {
+    ) -> std::result::Result<models::BotResponseList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HealthBot/healthBots",
@@ -179,13 +200,13 @@ pub mod bots {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BotResponseList =
+                let rsp_value: models::BotResponseList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -195,7 +216,7 @@ pub mod bots {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -219,13 +240,13 @@ pub mod bots {
     }
 }
 pub mod get {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn bot(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<HealthBot, bot::Error> {
+    ) -> std::result::Result<models::HealthBot, bot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HealthBot/healthBots/{}",
@@ -252,13 +273,13 @@ pub mod get {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HealthBot =
+                let rsp_value: models::HealthBot =
                     serde_json::from_slice(rsp_body).map_err(|source| bot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| bot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(bot::Error::DefaultResponse {
                     status_code,
@@ -268,7 +289,7 @@ pub mod get {
         }
     }
     pub mod bot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -292,13 +313,13 @@ pub mod get {
     }
 }
 pub mod create {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn bot(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &HealthBot,
+        parameters: &models::HealthBot,
     ) -> std::result::Result<bot::Response, bot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -327,19 +348,19 @@ pub mod create {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HealthBot =
+                let rsp_value: models::HealthBot =
                     serde_json::from_slice(rsp_body).map_err(|source| bot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(bot::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: HealthBot =
+                let rsp_value: models::HealthBot =
                     serde_json::from_slice(rsp_body).map_err(|source| bot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(bot::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| bot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(bot::Error::DefaultResponse {
                     status_code,
@@ -349,11 +370,11 @@ pub mod create {
         }
     }
     pub mod bot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(HealthBot),
-            Created201(HealthBot),
+            Ok200(models::HealthBot),
+            Created201(models::HealthBot),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -378,14 +399,14 @@ pub mod create {
     }
 }
 pub mod patch {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn bot(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        parameters: &HealthBotUpdateParameters,
-    ) -> std::result::Result<HealthBot, bot::Error> {
+        parameters: &models::HealthBotUpdateParameters,
+    ) -> std::result::Result<models::HealthBot, bot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HealthBot/healthBots/{}",
@@ -413,13 +434,13 @@ pub mod patch {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HealthBot =
+                let rsp_value: models::HealthBot =
                     serde_json::from_slice(rsp_body).map_err(|source| bot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| bot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(bot::Error::DefaultResponse {
                     status_code,
@@ -429,7 +450,7 @@ pub mod patch {
         }
     }
     pub mod bot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -453,7 +474,7 @@ pub mod patch {
     }
 }
 pub mod delete {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn bot(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -488,7 +509,7 @@ pub mod delete {
             http::StatusCode::NO_CONTENT => Ok(bot::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| bot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(bot::Error::DefaultResponse {
                     status_code,
@@ -498,7 +519,7 @@ pub mod delete {
         }
     }
     pub mod bot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -527,8 +548,8 @@ pub mod delete {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<AvailableOperations, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::AvailableOperations, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.HealthBot/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -549,13 +570,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailableOperations =
+                let rsp_value: models::AvailableOperations =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -565,7 +586,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

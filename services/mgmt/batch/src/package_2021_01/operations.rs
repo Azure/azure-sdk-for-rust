@@ -2,15 +2,100 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    BatchAccount_Get(#[from] batch_account::get::Error),
+    #[error(transparent)]
+    BatchAccount_Create(#[from] batch_account::create::Error),
+    #[error(transparent)]
+    BatchAccount_Update(#[from] batch_account::update::Error),
+    #[error(transparent)]
+    BatchAccount_Delete(#[from] batch_account::delete::Error),
+    #[error(transparent)]
+    BatchAccount_List(#[from] batch_account::list::Error),
+    #[error(transparent)]
+    BatchAccount_ListByResourceGroup(#[from] batch_account::list_by_resource_group::Error),
+    #[error(transparent)]
+    BatchAccount_SynchronizeAutoStorageKeys(#[from] batch_account::synchronize_auto_storage_keys::Error),
+    #[error(transparent)]
+    BatchAccount_RegenerateKey(#[from] batch_account::regenerate_key::Error),
+    #[error(transparent)]
+    BatchAccount_GetKeys(#[from] batch_account::get_keys::Error),
+    #[error(transparent)]
+    ApplicationPackage_Activate(#[from] application_package::activate::Error),
+    #[error(transparent)]
+    Application_Get(#[from] application::get::Error),
+    #[error(transparent)]
+    Application_Create(#[from] application::create::Error),
+    #[error(transparent)]
+    Application_Update(#[from] application::update::Error),
+    #[error(transparent)]
+    Application_Delete(#[from] application::delete::Error),
+    #[error(transparent)]
+    ApplicationPackage_Get(#[from] application_package::get::Error),
+    #[error(transparent)]
+    ApplicationPackage_Create(#[from] application_package::create::Error),
+    #[error(transparent)]
+    ApplicationPackage_Delete(#[from] application_package::delete::Error),
+    #[error(transparent)]
+    Application_List(#[from] application::list::Error),
+    #[error(transparent)]
+    ApplicationPackage_List(#[from] application_package::list::Error),
+    #[error(transparent)]
+    Location_GetQuotas(#[from] location::get_quotas::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Location_CheckNameAvailability(#[from] location::check_name_availability::Error),
+    #[error(transparent)]
+    Certificate_ListByBatchAccount(#[from] certificate::list_by_batch_account::Error),
+    #[error(transparent)]
+    Certificate_Get(#[from] certificate::get::Error),
+    #[error(transparent)]
+    Certificate_Create(#[from] certificate::create::Error),
+    #[error(transparent)]
+    Certificate_Update(#[from] certificate::update::Error),
+    #[error(transparent)]
+    Certificate_Delete(#[from] certificate::delete::Error),
+    #[error(transparent)]
+    Certificate_CancelDeletion(#[from] certificate::cancel_deletion::Error),
+    #[error(transparent)]
+    PrivateLinkResource_ListByBatchAccount(#[from] private_link_resource::list_by_batch_account::Error),
+    #[error(transparent)]
+    PrivateLinkResource_Get(#[from] private_link_resource::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnection_ListByBatchAccount(#[from] private_endpoint_connection::list_by_batch_account::Error),
+    #[error(transparent)]
+    PrivateEndpointConnection_Get(#[from] private_endpoint_connection::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnection_Update(#[from] private_endpoint_connection::update::Error),
+    #[error(transparent)]
+    Pool_ListByBatchAccount(#[from] pool::list_by_batch_account::Error),
+    #[error(transparent)]
+    Pool_Get(#[from] pool::get::Error),
+    #[error(transparent)]
+    Pool_Create(#[from] pool::create::Error),
+    #[error(transparent)]
+    Pool_Update(#[from] pool::update::Error),
+    #[error(transparent)]
+    Pool_Delete(#[from] pool::delete::Error),
+    #[error(transparent)]
+    Pool_DisableAutoScale(#[from] pool::disable_auto_scale::Error),
+    #[error(transparent)]
+    Pool_StopResize(#[from] pool::stop_resize::Error),
+}
 pub mod batch_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BatchAccount, get::Error> {
+    ) -> std::result::Result<models::BatchAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}",
@@ -37,13 +122,13 @@ pub mod batch_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchAccount =
+                let rsp_value: models::BatchAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +138,7 @@ pub mod batch_account {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -79,7 +164,7 @@ pub mod batch_account {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &BatchAccountCreateParameters,
+        parameters: &models::BatchAccountCreateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -109,14 +194,14 @@ pub mod batch_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchAccount =
+                let rsp_value: models::BatchAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -126,10 +211,10 @@ pub mod batch_account {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BatchAccount),
+            Ok200(models::BatchAccount),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -157,9 +242,9 @@ pub mod batch_account {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &BatchAccountUpdateParameters,
+        parameters: &models::BatchAccountUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<BatchAccount, update::Error> {
+    ) -> std::result::Result<models::BatchAccount, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}",
@@ -187,13 +272,13 @@ pub mod batch_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchAccount =
+                let rsp_value: models::BatchAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -203,7 +288,7 @@ pub mod batch_account {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -260,7 +345,7 @@ pub mod batch_account {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -270,7 +355,7 @@ pub mod batch_account {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -301,7 +386,7 @@ pub mod batch_account {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<BatchAccountListResult, list::Error> {
+    ) -> std::result::Result<models::BatchAccountListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Batch/batchAccounts",
@@ -326,13 +411,13 @@ pub mod batch_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchAccountListResult =
+                let rsp_value: models::BatchAccountListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -342,7 +427,7 @@ pub mod batch_account {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -368,7 +453,7 @@ pub mod batch_account {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BatchAccountListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::BatchAccountListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts",
@@ -399,13 +484,13 @@ pub mod batch_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchAccountListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchAccountListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -415,7 +500,7 @@ pub mod batch_account {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -476,7 +561,7 @@ pub mod batch_account {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| synchronize_auto_storage_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(synchronize_auto_storage_keys::Error::DefaultResponse {
                     status_code,
@@ -486,7 +571,7 @@ pub mod batch_account {
         }
     }
     pub mod synchronize_auto_storage_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -512,9 +597,9 @@ pub mod batch_account {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &BatchAccountRegenerateKeyParameters,
+        parameters: &models::BatchAccountRegenerateKeyParameters,
         subscription_id: &str,
-    ) -> std::result::Result<BatchAccountKeys, regenerate_key::Error> {
+    ) -> std::result::Result<models::BatchAccountKeys, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/regenerateKeys",
@@ -545,13 +630,13 @@ pub mod batch_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchAccountKeys =
+                let rsp_value: models::BatchAccountKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_key::Error::DefaultResponse {
                     status_code,
@@ -561,7 +646,7 @@ pub mod batch_account {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -588,7 +673,7 @@ pub mod batch_account {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BatchAccountKeys, get_keys::Error> {
+    ) -> std::result::Result<models::BatchAccountKeys, get_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/listKeys",
@@ -619,13 +704,13 @@ pub mod batch_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchAccountKeys =
+                let rsp_value: models::BatchAccountKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| get_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_keys::Error::DefaultResponse {
                     status_code,
@@ -635,7 +720,7 @@ pub mod batch_account {
         }
     }
     pub mod get_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -659,16 +744,16 @@ pub mod batch_account {
     }
 }
 pub mod application_package {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn activate(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         application_name: &str,
         version_name: &str,
-        parameters: &ActivateApplicationPackageParameters,
+        parameters: &models::ActivateApplicationPackageParameters,
         subscription_id: &str,
-    ) -> std::result::Result<ApplicationPackage, activate::Error> {
+    ) -> std::result::Result<models::ApplicationPackage, activate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/applications/{}/versions/{}/activate",
@@ -701,13 +786,13 @@ pub mod application_package {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationPackage =
+                let rsp_value: models::ApplicationPackage =
                     serde_json::from_slice(rsp_body).map_err(|source| activate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| activate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(activate::Error::DefaultResponse {
                     status_code,
@@ -717,7 +802,7 @@ pub mod application_package {
         }
     }
     pub mod activate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -746,7 +831,7 @@ pub mod application_package {
         application_name: &str,
         version_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ApplicationPackage, get::Error> {
+    ) -> std::result::Result<models::ApplicationPackage, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/applications/{}/versions/{}",
@@ -775,13 +860,13 @@ pub mod application_package {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationPackage =
+                let rsp_value: models::ApplicationPackage =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -791,7 +876,7 @@ pub mod application_package {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -820,8 +905,8 @@ pub mod application_package {
         application_name: &str,
         version_name: &str,
         subscription_id: &str,
-        parameters: Option<&ApplicationPackage>,
-    ) -> std::result::Result<ApplicationPackage, create::Error> {
+        parameters: Option<&models::ApplicationPackage>,
+    ) -> std::result::Result<models::ApplicationPackage, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/applications/{}/versions/{}",
@@ -855,13 +940,13 @@ pub mod application_package {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationPackage =
+                let rsp_value: models::ApplicationPackage =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -871,7 +956,7 @@ pub mod application_package {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -931,7 +1016,7 @@ pub mod application_package {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -941,7 +1026,7 @@ pub mod application_package {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -975,7 +1060,7 @@ pub mod application_package {
         application_name: &str,
         maxresults: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<ListApplicationPackagesResult, list::Error> {
+    ) -> std::result::Result<models::ListApplicationPackagesResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/applications/{}/versions",
@@ -1006,13 +1091,13 @@ pub mod application_package {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListApplicationPackagesResult =
+                let rsp_value: models::ListApplicationPackagesResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1022,7 +1107,7 @@ pub mod application_package {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1046,14 +1131,14 @@ pub mod application_package {
     }
 }
 pub mod application {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         application_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Application, get::Error> {
+    ) -> std::result::Result<models::Application, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/applications/{}",
@@ -1081,13 +1166,13 @@ pub mod application {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Application =
+                let rsp_value: models::Application =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1097,7 +1182,7 @@ pub mod application {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1124,9 +1209,9 @@ pub mod application {
         resource_group_name: &str,
         account_name: &str,
         application_name: &str,
-        parameters: Option<&Application>,
+        parameters: Option<&models::Application>,
         subscription_id: &str,
-    ) -> std::result::Result<Application, create::Error> {
+    ) -> std::result::Result<models::Application, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/applications/{}",
@@ -1159,13 +1244,13 @@ pub mod application {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Application =
+                let rsp_value: models::Application =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1175,7 +1260,7 @@ pub mod application {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1202,9 +1287,9 @@ pub mod application {
         resource_group_name: &str,
         account_name: &str,
         application_name: &str,
-        parameters: &Application,
+        parameters: &models::Application,
         subscription_id: &str,
-    ) -> std::result::Result<Application, update::Error> {
+    ) -> std::result::Result<models::Application, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/applications/{}",
@@ -1233,13 +1318,13 @@ pub mod application {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Application =
+                let rsp_value: models::Application =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1249,7 +1334,7 @@ pub mod application {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1307,7 +1392,7 @@ pub mod application {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1317,7 +1402,7 @@ pub mod application {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1350,7 +1435,7 @@ pub mod application {
         account_name: &str,
         maxresults: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<ListApplicationsResult, list::Error> {
+    ) -> std::result::Result<models::ListApplicationsResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/applications",
@@ -1380,13 +1465,13 @@ pub mod application {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListApplicationsResult =
+                let rsp_value: models::ListApplicationsResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1396,7 +1481,7 @@ pub mod application {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1420,12 +1505,12 @@ pub mod application {
     }
 }
 pub mod location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_quotas(
         operation_config: &crate::OperationConfig,
         location_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BatchLocationQuota, get_quotas::Error> {
+    ) -> std::result::Result<models::BatchLocationQuota, get_quotas::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Batch/locations/{}/quotas",
@@ -1454,13 +1539,13 @@ pub mod location {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchLocationQuota =
+                let rsp_value: models::BatchLocationQuota =
                     serde_json::from_slice(rsp_body).map_err(|source| get_quotas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_quotas::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_quotas::Error::DefaultResponse {
                     status_code,
@@ -1470,7 +1555,7 @@ pub mod location {
         }
     }
     pub mod get_quotas {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1496,8 +1581,8 @@ pub mod location {
         operation_config: &crate::OperationConfig,
         location_name: &str,
         subscription_id: &str,
-        parameters: &CheckNameAvailabilityParameters,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+        parameters: &models::CheckNameAvailabilityParameters,
+    ) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Batch/locations/{}/checkNameAvailability",
@@ -1529,13 +1614,13 @@ pub mod location {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -1545,7 +1630,7 @@ pub mod location {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1569,8 +1654,8 @@ pub mod location {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Batch/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1591,13 +1676,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1607,7 +1692,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1631,7 +1716,7 @@ pub mod operations {
     }
 }
 pub mod certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_batch_account(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1640,7 +1725,7 @@ pub mod certificate {
         select: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ListCertificatesResult, list_by_batch_account::Error> {
+    ) -> std::result::Result<models::ListCertificatesResult, list_by_batch_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/certificates",
@@ -1681,13 +1766,13 @@ pub mod certificate {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListCertificatesResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListCertificatesResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_batch_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_batch_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_batch_account::Error::DefaultResponse {
                     status_code,
@@ -1697,7 +1782,7 @@ pub mod certificate {
         }
     }
     pub mod list_by_batch_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1725,7 +1810,7 @@ pub mod certificate {
         account_name: &str,
         certificate_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Certificate, get::Error> {
+    ) -> std::result::Result<models::Certificate, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/certificates/{}",
@@ -1753,13 +1838,13 @@ pub mod certificate {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Certificate =
+                let rsp_value: models::Certificate =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1769,7 +1854,7 @@ pub mod certificate {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1796,11 +1881,11 @@ pub mod certificate {
         resource_group_name: &str,
         account_name: &str,
         certificate_name: &str,
-        parameters: &CertificateCreateOrUpdateParameters,
+        parameters: &models::CertificateCreateOrUpdateParameters,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<Certificate, create::Error> {
+    ) -> std::result::Result<models::Certificate, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/certificates/{}",
@@ -1835,13 +1920,13 @@ pub mod certificate {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Certificate =
+                let rsp_value: models::Certificate =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1851,7 +1936,7 @@ pub mod certificate {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1878,10 +1963,10 @@ pub mod certificate {
         resource_group_name: &str,
         account_name: &str,
         certificate_name: &str,
-        parameters: &CertificateCreateOrUpdateParameters,
+        parameters: &models::CertificateCreateOrUpdateParameters,
         if_match: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<Certificate, update::Error> {
+    ) -> std::result::Result<models::Certificate, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/certificates/{}",
@@ -1913,13 +1998,13 @@ pub mod certificate {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Certificate =
+                let rsp_value: models::Certificate =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1929,7 +2014,7 @@ pub mod certificate {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1988,7 +2073,7 @@ pub mod certificate {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1998,7 +2083,7 @@ pub mod certificate {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2032,7 +2117,7 @@ pub mod certificate {
         account_name: &str,
         certificate_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Certificate, cancel_deletion::Error> {
+    ) -> std::result::Result<models::Certificate, cancel_deletion::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/certificates/{}/cancelDelete",
@@ -2064,13 +2149,13 @@ pub mod certificate {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Certificate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Certificate = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_deletion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_deletion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel_deletion::Error::DefaultResponse {
                     status_code,
@@ -2080,7 +2165,7 @@ pub mod certificate {
         }
     }
     pub mod cancel_deletion {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2104,14 +2189,14 @@ pub mod certificate {
     }
 }
 pub mod private_link_resource {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_batch_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         maxresults: Option<i32>,
-    ) -> std::result::Result<ListPrivateLinkResourcesResult, list_by_batch_account::Error> {
+    ) -> std::result::Result<models::ListPrivateLinkResourcesResult, list_by_batch_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/privateLinkResources",
@@ -2146,13 +2231,13 @@ pub mod private_link_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListPrivateLinkResourcesResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListPrivateLinkResourcesResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_batch_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_batch_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_batch_account::Error::DefaultResponse {
                     status_code,
@@ -2162,7 +2247,7 @@ pub mod private_link_resource {
         }
     }
     pub mod list_by_batch_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2190,7 +2275,7 @@ pub mod private_link_resource {
         resource_group_name: &str,
         account_name: &str,
         private_link_resource_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/privateLinkResources/{}",
@@ -2218,13 +2303,13 @@ pub mod private_link_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2234,7 +2319,7 @@ pub mod private_link_resource {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2258,14 +2343,14 @@ pub mod private_link_resource {
     }
 }
 pub mod private_endpoint_connection {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_batch_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         maxresults: Option<i32>,
-    ) -> std::result::Result<ListPrivateEndpointConnectionsResult, list_by_batch_account::Error> {
+    ) -> std::result::Result<models::ListPrivateEndpointConnectionsResult, list_by_batch_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/privateEndpointConnections",
@@ -2300,13 +2385,13 @@ pub mod private_endpoint_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListPrivateEndpointConnectionsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListPrivateEndpointConnectionsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_batch_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_batch_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_batch_account::Error::DefaultResponse {
                     status_code,
@@ -2316,7 +2401,7 @@ pub mod private_endpoint_connection {
         }
     }
     pub mod list_by_batch_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2344,7 +2429,7 @@ pub mod private_endpoint_connection {
         resource_group_name: &str,
         account_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/privateEndpointConnections/{}",
@@ -2372,13 +2457,13 @@ pub mod private_endpoint_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2388,7 +2473,7 @@ pub mod private_endpoint_connection {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2416,7 +2501,7 @@ pub mod private_endpoint_connection {
         resource_group_name: &str,
         account_name: &str,
         private_endpoint_connection_name: &str,
-        parameters: &PrivateEndpointConnection,
+        parameters: &models::PrivateEndpointConnection,
         if_match: Option<&str>,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -2450,7 +2535,7 @@ pub mod private_endpoint_connection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -2458,7 +2543,7 @@ pub mod private_endpoint_connection {
             http::StatusCode::NO_CONTENT => Ok(update::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2468,10 +2553,10 @@ pub mod private_endpoint_connection {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
             Accepted202,
             NoContent204,
         }
@@ -2498,7 +2583,7 @@ pub mod private_endpoint_connection {
     }
 }
 pub mod pool {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_batch_account(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -2507,7 +2592,7 @@ pub mod pool {
         select: Option<&str>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ListPoolsResult, list_by_batch_account::Error> {
+    ) -> std::result::Result<models::ListPoolsResult, list_by_batch_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/pools",
@@ -2548,13 +2633,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ListPoolsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ListPoolsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_batch_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_batch_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_batch_account::Error::DefaultResponse {
                     status_code,
@@ -2564,7 +2649,7 @@ pub mod pool {
         }
     }
     pub mod list_by_batch_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2592,7 +2677,7 @@ pub mod pool {
         account_name: &str,
         pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Pool, get::Error> {
+    ) -> std::result::Result<models::Pool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/pools/{}",
@@ -2620,13 +2705,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Pool =
+                let rsp_value: models::Pool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2636,7 +2721,7 @@ pub mod pool {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2663,11 +2748,11 @@ pub mod pool {
         resource_group_name: &str,
         account_name: &str,
         pool_name: &str,
-        parameters: &Pool,
+        parameters: &models::Pool,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<Pool, create::Error> {
+    ) -> std::result::Result<models::Pool, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/pools/{}",
@@ -2702,13 +2787,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Pool =
+                let rsp_value: models::Pool =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -2718,7 +2803,7 @@ pub mod pool {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2745,10 +2830,10 @@ pub mod pool {
         resource_group_name: &str,
         account_name: &str,
         pool_name: &str,
-        parameters: &Pool,
+        parameters: &models::Pool,
         if_match: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<Pool, update::Error> {
+    ) -> std::result::Result<models::Pool, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/pools/{}",
@@ -2780,13 +2865,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Pool =
+                let rsp_value: models::Pool =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2796,7 +2881,7 @@ pub mod pool {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2855,7 +2940,7 @@ pub mod pool {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2865,7 +2950,7 @@ pub mod pool {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2899,7 +2984,7 @@ pub mod pool {
         account_name: &str,
         pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Pool, disable_auto_scale::Error> {
+    ) -> std::result::Result<models::Pool, disable_auto_scale::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/pools/{}/disableAutoScale",
@@ -2931,13 +3016,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Pool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Pool = serde_json::from_slice(rsp_body)
                     .map_err(|source| disable_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| disable_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable_auto_scale::Error::DefaultResponse {
                     status_code,
@@ -2947,7 +3032,7 @@ pub mod pool {
         }
     }
     pub mod disable_auto_scale {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2975,7 +3060,7 @@ pub mod pool {
         account_name: &str,
         pool_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Pool, stop_resize::Error> {
+    ) -> std::result::Result<models::Pool, stop_resize::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Batch/batchAccounts/{}/pools/{}/stopResize",
@@ -3007,13 +3092,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Pool =
+                let rsp_value: models::Pool =
                     serde_json::from_slice(rsp_body).map_err(|source| stop_resize::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| stop_resize::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop_resize::Error::DefaultResponse {
                     status_code,
@@ -3023,7 +3108,7 @@ pub mod pool {
         }
     }
     pub mod stop_resize {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

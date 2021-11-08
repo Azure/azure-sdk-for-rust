@@ -2,15 +2,40 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    CustomAssessmentAutomations_Get(#[from] custom_assessment_automations::get::Error),
+    #[error(transparent)]
+    CustomAssessmentAutomations_Create(#[from] custom_assessment_automations::create::Error),
+    #[error(transparent)]
+    CustomAssessmentAutomations_Delete(#[from] custom_assessment_automations::delete::Error),
+    #[error(transparent)]
+    CustomAssessmentAutomations_ListByResourceGroup(#[from] custom_assessment_automations::list_by_resource_group::Error),
+    #[error(transparent)]
+    CustomAssessmentAutomations_ListBySubscription(#[from] custom_assessment_automations::list_by_subscription::Error),
+    #[error(transparent)]
+    CustomEntityStoreAssignments_Get(#[from] custom_entity_store_assignments::get::Error),
+    #[error(transparent)]
+    CustomEntityStoreAssignments_Create(#[from] custom_entity_store_assignments::create::Error),
+    #[error(transparent)]
+    CustomEntityStoreAssignments_Delete(#[from] custom_entity_store_assignments::delete::Error),
+    #[error(transparent)]
+    CustomEntityStoreAssignments_ListByResourceGroup(#[from] custom_entity_store_assignments::list_by_resource_group::Error),
+    #[error(transparent)]
+    CustomEntityStoreAssignments_ListBySubscription(#[from] custom_entity_store_assignments::list_by_subscription::Error),
+}
 pub mod custom_assessment_automations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         custom_assessment_automation_name: &str,
-    ) -> std::result::Result<CustomAssessmentAutomation, get::Error> {
+    ) -> std::result::Result<models::CustomAssessmentAutomation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations/{}",
@@ -37,13 +62,13 @@ pub mod custom_assessment_automations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomAssessmentAutomation =
+                let rsp_value: models::CustomAssessmentAutomation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +78,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,7 +105,7 @@ pub mod custom_assessment_automations {
         subscription_id: &str,
         resource_group_name: &str,
         custom_assessment_automation_name: &str,
-        custom_assessment_automation_body: &CustomAssessmentAutomationRequest,
+        custom_assessment_automation_body: &models::CustomAssessmentAutomationRequest,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -109,19 +134,19 @@ pub mod custom_assessment_automations {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomAssessmentAutomation =
+                let rsp_value: models::CustomAssessmentAutomation =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomAssessmentAutomation =
+                let rsp_value: models::CustomAssessmentAutomation =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -131,11 +156,11 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(CustomAssessmentAutomation),
-            Ok200(CustomAssessmentAutomation),
+            Created201(models::CustomAssessmentAutomation),
+            Ok200(models::CustomAssessmentAutomation),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -192,7 +217,7 @@ pub mod custom_assessment_automations {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -202,7 +227,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -233,7 +258,7 @@ pub mod custom_assessment_automations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<CustomAssessmentAutomationsListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::CustomAssessmentAutomationsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customAssessmentAutomations",
@@ -264,13 +289,13 @@ pub mod custom_assessment_automations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomAssessmentAutomationsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomAssessmentAutomationsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -280,7 +305,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -305,7 +330,7 @@ pub mod custom_assessment_automations {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<CustomAssessmentAutomationsListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::CustomAssessmentAutomationsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Security/customAssessmentAutomations",
@@ -333,13 +358,13 @@ pub mod custom_assessment_automations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomAssessmentAutomationsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomAssessmentAutomationsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -349,7 +374,7 @@ pub mod custom_assessment_automations {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -373,13 +398,13 @@ pub mod custom_assessment_automations {
     }
 }
 pub mod custom_entity_store_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         custom_entity_store_assignment_name: &str,
-    ) -> std::result::Result<CustomEntityStoreAssignment, get::Error> {
+    ) -> std::result::Result<models::CustomEntityStoreAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments/{}",
@@ -406,13 +431,13 @@ pub mod custom_entity_store_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomEntityStoreAssignment =
+                let rsp_value: models::CustomEntityStoreAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -422,7 +447,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -449,7 +474,7 @@ pub mod custom_entity_store_assignments {
         subscription_id: &str,
         resource_group_name: &str,
         custom_entity_store_assignment_name: &str,
-        custom_entity_store_assignment_request_body: &CustomEntityStoreAssignmentRequest,
+        custom_entity_store_assignment_request_body: &models::CustomEntityStoreAssignmentRequest,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -478,19 +503,19 @@ pub mod custom_entity_store_assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomEntityStoreAssignment =
+                let rsp_value: models::CustomEntityStoreAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomEntityStoreAssignment =
+                let rsp_value: models::CustomEntityStoreAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -500,11 +525,11 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(CustomEntityStoreAssignment),
-            Ok200(CustomEntityStoreAssignment),
+            Created201(models::CustomEntityStoreAssignment),
+            Ok200(models::CustomEntityStoreAssignment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -561,7 +586,7 @@ pub mod custom_entity_store_assignments {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -571,7 +596,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -602,7 +627,7 @@ pub mod custom_entity_store_assignments {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<CustomEntityStoreAssignmentsListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::CustomEntityStoreAssignmentsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Security/customEntityStoreAssignments",
@@ -633,13 +658,13 @@ pub mod custom_entity_store_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomEntityStoreAssignmentsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomEntityStoreAssignmentsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -649,7 +674,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -674,7 +699,7 @@ pub mod custom_entity_store_assignments {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<CustomEntityStoreAssignmentsListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::CustomEntityStoreAssignmentsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Security/customEntityStoreAssignments",
@@ -702,13 +727,13 @@ pub mod custom_entity_store_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomEntityStoreAssignmentsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomEntityStoreAssignmentsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -718,7 +743,7 @@ pub mod custom_entity_store_assignments {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
