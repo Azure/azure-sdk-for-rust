@@ -2,6 +2,7 @@ use crate::{
     codegen::{create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, require, Error},
     codegen::{parse_params, PARAM_RE},
     identifier::ident,
+    identifier::SnakeCaseIdent,
     spec::{WebOperation, WebVerb},
     status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
     status_codes::{get_response_type_ident, get_status_code_ident},
@@ -110,7 +111,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
 
     let params = parse_params(&operation.path);
     // println!("path params {:#?}", params);
-    let params: Result<Vec<_>, Error> = params.iter().map(|s| ident(&s.to_snake_case()).map_err(Error::ParamName)).collect();
+    let params: Result<Vec<_>, Error> = params.iter().map(|s| s.to_snake_case_ident().map_err(Error::ParamName)).collect();
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
@@ -281,18 +282,22 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
                     });
                 }
             }
-            ParameterType::Form => {
-                if required {
-                    ts_request_builder.extend(quote! {
-                        req_builder = req_builder.form(#param_name_var);
-                    });
-                } else {
-                    ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
-                            req_builder = req_builder.form(#param_name_var);
-                        }
-                    });
-                }
+            ParameterType::FormData => {
+                ts_request_builder.extend(quote! {
+                    unimplemented!("form data not yet supported");
+                });
+                // https://github.com/Azure/azure-sdk-for-rust/issues/500
+                // if required {
+                //     cargo run --example gen_svc --release
+                //         req_builder = req_builder.form(#param_name_var);
+                //     });
+                // } else {
+                //     ts_request_builder.extend(quote! {
+                //         if let Some(#param_name_var) = #param_name_var {
+                //             req_builder = req_builder.form(#param_name_var);
+                //         }
+                //     });
+                // }
             }
         }
     }
@@ -558,7 +563,7 @@ fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &[Paramet
 }
 
 fn get_param_name(param: &Parameter) -> Result<TokenStream, Error> {
-    ident(&param.name.to_snake_case()).map_err(Error::ParamName)
+    param.name.to_snake_case_ident().map_err(Error::ParamName)
 }
 
 fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {

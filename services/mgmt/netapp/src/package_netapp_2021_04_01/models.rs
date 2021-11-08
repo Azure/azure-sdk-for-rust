@@ -554,7 +554,7 @@ pub mod replication_object {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReplicationSchedule {
         #[serde(rename = "_10minutely")]
-        U5f10minutely,
+        N10minutely,
         #[serde(rename = "hourly")]
         Hourly,
         #[serde(rename = "daily")]

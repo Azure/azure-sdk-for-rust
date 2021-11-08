@@ -42,6 +42,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("datamigration", "package-2021-06"),
     ("deploymentmanager", "package-2018-09-01-preview"), //  identifiers are bound more than once in param list.   https://github.com/Azure/azure-sdk-for-rust/issues/415
     ("iothub", "package-preview-2021-07"),               // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
+    ("iothub", "package-2021-07"),                       // duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
     ("mediaservices", "package-2019-05-preview"), // invalid unicode character of a dash instead of a hyphen https://github.com/Azure/azure-rest-api-specs/pull/11576
     ("marketplace", "package-2020-01-01"),
     ("marketplace", "package-2020-12-01"),
