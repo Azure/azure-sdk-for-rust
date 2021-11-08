@@ -1215,6 +1215,11 @@ pub async fn get_acr_refresh_token_from_exchange(
             .map_err(get_acr_refresh_token_from_exchange::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
+    unimplemented!("form data not yet supported");
+    unimplemented!("form data not yet supported");
+    unimplemented!("form data not yet supported");
+    unimplemented!("form data not yet supported");
+    unimplemented!("form data not yet supported");
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
     req_builder = req_builder.uri(url.as_str());
@@ -1354,6 +1359,10 @@ pub async fn get_acr_access_token(
             .map_err(get_acr_access_token::Error::GetTokenError)?;
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
+    unimplemented!("form data not yet supported");
+    unimplemented!("form data not yet supported");
+    unimplemented!("form data not yet supported");
+    unimplemented!("form data not yet supported");
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
     req_builder = req_builder.uri(url.as_str());
