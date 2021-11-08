@@ -72,6 +72,11 @@ impl Context {
         self.type_map.len()
     }
 
+    /// Returns `true` if the type map is empty, `false` otherwise.
+    pub fn is_empty(&self) -> bool {
+        self.type_map.is_empty()
+    }
+
     /// Iterates the type map contains.
     pub fn iter(&self) -> std::collections::hash_map::Iter<'_, TypeId, Arc<dyn Any + Send + Sync>> {
         self.type_map.iter()
@@ -173,5 +178,9 @@ mod tests {
 
         // the new struct has 0 has number.
         assert_eq!(0, context.get::<Mutex<S1>>().unwrap().lock().unwrap().num);
+
+        context.insert_or_replace(Mutex::new(33u32));
+        *context.get::<Mutex<u32>>().unwrap().lock().unwrap() = 42;
+        assert_eq!(42, *context.get::<Mutex<u32>>().unwrap().lock().unwrap());
     }
 }
