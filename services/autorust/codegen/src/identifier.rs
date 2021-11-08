@@ -15,7 +15,8 @@ pub trait CamelCaseIdent: ToOwned {
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
         let is_number = starts_with_number(self);
-        let mut txt = replace_first(self, true, false);
+        let mut txt = replace_first(self, true, true);
+        txt = replace_first(&txt, true, false);
         txt = replace_special_chars(&txt);
         if !is_number {
             // heck::CamelCase::to_camel_case will remove underscores
@@ -95,7 +96,7 @@ fn replace_first(text: &str, uppercase: bool, remove: bool) -> String {
     } else if !first.is_ascii_alphanumeric() {
         if text.len() > 1 {
             if remove {
-                format!("{}", &text[1..])
+                text[1..].to_owned()
             } else {
                 format!("{}{}", unicode(first, uppercase), &text[1..])
             }
@@ -291,4 +292,17 @@ mod tests {
         assert_eq!("$filter".to_snake_case_ident()?.to_string(), "filter");
         Ok(())
     }
+
+    #[test]
+    fn test_odata_type() -> Result<(), Error> {
+        assert_eq!("@odata.type".to_camel_case_ident()?.to_string(), "OdataType");
+        Ok(())
+    }
+
+    #[test]
+    fn test_10minutely() -> Result<(), Error> {
+        assert_eq!("_10minutely".to_camel_case_ident()?.to_string(), "N10minutely");
+        Ok(())
+    }
+
 }
