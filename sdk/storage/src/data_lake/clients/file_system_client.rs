@@ -148,9 +148,10 @@ impl FileSystemClient {
         ctx: Context,
         file_path: &str,
         position: i64,
+        close: bool,
         options: FileFlushOptions<'_>,
     ) -> Result<FileFlushResponse, crate::Error> {
-        let mut request = self.prepare_file_flush_request(file_path, position);
+        let mut request = self.prepare_file_flush_request(file_path, position, close);
         let contents = DataLakeContext {};
         let mut pipeline_context = PipelineContext::new(ctx, contents);
 
@@ -219,17 +220,18 @@ impl FileSystemClient {
             .into()
     }
 
-    // TODO: take close as param
     pub(crate) fn prepare_file_flush_request(
         &self,
         file_path: &str,
         position: i64,
+        close: bool,
     ) -> azure_core::Request {
         let uri = format!(
-            "{}/{}?action=flush&position={}&close=true",
+            "{}/{}?action=flush&position={}&close={}",
             self.url(),
             file_path,
-            position
+            position,
+            close,
         );
         http::request::Request::patch(uri)
             .body(bytes::Bytes::new()) // Request builder requires a body here

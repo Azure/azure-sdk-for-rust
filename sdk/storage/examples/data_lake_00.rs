@@ -116,6 +116,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             Context::default(),
             file_path,
             file_length,
+            true,
             FileFlushOptions::default(),
         )
         .await?;
