@@ -322,7 +322,7 @@ pub mod registration_assignments {
         operation_config: &crate::OperationConfig,
         scope: &str,
         registration_assignment_id: &str,
-        expand_registration_definition: Option<bool>,
+        u24expand_registration_definition: Option<bool>,
     ) -> std::result::Result<models::RegistrationAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -342,9 +342,11 @@ pub mod registration_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand_registration_definition) = expand_registration_definition {
-            url.query_pairs_mut()
-                .append_pair("$expandRegistrationDefinition", expand_registration_definition.to_string().as_str());
+        if let Some(u24expand_registration_definition) = u24expand_registration_definition {
+            url.query_pairs_mut().append_pair(
+                "$expandRegistrationDefinition",
+                u24expand_registration_definition.to_string().as_str(),
+            );
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -547,7 +549,7 @@ pub mod registration_assignments {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        expand_registration_definition: Option<bool>,
+        u24expand_registration_definition: Option<bool>,
     ) -> std::result::Result<models::RegistrationAssignmentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -566,9 +568,11 @@ pub mod registration_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand_registration_definition) = expand_registration_definition {
-            url.query_pairs_mut()
-                .append_pair("$expandRegistrationDefinition", expand_registration_definition.to_string().as_str());
+        if let Some(u24expand_registration_definition) = u24expand_registration_definition {
+            url.query_pairs_mut().append_pair(
+                "$expandRegistrationDefinition",
+                u24expand_registration_definition.to_string().as_str(),
+            );
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

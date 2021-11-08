@@ -922,9 +922,9 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         job_collection_name: &str,
-        top: Option<i64>,
-        skip: Option<i64>,
-        filter: Option<&str>,
+        u24top: Option<i64>,
+        u24skip: Option<i64>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::JobListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -945,14 +945,14 @@ pub mod jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1000,9 +1000,9 @@ pub mod jobs {
         resource_group_name: &str,
         job_collection_name: &str,
         job_name: &str,
-        top: Option<i64>,
-        skip: Option<i64>,
-        filter: Option<&str>,
+        u24top: Option<i64>,
+        u24skip: Option<i64>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::JobHistoryListResult, list_job_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1024,14 +1024,14 @@ pub mod jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

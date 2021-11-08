@@ -14,11 +14,11 @@ pub struct QueryRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequestOptions {
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
-    pub skip_token: Option<String>,
+    pub u24skip_token: Option<String>,
     #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
-    pub top: Option<i32>,
+    pub u24top: Option<i32>,
     #[serde(rename = "$skip", default, skip_serializing_if = "Option::is_none")]
-    pub skip: Option<i32>,
+    pub u24skip: Option<i32>,
     #[serde(rename = "resultFormat", default, skip_serializing_if = "Option::is_none")]
     pub result_format: Option<query_request_options::ResultFormat>,
 }
@@ -47,7 +47,7 @@ pub struct FacetRequestOptions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<String>,
     #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
-    pub top: Option<i32>,
+    pub u24top: Option<i32>,
 }
 pub mod facet_request_options {
     use super::*;
@@ -67,7 +67,7 @@ pub struct QueryResponse {
     #[serde(rename = "resultTruncated")]
     pub result_truncated: query_response::ResultTruncated,
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
-    pub skip_token: Option<String>,
+    pub u24skip_token: Option<String>,
     pub data: serde_json::Value,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub facets: Vec<Facet>,

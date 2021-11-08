@@ -3521,7 +3521,7 @@ pub mod availability_sets {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::AvailabilitySetListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3540,8 +3540,8 @@ pub mod availability_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4137,7 +4137,7 @@ pub mod dedicated_host_groups {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         host_group_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::DedicatedHostGroup, get::Error> {
         let http_client = operation_config.http_client();
@@ -4159,8 +4159,8 @@ pub mod dedicated_host_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4556,7 +4556,7 @@ pub mod dedicated_hosts {
         resource_group_name: &str,
         host_group_name: &str,
         host_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::DedicatedHost, get::Error> {
         let http_client = operation_config.http_client();
@@ -4579,8 +4579,8 @@ pub mod dedicated_hosts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5537,9 +5537,9 @@ pub mod virtual_machine_extension_images {
         location: &str,
         publisher_name: &str,
         type_: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        orderby: Option<&str>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24orderby: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<Vec<models::VirtualMachineExtensionImage>, list_versions::Error> {
         let http_client = operation_config.http_client();
@@ -5562,14 +5562,14 @@ pub mod virtual_machine_extension_images {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5622,7 +5622,7 @@ pub mod virtual_machine_extensions {
         resource_group_name: &str,
         vm_name: &str,
         vm_extension_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineExtension, get::Error> {
         let http_client = operation_config.http_client();
@@ -5645,8 +5645,8 @@ pub mod virtual_machine_extensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5914,7 +5914,7 @@ pub mod virtual_machine_extensions {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vm_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineExtensionsListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -5936,8 +5936,8 @@ pub mod virtual_machine_extensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6050,9 +6050,9 @@ pub mod virtual_machine_images {
         publisher_name: &str,
         offer: &str,
         skus: &str,
-        expand: Option<&str>,
-        top: Option<i32>,
-        orderby: Option<&str>,
+        u24expand: Option<&str>,
+        u24top: Option<i32>,
+        u24orderby: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<Vec<models::VirtualMachineImageResource>, list::Error> {
         let http_client = operation_config.http_client();
@@ -6076,14 +6076,14 @@ pub mod virtual_machine_images {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6407,9 +6407,9 @@ pub mod virtual_machine_images_edge_zone {
         publisher_name: &str,
         offer: &str,
         skus: &str,
-        expand: Option<&str>,
-        top: Option<i32>,
-        orderby: Option<&str>,
+        u24expand: Option<&str>,
+        u24top: Option<i32>,
+        u24orderby: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<Vec<models::VirtualMachineImageResource>, list::Error> {
         let http_client = operation_config.http_client();
@@ -6425,14 +6425,14 @@ pub mod virtual_machine_images_edge_zone {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6919,7 +6919,7 @@ pub mod virtual_machines {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vm_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachine, get::Error> {
         let http_client = operation_config.http_client();
@@ -6941,8 +6941,8 @@ pub mod virtual_machines {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10290,7 +10290,7 @@ pub mod images {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         image_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::Image, get::Error> {
         let http_client = operation_config.http_client();
@@ -10312,8 +10312,8 @@ pub mod images {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10719,7 +10719,7 @@ pub mod virtual_machine_scale_set_extensions {
         resource_group_name: &str,
         vm_scale_set_name: &str,
         vmss_extension_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineScaleSetExtension, get::Error> {
         let http_client = operation_config.http_client();
@@ -10742,8 +10742,8 @@ pub mod virtual_machine_scale_set_extensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -11372,7 +11372,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
         vm_scale_set_name: &str,
         instance_id: &str,
         vm_extension_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineScaleSetVmExtension, get::Error> {
         let http_client = operation_config.http_client();
@@ -11396,8 +11396,8 @@ pub mod virtual_machine_scale_set_vm_extensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -11692,7 +11692,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
         resource_group_name: &str,
         vm_scale_set_name: &str,
         instance_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineScaleSetVmExtensionsListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -11715,8 +11715,8 @@ pub mod virtual_machine_scale_set_vm_extensions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -11992,7 +11992,7 @@ pub mod virtual_machine_scale_set_v_ms {
         resource_group_name: &str,
         vm_scale_set_name: &str,
         instance_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineScaleSetVm, get::Error> {
         let http_client = operation_config.http_client();
@@ -12015,8 +12015,8 @@ pub mod virtual_machine_scale_set_v_ms {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -12287,9 +12287,9 @@ pub mod virtual_machine_scale_set_v_ms {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         virtual_machine_scale_set_name: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineScaleSetVmListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -12311,14 +12311,14 @@ pub mod virtual_machine_scale_set_v_ms {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -13221,7 +13221,7 @@ pub mod virtual_machine_run_commands {
         resource_group_name: &str,
         vm_name: &str,
         run_command_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineRunCommand, get_by_virtual_machine::Error> {
         let http_client = operation_config.http_client();
@@ -13244,8 +13244,8 @@ pub mod virtual_machine_run_commands {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -13538,7 +13538,7 @@ pub mod virtual_machine_run_commands {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vm_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineRunCommandsListResult, list_by_virtual_machine::Error> {
         let http_client = operation_config.http_client();
@@ -13560,8 +13560,8 @@ pub mod virtual_machine_run_commands {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -13622,7 +13622,7 @@ pub mod virtual_machine_scale_set_vm_run_commands {
         vm_scale_set_name: &str,
         instance_id: &str,
         run_command_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineRunCommand, get::Error> {
         let http_client = operation_config.http_client();
@@ -13638,8 +13638,8 @@ pub mod virtual_machine_scale_set_vm_run_commands {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -13910,7 +13910,7 @@ pub mod virtual_machine_scale_set_vm_run_commands {
         resource_group_name: &str,
         vm_scale_set_name: &str,
         instance_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualMachineRunCommandsListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -13933,8 +13933,8 @@ pub mod virtual_machine_scale_set_vm_run_commands {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

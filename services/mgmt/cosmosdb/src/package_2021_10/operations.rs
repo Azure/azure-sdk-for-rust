@@ -1393,7 +1393,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1414,7 +1414,7 @@ pub mod database_accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -1463,7 +1463,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::UsagesResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1484,8 +1484,8 @@ pub mod database_accounts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1666,7 +1666,7 @@ pub mod database {
         resource_group_name: &str,
         account_name: &str,
         database_rid: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1688,7 +1688,7 @@ pub mod database {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -1738,7 +1738,7 @@ pub mod database {
         resource_group_name: &str,
         account_name: &str,
         database_rid: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::UsagesResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1760,8 +1760,8 @@ pub mod database {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1888,7 +1888,7 @@ pub mod collection {
         account_name: &str,
         database_rid: &str,
         collection_rid: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1911,7 +1911,7 @@ pub mod collection {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -1962,7 +1962,7 @@ pub mod collection {
         account_name: &str,
         database_rid: &str,
         collection_rid: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::UsagesResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1985,8 +1985,8 @@ pub mod collection {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2108,7 +2108,7 @@ pub mod collection_region {
         region: &str,
         database_rid: &str,
         collection_rid: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/region/{}/databases/{}/collections/{}/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , region , database_rid , collection_rid) ;
@@ -2123,7 +2123,7 @@ pub mod collection_region {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -2176,7 +2176,7 @@ pub mod database_account_region {
         resource_group_name: &str,
         account_name: &str,
         region: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2198,7 +2198,7 @@ pub mod database_account_region {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -2252,7 +2252,7 @@ pub mod percentile_source_target {
         account_name: &str,
         source_region: &str,
         target_region: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::PercentileMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/sourceRegion/{}/targetRegion/{}/percentile/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , source_region , target_region) ;
@@ -2267,7 +2267,7 @@ pub mod percentile_source_target {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -2320,7 +2320,7 @@ pub mod percentile_target {
         resource_group_name: &str,
         account_name: &str,
         target_region: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::PercentileMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2342,7 +2342,7 @@ pub mod percentile_target {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -2394,7 +2394,7 @@ pub mod percentile {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::PercentileMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2415,7 +2415,7 @@ pub mod percentile {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -2470,7 +2470,7 @@ pub mod collection_partition_region {
         region: &str,
         database_rid: &str,
         collection_rid: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::PartitionMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/region/{}/databases/{}/collections/{}/partitions/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , region , database_rid , collection_rid) ;
@@ -2485,7 +2485,7 @@ pub mod collection_partition_region {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -2539,7 +2539,7 @@ pub mod collection_partition {
         account_name: &str,
         database_rid: &str,
         collection_rid: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::PartitionMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/partitions/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_rid , collection_rid) ;
@@ -2554,7 +2554,7 @@ pub mod collection_partition {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -2605,7 +2605,7 @@ pub mod collection_partition {
         account_name: &str,
         database_rid: &str,
         collection_rid: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::PartitionUsagesResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/partitions/usages" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_rid , collection_rid) ;
@@ -2620,8 +2620,8 @@ pub mod collection_partition {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2677,7 +2677,7 @@ pub mod partition_key_range_id {
         database_rid: &str,
         collection_rid: &str,
         partition_key_range_id: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::PartitionMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/partitionKeyRangeId/{}/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_rid , collection_rid , partition_key_range_id) ;
@@ -2692,7 +2692,7 @@ pub mod partition_key_range_id {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -2748,7 +2748,7 @@ pub mod partition_key_range_id_region {
         database_rid: &str,
         collection_rid: &str,
         partition_key_range_id: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::PartitionMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/region/{}/databases/{}/collections/{}/partitionKeyRangeId/{}/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , region , database_rid , collection_rid , partition_key_range_id) ;
@@ -2763,7 +2763,7 @@ pub mod partition_key_range_id_region {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;

@@ -336,8 +336,8 @@ pub mod extensions {
         farm_beats_resource_name: &str,
         extension_ids: &[&str],
         extension_categories: &[&str],
-        max_page_size: Option<i32>,
-        skip_token: Option<&str>,
+        u24max_page_size: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ExtensionListResponse, list_by_farm_beats::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -364,12 +364,12 @@ pub mod extensions {
         for value in extension_categories {
             url.query_pairs_mut().append_pair("extensionCategories", value.to_string().as_str());
         }
-        if let Some(max_page_size) = max_page_size {
+        if let Some(u24max_page_size) = u24max_page_size {
             url.query_pairs_mut()
-                .append_pair("$maxPageSize", max_page_size.to_string().as_str());
+                .append_pair("$maxPageSize", u24max_page_size.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -428,7 +428,7 @@ pub mod farm_beats_extensions {
         farm_beats_extension_names: &[&str],
         extension_categories: &[&str],
         publisher_ids: &[&str],
-        max_page_size: Option<i32>,
+        u24max_page_size: Option<i32>,
     ) -> std::result::Result<models::FarmBeatsExtensionListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -460,9 +460,9 @@ pub mod farm_beats_extensions {
         for value in publisher_ids {
             url.query_pairs_mut().append_pair("publisherIds", value.to_string().as_str());
         }
-        if let Some(max_page_size) = max_page_size {
+        if let Some(u24max_page_size) = u24max_page_size {
             url.query_pairs_mut()
-                .append_pair("$maxPageSize", max_page_size.to_string().as_str());
+                .append_pair("$maxPageSize", u24max_page_size.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -879,8 +879,8 @@ pub mod farm_beats_models {
     }
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
-        max_page_size: Option<i32>,
-        skip_token: Option<&str>,
+        u24max_page_size: Option<i32>,
+        u24skip_token: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::FarmBeatsListResponse, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -900,12 +900,12 @@ pub mod farm_beats_models {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(max_page_size) = max_page_size {
+        if let Some(u24max_page_size) = u24max_page_size {
             url.query_pairs_mut()
-                .append_pair("$maxPageSize", max_page_size.to_string().as_str());
+                .append_pair("$maxPageSize", u24max_page_size.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -957,8 +957,8 @@ pub mod farm_beats_models {
     }
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
-        max_page_size: Option<i32>,
-        skip_token: Option<&str>,
+        u24max_page_size: Option<i32>,
+        u24skip_token: Option<&str>,
         resource_group_name: &str,
         subscription_id: &str,
     ) -> std::result::Result<models::FarmBeatsListResponse, list_by_resource_group::Error> {
@@ -980,12 +980,12 @@ pub mod farm_beats_models {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(max_page_size) = max_page_size {
+        if let Some(u24max_page_size) = u24max_page_size {
             url.query_pairs_mut()
-                .append_pair("$maxPageSize", max_page_size.to_string().as_str());
+                .append_pair("$maxPageSize", u24max_page_size.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

@@ -455,7 +455,7 @@ pub mod workspaces {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
     ) -> std::result::Result<models::WorkspaceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -475,8 +475,8 @@ pub mod workspaces {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -765,7 +765,7 @@ pub mod workspaces {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
     ) -> std::result::Result<models::WorkspaceListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -784,8 +784,8 @@ pub mod workspaces {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1491,7 +1491,7 @@ pub mod compute {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
     ) -> std::result::Result<models::PaginatedComputeResourcesList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1512,8 +1512,8 @@ pub mod compute {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

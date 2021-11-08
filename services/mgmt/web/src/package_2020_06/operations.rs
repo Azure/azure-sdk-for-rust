@@ -6814,7 +6814,7 @@ pub mod recommendations {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         featured: Option<bool>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecommendationCollection, list::Error> {
         let http_client = operation_config.http_client();
@@ -6837,8 +6837,8 @@ pub mod recommendations {
         if let Some(featured) = featured {
             url.query_pairs_mut().append_pair("featured", featured.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7024,7 +7024,7 @@ pub mod recommendations {
         resource_group_name: &str,
         hosting_environment_name: &str,
         expired_only: Option<bool>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecommendationCollection, list_history_for_hosting_environment::Error> {
         let http_client = operation_config.http_client();
@@ -7049,8 +7049,8 @@ pub mod recommendations {
         if let Some(expired_only) = expired_only {
             url.query_pairs_mut().append_pair("expiredOnly", expired_only.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7107,7 +7107,7 @@ pub mod recommendations {
         resource_group_name: &str,
         hosting_environment_name: &str,
         featured: Option<bool>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecommendationCollection, list_recommended_rules_for_hosting_environment::Error> {
         let http_client = operation_config.http_client();
@@ -7132,8 +7132,8 @@ pub mod recommendations {
         if let Some(featured) = featured {
             url.query_pairs_mut().append_pair("featured", featured.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7496,7 +7496,7 @@ pub mod recommendations {
         resource_group_name: &str,
         site_name: &str,
         expired_only: Option<bool>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecommendationCollection, list_history_for_web_app::Error> {
         let http_client = operation_config.http_client();
@@ -7521,8 +7521,8 @@ pub mod recommendations {
         if let Some(expired_only) = expired_only {
             url.query_pairs_mut().append_pair("expiredOnly", expired_only.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7579,7 +7579,7 @@ pub mod recommendations {
         resource_group_name: &str,
         site_name: &str,
         featured: Option<bool>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecommendationCollection, list_recommended_rules_for_web_app::Error> {
         let http_client = operation_config.http_client();
@@ -7604,8 +7604,8 @@ pub mod recommendations {
         if let Some(featured) = featured {
             url.query_pairs_mut().append_pair("featured", featured.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -18981,7 +18981,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::PerfMonCounterCollection, list_perf_mon_counters::Error> {
         let http_client = operation_config.http_client();
@@ -19003,8 +19003,8 @@ pub mod web_apps {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -30796,7 +30796,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         slot: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::PerfMonCounterCollection, list_perf_mon_counters_slot::Error> {
         let http_client = operation_config.http_client();
@@ -30819,8 +30819,8 @@ pub mod web_apps {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -35231,7 +35231,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         slot: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::CsmUsageQuotaCollection, list_usages_slot::Error> {
         let http_client = operation_config.http_client();
@@ -35254,8 +35254,8 @@ pub mod web_apps {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -37687,7 +37687,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::CsmUsageQuotaCollection, list_usages::Error> {
         let http_client = operation_config.http_client();
@@ -37709,8 +37709,8 @@ pub mod web_apps {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -42765,7 +42765,7 @@ pub mod app_service_environments {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::CsmUsageQuotaCollection, list_usages::Error> {
         let http_client = operation_config.http_client();
@@ -42787,8 +42787,8 @@ pub mod app_service_environments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -44543,9 +44543,9 @@ pub mod app_service_plans {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        skip_token: Option<&str>,
-        filter: Option<&str>,
-        top: Option<&str>,
+        u24skip_token: Option<&str>,
+        u24filter: Option<&str>,
+        u24top: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::WebAppCollection, list_web_apps::Error> {
         let http_client = operation_config.http_client();
@@ -44567,14 +44567,14 @@ pub mod app_service_plans {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top);
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -44701,7 +44701,7 @@ pub mod app_service_plans {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::CsmUsageQuotaCollection, list_usages::Error> {
         let http_client = operation_config.http_client();
@@ -44723,8 +44723,8 @@ pub mod app_service_plans {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

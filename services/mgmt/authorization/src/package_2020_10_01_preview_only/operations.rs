@@ -87,7 +87,7 @@ pub mod role_assignments {
     pub async fn list_for_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         tenant_id: Option<&str>,
     ) -> std::result::Result<models::RoleAssignmentListResult, list_for_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -107,8 +107,8 @@ pub mod role_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(tenant_id) = tenant_id {
             url.query_pairs_mut().append_pair("tenantId", tenant_id);
@@ -167,7 +167,7 @@ pub mod role_assignments {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         tenant_id: Option<&str>,
     ) -> std::result::Result<models::RoleAssignmentListResult, list_for_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -188,8 +188,8 @@ pub mod role_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(tenant_id) = tenant_id {
             url.query_pairs_mut().append_pair("tenantId", tenant_id);
@@ -251,7 +251,7 @@ pub mod role_assignments {
         resource_provider_namespace: &str,
         resource_type: &str,
         resource_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         tenant_id: Option<&str>,
     ) -> std::result::Result<models::RoleAssignmentListResult, list_for_resource::Error> {
         let http_client = operation_config.http_client();
@@ -275,8 +275,8 @@ pub mod role_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(tenant_id) = tenant_id {
             url.query_pairs_mut().append_pair("tenantId", tenant_id);
@@ -636,7 +636,7 @@ pub mod role_assignments {
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         tenant_id: Option<&str>,
     ) -> std::result::Result<models::RoleAssignmentListResult, list_for_scope::Error> {
         let http_client = operation_config.http_client();
@@ -656,8 +656,8 @@ pub mod role_assignments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(tenant_id) = tenant_id {
             url.query_pairs_mut().append_pair("tenantId", tenant_id);
@@ -1005,7 +1005,7 @@ pub mod eligible_child_resources {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::EligibleChildResourcesListResult, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1024,8 +1024,8 @@ pub mod eligible_child_resources {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1146,7 +1146,7 @@ pub mod role_assignment_schedules {
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RoleAssignmentScheduleListResult, list_for_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1165,8 +1165,8 @@ pub mod role_assignment_schedules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1222,7 +1222,7 @@ pub mod role_assignment_schedule_instances {
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RoleAssignmentScheduleInstanceListResult, list_for_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1241,8 +1241,8 @@ pub mod role_assignment_schedule_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1504,7 +1504,7 @@ pub mod role_assignment_schedule_requests {
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RoleAssignmentScheduleRequestListResult, list_for_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1523,8 +1523,8 @@ pub mod role_assignment_schedule_requests {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1712,7 +1712,7 @@ pub mod role_eligibility_schedules {
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RoleEligibilityScheduleListResult, list_for_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1731,8 +1731,8 @@ pub mod role_eligibility_schedules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1788,7 +1788,7 @@ pub mod role_eligibility_schedule_instances {
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RoleEligibilityScheduleInstanceListResult, list_for_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1807,8 +1807,8 @@ pub mod role_eligibility_schedule_instances {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2070,7 +2070,7 @@ pub mod role_eligibility_schedule_requests {
     pub async fn list_for_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RoleEligibilityScheduleRequestListResult, list_for_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2089,8 +2089,8 @@ pub mod role_eligibility_schedule_requests {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

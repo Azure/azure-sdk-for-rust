@@ -608,7 +608,7 @@ pub mod workspaces {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
     ) -> std::result::Result<models::WorkspaceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -628,8 +628,8 @@ pub mod workspaces {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -833,7 +833,7 @@ pub mod workspaces {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
     ) -> std::result::Result<models::WorkspaceListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -852,8 +852,8 @@ pub mod workspaces {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1490,7 +1490,7 @@ pub mod compute {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
     ) -> std::result::Result<models::PaginatedComputeResourcesList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1511,8 +1511,8 @@ pub mod compute {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2973,7 +2973,7 @@ pub mod batch_endpoints {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         count: Option<i32>,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -3000,8 +3000,8 @@ pub mod batch_endpoints {
         if let Some(count) = count {
             url.query_pairs_mut().append_pair("count", count.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3437,9 +3437,9 @@ pub mod batch_deployments {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         endpoint_name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
-        skip: Option<&str>,
+        u24order_by: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -3464,14 +3464,14 @@ pub mod batch_deployments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        if let Some(u24order_by) = u24order_by {
+            url.query_pairs_mut().append_pair("$orderBy", u24order_by);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3806,7 +3806,7 @@ pub mod code_containers {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -3830,8 +3830,8 @@ pub mod code_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4117,9 +4117,9 @@ pub mod code_versions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
-        skip: Option<&str>,
+        u24order_by: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -4144,14 +4144,14 @@ pub mod code_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        if let Some(u24order_by) = u24order_by {
+            url.query_pairs_mut().append_pair("$orderBy", u24order_by);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4442,7 +4442,7 @@ pub mod data_containers {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -4466,8 +4466,8 @@ pub mod data_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4753,10 +4753,10 @@ pub mod data_versions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
-        skip: Option<&str>,
-        tags: Option<&str>,
+        u24order_by: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<&str>,
+        u24tags: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -4781,17 +4781,17 @@ pub mod data_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        if let Some(u24order_by) = u24order_by {
+            url.query_pairs_mut().append_pair("$orderBy", u24order_by);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
-        if let Some(tags) = tags {
-            url.query_pairs_mut().append_pair("$tags", tags);
+        if let Some(u24tags) = u24tags {
+            url.query_pairs_mut().append_pair("$tags", u24tags);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5082,7 +5082,7 @@ pub mod datastores {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         count: Option<i32>,
         is_default: Option<bool>,
         names: &[&str],
@@ -5112,8 +5112,8 @@ pub mod datastores {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         if let Some(count) = count {
             url.query_pairs_mut().append_pair("count", count.to_string().as_str());
@@ -5494,7 +5494,7 @@ pub mod environment_containers {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -5518,8 +5518,8 @@ pub mod environment_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5805,9 +5805,9 @@ pub mod environment_specification_versions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
-        skip: Option<&str>,
+        u24order_by: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -5832,14 +5832,14 @@ pub mod environment_specification_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        if let Some(u24order_by) = u24order_by {
+            url.query_pairs_mut().append_pair("$orderBy", u24order_by);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6130,7 +6130,7 @@ pub mod jobs {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         job_type: Option<&str>,
         tags: Option<&str>,
         tag: Option<&str>,
@@ -6157,8 +6157,8 @@ pub mod jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         if let Some(job_type) = job_type {
             url.query_pairs_mut().append_pair("jobType", job_type);
@@ -6522,7 +6522,7 @@ pub mod labeling_jobs {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         count: Option<i32>,
         subscription_id: &str,
         resource_group_name: &str,
@@ -6547,8 +6547,8 @@ pub mod labeling_jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         if let Some(count) = count {
             url.query_pairs_mut().append_pair("count", count.to_string().as_str());
@@ -7071,7 +7071,7 @@ pub mod model_containers {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         count: Option<i32>,
         subscription_id: &str,
         resource_group_name: &str,
@@ -7096,8 +7096,8 @@ pub mod model_containers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         if let Some(count) = count {
             url.query_pairs_mut().append_pair("count", count.to_string().as_str());
@@ -7386,9 +7386,9 @@ pub mod model_versions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         name: &str,
-        skip: Option<&str>,
-        order_by: Option<&str>,
-        top: Option<i32>,
+        u24skip: Option<&str>,
+        u24order_by: Option<&str>,
+        u24top: Option<i32>,
         version: Option<&str>,
         description: Option<&str>,
         offset: Option<i32>,
@@ -7418,14 +7418,14 @@ pub mod model_versions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        if let Some(u24order_by) = u24order_by {
+            url.query_pairs_mut().append_pair("$orderBy", u24order_by);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         if let Some(version) = version {
             url.query_pairs_mut().append_pair("version", version);
@@ -7734,7 +7734,7 @@ pub mod online_endpoints {
         name: Option<&str>,
         count: Option<i32>,
         compute_type: Option<&str>,
-        skip: Option<&str>,
+        u24skip: Option<&str>,
         tags: Option<&str>,
         properties: Option<&str>,
         order_by: Option<&str>,
@@ -7770,8 +7770,8 @@ pub mod online_endpoints {
         if let Some(compute_type) = compute_type {
             url.query_pairs_mut().append_pair("computeType", compute_type);
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         if let Some(tags) = tags {
             url.query_pairs_mut().append_pair("tags", tags);
@@ -8371,9 +8371,9 @@ pub mod online_deployments {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         endpoint_name: &str,
-        order_by: Option<&str>,
-        top: Option<i32>,
-        skip: Option<&str>,
+        u24order_by: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
@@ -8391,14 +8391,14 @@ pub mod online_deployments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(order_by) = order_by {
-            url.query_pairs_mut().append_pair("$orderBy", order_by);
+        if let Some(u24order_by) = u24order_by {
+            url.query_pairs_mut().append_pair("$orderBy", u24order_by);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

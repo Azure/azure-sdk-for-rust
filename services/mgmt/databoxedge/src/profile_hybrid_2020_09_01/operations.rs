@@ -193,7 +193,7 @@ pub mod devices {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::DataBoxEdgeDeviceList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -212,8 +212,8 @@ pub mod devices {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -267,7 +267,7 @@ pub mod devices {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::DataBoxEdgeDeviceList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -287,8 +287,8 @@ pub mod devices {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3918,7 +3918,7 @@ pub mod triggers {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::TriggerList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3939,8 +3939,8 @@ pub mod triggers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4230,7 +4230,7 @@ pub mod users {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::UserList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4251,8 +4251,8 @@ pub mod users {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4540,7 +4540,7 @@ pub mod skus {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::SkuInformationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4559,8 +4559,8 @@ pub mod skus {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

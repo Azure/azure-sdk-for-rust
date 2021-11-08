@@ -849,9 +849,9 @@ pub struct Machine {
     #[serde(rename = "properties.timestamp", default, skip_serializing_if = "Option::is_none")]
     pub properties_timestamp: Option<String>,
     #[serde(rename = "properties.monitoringState", default, skip_serializing_if = "Option::is_none")]
-    pub properties_monitoring_state: Option<machine::Properties_monitoringState>,
+    pub properties_monitoring_state: Option<machine::PropertiesMonitoringState>,
     #[serde(rename = "properties.virtualizationState", default, skip_serializing_if = "Option::is_none")]
-    pub properties_virtualization_state: Option<machine::Properties_virtualizationState>,
+    pub properties_virtualization_state: Option<machine::PropertiesVirtualizationState>,
     #[serde(rename = "properties.displayName", default, skip_serializing_if = "Option::is_none")]
     pub properties_display_name: Option<String>,
     #[serde(rename = "properties.computerName", default, skip_serializing_if = "Option::is_none")]
@@ -888,14 +888,14 @@ pub struct Machine {
 pub mod machine {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Properties_monitoringState {
+    pub enum PropertiesMonitoringState {
         #[serde(rename = "monitored")]
         Monitored,
         #[serde(rename = "discovered")]
         Discovered,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Properties_virtualizationState {
+    pub enum PropertiesVirtualizationState {
         #[serde(rename = "unknown")]
         Unknown,
         #[serde(rename = "physical")]

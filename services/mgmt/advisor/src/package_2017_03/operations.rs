@@ -155,9 +155,9 @@ pub mod recommendations {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        filter: Option<&str>,
-        top: Option<i64>,
-        skip_token: Option<&str>,
+        u24filter: Option<&str>,
+        u24top: Option<i64>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ResourceRecommendationBaseListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -176,14 +176,14 @@ pub mod recommendations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

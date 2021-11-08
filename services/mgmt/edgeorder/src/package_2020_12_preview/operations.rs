@@ -117,8 +117,8 @@ pub mod list_operations {
 pub async fn list_addresses_at_subscription_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-    filter: Option<&str>,
-    skip_token: Option<&str>,
+    u24filter: Option<&str>,
+    u24skip_token: Option<&str>,
 ) -> std::result::Result<models::AddressResourceList, list_addresses_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -137,11 +137,11 @@ pub async fn list_addresses_at_subscription_level(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
+    if let Some(u24filter) = u24filter {
+        url.query_pairs_mut().append_pair("$filter", u24filter);
     }
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -196,8 +196,8 @@ pub mod list_addresses_at_subscription_level {
 pub async fn list_product_families(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-    expand: Option<&str>,
-    skip_token: Option<&str>,
+    u24expand: Option<&str>,
+    u24skip_token: Option<&str>,
     product_families_request: &models::ProductFamiliesRequest,
 ) -> std::result::Result<models::ProductFamilies, list_product_families::Error> {
     let http_client = operation_config.http_client();
@@ -217,11 +217,11 @@ pub async fn list_product_families(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(expand) = expand {
-        url.query_pairs_mut().append_pair("$expand", expand);
+    if let Some(u24expand) = u24expand {
+        url.query_pairs_mut().append_pair("$expand", u24expand);
     }
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(product_families_request).map_err(list_product_families::Error::SerializeError)?;
@@ -277,7 +277,7 @@ pub mod list_product_families {
 pub async fn list_configurations(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-    skip_token: Option<&str>,
+    u24skip_token: Option<&str>,
     configurations_request: &models::ConfigurationsRequest,
 ) -> std::result::Result<models::Configurations, list_configurations::Error> {
     let http_client = operation_config.http_client();
@@ -297,8 +297,8 @@ pub async fn list_configurations(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     req_builder = req_builder.header("content-type", "application/json");
     let req_body = azure_core::to_json(configurations_request).map_err(list_configurations::Error::SerializeError)?;
@@ -352,7 +352,7 @@ pub mod list_configurations {
 pub async fn list_product_families_metadata(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-    skip_token: Option<&str>,
+    u24skip_token: Option<&str>,
 ) -> std::result::Result<models::ProductFamiliesMetadata, list_product_families_metadata::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -371,8 +371,8 @@ pub async fn list_product_families_metadata(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -428,7 +428,7 @@ pub mod list_product_families_metadata {
 pub async fn list_order_at_subscription_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-    skip_token: Option<&str>,
+    u24skip_token: Option<&str>,
 ) -> std::result::Result<models::OrderResourceList, list_order_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -447,8 +447,8 @@ pub async fn list_order_at_subscription_level(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -503,9 +503,9 @@ pub mod list_order_at_subscription_level {
 pub async fn list_order_items_at_subscription_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-    filter: Option<&str>,
-    expand: Option<&str>,
-    skip_token: Option<&str>,
+    u24filter: Option<&str>,
+    u24expand: Option<&str>,
+    u24skip_token: Option<&str>,
 ) -> std::result::Result<models::OrderItemResourceList, list_order_items_at_subscription_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -524,14 +524,14 @@ pub async fn list_order_items_at_subscription_level(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
+    if let Some(u24filter) = u24filter {
+        url.query_pairs_mut().append_pair("$filter", u24filter);
     }
-    if let Some(expand) = expand {
-        url.query_pairs_mut().append_pair("$expand", expand);
+    if let Some(u24expand) = u24expand {
+        url.query_pairs_mut().append_pair("$expand", u24expand);
     }
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -587,8 +587,8 @@ pub async fn list_addresses_at_resource_group_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     resource_group_name: &str,
-    filter: Option<&str>,
-    skip_token: Option<&str>,
+    u24filter: Option<&str>,
+    u24skip_token: Option<&str>,
 ) -> std::result::Result<models::AddressResourceList, list_addresses_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -608,11 +608,11 @@ pub async fn list_addresses_at_resource_group_level(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
+    if let Some(u24filter) = u24filter {
+        url.query_pairs_mut().append_pair("$filter", u24filter);
     }
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -985,7 +985,7 @@ pub async fn list_order_at_resource_group_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     resource_group_name: &str,
-    skip_token: Option<&str>,
+    u24skip_token: Option<&str>,
 ) -> std::result::Result<models::OrderResourceList, list_order_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -1005,8 +1005,8 @@ pub async fn list_order_at_resource_group_level(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -1137,9 +1137,9 @@ pub async fn list_order_items_at_resource_group_level(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
     resource_group_name: &str,
-    filter: Option<&str>,
-    expand: Option<&str>,
-    skip_token: Option<&str>,
+    u24filter: Option<&str>,
+    u24expand: Option<&str>,
+    u24skip_token: Option<&str>,
 ) -> std::result::Result<models::OrderItemResourceList, list_order_items_at_resource_group_level::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -1159,14 +1159,14 @@ pub async fn list_order_items_at_resource_group_level(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
+    if let Some(u24filter) = u24filter {
+        url.query_pairs_mut().append_pair("$filter", u24filter);
     }
-    if let Some(expand) = expand {
-        url.query_pairs_mut().append_pair("$expand", expand);
+    if let Some(u24expand) = u24expand {
+        url.query_pairs_mut().append_pair("$expand", u24expand);
     }
-    if let Some(skip_token) = skip_token {
-        url.query_pairs_mut().append_pair("$skipToken", skip_token);
+    if let Some(u24skip_token) = u24skip_token {
+        url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());
@@ -1223,7 +1223,7 @@ pub async fn get_order_item_by_name(
     order_item_name: &str,
     subscription_id: &str,
     resource_group_name: &str,
-    expand: Option<&str>,
+    u24expand: Option<&str>,
 ) -> std::result::Result<models::OrderItemResource, get_order_item_by_name::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -1244,8 +1244,8 @@ pub async fn get_order_item_by_name(
         req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     }
     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(expand) = expand {
-        url.query_pairs_mut().append_pair("$expand", expand);
+    if let Some(u24expand) = u24expand {
+        url.query_pairs_mut().append_pair("$expand", u24expand);
     }
     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
     req_builder = req_builder.uri(url.as_str());

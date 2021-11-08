@@ -1366,7 +1366,7 @@ pub mod assessments {
         operation_config: &crate::OperationConfig,
         resource_id: &str,
         assessment_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::SecurityAssessment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1386,8 +1386,8 @@ pub mod assessments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3553,7 +3553,7 @@ pub mod secure_score_controls {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         secure_score_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::SecureScoreControlList, list_by_secure_score::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3573,8 +3573,8 @@ pub mod secure_score_controls {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3627,7 +3627,7 @@ pub mod secure_score_controls {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::SecureScoreControlList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3646,8 +3646,8 @@ pub mod secure_score_controls {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

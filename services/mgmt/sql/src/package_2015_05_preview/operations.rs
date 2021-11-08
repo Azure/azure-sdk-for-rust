@@ -1381,7 +1381,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::Database, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1403,8 +1403,8 @@ pub mod databases {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1679,8 +1679,8 @@ pub mod databases {
         subscription_id: &str,
         resource_group_name: &str,
         server_name: &str,
-        expand: Option<&str>,
-        filter: Option<&str>,
+        u24expand: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::DatabaseListResult, list_by_server::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1701,11 +1701,11 @@ pub mod databases {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2274,7 +2274,7 @@ pub mod databases {
         resource_group_name: &str,
         server_name: &str,
         database_name: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2296,7 +2296,7 @@ pub mod databases {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;
@@ -3751,7 +3751,7 @@ pub mod elastic_pools {
         resource_group_name: &str,
         server_name: &str,
         elastic_pool_name: &str,
-        filter: &str,
+        u24filter: &str,
     ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3773,7 +3773,7 @@ pub mod elastic_pools {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$filter", filter);
+        url.query_pairs_mut().append_pair("$filter", u24filter);
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
         let req = req_builder.body(req_body).map_err(list_metrics::Error::BuildRequestError)?;

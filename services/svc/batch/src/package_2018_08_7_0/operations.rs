@@ -330,7 +330,7 @@ pub mod pool {
         operation_config: &crate::OperationConfig,
         starttime: Option<&str>,
         endtime: Option<&str>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -356,8 +356,8 @@ pub mod pool {
         if let Some(endtime) = endtime {
             url.query_pairs_mut().append_pair("endtime", endtime);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -506,9 +506,9 @@ pub mod pool {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -528,14 +528,14 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -674,8 +674,8 @@ pub mod pool {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -698,11 +698,11 @@ pub mod pool {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -1754,7 +1754,7 @@ pub mod account {
     use super::{models, API_VERSION};
     pub async fn list_node_agent_skus(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -1774,8 +1774,8 @@ pub mod account {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -1842,7 +1842,7 @@ pub mod account {
     }
     pub async fn list_pool_node_counts(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -1862,8 +1862,8 @@ pub mod account {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -2018,8 +2018,8 @@ pub mod job {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -2042,11 +2042,11 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -2672,9 +2672,9 @@ pub mod job {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -2694,14 +2694,14 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -2840,9 +2840,9 @@ pub mod job {
     pub async fn list_from_job_schedule(
         operation_config: &crate::OperationConfig,
         job_schedule_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -2862,14 +2862,14 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -2939,8 +2939,8 @@ pub mod job {
     pub async fn list_preparation_and_release_task_status(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -2965,11 +2965,11 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -3122,8 +3122,8 @@ pub mod certificate {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        select: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -3143,11 +3143,11 @@ pub mod certificate {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -3370,7 +3370,7 @@ pub mod certificate {
         operation_config: &crate::OperationConfig,
         thumbprint_algorithm: &str,
         thumbprint: &str,
-        select: Option<&str>,
+        u24select: Option<&str>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -3394,8 +3394,8 @@ pub mod certificate {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -4110,7 +4110,7 @@ pub mod file {
         operation_config: &crate::OperationConfig,
         job_id: &str,
         task_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         recursive: Option<bool>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
@@ -4131,8 +4131,8 @@ pub mod file {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(recursive) = recursive {
             url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
@@ -4204,7 +4204,7 @@ pub mod file {
         operation_config: &crate::OperationConfig,
         pool_id: &str,
         node_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         recursive: Option<bool>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
@@ -4225,8 +4225,8 @@ pub mod file {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(recursive) = recursive {
             url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
@@ -4302,8 +4302,8 @@ pub mod job_schedule {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         job_schedule_id: &str,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -4326,11 +4326,11 @@ pub mod job_schedule {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5042,9 +5042,9 @@ pub mod job_schedule {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -5064,14 +5064,14 @@ pub mod job_schedule {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -5213,9 +5213,9 @@ pub mod task {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -5235,14 +5235,14 @@ pub mod task {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
@@ -5466,8 +5466,8 @@ pub mod task {
         operation_config: &crate::OperationConfig,
         job_id: &str,
         task_id: &str,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -5490,11 +5490,11 @@ pub mod task {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -5751,7 +5751,7 @@ pub mod task {
         operation_config: &crate::OperationConfig,
         job_id: &str,
         task_id: &str,
-        select: Option<&str>,
+        u24select: Option<&str>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -5770,8 +5770,8 @@ pub mod task {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -6277,7 +6277,7 @@ pub mod compute_node {
         operation_config: &crate::OperationConfig,
         pool_id: &str,
         node_id: &str,
-        select: Option<&str>,
+        u24select: Option<&str>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -6296,8 +6296,8 @@ pub mod compute_node {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         if let Some(timeout) = timeout {
             url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
@@ -6956,8 +6956,8 @@ pub mod compute_node {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
         maxresults: Option<i32>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
@@ -6977,11 +6977,11 @@ pub mod compute_node {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());

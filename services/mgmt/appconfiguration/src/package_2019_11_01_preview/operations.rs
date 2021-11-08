@@ -47,7 +47,7 @@ pub mod configuration_stores {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        skip_token: Option<&str>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ConfigurationStoreListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -66,8 +66,8 @@ pub mod configuration_stores {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -118,7 +118,7 @@ pub mod configuration_stores {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        skip_token: Option<&str>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ConfigurationStoreListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -138,8 +138,8 @@ pub mod configuration_stores {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -505,7 +505,7 @@ pub mod configuration_stores {
         subscription_id: &str,
         resource_group_name: &str,
         config_store_name: &str,
-        skip_token: Option<&str>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ApiKeyListResult, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -526,8 +526,8 @@ pub mod configuration_stores {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -806,7 +806,7 @@ pub mod operations {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip_token: Option<&str>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::OperationDefinitionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.AppConfiguration/operations", operation_config.base_path(),);
@@ -821,8 +821,8 @@ pub mod operations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

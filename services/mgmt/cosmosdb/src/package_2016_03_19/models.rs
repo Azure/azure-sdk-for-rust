@@ -128,11 +128,11 @@ pub mod database_account {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtendedResourceProperties {
     #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-    pub rid: Option<String>,
+    pub u5frid: Option<String>,
     #[serde(rename = "_ts", default, skip_serializing_if = "Option::is_none")]
-    pub ts: Option<serde_json::Value>,
+    pub u5fts: Option<serde_json::Value>,
     #[serde(rename = "_etag", default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+    pub u5fetag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Throughput {
@@ -160,9 +160,9 @@ pub struct SqlDatabaseProperties {
     #[serde(flatten)]
     pub extended_resource_properties: ExtendedResourceProperties,
     #[serde(rename = "_colls", default, skip_serializing_if = "Option::is_none")]
-    pub colls: Option<String>,
+    pub u5fcolls: Option<String>,
     #[serde(rename = "_users", default, skip_serializing_if = "Option::is_none")]
-    pub users: Option<String>,
+    pub u5fusers: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlContainer {
@@ -250,11 +250,11 @@ pub struct GremlinDatabaseProperties {
     #[serde(flatten)]
     pub gremlin_database_resource: GremlinDatabaseResource,
     #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-    pub rid: Option<String>,
+    pub u5frid: Option<String>,
     #[serde(rename = "_ts", default, skip_serializing_if = "Option::is_none")]
-    pub ts: Option<serde_json::Value>,
+    pub u5fts: Option<serde_json::Value>,
     #[serde(rename = "_etag", default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+    pub u5fetag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GremlinGraph {
@@ -883,7 +883,7 @@ pub struct MetricName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricValue {
     #[serde(rename = "_count", default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<f64>,
+    pub u5fcount: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub average: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

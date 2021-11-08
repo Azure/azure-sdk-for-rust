@@ -1490,7 +1490,7 @@ pub mod application_gateways {
         resource_group_name: &str,
         application_gateway_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<backend_health::Response, backend_health::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1511,8 +1511,8 @@ pub mod application_gateways {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -1574,7 +1574,7 @@ pub mod application_gateways {
         resource_group_name: &str,
         application_gateway_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         probe_request: &models::ApplicationGatewayOnDemandProbe,
     ) -> std::result::Result<backend_health_on_demand::Response, backend_health_on_demand::Error> {
         let http_client = operation_config.http_client();
@@ -1596,8 +1596,8 @@ pub mod application_gateways {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(probe_request).map_err(backend_health_on_demand::Error::SerializeError)?;
@@ -2163,7 +2163,7 @@ pub mod network_interfaces {
         resource_group_name: &str,
         network_interface_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::NetworkInterface, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2184,8 +2184,8 @@ pub mod network_interfaces {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2923,7 +2923,7 @@ pub mod network_interfaces {
         virtualmachine_index: &str,
         network_interface_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::NetworkInterface, get_virtual_machine_scale_set_network_interface::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name) ;
@@ -2938,8 +2938,8 @@ pub mod network_interfaces {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2998,7 +2998,7 @@ pub mod network_interfaces {
         virtualmachine_index: &str,
         network_interface_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::NetworkInterfaceIpConfigurationListResult, list_virtual_machine_scale_set_ip_configurations::Error>
     {
         let http_client = operation_config.http_client();
@@ -3014,8 +3014,8 @@ pub mod network_interfaces {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3077,7 +3077,7 @@ pub mod network_interfaces {
         network_interface_name: &str,
         ip_configuration_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::NetworkInterfaceIpConfiguration, get_virtual_machine_scale_set_ip_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name , ip_configuration_name) ;
@@ -3092,8 +3092,8 @@ pub mod network_interfaces {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4128,7 +4128,7 @@ pub mod load_balancers {
         resource_group_name: &str,
         load_balancer_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::LoadBalancer, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4149,8 +4149,8 @@ pub mod load_balancers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4937,7 +4937,7 @@ pub mod inbound_nat_rules {
         load_balancer_name: &str,
         inbound_nat_rule_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::InboundNatRule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4959,8 +4959,8 @@ pub mod inbound_nat_rules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5686,7 +5686,7 @@ pub mod virtual_networks {
         resource_group_name: &str,
         virtual_network_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::VirtualNetwork, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -5707,8 +5707,8 @@ pub mod virtual_networks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6285,7 +6285,7 @@ pub mod subnets {
         virtual_network_name: &str,
         subnet_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::Subnet, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6307,8 +6307,8 @@ pub mod subnets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7216,7 +7216,7 @@ pub mod network_security_groups {
         resource_group_name: &str,
         network_security_group_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::NetworkSecurityGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -7237,8 +7237,8 @@ pub mod network_security_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -8561,7 +8561,7 @@ pub mod route_tables {
         resource_group_name: &str,
         route_table_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::RouteTable, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -8582,8 +8582,8 @@ pub mod route_tables {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -9317,7 +9317,7 @@ pub mod service_endpoint_policies {
         resource_group_name: &str,
         service_endpoint_policy_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::ServiceEndpointPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -9338,8 +9338,8 @@ pub mod service_endpoint_policies {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10059,7 +10059,7 @@ pub mod private_endpoints {
         resource_group_name: &str,
         private_endpoint_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::PrivateEndpoint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -10080,8 +10080,8 @@ pub mod private_endpoints {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10578,7 +10578,7 @@ pub mod private_link_services {
         resource_group_name: &str,
         service_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::PrivateLinkService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -10599,8 +10599,8 @@ pub mod private_link_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10949,7 +10949,7 @@ pub mod private_link_services {
         service_name: &str,
         pe_connection_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::PrivateEndpointConnection, get_private_endpoint_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -10971,8 +10971,8 @@ pub mod private_link_services {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -11587,7 +11587,7 @@ pub mod network_profiles {
         resource_group_name: &str,
         network_profile_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::NetworkProfile, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -11608,8 +11608,8 @@ pub mod network_profiles {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -12035,7 +12035,7 @@ pub mod public_ip_addresses {
         resource_group_name: &str,
         public_ip_address_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::PublicIpAddress, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -12056,8 +12056,8 @@ pub mod public_ip_addresses {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -12635,7 +12635,7 @@ pub mod public_ip_addresses {
         ip_configuration_name: &str,
         public_ip_address_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::PublicIpAddress, get_virtual_machine_scale_set_public_ip_address::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name , ip_configuration_name , public_ip_address_name) ;
@@ -12650,8 +12650,8 @@ pub mod public_ip_addresses {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -19666,7 +19666,7 @@ pub mod firewall_policies {
         resource_group_name: &str,
         firewall_policy_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::FirewallPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -19687,8 +19687,8 @@ pub mod firewall_policies {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -20347,7 +20347,7 @@ pub mod ip_groups {
         resource_group_name: &str,
         ip_groups_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::IpGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -20368,8 +20368,8 @@ pub mod ip_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -20797,7 +20797,7 @@ pub mod nat_gateways {
         resource_group_name: &str,
         nat_gateway_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::NatGateway, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -20818,8 +20818,8 @@ pub mod nat_gateways {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -24163,7 +24163,7 @@ pub mod public_ip_prefixes {
         resource_group_name: &str,
         public_ip_prefix_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::PublicIpPrefix, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -24184,8 +24184,8 @@ pub mod public_ip_prefixes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -24611,7 +24611,7 @@ pub mod route_filters {
         resource_group_name: &str,
         route_filter_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::RouteFilter, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -24632,8 +24632,8 @@ pub mod route_filters {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -32792,7 +32792,7 @@ pub mod virtual_routers {
         resource_group_name: &str,
         virtual_router_name: &str,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::VirtualRouter, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -32813,8 +32813,8 @@ pub mod virtual_routers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

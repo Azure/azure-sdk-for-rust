@@ -4169,8 +4169,8 @@ pub mod event_hubs {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-        skip: Option<i64>,
-        top: Option<i64>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
     ) -> std::result::Result<models::EventHubListResult, list_by_namespace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4191,11 +4191,11 @@ pub mod event_hubs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4704,8 +4704,8 @@ pub mod consumer_groups {
         namespace_name: &str,
         event_hub_name: &str,
         subscription_id: &str,
-        skip: Option<i64>,
-        top: Option<i64>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
     ) -> std::result::Result<models::ConsumerGroupListResult, list_by_event_hub::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4727,11 +4727,11 @@ pub mod consumer_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

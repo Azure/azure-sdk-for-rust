@@ -20,7 +20,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skip_token: Option<&str>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ResourceProviderOperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ChangeAnalysis/operations", operation_config.base_path(),);
@@ -35,8 +35,8 @@ pub mod operations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -89,9 +89,9 @@ pub mod resource_changes {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_id: &str,
-        start_time: &str,
-        end_time: &str,
-        skip_token: Option<&str>,
+        u24start_time: &str,
+        u24end_time: &str,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ChangeList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -110,10 +110,10 @@ pub mod resource_changes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$startTime", start_time);
-        url.query_pairs_mut().append_pair("$endTime", end_time);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        url.query_pairs_mut().append_pair("$startTime", u24start_time);
+        url.query_pairs_mut().append_pair("$endTime", u24end_time);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
@@ -168,9 +168,9 @@ pub mod changes {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        start_time: &str,
-        end_time: &str,
-        skip_token: Option<&str>,
+        u24start_time: &str,
+        u24end_time: &str,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ChangeList, list_changes_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -190,10 +190,10 @@ pub mod changes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$startTime", start_time);
-        url.query_pairs_mut().append_pair("$endTime", end_time);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        url.query_pairs_mut().append_pair("$startTime", u24start_time);
+        url.query_pairs_mut().append_pair("$endTime", u24end_time);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -248,9 +248,9 @@ pub mod changes {
     pub async fn list_changes_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        start_time: &str,
-        end_time: &str,
-        skip_token: Option<&str>,
+        u24start_time: &str,
+        u24end_time: &str,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ChangeList, list_changes_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -269,10 +269,10 @@ pub mod changes {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("$startTime", start_time);
-        url.query_pairs_mut().append_pair("$endTime", end_time);
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        url.query_pairs_mut().append_pair("$startTime", u24start_time);
+        url.query_pairs_mut().append_pair("$endTime", u24end_time);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

@@ -427,7 +427,7 @@ pub mod functions {
     }
     pub async fn list_by_streaming_job(
         operation_config: &crate::OperationConfig,
-        select: Option<&str>,
+        u24select: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
@@ -451,8 +451,8 @@ pub mod functions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -989,7 +989,7 @@ pub mod inputs {
     }
     pub async fn list_by_streaming_job(
         operation_config: &crate::OperationConfig,
-        select: Option<&str>,
+        u24select: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
@@ -1013,8 +1013,8 @@ pub mod inputs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1474,7 +1474,7 @@ pub mod outputs {
     }
     pub async fn list_by_streaming_job(
         operation_config: &crate::OperationConfig,
-        select: Option<&str>,
+        u24select: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
@@ -1498,8 +1498,8 @@ pub mod outputs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1640,7 +1640,7 @@ pub mod streaming_jobs {
     use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         job_name: &str,
@@ -1664,8 +1664,8 @@ pub mod streaming_jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1957,7 +1957,7 @@ pub mod streaming_jobs {
     }
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<models::StreamingJobListResult, list_by_resource_group::Error> {
@@ -1979,8 +1979,8 @@ pub mod streaming_jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2034,7 +2034,7 @@ pub mod streaming_jobs {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::StreamingJobListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -2054,8 +2054,8 @@ pub mod streaming_jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

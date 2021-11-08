@@ -1088,7 +1088,7 @@ pub mod move_resources {
         subscription_id: &str,
         resource_group_name: &str,
         move_collection_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::MoveResourceCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1109,8 +1109,8 @@ pub mod move_resources {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1402,8 +1402,8 @@ pub mod unresolved_dependencies {
         resource_group_name: &str,
         move_collection_name: &str,
         dependency_level: Option<&str>,
-        orderby: Option<&str>,
-        filter: Option<&str>,
+        u24orderby: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::UnresolvedDependencyCollection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1427,11 +1427,11 @@ pub mod unresolved_dependencies {
         if let Some(dependency_level) = dependency_level {
             url.query_pairs_mut().append_pair("dependencyLevel", dependency_level);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

@@ -156,7 +156,7 @@ pub struct DeliveryRuleUrlPathCondition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlPathConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: url_path_condition_parameters::Odata_type,
+    pub u40odata_type: url_path_condition_parameters::U40odataType,
     pub path: String,
     #[serde(rename = "matchType")]
     pub match_type: url_path_condition_parameters::MatchType,
@@ -164,7 +164,7 @@ pub struct UrlPathConditionParameters {
 pub mod url_path_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleUrlPathConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleUrlPathConditionParameters,
     }
@@ -183,13 +183,13 @@ pub struct DeliveryRuleUrlFileExtensionCondition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileExtensionConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: url_file_extension_condition_parameters::Odata_type,
+    pub u40odata_type: url_file_extension_condition_parameters::U40odataType,
     pub extensions: Vec<String>,
 }
 pub mod url_file_extension_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFileExtensionConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleUrlFileExtensionConditionParameters,
     }
@@ -214,7 +214,7 @@ pub struct DeliveryRuleCacheExpirationAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheExpirationActionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: cache_expiration_action_parameters::Odata_type,
+    pub u40odata_type: cache_expiration_action_parameters::U40odataType,
     #[serde(rename = "cacheBehavior")]
     pub cache_behavior: cache_expiration_action_parameters::CacheBehavior,
     #[serde(rename = "cacheType")]
@@ -225,7 +225,7 @@ pub struct CacheExpirationActionParameters {
 pub mod cache_expiration_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "Microsoft.Azure.Cdn.Models.DeliveryRuleCacheExpirationActionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleCacheExpirationActionParameters,
     }
@@ -424,14 +424,14 @@ pub struct CdnManagedHttpsParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CdnCertificateSourceParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: cdn_certificate_source_parameters::Odata_type,
+    pub u40odata_type: cdn_certificate_source_parameters::U40odataType,
     #[serde(rename = "certificateType")]
     pub certificate_type: cdn_certificate_source_parameters::CertificateType,
 }
 pub mod cdn_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.CdnCertificateSourceParameters")]
         U23MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
     }
@@ -451,7 +451,7 @@ pub struct UserManagedHttpsParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultCertificateSourceParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: key_vault_certificate_source_parameters::Odata_type,
+    pub u40odata_type: key_vault_certificate_source_parameters::U40odataType,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
     #[serde(rename = "resourceGroupName")]
@@ -470,7 +470,7 @@ pub struct KeyVaultCertificateSourceParameters {
 pub mod key_vault_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.KeyVaultCertificateSourceParameters")]
         U23MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
     }

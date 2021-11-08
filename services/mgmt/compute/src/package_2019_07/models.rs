@@ -457,7 +457,7 @@ pub struct VirtualMachineCaptureResult {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[serde(rename = "$schema", default, skip_serializing_if = "Option::is_none")]
-    pub schema: Option<String>,
+    pub u24schema: Option<String>,
     #[serde(rename = "contentVersion", default, skip_serializing_if = "Option::is_none")]
     pub content_version: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2481,7 +2481,7 @@ pub struct RunCommandParameterDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunCommandDocumentBase {
     #[serde(rename = "$schema")]
-    pub schema: String,
+    pub u24schema: String,
     pub id: String,
     #[serde(rename = "osType")]
     pub os_type: run_command_document_base::OsType,

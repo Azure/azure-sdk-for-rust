@@ -33,7 +33,7 @@ pub mod management_groups {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         cache_control: Option<&str>,
-        skiptoken: Option<&str>,
+        u24skiptoken: Option<&str>,
     ) -> std::result::Result<models::ManagementGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Management/managementGroups", operation_config.base_path(),);
@@ -51,8 +51,8 @@ pub mod management_groups {
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
         }
-        if let Some(skiptoken) = skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+        if let Some(u24skiptoken) = u24skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -102,9 +102,9 @@ pub mod management_groups {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         group_id: &str,
-        expand: Option<&str>,
-        recurse: Option<bool>,
-        filter: Option<&str>,
+        u24expand: Option<&str>,
+        u24recurse: Option<bool>,
+        u24filter: Option<&str>,
         cache_control: Option<&str>,
     ) -> std::result::Result<models::ManagementGroup, get::Error> {
         let http_client = operation_config.http_client();
@@ -124,14 +124,14 @@ pub mod management_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(recurse) = recurse {
-            url.query_pairs_mut().append_pair("$recurse", recurse.to_string().as_str());
+        if let Some(u24recurse) = u24recurse {
+            url.query_pairs_mut().append_pair("$recurse", u24recurse.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(cache_control) = cache_control {
             req_builder = req_builder.header("Cache-Control", cache_control);
@@ -690,7 +690,7 @@ pub mod entities {
     use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        skiptoken: Option<&str>,
+        u24skiptoken: Option<&str>,
         group_name: Option<&str>,
         cache_control: Option<&str>,
     ) -> std::result::Result<models::EntityListResult, list::Error> {
@@ -707,8 +707,8 @@ pub mod entities {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skiptoken) = skiptoken {
-            url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
+        if let Some(u24skiptoken) = u24skiptoken {
+            url.query_pairs_mut().append_pair("$skiptoken", u24skiptoken);
         }
         if let Some(group_name) = group_name {
             url.query_pairs_mut().append_pair("groupName", group_name);

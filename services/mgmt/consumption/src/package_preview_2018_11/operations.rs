@@ -474,7 +474,7 @@ pub mod charges_by_billing_account {
         billing_account_id: &str,
         start_date: &str,
         end_date: &str,
-        apply: Option<&str>,
+        u24apply: Option<&str>,
     ) -> std::result::Result<models::ChargesListByBillingAccount, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -495,8 +495,8 @@ pub mod charges_by_billing_account {
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         url.query_pairs_mut().append_pair("startDate", start_date);
         url.query_pairs_mut().append_pair("endDate", end_date);
-        if let Some(apply) = apply {
-            url.query_pairs_mut().append_pair("$apply", apply);
+        if let Some(u24apply) = u24apply {
+            url.query_pairs_mut().append_pair("$apply", u24apply);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -627,7 +627,7 @@ pub mod charges_by_invoice_section {
         invoice_section_id: &str,
         start_date: &str,
         end_date: &str,
-        apply: Option<&str>,
+        u24apply: Option<&str>,
     ) -> std::result::Result<models::ChargesListByInvoiceSection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -649,8 +649,8 @@ pub mod charges_by_invoice_section {
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
         url.query_pairs_mut().append_pair("startDate", start_date);
         url.query_pairs_mut().append_pair("endDate", end_date);
-        if let Some(apply) = apply {
-            url.query_pairs_mut().append_pair("$apply", apply);
+        if let Some(u24apply) = u24apply {
+            url.query_pairs_mut().append_pair("$apply", u24apply);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

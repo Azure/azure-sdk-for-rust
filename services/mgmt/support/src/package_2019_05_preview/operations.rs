@@ -437,8 +437,8 @@ pub mod support_tickets {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
-        filter: Option<&str>,
+        u24top: Option<i64>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SupportTicketsListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -458,11 +458,11 @@ pub mod support_tickets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -804,8 +804,8 @@ pub mod communications {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         support_ticket_name: &str,
-        top: Option<i64>,
-        filter: Option<&str>,
+        u24top: Option<i64>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::CommunicationsListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -826,11 +826,11 @@ pub mod communications {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

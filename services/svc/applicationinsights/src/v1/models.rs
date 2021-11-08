@@ -169,16 +169,16 @@ pub type EventsApply = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
-    pub odata_context: Option<String>,
+    pub u40odata_context: Option<String>,
     #[serde(rename = "@ai.messages", default, skip_serializing_if = "Vec::is_empty")]
-    pub ai_messages: Vec<ErrorInfo>,
+    pub u40ai_messages: Vec<ErrorInfo>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventsResultData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsResult {
     #[serde(rename = "@ai.messages", default, skip_serializing_if = "Vec::is_empty")]
-    pub ai_messages: Vec<ErrorInfo>,
+    pub u40ai_messages: Vec<ErrorInfo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<EventsResultData>,
 }

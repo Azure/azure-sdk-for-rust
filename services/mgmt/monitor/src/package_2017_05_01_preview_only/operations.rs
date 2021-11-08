@@ -526,9 +526,9 @@ pub mod metrics {
         interval: Option<&str>,
         metric: Option<&str>,
         aggregation: Option<&str>,
-        top: Option<f64>,
-        orderby: Option<&str>,
-        filter: Option<&str>,
+        u24top: Option<f64>,
+        u24orderby: Option<&str>,
+        u24filter: Option<&str>,
         result_type: Option<&str>,
     ) -> std::result::Result<models::Response, list::Error> {
         let http_client = operation_config.http_client();
@@ -560,14 +560,14 @@ pub mod metrics {
         if let Some(aggregation) = aggregation {
             url.query_pairs_mut().append_pair("aggregation", aggregation);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(result_type) = result_type {
             url.query_pairs_mut().append_pair("resultType", result_type);

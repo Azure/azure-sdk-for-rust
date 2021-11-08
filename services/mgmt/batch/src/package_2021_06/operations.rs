@@ -1662,7 +1662,7 @@ pub mod location {
         operation_config: &crate::OperationConfig,
         location_name: &str,
         maxresults: Option<i32>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SupportedSkusResult, list_supported_virtual_machine_skus::Error> {
         let http_client = operation_config.http_client();
@@ -1686,8 +1686,8 @@ pub mod location {
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1743,7 +1743,7 @@ pub mod location {
         operation_config: &crate::OperationConfig,
         location_name: &str,
         maxresults: Option<i32>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SupportedSkusResult, list_supported_cloud_service_skus::Error> {
         let http_client = operation_config.http_client();
@@ -1767,8 +1767,8 @@ pub mod location {
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1965,8 +1965,8 @@ pub mod certificate {
         resource_group_name: &str,
         account_name: &str,
         maxresults: Option<i32>,
-        select: Option<&str>,
-        filter: Option<&str>,
+        u24select: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ListCertificatesResult, list_by_batch_account::Error> {
         let http_client = operation_config.http_client();
@@ -1991,11 +1991,11 @@ pub mod certificate {
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2832,8 +2832,8 @@ pub mod pool {
         resource_group_name: &str,
         account_name: &str,
         maxresults: Option<i32>,
-        select: Option<&str>,
-        filter: Option<&str>,
+        u24select: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ListPoolsResult, list_by_batch_account::Error> {
         let http_client = operation_config.http_client();
@@ -2858,11 +2858,11 @@ pub mod pool {
         if let Some(maxresults) = maxresults {
             url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

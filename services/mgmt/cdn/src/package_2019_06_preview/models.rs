@@ -255,7 +255,7 @@ pub struct DeliveryRuleIsDeviceCondition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemoteAddressMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: remote_address_match_condition_parameters::Odata_type,
+    pub u40odata_type: remote_address_match_condition_parameters::U40odataType,
     pub operator: remote_address_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -267,7 +267,7 @@ pub struct RemoteAddressMatchConditionParameters {
 pub mod remote_address_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRemoteAddressConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleRemoteAddressConditionParameters,
     }
@@ -282,7 +282,7 @@ pub mod remote_address_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestMethodMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: request_method_match_condition_parameters::Odata_type,
+    pub u40odata_type: request_method_match_condition_parameters::U40odataType,
     pub operator: request_method_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -292,7 +292,7 @@ pub struct RequestMethodMatchConditionParameters {
 pub mod request_method_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestMethodConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleRequestMethodConditionParameters,
     }
@@ -304,7 +304,7 @@ pub mod request_method_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryStringMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: query_string_match_condition_parameters::Odata_type,
+    pub u40odata_type: query_string_match_condition_parameters::U40odataType,
     pub operator: query_string_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -316,7 +316,7 @@ pub struct QueryStringMatchConditionParameters {
 pub mod query_string_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleQueryStringConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleQueryStringConditionParameters,
     }
@@ -336,7 +336,7 @@ pub mod query_string_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PostArgsMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: post_args_match_condition_parameters::Odata_type,
+    pub u40odata_type: post_args_match_condition_parameters::U40odataType,
     pub selector: String,
     pub operator: post_args_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -349,7 +349,7 @@ pub struct PostArgsMatchConditionParameters {
 pub mod post_args_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRulePostArgsConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRulePostArgsConditionParameters,
     }
@@ -369,7 +369,7 @@ pub mod post_args_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestUriMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: request_uri_match_condition_parameters::Odata_type,
+    pub u40odata_type: request_uri_match_condition_parameters::U40odataType,
     pub operator: request_uri_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -381,7 +381,7 @@ pub struct RequestUriMatchConditionParameters {
 pub mod request_uri_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestUriConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleRequestUriConditionParameters,
     }
@@ -401,7 +401,7 @@ pub mod request_uri_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestHeaderMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: request_header_match_condition_parameters::Odata_type,
+    pub u40odata_type: request_header_match_condition_parameters::U40odataType,
     pub selector: String,
     pub operator: request_header_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -414,7 +414,7 @@ pub struct RequestHeaderMatchConditionParameters {
 pub mod request_header_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestHeaderConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleRequestHeaderConditionParameters,
     }
@@ -434,7 +434,7 @@ pub mod request_header_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestBodyMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: request_body_match_condition_parameters::Odata_type,
+    pub u40odata_type: request_body_match_condition_parameters::U40odataType,
     pub operator: request_body_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -446,7 +446,7 @@ pub struct RequestBodyMatchConditionParameters {
 pub mod request_body_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestBodyConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleRequestBodyConditionParameters,
     }
@@ -466,7 +466,7 @@ pub mod request_body_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestSchemeMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: request_scheme_match_condition_parameters::Odata_type,
+    pub u40odata_type: request_scheme_match_condition_parameters::U40odataType,
     pub operator: request_scheme_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -476,7 +476,7 @@ pub struct RequestSchemeMatchConditionParameters {
 pub mod request_scheme_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestSchemeConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleRequestSchemeConditionParameters,
     }
@@ -488,7 +488,7 @@ pub mod request_scheme_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlPathMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: url_path_match_condition_parameters::Odata_type,
+    pub u40odata_type: url_path_match_condition_parameters::U40odataType,
     pub operator: url_path_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -500,7 +500,7 @@ pub struct UrlPathMatchConditionParameters {
 pub mod url_path_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlPathMatchConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleUrlPathMatchConditionParameters,
     }
@@ -521,7 +521,7 @@ pub mod url_path_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileExtensionMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: url_file_extension_match_condition_parameters::Odata_type,
+    pub u40odata_type: url_file_extension_match_condition_parameters::U40odataType,
     pub operator: url_file_extension_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -533,7 +533,7 @@ pub struct UrlFileExtensionMatchConditionParameters {
 pub mod url_file_extension_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFileExtensionMatchConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleUrlFileExtensionMatchConditionParameters,
     }
@@ -553,7 +553,7 @@ pub mod url_file_extension_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileNameMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: url_file_name_match_condition_parameters::Odata_type,
+    pub u40odata_type: url_file_name_match_condition_parameters::U40odataType,
     pub operator: url_file_name_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -565,7 +565,7 @@ pub struct UrlFileNameMatchConditionParameters {
 pub mod url_file_name_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFilenameConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleUrlFilenameConditionParameters,
     }
@@ -585,7 +585,7 @@ pub mod url_file_name_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpVersionMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: http_version_match_condition_parameters::Odata_type,
+    pub u40odata_type: http_version_match_condition_parameters::U40odataType,
     pub operator: http_version_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -595,7 +595,7 @@ pub struct HttpVersionMatchConditionParameters {
 pub mod http_version_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleHttpVersionConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleHttpVersionConditionParameters,
     }
@@ -607,7 +607,7 @@ pub mod http_version_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CookiesMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: cookies_match_condition_parameters::Odata_type,
+    pub u40odata_type: cookies_match_condition_parameters::U40odataType,
     pub selector: String,
     pub operator: cookies_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -620,7 +620,7 @@ pub struct CookiesMatchConditionParameters {
 pub mod cookies_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCookiesConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleCookiesConditionParameters,
     }
@@ -640,7 +640,7 @@ pub mod cookies_match_condition_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IsDeviceMatchConditionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: is_device_match_condition_parameters::Odata_type,
+    pub u40odata_type: is_device_match_condition_parameters::U40odataType,
     pub operator: is_device_match_condition_parameters::Operator,
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
@@ -652,7 +652,7 @@ pub struct IsDeviceMatchConditionParameters {
 pub mod is_device_match_condition_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleIsDeviceConditionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleIsDeviceConditionParameters,
     }
@@ -686,7 +686,7 @@ pub struct UrlRedirectAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRedirectActionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: url_redirect_action_parameters::Odata_type,
+    pub u40odata_type: url_redirect_action_parameters::U40odataType,
     #[serde(rename = "redirectType")]
     pub redirect_type: url_redirect_action_parameters::RedirectType,
     #[serde(rename = "destinationProtocol", default, skip_serializing_if = "Option::is_none")]
@@ -703,7 +703,7 @@ pub struct UrlRedirectActionParameters {
 pub mod url_redirect_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlRedirectActionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleUrlRedirectActionParameters,
     }
@@ -730,7 +730,7 @@ pub struct UrlRewriteAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRewriteActionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: url_rewrite_action_parameters::Odata_type,
+    pub u40odata_type: url_rewrite_action_parameters::U40odataType,
     #[serde(rename = "sourcePattern")]
     pub source_pattern: String,
     pub destination: String,
@@ -740,7 +740,7 @@ pub struct UrlRewriteActionParameters {
 pub mod url_rewrite_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlRewriteActionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleUrlRewriteActionParameters,
     }
@@ -760,7 +760,7 @@ pub struct DeliveryRuleResponseHeaderAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HeaderActionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: header_action_parameters::Odata_type,
+    pub u40odata_type: header_action_parameters::U40odataType,
     #[serde(rename = "headerAction")]
     pub header_action: header_action_parameters::HeaderAction,
     #[serde(rename = "headerName")]
@@ -771,7 +771,7 @@ pub struct HeaderActionParameters {
 pub mod header_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleHeaderActionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleHeaderActionParameters,
     }
@@ -791,7 +791,7 @@ pub struct DeliveryRuleCacheExpirationAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheExpirationActionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: cache_expiration_action_parameters::Odata_type,
+    pub u40odata_type: cache_expiration_action_parameters::U40odataType,
     #[serde(rename = "cacheBehavior")]
     pub cache_behavior: cache_expiration_action_parameters::CacheBehavior,
     #[serde(rename = "cacheType")]
@@ -802,7 +802,7 @@ pub struct CacheExpirationActionParameters {
 pub mod cache_expiration_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheExpirationActionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleCacheExpirationActionParameters,
     }
@@ -826,7 +826,7 @@ pub struct DeliveryRuleCacheKeyQueryStringAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheKeyQueryStringActionParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: cache_key_query_string_action_parameters::Odata_type,
+    pub u40odata_type: cache_key_query_string_action_parameters::U40odataType,
     #[serde(rename = "queryStringBehavior")]
     pub query_string_behavior: cache_key_query_string_action_parameters::QueryStringBehavior,
     #[serde(rename = "queryParameters", default, skip_serializing_if = "Option::is_none")]
@@ -835,7 +835,7 @@ pub struct CacheKeyQueryStringActionParameters {
 pub mod cache_key_query_string_action_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheKeyQueryStringBehaviorActionParameters")]
         U23MicrosoftAzureCdnModelsDeliveryRuleCacheKeyQueryStringBehaviorActionParameters,
     }
@@ -1048,14 +1048,14 @@ pub struct CdnManagedHttpsParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CdnCertificateSourceParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: cdn_certificate_source_parameters::Odata_type,
+    pub u40odata_type: cdn_certificate_source_parameters::U40odataType,
     #[serde(rename = "certificateType")]
     pub certificate_type: cdn_certificate_source_parameters::CertificateType,
 }
 pub mod cdn_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.CdnCertificateSourceParameters")]
         U23MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
     }
@@ -1075,7 +1075,7 @@ pub struct UserManagedHttpsParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultCertificateSourceParameters {
     #[serde(rename = "@odata.type")]
-    pub odata_type: key_vault_certificate_source_parameters::Odata_type,
+    pub u40odata_type: key_vault_certificate_source_parameters::U40odataType,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
     #[serde(rename = "resourceGroupName")]
@@ -1094,7 +1094,7 @@ pub struct KeyVaultCertificateSourceParameters {
 pub mod key_vault_certificate_source_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum U40odataType {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.KeyVaultCertificateSourceParameters")]
         U23MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
     }

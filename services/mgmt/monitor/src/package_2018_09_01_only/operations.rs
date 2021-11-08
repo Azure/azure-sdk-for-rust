@@ -559,7 +559,7 @@ pub mod metric_baseline {
         sensitivities: Option<&str>,
         result_type: Option<&str>,
         metricnamespace: Option<&str>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::BaselineResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -597,8 +597,8 @@ pub mod metric_baseline {
         if let Some(metricnamespace) = metricnamespace {
             url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -729,7 +729,7 @@ pub mod baseline {
         sensitivities: Option<&str>,
         result_type: Option<&str>,
         metricnamespace: Option<&str>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::BaselineResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -769,8 +769,8 @@ pub mod baseline {
         if let Some(metricnamespace) = metricnamespace {
             url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

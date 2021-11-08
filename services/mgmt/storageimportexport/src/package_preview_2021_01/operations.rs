@@ -170,8 +170,8 @@ pub mod jobs {
     use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
-        filter: Option<&str>,
+        u24top: Option<i64>,
+        u24filter: Option<&str>,
         subscription_id: &str,
         accept_language: Option<&str>,
     ) -> std::result::Result<models::ListJobsResponse, list_by_subscription::Error> {
@@ -192,11 +192,11 @@ pub mod jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);
@@ -251,8 +251,8 @@ pub mod jobs {
     }
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
-        top: Option<i64>,
-        filter: Option<&str>,
+        u24top: Option<i64>,
+        u24filter: Option<&str>,
         subscription_id: &str,
         resource_group_name: &str,
         accept_language: Option<&str>,
@@ -275,11 +275,11 @@ pub mod jobs {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(accept_language) = accept_language {
             req_builder = req_builder.header("Accept-Language", accept_language);

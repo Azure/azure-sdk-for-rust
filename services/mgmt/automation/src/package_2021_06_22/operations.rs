@@ -1433,10 +1433,10 @@ pub mod dsc_node {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
-        skip: Option<i64>,
-        top: Option<i64>,
-        inlinecount: Option<&str>,
+        u24filter: Option<&str>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
+        u24inlinecount: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::DscNodeListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -1458,17 +1458,17 @@ pub mod dsc_node {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(inlinecount) = inlinecount {
-            url.query_pairs_mut().append_pair("$inlinecount", inlinecount);
+        if let Some(u24inlinecount) = u24inlinecount {
+            url.query_pairs_mut().append_pair("$inlinecount", u24inlinecount);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1528,7 +1528,7 @@ pub mod node_reports {
         resource_group_name: &str,
         automation_account_name: &str,
         node_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::DscNodeReportListResult, list_by_node::Error> {
         let http_client = operation_config.http_client();
@@ -1551,8 +1551,8 @@ pub mod node_reports {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1983,10 +1983,10 @@ pub mod dsc_node_configuration {
         resource_group_name: &str,
         automation_account_name: &str,
         subscription_id: &str,
-        filter: Option<&str>,
-        skip: Option<i64>,
-        top: Option<i64>,
-        inlinecount: Option<&str>,
+        u24filter: Option<&str>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
+        u24inlinecount: Option<&str>,
     ) -> std::result::Result<models::DscNodeConfigurationListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2007,17 +2007,17 @@ pub mod dsc_node_configuration {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(inlinecount) = inlinecount {
-            url.query_pairs_mut().append_pair("$inlinecount", inlinecount);
+        if let Some(u24inlinecount) = u24inlinecount {
+            url.query_pairs_mut().append_pair("$inlinecount", u24inlinecount);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2222,7 +2222,7 @@ pub mod dsc_compilation_job {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::DscCompilationJobListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -2244,8 +2244,8 @@ pub mod dsc_compilation_job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2835,7 +2835,7 @@ pub mod source_control {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SourceControlListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -2857,8 +2857,8 @@ pub mod source_control {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3052,7 +3052,7 @@ pub mod source_control_sync_job {
         resource_group_name: &str,
         automation_account_name: &str,
         source_control_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SourceControlSyncJobListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -3068,8 +3068,8 @@ pub mod source_control_sync_job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3130,7 +3130,7 @@ pub mod source_control_sync_job_streams {
         automation_account_name: &str,
         source_control_name: &str,
         source_control_sync_job_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::SourceControlSyncJobStreamsListBySyncJob, list_by_sync_job::Error> {
         let http_client = operation_config.http_client();
@@ -3146,8 +3146,8 @@ pub mod source_control_sync_job_streams {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3712,7 +3712,7 @@ pub mod statistics {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::StatisticsListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -3734,8 +3734,8 @@ pub mod statistics {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5676,7 +5676,7 @@ pub mod hybrid_runbook_worker_group {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::HybridRunbookWorkerGroupsListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -5698,8 +5698,8 @@ pub mod hybrid_runbook_worker_group {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -5971,7 +5971,7 @@ pub mod job_schedule {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::JobScheduleListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -5993,8 +5993,8 @@ pub mod job_schedule {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -8084,7 +8084,7 @@ pub mod watcher {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::WatcherListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -8106,8 +8106,8 @@ pub mod watcher {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -8553,10 +8553,10 @@ pub mod dsc_configuration {
         resource_group_name: &str,
         automation_account_name: &str,
         subscription_id: &str,
-        filter: Option<&str>,
-        skip: Option<i64>,
-        top: Option<i64>,
-        inlinecount: Option<&str>,
+        u24filter: Option<&str>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
+        u24inlinecount: Option<&str>,
     ) -> std::result::Result<models::DscConfigurationListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -8577,17 +8577,17 @@ pub mod dsc_configuration {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(inlinecount) = inlinecount {
-            url.query_pairs_mut().append_pair("$inlinecount", inlinecount);
+        if let Some(u24inlinecount) = u24inlinecount {
+            url.query_pairs_mut().append_pair("$inlinecount", u24inlinecount);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -9105,7 +9105,7 @@ pub mod job {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
         client_request_id: Option<&str>,
     ) -> std::result::Result<models::JobListResultV2, list_by_automation_account::Error> {
@@ -9128,8 +9128,8 @@ pub mod job {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(client_request_id) = client_request_id {
             req_builder = req_builder.header("clientRequestId", client_request_id);
@@ -9342,7 +9342,7 @@ pub mod job_stream {
         resource_group_name: &str,
         automation_account_name: &str,
         job_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
         client_request_id: Option<&str>,
     ) -> std::result::Result<models::JobStreamListResult, list_by_job::Error> {
@@ -9366,8 +9366,8 @@ pub mod job_stream {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         if let Some(client_request_id) = client_request_id {
             req_builder = req_builder.header("clientRequestId", client_request_id);
@@ -9813,7 +9813,7 @@ pub mod software_update_configurations {
         resource_group_name: &str,
         automation_account_name: &str,
         client_request_id: Option<&str>,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::SoftwareUpdateConfigurationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -9837,8 +9837,8 @@ pub mod software_update_configurations {
         if let Some(client_request_id) = client_request_id {
             req_builder = req_builder.header("clientRequestId", client_request_id);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -9973,9 +9973,9 @@ pub mod software_update_configuration_runs {
         resource_group_name: &str,
         automation_account_name: &str,
         client_request_id: Option<&str>,
-        filter: Option<&str>,
-        skip: Option<&str>,
-        top: Option<&str>,
+        u24filter: Option<&str>,
+        u24skip: Option<&str>,
+        u24top: Option<&str>,
     ) -> std::result::Result<models::SoftwareUpdateConfigurationRunListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -9999,14 +9999,14 @@ pub mod software_update_configuration_runs {
         if let Some(client_request_id) = client_request_id {
             req_builder = req_builder.header("clientRequestId", client_request_id);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top);
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -10134,9 +10134,9 @@ pub mod software_update_configuration_machine_runs {
         resource_group_name: &str,
         automation_account_name: &str,
         client_request_id: Option<&str>,
-        filter: Option<&str>,
-        skip: Option<&str>,
-        top: Option<&str>,
+        u24filter: Option<&str>,
+        u24skip: Option<&str>,
+        u24top: Option<&str>,
     ) -> std::result::Result<models::SoftwareUpdateConfigurationMachineRunListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automation/automationAccounts/{}/softwareUpdateConfigurationMachineRuns" , operation_config . base_path () , subscription_id , resource_group_name , automation_account_name) ;
@@ -10154,14 +10154,14 @@ pub mod software_update_configuration_machine_runs {
         if let Some(client_request_id) = client_request_id {
             req_builder = req_builder.header("clientRequestId", client_request_id);
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip);
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top);
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -11120,7 +11120,7 @@ pub mod test_job_streams {
         resource_group_name: &str,
         automation_account_name: &str,
         runbook_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::JobStreamListResult, list_by_test_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -11142,8 +11142,8 @@ pub mod test_job_streams {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -11931,7 +11931,7 @@ pub mod webhook {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         automation_account_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::WebhookListResult, list_by_automation_account::Error> {
         let http_client = operation_config.http_client();
@@ -11953,8 +11953,8 @@ pub mod webhook {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -12278,7 +12278,7 @@ pub mod hybrid_runbook_workers {
         resource_group_name: &str,
         automation_account_name: &str,
         hybrid_runbook_worker_group_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::HybridRunbookWorkersListResult, list_by_hybrid_runbook_worker_group::Error> {
         let http_client = operation_config.http_client();
@@ -12294,8 +12294,8 @@ pub mod hybrid_runbook_workers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

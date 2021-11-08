@@ -371,7 +371,7 @@ pub mod private_zones {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-        top: Option<i32>,
+        u24top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::PrivateZoneListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -391,8 +391,8 @@ pub mod private_zones {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -442,7 +442,7 @@ pub mod private_zones {
     pub async fn list_by_resource_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        top: Option<i32>,
+        u24top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::PrivateZoneListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -463,8 +463,8 @@ pub mod private_zones {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -856,7 +856,7 @@ pub mod virtual_network_links {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         private_zone_name: &str,
-        top: Option<i32>,
+        u24top: Option<i32>,
         subscription_id: &str,
     ) -> std::result::Result<models::VirtualNetworkLinkListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -878,8 +878,8 @@ pub mod virtual_network_links {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1265,8 +1265,8 @@ pub mod record_sets {
         resource_group_name: &str,
         private_zone_name: &str,
         record_type: &str,
-        top: Option<i32>,
-        recordsetnamesuffix: Option<&str>,
+        u24top: Option<i32>,
+        u24recordsetnamesuffix: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecordSetListResult, list_by_type::Error> {
         let http_client = operation_config.http_client();
@@ -1289,11 +1289,11 @@ pub mod record_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(recordsetnamesuffix) = recordsetnamesuffix {
-            url.query_pairs_mut().append_pair("$recordsetnamesuffix", recordsetnamesuffix);
+        if let Some(u24recordsetnamesuffix) = u24recordsetnamesuffix {
+            url.query_pairs_mut().append_pair("$recordsetnamesuffix", u24recordsetnamesuffix);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1347,8 +1347,8 @@ pub mod record_sets {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         private_zone_name: &str,
-        top: Option<i32>,
-        recordsetnamesuffix: Option<&str>,
+        u24top: Option<i32>,
+        u24recordsetnamesuffix: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::RecordSetListResult, list::Error> {
         let http_client = operation_config.http_client();
@@ -1370,11 +1370,11 @@ pub mod record_sets {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(recordsetnamesuffix) = recordsetnamesuffix {
-            url.query_pairs_mut().append_pair("$recordsetnamesuffix", recordsetnamesuffix);
+        if let Some(u24recordsetnamesuffix) = u24recordsetnamesuffix {
+            url.query_pairs_mut().append_pair("$recordsetnamesuffix", u24recordsetnamesuffix);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

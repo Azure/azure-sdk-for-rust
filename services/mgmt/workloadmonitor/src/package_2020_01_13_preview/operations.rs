@@ -89,8 +89,8 @@ pub mod health_monitors {
         provider_name: &str,
         resource_collection_name: &str,
         resource_name: &str,
-        filter: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::HealthMonitorList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -113,11 +113,11 @@ pub mod health_monitors {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -172,7 +172,7 @@ pub mod health_monitors {
         resource_collection_name: &str,
         resource_name: &str,
         monitor_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::HealthMonitor, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -196,8 +196,8 @@ pub mod health_monitors {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -252,8 +252,8 @@ pub mod health_monitors {
         resource_collection_name: &str,
         resource_name: &str,
         monitor_id: &str,
-        filter: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24expand: Option<&str>,
         start_timestamp_utc: Option<&str>,
         end_timestamp_utc: Option<&str>,
     ) -> std::result::Result<models::HealthMonitorStateChangeList, list_state_changes::Error> {
@@ -279,11 +279,11 @@ pub mod health_monitors {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(start_timestamp_utc) = start_timestamp_utc {
             url.query_pairs_mut().append_pair("startTimestampUtc", start_timestamp_utc);
@@ -348,7 +348,7 @@ pub mod health_monitors {
         resource_name: &str,
         monitor_id: &str,
         timestamp_unix: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::HealthMonitorStateChange, get_state_change::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -373,8 +373,8 @@ pub mod health_monitors {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

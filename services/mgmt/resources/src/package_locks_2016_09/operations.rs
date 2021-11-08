@@ -1008,7 +1008,7 @@ pub mod management_locks {
     pub async fn list_at_resource_group_level(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ManagementLockListResult, list_at_resource_group_level::Error> {
         let http_client = operation_config.http_client();
@@ -1029,8 +1029,8 @@ pub mod management_locks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1084,7 +1084,7 @@ pub mod management_locks {
         parent_resource_path: &str,
         resource_type: &str,
         resource_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ManagementLockListResult, list_at_resource_level::Error> {
         let http_client = operation_config.http_client();
@@ -1109,8 +1109,8 @@ pub mod management_locks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1159,7 +1159,7 @@ pub mod management_locks {
     }
     pub async fn list_at_subscription_level(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ManagementLockListResult, list_at_subscription_level::Error> {
         let http_client = operation_config.http_client();
@@ -1179,8 +1179,8 @@ pub mod management_locks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1230,7 +1230,7 @@ pub mod management_locks {
     pub async fn list_by_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::ManagementLockListResult, list_by_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/providers/Microsoft.Authorization/locks", operation_config.base_path(), scope);
@@ -1245,8 +1245,8 @@ pub mod management_locks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

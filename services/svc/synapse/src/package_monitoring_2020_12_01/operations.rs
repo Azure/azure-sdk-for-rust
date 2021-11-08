@@ -81,7 +81,7 @@ pub mod monitoring {
         operation_config: &crate::OperationConfig,
         x_ms_client_request_id: Option<&str>,
         filter: Option<&str>,
-        orderby: Option<&str>,
+        u24orderby: Option<&str>,
         skip: Option<&str>,
     ) -> std::result::Result<models::SqlQueryStringDataModel, get_sql_job_query_string::Error> {
         let http_client = operation_config.http_client();
@@ -103,8 +103,8 @@ pub mod monitoring {
         if let Some(filter) = filter {
             url.query_pairs_mut().append_pair("filter", filter);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
         if let Some(skip) = skip {
             url.query_pairs_mut().append_pair("skip", skip);

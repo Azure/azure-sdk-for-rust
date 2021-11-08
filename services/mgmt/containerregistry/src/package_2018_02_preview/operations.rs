@@ -2152,9 +2152,9 @@ pub mod builds {
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::BuildListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2175,14 +2175,14 @@ pub mod builds {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2891,8 +2891,8 @@ pub mod build_tasks {
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-        filter: Option<&str>,
-        skip_token: Option<&str>,
+        u24filter: Option<&str>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::BuildTaskListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2913,11 +2913,11 @@ pub mod build_tasks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

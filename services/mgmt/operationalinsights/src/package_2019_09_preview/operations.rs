@@ -539,9 +539,9 @@ pub mod queries {
         subscription_id: &str,
         resource_group_name: &str,
         query_pack_name: &str,
-        top: Option<i64>,
+        u24top: Option<i64>,
         include_body: Option<bool>,
-        skip_token: Option<&str>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::LogAnalyticsQueryPackQueryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -562,14 +562,14 @@ pub mod queries {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         if let Some(include_body) = include_body {
             url.query_pairs_mut().append_pair("includeBody", include_body.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -621,9 +621,9 @@ pub mod queries {
         subscription_id: &str,
         resource_group_name: &str,
         query_pack_name: &str,
-        top: Option<i64>,
+        u24top: Option<i64>,
         include_body: Option<bool>,
-        skip_token: Option<&str>,
+        u24skip_token: Option<&str>,
         query_search_properties: &models::LogAnalyticsQueryPackQuerySearchProperties,
     ) -> std::result::Result<models::LogAnalyticsQueryPackQueryListResult, search::Error> {
         let http_client = operation_config.http_client();
@@ -645,14 +645,14 @@ pub mod queries {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         if let Some(include_body) = include_body {
             url.query_pairs_mut().append_pair("includeBody", include_body.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(query_search_properties).map_err(search::Error::SerializeError)?;

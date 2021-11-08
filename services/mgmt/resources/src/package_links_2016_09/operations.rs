@@ -263,7 +263,7 @@ pub mod resource_links {
     }
     pub async fn list_at_subscription(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<models::ResourceLinkResult, list_at_subscription::Error> {
         let http_client = operation_config.http_client();
@@ -283,8 +283,8 @@ pub mod resource_links {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -332,7 +332,7 @@ pub mod resource_links {
     pub async fn list_at_source_scope(
         operation_config: &crate::OperationConfig,
         scope: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::ResourceLinkResult, list_at_source_scope::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/{}/providers/Microsoft.Resources/links", operation_config.base_path(), scope);
@@ -347,8 +347,8 @@ pub mod resource_links {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

@@ -99,14 +99,14 @@ pub struct OperationCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaServiceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MediaService>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityInput {
@@ -120,7 +120,7 @@ pub struct SubscriptionMediaServiceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubscriptionMediaService>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetProperties {
@@ -171,7 +171,7 @@ pub struct AssetCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Asset>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListContainerSasInput {
@@ -199,7 +199,7 @@ pub struct ContentKeyPolicyPlayReadyExplicitAnalogTelevisionRestriction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentKeyLocation {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromHeader {
@@ -305,7 +305,7 @@ pub mod content_key_policy_play_ready_license {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRestriction {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyOpenRestriction {
@@ -320,12 +320,12 @@ pub struct ContentKeyPolicyUnknownRestriction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyConfiguration {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRestrictionTokenKey {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicySymmetricTokenKey {
@@ -456,17 +456,17 @@ pub struct ContentKeyPolicyCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContentKeyPolicy>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Preset {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Codec {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
@@ -507,7 +507,7 @@ pub struct AudioAnalyzerPreset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Overlay {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
     #[serde(rename = "inputLabel", default, skip_serializing_if = "Option::is_none")]
     pub input_label: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -563,7 +563,7 @@ pub struct Image {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Format {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
     #[serde(rename = "filenamePattern", default, skip_serializing_if = "Option::is_none")]
     pub filename_pattern: Option<String>,
 }
@@ -645,7 +645,7 @@ pub mod filters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Layer {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub width: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -861,7 +861,7 @@ pub struct Transform {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInput {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
@@ -896,7 +896,7 @@ pub struct JobInputHttp {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobOutput {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<JobError>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1020,14 +1020,14 @@ pub struct TransformCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Transform>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Job>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackPropertyCondition {
@@ -1275,14 +1275,14 @@ pub struct StreamingPolicyCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingPolicy>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingLocatorCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingLocator>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Hls {
@@ -1333,9 +1333,9 @@ pub struct LiveOutputListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LiveOutput>,
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
-    pub odata_count: Option<i32>,
+    pub u40odata_count: Option<i32>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventEndpoint {
@@ -1471,9 +1471,9 @@ pub struct LiveEventListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LiveEvent>,
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
-    pub odata_count: Option<i32>,
+    pub u40odata_count: Option<i32>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AkamaiSignatureHeaderAuthenticationKey {
@@ -1564,9 +1564,9 @@ pub struct StreamingEndpointListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingEndpoint>,
     #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
-    pub odata_count: Option<i32>,
+    pub u40odata_count: Option<i32>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub odata_next_link: Option<String>,
+    pub u40odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

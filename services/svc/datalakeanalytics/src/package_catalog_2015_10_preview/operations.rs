@@ -459,13 +459,13 @@ pub mod catalog {
     pub async fn list_external_data_sources(
         operation_config: &crate::OperationConfig,
         database_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlExternalDataSourceList, list_external_data_sources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -484,26 +484,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -619,13 +619,13 @@ pub mod catalog {
     pub async fn list_credentials(
         operation_config: &crate::OperationConfig,
         database_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlCredentialList, list_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -644,26 +644,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -780,13 +780,13 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         schema_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlProcedureList, list_procedures::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -806,26 +806,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -942,13 +942,13 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         schema_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlTableList, list_tables::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -968,26 +968,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1104,13 +1104,13 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         schema_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlTableTypeList, list_table_types::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1130,26 +1130,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1266,13 +1266,13 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         schema_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlViewList, list_views::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1292,26 +1292,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1431,13 +1431,13 @@ pub mod catalog {
         database_name: &str,
         schema_name: &str,
         table_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlTableStatisticsList, list_table_statistics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1458,26 +1458,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1599,13 +1599,13 @@ pub mod catalog {
         database_name: &str,
         schema_name: &str,
         table_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlTablePartitionList, list_table_partitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1626,26 +1626,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1696,13 +1696,13 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         schema_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlTypeList, list_types::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1722,26 +1722,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1860,13 +1860,13 @@ pub mod catalog {
         operation_config: &crate::OperationConfig,
         database_name: &str,
         schema_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlTableValuedFunctionList, list_table_valued_functions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1886,26 +1886,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2021,13 +2021,13 @@ pub mod catalog {
     pub async fn list_assemblies(
         operation_config: &crate::OperationConfig,
         database_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlAssemblyList, list_assemblies::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2046,26 +2046,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2179,13 +2179,13 @@ pub mod catalog {
     pub async fn list_schemas(
         operation_config: &crate::OperationConfig,
         database_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlSchemaList, list_schemas::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/catalog/usql/databases/{}/schemas", operation_config.base_path(), database_name);
@@ -2200,26 +2200,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2326,13 +2326,13 @@ pub mod catalog {
     }
     pub async fn list_databases(
         operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        top: Option<i32>,
-        skip: Option<i32>,
-        expand: Option<&str>,
-        select: Option<&str>,
-        orderby: Option<&str>,
-        count: Option<bool>,
+        u24filter: Option<&str>,
+        u24top: Option<i32>,
+        u24skip: Option<i32>,
+        u24expand: Option<&str>,
+        u24select: Option<&str>,
+        u24orderby: Option<&str>,
+        u24count: Option<bool>,
     ) -> std::result::Result<models::USqlDatabaseList, list_databases::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/catalog/usql/databases", operation_config.base_path(),);
@@ -2347,26 +2347,26 @@ pub mod catalog {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(orderby) = orderby {
-            url.query_pairs_mut().append_pair("$orderby", orderby);
+        if let Some(u24orderby) = u24orderby {
+            url.query_pairs_mut().append_pair("$orderby", u24orderby);
         }
-        if let Some(count) = count {
-            url.query_pairs_mut().append_pair("$count", count.to_string().as_str());
+        if let Some(u24count) = u24count {
+            url.query_pairs_mut().append_pair("$count", u24count.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

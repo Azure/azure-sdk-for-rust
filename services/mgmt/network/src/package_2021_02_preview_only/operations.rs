@@ -421,8 +421,8 @@ pub mod network_managers {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::NetworkManagerListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -441,11 +441,11 @@ pub mod network_managers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -499,8 +499,8 @@ pub mod network_managers {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::NetworkManagerListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -520,11 +520,11 @@ pub mod network_managers {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -729,8 +729,8 @@ pub mod effective_virtual_networks {
         subscription_id: &str,
         resource_group_name: &str,
         network_manager_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
         parameters: &models::EffectiveVirtualNetworksParameter,
     ) -> std::result::Result<models::EffectiveVirtualNetworksListResult, list_by_network_manager::Error> {
         let http_client = operation_config.http_client();
@@ -752,11 +752,11 @@ pub mod effective_virtual_networks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         req_builder = req_builder.header("content-type", "application/json");
         let req_body = azure_core::to_json(parameters).map_err(list_by_network_manager::Error::SerializeError)?;
@@ -1126,8 +1126,8 @@ pub mod network_groups {
         subscription_id: &str,
         resource_group_name: &str,
         network_manager_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::NetworkGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1148,11 +1148,11 @@ pub mod network_groups {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1803,8 +1803,8 @@ pub mod connectivity_configurations {
         subscription_id: &str,
         resource_group_name: &str,
         network_manager_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::ConnectivityConfigurationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1825,11 +1825,11 @@ pub mod connectivity_configurations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -1884,8 +1884,8 @@ pub mod security_admin_configurations {
         subscription_id: &str,
         resource_group_name: &str,
         network_manager_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::SecurityConfigurationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1906,11 +1906,11 @@ pub mod security_admin_configurations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2199,8 +2199,8 @@ pub mod admin_rule_collections {
         resource_group_name: &str,
         network_manager_name: &str,
         configuration_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::RuleCollectionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name) ;
@@ -2215,11 +2215,11 @@ pub mod admin_rule_collections {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2491,8 +2491,8 @@ pub mod admin_rules {
         network_manager_name: &str,
         configuration_name: &str,
         rule_collection_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::AdminRuleListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name) ;
@@ -2507,11 +2507,11 @@ pub mod admin_rules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2784,8 +2784,8 @@ pub mod security_user_configurations {
         subscription_id: &str,
         resource_group_name: &str,
         network_manager_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::SecurityConfigurationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2806,11 +2806,11 @@ pub mod security_user_configurations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3099,8 +3099,8 @@ pub mod user_rule_collections {
         resource_group_name: &str,
         network_manager_name: &str,
         configuration_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::RuleCollectionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name) ;
@@ -3115,11 +3115,11 @@ pub mod user_rule_collections {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3391,8 +3391,8 @@ pub mod user_rules {
         network_manager_name: &str,
         configuration_name: &str,
         rule_collection_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::UserRuleListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules" , operation_config . base_path () , subscription_id , resource_group_name , network_manager_name , configuration_name , rule_collection_name) ;
@@ -3407,11 +3407,11 @@ pub mod user_rules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3909,8 +3909,8 @@ pub mod network_security_perimeters {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::NetworkSecurityPerimeterListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3929,11 +3929,11 @@ pub mod network_security_perimeters {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3987,8 +3987,8 @@ pub mod network_security_perimeters {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        top: Option<i32>,
-        skip_token: Option<&str>,
+        u24top: Option<i32>,
+        u24skip_token: Option<&str>,
     ) -> std::result::Result<models::NetworkSecurityPerimeterListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4008,11 +4008,11 @@ pub mod network_security_perimeters {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(skip_token) = skip_token {
-            url.query_pairs_mut().append_pair("$skipToken", skip_token);
+        if let Some(u24skip_token) = u24skip_token {
+            url.query_pairs_mut().append_pair("$skipToken", u24skip_token);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

@@ -97,9 +97,9 @@ pub struct DeviceTelemetry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTemplate {
     #[serde(rename = "@id", default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub u40id: Option<String>,
     #[serde(rename = "@type")]
-    pub type_: Vec<String>,
+    pub u40type: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]

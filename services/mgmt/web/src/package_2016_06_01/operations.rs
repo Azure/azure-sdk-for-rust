@@ -607,7 +607,7 @@ pub mod custom_apis {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        top: Option<i32>,
+        u24top: Option<i32>,
         skiptoken: Option<&str>,
     ) -> std::result::Result<models::CustomApiDefinitionCollection, list::Error> {
         let http_client = operation_config.http_client();
@@ -627,8 +627,8 @@ pub mod custom_apis {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         if let Some(skiptoken) = skiptoken {
             url.query_pairs_mut().append_pair("skiptoken", skiptoken);
@@ -677,7 +677,7 @@ pub mod custom_apis {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        top: Option<i32>,
+        u24top: Option<i32>,
         skiptoken: Option<&str>,
     ) -> std::result::Result<models::CustomApiDefinitionCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -698,8 +698,8 @@ pub mod custom_apis {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         if let Some(skiptoken) = skiptoken {
             url.query_pairs_mut().append_pair("skiptoken", skiptoken);
@@ -1355,8 +1355,8 @@ pub mod connections {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        top: Option<i32>,
-        filter: Option<&str>,
+        u24top: Option<i32>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::ApiConnectionDefinitionCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1376,11 +1376,11 @@ pub mod connections {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

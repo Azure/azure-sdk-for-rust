@@ -2653,7 +2653,7 @@ pub mod secure_score_controls {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         secure_score_name: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::SecureScoreControlList, list_by_secure_score::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2673,8 +2673,8 @@ pub mod secure_score_controls {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2727,7 +2727,7 @@ pub mod secure_score_controls {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        expand: Option<&str>,
+        u24expand: Option<&str>,
     ) -> std::result::Result<models::SecureScoreControlList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2746,8 +2746,8 @@ pub mod secure_score_controls {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -3863,7 +3863,7 @@ pub mod regulatory_compliance_standards {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RegulatoryComplianceStandardList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3882,8 +3882,8 @@ pub mod regulatory_compliance_standards {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4005,7 +4005,7 @@ pub mod regulatory_compliance_controls {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         regulatory_compliance_standard_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RegulatoryComplianceControlList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4025,8 +4025,8 @@ pub mod regulatory_compliance_controls {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4151,7 +4151,7 @@ pub mod regulatory_compliance_assessments {
         subscription_id: &str,
         regulatory_compliance_standard_name: &str,
         regulatory_compliance_control_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::RegulatoryComplianceAssessmentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Security/regulatoryComplianceStandards/{}/regulatoryComplianceControls/{}/regulatoryComplianceAssessments" , operation_config . base_path () , subscription_id , regulatory_compliance_standard_name , regulatory_compliance_control_name) ;
@@ -4166,8 +4166,8 @@ pub mod regulatory_compliance_assessments {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6372,7 +6372,7 @@ pub mod io_t_security_solutions {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::IoTSecuritySolutionsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6391,8 +6391,8 @@ pub mod io_t_security_solutions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6446,7 +6446,7 @@ pub mod io_t_security_solutions_resource_group {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::IoTSecuritySolutionsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -6466,8 +6466,8 @@ pub mod io_t_security_solutions_resource_group {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -6970,7 +6970,7 @@ pub mod io_t_security_solutions_analytics_aggregated_alerts {
         subscription_id: &str,
         resource_group_name: &str,
         solution_name: &str,
-        top: Option<i64>,
+        u24top: Option<i64>,
     ) -> std::result::Result<models::IoTSecurityAggregatedAlertList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedAlerts" , operation_config . base_path () , subscription_id , resource_group_name , solution_name) ;
@@ -6985,8 +6985,8 @@ pub mod io_t_security_solutions_analytics_aggregated_alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7241,7 +7241,7 @@ pub mod io_t_security_solutions_analytics_recommendations {
         subscription_id: &str,
         resource_group_name: &str,
         solution_name: &str,
-        top: Option<i64>,
+        u24top: Option<i64>,
     ) -> std::result::Result<models::IoTSecurityAggregatedRecommendationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/iotSecuritySolutions/{}/analyticsModels/default/aggregatedRecommendations" , operation_config . base_path () , subscription_id , resource_group_name , solution_name) ;
@@ -7256,8 +7256,8 @@ pub mod io_t_security_solutions_analytics_recommendations {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7509,7 +7509,7 @@ pub mod tasks {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::SecurityTaskList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -7528,8 +7528,8 @@ pub mod tasks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7580,7 +7580,7 @@ pub mod tasks {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         asc_location: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::SecurityTaskList, list_by_home_region::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -7600,8 +7600,8 @@ pub mod tasks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -7804,7 +7804,7 @@ pub mod tasks {
         subscription_id: &str,
         resource_group_name: &str,
         asc_location: &str,
-        filter: Option<&str>,
+        u24filter: Option<&str>,
     ) -> std::result::Result<models::SecurityTaskList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -7825,8 +7825,8 @@ pub mod tasks {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -8036,9 +8036,9 @@ pub mod alerts {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         auto_dismiss_rule_name: Option<&str>,
     ) -> std::result::Result<models::AlertList, list::Error> {
         let http_client = operation_config.http_client();
@@ -8058,14 +8058,14 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(auto_dismiss_rule_name) = auto_dismiss_rule_name {
             url.query_pairs_mut().append_pair("autoDismissRuleName", auto_dismiss_rule_name);
@@ -8119,9 +8119,9 @@ pub mod alerts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         auto_dismiss_rule_name: Option<&str>,
     ) -> std::result::Result<models::AlertList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
@@ -8142,14 +8142,14 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(auto_dismiss_rule_name) = auto_dismiss_rule_name {
             url.query_pairs_mut().append_pair("autoDismissRuleName", auto_dismiss_rule_name);
@@ -8208,9 +8208,9 @@ pub mod alerts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         asc_location: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         auto_dismiss_rule_name: Option<&str>,
     ) -> std::result::Result<models::AlertList, list_subscription_level_alerts_by_region::Error> {
         let http_client = operation_config.http_client();
@@ -8231,14 +8231,14 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(auto_dismiss_rule_name) = auto_dismiss_rule_name {
             url.query_pairs_mut().append_pair("autoDismissRuleName", auto_dismiss_rule_name);
@@ -8298,9 +8298,9 @@ pub mod alerts {
         subscription_id: &str,
         asc_location: &str,
         resource_group_name: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
+        u24filter: Option<&str>,
+        u24select: Option<&str>,
+        u24expand: Option<&str>,
         auto_dismiss_rule_name: Option<&str>,
     ) -> std::result::Result<models::AlertList, list_resource_group_level_alerts_by_region::Error> {
         let http_client = operation_config.http_client();
@@ -8322,14 +8322,14 @@ pub mod alerts {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
+        if let Some(u24filter) = u24filter {
+            url.query_pairs_mut().append_pair("$filter", u24filter);
         }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
+        if let Some(u24select) = u24select {
+            url.query_pairs_mut().append_pair("$select", u24select);
         }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
+        if let Some(u24expand) = u24expand {
+            url.query_pairs_mut().append_pair("$expand", u24expand);
         }
         if let Some(auto_dismiss_rule_name) = auto_dismiss_rule_name {
             url.query_pairs_mut().append_pair("autoDismissRuleName", auto_dismiss_rule_name);

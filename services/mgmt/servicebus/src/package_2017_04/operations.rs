@@ -1899,8 +1899,8 @@ pub mod queues {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-        skip: Option<i64>,
-        top: Option<i64>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
     ) -> std::result::Result<models::SbQueueListResult, list_by_namespace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1921,11 +1921,11 @@ pub mod queues {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -2671,8 +2671,8 @@ pub mod topics {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-        skip: Option<i64>,
-        top: Option<i64>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
     ) -> std::result::Result<models::SbTopicListResult, list_by_namespace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2693,11 +2693,11 @@ pub mod topics {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4347,8 +4347,8 @@ pub mod rules {
         topic_name: &str,
         subscription_name: &str,
         subscription_id: &str,
-        skip: Option<i64>,
-        top: Option<i64>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
     ) -> std::result::Result<models::RuleListResult, list_by_subscriptions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4371,11 +4371,11 @@ pub mod rules {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());
@@ -4744,8 +4744,8 @@ pub mod subscriptions {
         namespace_name: &str,
         topic_name: &str,
         subscription_id: &str,
-        skip: Option<i64>,
-        top: Option<i64>,
+        u24skip: Option<i64>,
+        u24top: Option<i64>,
     ) -> std::result::Result<models::SbSubscriptionListResult, list_by_topic::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4767,11 +4767,11 @@ pub mod subscriptions {
             req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         }
         url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(skip) = skip {
-            url.query_pairs_mut().append_pair("$skip", skip.to_string().as_str());
+        if let Some(u24skip) = u24skip {
+            url.query_pairs_mut().append_pair("$skip", u24skip.to_string().as_str());
         }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
+        if let Some(u24top) = u24top {
+            url.query_pairs_mut().append_pair("$top", u24top.to_string().as_str());
         }
         let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
         req_builder = req_builder.uri(url.as_str());

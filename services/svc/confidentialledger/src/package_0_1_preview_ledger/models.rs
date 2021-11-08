@@ -86,7 +86,7 @@ pub struct MerkleProofElement {
 pub struct PagedLedgerEntries {
     pub state: LedgerQueryState,
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub u40next_link: Option<String>,
     pub entries: LedgerEntries,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

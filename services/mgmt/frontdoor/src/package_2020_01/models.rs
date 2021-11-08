@@ -451,7 +451,7 @@ pub mod routing_rule_update_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RouteConfiguration {
     #[serde(rename = "@odata.type")]
-    pub odata_type: String,
+    pub u40odata_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ForwardingConfiguration {
