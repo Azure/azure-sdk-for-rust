@@ -3,11 +3,10 @@ use azure_core::headers::{
 };
 use azure_core::prelude::ContentLength;
 use azure_core::prelude::IfMatchCondition;
-use azure_core::prelude::RenameSource;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-use azure_core::{Request as HttpRequest, Response as HttpResponse};
+use azure_core::{HTTPHeaderError, Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone, Default)]
 pub struct FileRenameOptions<'a> {
@@ -32,7 +31,11 @@ impl<'a> FileRenameOptions<'a> {
     ) -> Result<(), crate::Error> {
         // azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
         azure_core::headers::add_mandatory_header2(&ContentLength::new(0), req)?; // Length is required for renaming files
-        azure_core::headers::add_mandatory_header2(&RenameSource::new(rename_source), req)?;
+        req.headers_mut().append(
+            "x-ms-rename-source",
+            http::HeaderValue::from_str(rename_source)
+                .map_err(HTTPHeaderError::InvalidHeaderValue)?,
+        );
 
         Ok(())
     }
