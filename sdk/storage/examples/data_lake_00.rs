@@ -31,17 +31,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("token expires on {}", bearer_token.expires_on);
     println!();
 
-    let data_lake = storage_account_client
+    let data_lake_client = storage_account_client
         .as_storage_client()
         .as_data_lake_client(account, bearer_token.token.secret().to_owned())?;
 
-    let file_system = data_lake.as_file_system_client(&file_system_name)?;
+    let file_system_client = data_lake_client.as_file_system_client(&file_system_name)?;
 
     let mut fs_properties = Properties::new();
     fs_properties.insert("AddedVia", "Azure SDK for Rust");
 
     println!("creating file system '{}'...", &file_system_name);
-    let create_fs_response = file_system
+    let create_fs_response = file_system_client
         .create()
         .properties(&fs_properties)
         .execute()
@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("listing file systems...");
     let mut stream = Box::pin(
-        data_lake
+        data_lake_client
             .list()
             .max_results(NonZeroU32::new(3).unwrap())
             .stream(),
@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     println!("getting file system properties...");
-    let get_fs_props_response = file_system.get_properties().execute().await?;
+    let get_fs_props_response = file_system_client.get_properties().execute().await?;
     println!(
         "get file system properties response == {:?}",
         get_fs_props_response
@@ -71,7 +71,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
-    let set_fs_props_response = file_system
+    let set_fs_props_response = file_system_client
         .set_properties(Some(&fs_properties))
         .execute()
         .await?;
@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!();
 
     println!("getting file system properties...");
-    let get_fs_props_response = file_system.get_properties().execute().await?;
+    let get_fs_props_response = file_system_client.get_properties().execute().await?;
     println!(
         "get file system properties response == {:?}",
         get_fs_props_response
@@ -90,7 +90,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!();
 
     println!("deleting file system...");
-    let delete_fs_response = file_system.delete().execute().await?;
+    let delete_fs_response = file_system_client.delete().execute().await?;
     println!("delete file system response == {:?}", delete_fs_response);
     println!();
 

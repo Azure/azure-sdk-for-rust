@@ -29,35 +29,35 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("token expires on {}", bearer_token.expires_on);
     println!();
 
-    let data_lake = storage_account_client
+    let data_lake_client = storage_account_client
         .as_storage_client()
         .as_data_lake_client(account, bearer_token.token.secret().to_owned())?;
 
-    let file_system = data_lake.as_file_system_client(&file_system_name)?;
+    let file_system_client = data_lake_client.as_file_system_client(&file_system_name)?;
 
     println!("creating file system '{}'...", &file_system_name);
-    let create_fs_response = file_system.create().execute().await?;
+    let create_fs_response = file_system_client.create().execute().await?;
     println!("create file system response == {:?}", create_fs_response);
     println!();
 
     let file_path = "some/path/example-file.txt";
 
     println!("creating file '{}'...", file_path);
-    let create_file_response = file_system
+    let create_file_response = file_system_client
         .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}", create_file_response);
     println!();
 
     println!("creating file '{}' (overwrite)...", file_path);
-    let create_file_response = file_system
+    let create_file_response = file_system_client
         .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}", create_file_response);
     println!();
 
     println!("creating file '{}' if not exists...", file_path);
-    let create_file_if_not_exists_result = file_system
+    let create_file_if_not_exists_result = file_system_client
         .create_file_if_not_exists(Context::default(), file_path)
         .await;
     println!(
@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("appending to file '{}'...", file_path);
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
-    let append_to_file_response = file_system
+    let append_to_file_response = file_system_client
         .append_to_file(
             Context::default(),
             file_path,
@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!();
 
     println!("flushing file '{}'...", file_path);
-    let flush_file_response = file_system
+    let flush_file_response = file_system_client
         .flush_file(
             Context::default(),
             file_path,
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         "renaming file '{}' to '{}'...",
         file_path, destination_file_path
     );
-    let rename_file_response = file_system
+    let rename_file_response = file_system_client
         .rename_file(
             Context::default(),
             file_path,
@@ -111,7 +111,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!();
 
     println!("deleting file system...");
-    let delete_fs_response = file_system.delete().execute().await?;
+    let delete_fs_response = file_system_client.delete().execute().await?;
     println!("delete file system response == {:?}", delete_fs_response);
     println!();
 
