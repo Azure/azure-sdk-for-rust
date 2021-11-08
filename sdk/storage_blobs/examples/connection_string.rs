@@ -20,9 +20,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         StorageAccountClient::new_connection_string(http_client.clone(), &connection_string)?
             .as_storage_client();
     let container = storage_account.as_container_client(&container_name);
-    let base_blob_service = storage_account.as_base_blob_service();
+    let blob_service = storage_account.as_blob_service_client();
 
-    let iv = base_blob_service.list_containers().execute().await?;
+    let iv = blob_service.list_containers().execute().await?;
 
     if iv
         .incomplete_vector

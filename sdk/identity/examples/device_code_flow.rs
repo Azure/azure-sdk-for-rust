@@ -84,11 +84,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         authorization.access_token().secret() as &str,
     )
     .as_storage_client();
-    let base_blob_service = storage_client.as_base_blob_service();
+    let blob_service = storage.as_blob_service_client();
 
     // now we enumerate the containers in the
     // specified storage account.
-    let containers = base_blob_service.list_containers().execute().await?;
+    let containers = blob_service.list_containers().execute().await?;
     println!("\nList containers completed succesfully: {:?}", containers);
 
     // now let's refresh the token, if available

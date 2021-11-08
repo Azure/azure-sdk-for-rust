@@ -1,8 +1,9 @@
 pub use super::container::PublicAccess;
 pub use crate::blob::{Blob, BlobBlockType, BlockList, BlockListType};
 pub use crate::clients::{
-    AsBaseBlobService, AsBlobClient, AsBlobLeaseClient, AsContainerClient, AsContainerLeaseClient,
-    BaseBlobService, BlobClient, BlobLeaseClient, ContainerClient, ContainerLeaseClient,
+    AsBlobClient, AsBlobLeaseClient, AsBlobServiceClient, AsContainerClient,
+    AsContainerLeaseClient, BlobClient, BlobLeaseClient, BlobServiceClient, ContainerClient,
+    ContainerLeaseClient,
 };
 pub use crate::{
     AccessTier, BlobContentMD5, BlobVersioning, BlockId, ConditionAppendPosition, ConditionMaxSize,

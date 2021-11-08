@@ -20,10 +20,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let http_client = azure_core::new_http_client();
     let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client();
-    let base_blob_service = storage.as_base_blob_service();
+    let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(&container_name);
 
-    let iv = base_blob_service.list_containers().execute().await?;
+    let iv = blob_service.list_containers().execute().await?;
 
     if iv
         .incomplete_vector

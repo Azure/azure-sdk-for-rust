@@ -22,10 +22,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let storage_account =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
             .as_storage_client();
-    let base_blob_service = storage_account.as_base_blob_service();
+    let blob_service = storage_account.as_blob_service_client();
     let container = storage_account.as_container_client(container_name);
 
-    let res = base_blob_service
+    let res = blob_service
         .list_containers()
         .client_request_id("ciccio")
         .include_metadata(true)
