@@ -6,14 +6,14 @@ use azure_core::prelude::IfMatchCondition;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-use azure_core::{Request as HttpRequest, Response as HttpResponse};
+use azure_core::{HTTPHeaderError, Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone, Default)]
-pub struct CreatePathOptions<'a> {
+pub struct FileRenameOptions<'a> {
     if_match_condition: Option<IfMatchCondition<'a>>,
 }
 
-impl<'a> CreatePathOptions<'a> {
+impl<'a> FileRenameOptions<'a> {
     pub fn new() -> Self {
         Self {
             if_match_condition: None,
@@ -24,22 +24,31 @@ impl<'a> CreatePathOptions<'a> {
         if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
     }
 
-    pub(crate) fn decorate_request(&self, req: &mut HttpRequest) -> Result<(), crate::Error> {
-        azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
-        azure_core::headers::add_mandatory_header2(&ContentLength::new(0), req)?; // Length is required for creating files
+    pub(crate) fn decorate_request(
+        &self,
+        req: &mut HttpRequest,
+        rename_source: &str,
+    ) -> Result<(), crate::Error> {
+        // azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
+        azure_core::headers::add_mandatory_header2(&ContentLength::new(0), req)?; // Length is required for renaming files
+        req.headers_mut().append(
+            "x-ms-rename-source",
+            http::HeaderValue::from_str(rename_source)
+                .map_err(HTTPHeaderError::InvalidHeaderValue)?,
+        );
 
         Ok(())
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct CreatePathResponse {
+pub struct FileRenameResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
     pub last_modified: DateTime<Utc>,
 }
 
-impl CreatePathResponse {
+impl FileRenameResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
