@@ -107,9 +107,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let replace_document_response = client
         .into_document_client(doc.id.clone(), &doc.id)?
-        .replace_document()
-        .consistency_level(&query_documents_response)
-        .execute(&doc)
+        .replace_document(
+            Context::new(),
+            &doc,
+            ReplaceDocumentOptions::new().consistency_level(&query_documents_response),
+        )
         .await?;
     println!(
         "replace_document_response == {:#?}",

@@ -212,12 +212,12 @@ impl AddAsHeader for ChangeFeed {
 /// Whether to allow tenative writes allowance
 #[derive(Debug, Clone, Copy)]
 #[allow(missing_docs)]
-pub enum TenativeWritesAllowance {
+pub enum TentativeWritesAllowance {
     Allow,
     Deny,
 }
 
-impl TenativeWritesAllowance {
+impl TentativeWritesAllowance {
     fn as_bool_str(&self) -> &str {
         match self {
             Self::Allow => "true",
@@ -226,7 +226,7 @@ impl TenativeWritesAllowance {
     }
 }
 
-impl AddAsHeader for TenativeWritesAllowance {
+impl AddAsHeader for TentativeWritesAllowance {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(headers::HEADER_ALLOW_MULTIPLE_WRITES, self.as_bool_str())
     }

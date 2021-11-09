@@ -33,7 +33,6 @@ impl<'a> GetDocumentOptions<'a> {
     }
 
     pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        // add trait headers
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
         azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
