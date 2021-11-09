@@ -27,6 +27,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut context = Context::new();
 
+    // Next we create a CustomHeaders type and insert it into the context allowing us to insert custom headers.
     let custom_headers: CustomHeaders = {
         let mut custom_headers = HeaderMap::new();
         custom_headers.insert("MyCoolHeader", HeaderValue::from_static("CORS maybe?"));

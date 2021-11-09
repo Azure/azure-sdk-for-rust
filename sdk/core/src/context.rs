@@ -79,20 +79,6 @@ impl Context {
     pub fn is_empty(&self) -> bool {
         self.type_map.is_empty()
     }
-
-    /// Iterates the type map contains.
-    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, TypeId, Arc<dyn Any + Send + Sync>> {
-        self.type_map.iter()
-    }
-}
-
-impl<'a> IntoIterator for &'a Context {
-    type Item = (&'a TypeId, &'a Arc<dyn Any + Send + Sync>);
-    type IntoIter = std::collections::hash_map::Iter<'a, TypeId, Arc<dyn Any + Send + Sync>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.type_map.iter()
-    }
 }
 
 #[cfg(test)]

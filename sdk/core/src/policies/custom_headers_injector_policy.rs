@@ -4,7 +4,7 @@ use http::header::HeaderMap;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct CustomHeaders(HeaderMap);
+pub struct CustomHeaders(pub HeaderMap);
 
 impl From<HeaderMap> for CustomHeaders {
     fn from(header_map: HeaderMap) -> Self {
@@ -26,9 +26,9 @@ where
         request: &mut Request,
         next: &[Arc<dyn Policy<C>>],
     ) -> PolicyResult<Response> {
-        if let Some(custom_headers) = ctx.get_inner_context().get::<CustomHeaders>() {
+        if let Some(CustomHeaders(custom_headers)) = ctx.get_inner_context().get::<CustomHeaders>()
+        {
             custom_headers
-                .0
                 .iter()
                 .for_each(|(header_name, header_value)| {
                     log::trace!(
