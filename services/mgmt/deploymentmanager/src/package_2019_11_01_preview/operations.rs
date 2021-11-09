@@ -2,15 +2,74 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ServiceTopologies_Get(#[from] service_topologies::get::Error),
+    #[error(transparent)]
+    ServiceTopologies_CreateOrUpdate(#[from] service_topologies::create_or_update::Error),
+    #[error(transparent)]
+    ServiceTopologies_Delete(#[from] service_topologies::delete::Error),
+    #[error(transparent)]
+    ServiceTopologies_List(#[from] service_topologies::list::Error),
+    #[error(transparent)]
+    Services_Get(#[from] services::get::Error),
+    #[error(transparent)]
+    Services_CreateOrUpdate(#[from] services::create_or_update::Error),
+    #[error(transparent)]
+    Services_Delete(#[from] services::delete::Error),
+    #[error(transparent)]
+    Services_List(#[from] services::list::Error),
+    #[error(transparent)]
+    ServiceUnits_Get(#[from] service_units::get::Error),
+    #[error(transparent)]
+    ServiceUnits_CreateOrUpdate(#[from] service_units::create_or_update::Error),
+    #[error(transparent)]
+    ServiceUnits_Delete(#[from] service_units::delete::Error),
+    #[error(transparent)]
+    ServiceUnits_List(#[from] service_units::list::Error),
+    #[error(transparent)]
+    Steps_Get(#[from] steps::get::Error),
+    #[error(transparent)]
+    Steps_CreateOrUpdate(#[from] steps::create_or_update::Error),
+    #[error(transparent)]
+    Steps_Delete(#[from] steps::delete::Error),
+    #[error(transparent)]
+    Steps_List(#[from] steps::list::Error),
+    #[error(transparent)]
+    Rollouts_Get(#[from] rollouts::get::Error),
+    #[error(transparent)]
+    Rollouts_CreateOrUpdate(#[from] rollouts::create_or_update::Error),
+    #[error(transparent)]
+    Rollouts_Delete(#[from] rollouts::delete::Error),
+    #[error(transparent)]
+    Rollouts_Cancel(#[from] rollouts::cancel::Error),
+    #[error(transparent)]
+    Rollouts_Restart(#[from] rollouts::restart::Error),
+    #[error(transparent)]
+    Rollouts_List(#[from] rollouts::list::Error),
+    #[error(transparent)]
+    ArtifactSources_Get(#[from] artifact_sources::get::Error),
+    #[error(transparent)]
+    ArtifactSources_CreateOrUpdate(#[from] artifact_sources::create_or_update::Error),
+    #[error(transparent)]
+    ArtifactSources_Delete(#[from] artifact_sources::delete::Error),
+    #[error(transparent)]
+    ArtifactSources_List(#[from] artifact_sources::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod service_topologies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         service_topology_name: &str,
-    ) -> std::result::Result<ServiceTopologyResource, get::Error> {
+    ) -> std::result::Result<models::ServiceTopologyResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}",
@@ -37,13 +96,13 @@ pub mod service_topologies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceTopologyResource =
+                let rsp_value: models::ServiceTopologyResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +112,7 @@ pub mod service_topologies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -77,11 +136,11 @@ pub mod service_topologies {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
-        service_topology_info: &ServiceTopologyResource,
+        service_topology_info: &models::ServiceTopologyResource,
         subscription_id: &str,
         resource_group_name: &str,
         service_topology_name: &str,
-    ) -> std::result::Result<ServiceTopologyResource, create_or_update::Error> {
+    ) -> std::result::Result<models::ServiceTopologyResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}",
@@ -112,13 +171,13 @@ pub mod service_topologies {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceTopologyResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServiceTopologyResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -128,7 +187,7 @@ pub mod service_topologies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -184,7 +243,7 @@ pub mod service_topologies {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -194,7 +253,7 @@ pub mod service_topologies {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -225,7 +284,7 @@ pub mod service_topologies {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ServiceTopologiesListResult, list::Error> {
+    ) -> std::result::Result<models::ServiceTopologiesListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies",
@@ -251,13 +310,13 @@ pub mod service_topologies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceTopologiesListResult =
+                let rsp_value: models::ServiceTopologiesListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -267,7 +326,7 @@ pub mod service_topologies {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -291,14 +350,14 @@ pub mod service_topologies {
     }
 }
 pub mod services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         service_topology_name: &str,
         service_name: &str,
-    ) -> std::result::Result<ServiceResource, get::Error> {
+    ) -> std::result::Result<models::ServiceResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}",
@@ -326,13 +385,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceResource =
+                let rsp_value: models::ServiceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -342,7 +401,7 @@ pub mod services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -370,8 +429,8 @@ pub mod services {
         resource_group_name: &str,
         service_topology_name: &str,
         service_name: &str,
-        service_info: &ServiceResource,
-    ) -> std::result::Result<ServiceResource, create_or_update::Error> {
+        service_info: &models::ServiceResource,
+    ) -> std::result::Result<models::ServiceResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}",
@@ -403,13 +462,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServiceResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -419,7 +478,7 @@ pub mod services {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -477,7 +536,7 @@ pub mod services {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -487,7 +546,7 @@ pub mod services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -519,7 +578,7 @@ pub mod services {
         subscription_id: &str,
         resource_group_name: &str,
         service_topology_name: &str,
-    ) -> std::result::Result<ServiceListResult, list::Error> {
+    ) -> std::result::Result<models::ServiceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services",
@@ -546,13 +605,13 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceListResult =
+                let rsp_value: models::ServiceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -562,7 +621,7 @@ pub mod services {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -586,7 +645,7 @@ pub mod services {
     }
 }
 pub mod service_units {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -594,7 +653,7 @@ pub mod service_units {
         service_topology_name: &str,
         service_name: &str,
         service_unit_name: &str,
-    ) -> std::result::Result<ServiceUnitResource, get::Error> {
+    ) -> std::result::Result<models::ServiceUnitResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits/{}",
@@ -623,13 +682,13 @@ pub mod service_units {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceUnitResource =
+                let rsp_value: models::ServiceUnitResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -639,7 +698,7 @@ pub mod service_units {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -668,8 +727,8 @@ pub mod service_units {
         service_topology_name: &str,
         service_name: &str,
         service_unit_name: &str,
-        service_unit_info: &ServiceUnitResource,
-    ) -> std::result::Result<ServiceUnitResource, create_or_update::Error> {
+        service_unit_info: &models::ServiceUnitResource,
+    ) -> std::result::Result<models::ServiceUnitResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits/{}",
@@ -702,13 +761,13 @@ pub mod service_units {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceUnitResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServiceUnitResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -718,7 +777,7 @@ pub mod service_units {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -778,7 +837,7 @@ pub mod service_units {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -788,7 +847,7 @@ pub mod service_units {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -821,7 +880,7 @@ pub mod service_units {
         resource_group_name: &str,
         service_topology_name: &str,
         service_name: &str,
-    ) -> std::result::Result<ServiceUnitListResult, list::Error> {
+    ) -> std::result::Result<models::ServiceUnitListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits",
@@ -849,13 +908,13 @@ pub mod service_units {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceUnitListResult =
+                let rsp_value: models::ServiceUnitListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -865,7 +924,7 @@ pub mod service_units {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -889,13 +948,13 @@ pub mod service_units {
     }
 }
 pub mod steps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         step_name: &str,
-    ) -> std::result::Result<StepResource, get::Error> {
+    ) -> std::result::Result<models::StepResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/steps/{}",
@@ -922,13 +981,13 @@ pub mod steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StepResource =
+                let rsp_value: models::StepResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -938,7 +997,7 @@ pub mod steps {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -965,8 +1024,8 @@ pub mod steps {
         subscription_id: &str,
         resource_group_name: &str,
         step_name: &str,
-        step_info: Option<&StepResource>,
-    ) -> std::result::Result<StepResource, create_or_update::Error> {
+        step_info: Option<&models::StepResource>,
+    ) -> std::result::Result<models::StepResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/steps/{}",
@@ -1001,13 +1060,13 @@ pub mod steps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: StepResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StepResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1017,7 +1076,7 @@ pub mod steps {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1073,7 +1132,7 @@ pub mod steps {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1083,7 +1142,7 @@ pub mod steps {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1114,7 +1173,7 @@ pub mod steps {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<StepResourceListResult, list::Error> {
+    ) -> std::result::Result<models::StepResourceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/steps",
@@ -1140,13 +1199,13 @@ pub mod steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StepResourceListResult =
+                let rsp_value: models::StepResourceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1156,7 +1215,7 @@ pub mod steps {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1180,14 +1239,14 @@ pub mod steps {
     }
 }
 pub mod rollouts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         rollout_name: &str,
         retry_attempt: Option<i64>,
-    ) -> std::result::Result<Rollout, get::Error> {
+    ) -> std::result::Result<models::Rollout, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}",
@@ -1218,13 +1277,13 @@ pub mod rollouts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Rollout =
+                let rsp_value: models::Rollout =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1234,7 +1293,7 @@ pub mod rollouts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1261,8 +1320,8 @@ pub mod rollouts {
         subscription_id: &str,
         resource_group_name: &str,
         rollout_name: &str,
-        rollout_request: Option<&RolloutRequest>,
-    ) -> std::result::Result<RolloutRequest, create_or_update::Error> {
+        rollout_request: Option<&models::RolloutRequest>,
+    ) -> std::result::Result<models::RolloutRequest, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}",
@@ -1297,13 +1356,13 @@ pub mod rollouts {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: RolloutRequest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RolloutRequest = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1313,7 +1372,7 @@ pub mod rollouts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1369,7 +1428,7 @@ pub mod rollouts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1379,7 +1438,7 @@ pub mod rollouts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1411,7 +1470,7 @@ pub mod rollouts {
         subscription_id: &str,
         resource_group_name: &str,
         rollout_name: &str,
-    ) -> std::result::Result<Rollout, cancel::Error> {
+    ) -> std::result::Result<models::Rollout, cancel::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}/cancel",
@@ -1439,13 +1498,13 @@ pub mod rollouts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Rollout =
+                let rsp_value: models::Rollout =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel::Error::DefaultResponse {
                     status_code,
@@ -1455,7 +1514,7 @@ pub mod rollouts {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1483,7 +1542,7 @@ pub mod rollouts {
         resource_group_name: &str,
         rollout_name: &str,
         skip_succeeded: Option<bool>,
-    ) -> std::result::Result<Rollout, restart::Error> {
+    ) -> std::result::Result<models::Rollout, restart::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}/restart",
@@ -1518,13 +1577,13 @@ pub mod rollouts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Rollout =
+                let rsp_value: models::Rollout =
                     serde_json::from_slice(rsp_body).map_err(|source| restart::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| restart::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(restart::Error::DefaultResponse {
                     status_code,
@@ -1534,7 +1593,7 @@ pub mod rollouts {
         }
     }
     pub mod restart {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1560,7 +1619,7 @@ pub mod rollouts {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<RolloutListResult, list::Error> {
+    ) -> std::result::Result<models::RolloutListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts",
@@ -1586,13 +1645,13 @@ pub mod rollouts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RolloutListResult =
+                let rsp_value: models::RolloutListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1602,7 +1661,7 @@ pub mod rollouts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1626,13 +1685,13 @@ pub mod rollouts {
     }
 }
 pub mod artifact_sources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         artifact_source_name: &str,
-    ) -> std::result::Result<ArtifactSource, get::Error> {
+    ) -> std::result::Result<models::ArtifactSource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/artifactSources/{}",
@@ -1659,13 +1718,13 @@ pub mod artifact_sources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ArtifactSource =
+                let rsp_value: models::ArtifactSource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1675,7 +1734,7 @@ pub mod artifact_sources {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1702,8 +1761,8 @@ pub mod artifact_sources {
         subscription_id: &str,
         resource_group_name: &str,
         artifact_source_name: &str,
-        artifact_source_info: Option<&ArtifactSource>,
-    ) -> std::result::Result<ArtifactSource, create_or_update::Error> {
+        artifact_source_info: Option<&models::ArtifactSource>,
+    ) -> std::result::Result<models::ArtifactSource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/artifactSources/{}",
@@ -1738,13 +1797,13 @@ pub mod artifact_sources {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ArtifactSource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ArtifactSource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1754,7 +1813,7 @@ pub mod artifact_sources {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1810,7 +1869,7 @@ pub mod artifact_sources {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1820,7 +1879,7 @@ pub mod artifact_sources {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1851,7 +1910,7 @@ pub mod artifact_sources {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ArtifactSourceListResult, list::Error> {
+    ) -> std::result::Result<models::ArtifactSourceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/artifactSources",
@@ -1877,13 +1936,13 @@ pub mod artifact_sources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ArtifactSourceListResult =
+                let rsp_value: models::ArtifactSourceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1893,7 +1952,7 @@ pub mod artifact_sources {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1917,8 +1976,8 @@ pub mod artifact_sources {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DeploymentManager/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1939,13 +1998,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsList =
+                let rsp_value: models::OperationsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1955,7 +2014,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

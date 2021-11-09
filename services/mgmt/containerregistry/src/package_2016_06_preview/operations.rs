@@ -2,14 +2,37 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Registries_CheckNameAvailability(#[from] registries::check_name_availability::Error),
+    #[error(transparent)]
+    Registries_GetProperties(#[from] registries::get_properties::Error),
+    #[error(transparent)]
+    Registries_CreateOrUpdate(#[from] registries::create_or_update::Error),
+    #[error(transparent)]
+    Registries_Update(#[from] registries::update::Error),
+    #[error(transparent)]
+    Registries_Delete(#[from] registries::delete::Error),
+    #[error(transparent)]
+    Registries_ListByResourceGroup(#[from] registries::list_by_resource_group::Error),
+    #[error(transparent)]
+    Registries_List(#[from] registries::list::Error),
+    #[error(transparent)]
+    Registries_GetCredentials(#[from] registries::get_credentials::Error),
+    #[error(transparent)]
+    Registries_RegenerateCredentials(#[from] registries::regenerate_credentials::Error),
+}
 pub mod registries {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        registry_name_check_request: &RegistryNameCheckRequest,
-    ) -> std::result::Result<RegistryNameStatus, check_name_availability::Error> {
+        registry_name_check_request: &models::RegistryNameCheckRequest,
+    ) -> std::result::Result<models::RegistryNameStatus, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerRegistry/checkNameAvailability",
@@ -40,7 +63,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegistryNameStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RegistryNameStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -54,7 +77,7 @@ pub mod registries {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -78,7 +101,7 @@ pub mod registries {
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> std::result::Result<Registry, get_properties::Error> {
+    ) -> std::result::Result<models::Registry, get_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
@@ -108,7 +131,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Registry =
+                let rsp_value: models::Registry =
                     serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -122,7 +145,7 @@ pub mod registries {
         }
     }
     pub mod get_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -146,7 +169,7 @@ pub mod registries {
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-        registry: &Registry,
+        registry: &models::Registry,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -178,7 +201,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Registry = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Registry = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -193,10 +216,10 @@ pub mod registries {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Registry),
+            Ok200(models::Registry),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -222,8 +245,8 @@ pub mod registries {
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-        registry_update_parameters: &RegistryUpdateParameters,
-    ) -> std::result::Result<Registry, update::Error> {
+        registry_update_parameters: &models::RegistryUpdateParameters,
+    ) -> std::result::Result<models::Registry, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}",
@@ -251,7 +274,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Registry =
+                let rsp_value: models::Registry =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -265,7 +288,7 @@ pub mod registries {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -326,7 +349,7 @@ pub mod registries {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -354,7 +377,7 @@ pub mod registries {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<RegistryListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::RegistryListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries",
@@ -385,7 +408,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegistryListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RegistryListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -399,7 +422,7 @@ pub mod registries {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -421,7 +444,7 @@ pub mod registries {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<RegistryListResult, list::Error> {
+    ) -> std::result::Result<models::RegistryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerRegistry/registries",
@@ -446,7 +469,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegistryListResult =
+                let rsp_value: models::RegistryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -460,7 +483,7 @@ pub mod registries {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -484,7 +507,7 @@ pub mod registries {
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> std::result::Result<RegistryCredentials, get_credentials::Error> {
+    ) -> std::result::Result<models::RegistryCredentials, get_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/getCredentials",
@@ -515,7 +538,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegistryCredentials = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RegistryCredentials = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -529,7 +552,7 @@ pub mod registries {
         }
     }
     pub mod get_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -553,7 +576,7 @@ pub mod registries {
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> std::result::Result<RegistryCredentials, regenerate_credentials::Error> {
+    ) -> std::result::Result<models::RegistryCredentials, regenerate_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/regenerateCredentials",
@@ -586,7 +609,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegistryCredentials = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RegistryCredentials = serde_json::from_slice(rsp_body)
                     .map_err(|source| regenerate_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -600,7 +623,7 @@ pub mod registries {
         }
     }
     pub mod regenerate_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

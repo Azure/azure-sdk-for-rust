@@ -2,9 +2,86 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Dimensions_ListByBillingAccount(#[from] dimensions::list_by_billing_account::Error),
+    #[error(transparent)]
+    Dimensions_ListByEnrollmentAccount(#[from] dimensions::list_by_enrollment_account::Error),
+    #[error(transparent)]
+    Dimensions_ListByDepartment(#[from] dimensions::list_by_department::Error),
+    #[error(transparent)]
+    Dimensions_ListByManagementGroup(#[from] dimensions::list_by_management_group::Error),
+    #[error(transparent)]
+    Dimensions_ListBySubscription(#[from] dimensions::list_by_subscription::Error),
+    #[error(transparent)]
+    Query_UsageBySubscription(#[from] query::usage_by_subscription::Error),
+    #[error(transparent)]
+    Forecast_UsageBySubscription(#[from] forecast::usage_by_subscription::Error),
+    #[error(transparent)]
+    Dimensions_ListByResourceGroup(#[from] dimensions::list_by_resource_group::Error),
+    #[error(transparent)]
+    Query_UsageByResourceGroup(#[from] query::usage_by_resource_group::Error),
+    #[error(transparent)]
+    Forecast_UsageByResourceGroup(#[from] forecast::usage_by_resource_group::Error),
+    #[error(transparent)]
+    Query_UsageByBillingAccount(#[from] query::usage_by_billing_account::Error),
+    #[error(transparent)]
+    Forecast_UsageByBillingAccount(#[from] forecast::usage_by_billing_account::Error),
+    #[error(transparent)]
+    Query_UsageByEnrollmentAccount(#[from] query::usage_by_enrollment_account::Error),
+    #[error(transparent)]
+    Forecast_UsageByEnrollmentAccount(#[from] forecast::usage_by_enrollment_account::Error),
+    #[error(transparent)]
+    Query_UsageByDepartment(#[from] query::usage_by_department::Error),
+    #[error(transparent)]
+    Forecast_UsageByDepartment(#[from] forecast::usage_by_department::Error),
+    #[error(transparent)]
+    Query_UsageByManagementGroup(#[from] query::usage_by_management_group::Error),
+    #[error(transparent)]
+    Forecast_UsageByManagementGroup(#[from] forecast::usage_by_management_group::Error),
+    #[error(transparent)]
+    Forecast_UsageByExternalBillingAccount(#[from] forecast::usage_by_external_billing_account::Error),
+    #[error(transparent)]
+    CloudConnector_List(#[from] cloud_connector::list::Error),
+    #[error(transparent)]
+    CloudConnector_Get(#[from] cloud_connector::get::Error),
+    #[error(transparent)]
+    CloudConnector_CreateOrUpdate(#[from] cloud_connector::create_or_update::Error),
+    #[error(transparent)]
+    CloudConnector_Update(#[from] cloud_connector::update::Error),
+    #[error(transparent)]
+    CloudConnector_Delete(#[from] cloud_connector::delete::Error),
+    #[error(transparent)]
+    Connector_CheckEligibility(#[from] connector::check_eligibility::Error),
+    #[error(transparent)]
+    ExternalBillingAccount_List(#[from] external_billing_account::list::Error),
+    #[error(transparent)]
+    ExternalBillingAccount_Get(#[from] external_billing_account::get::Error),
+    #[error(transparent)]
+    ExternalSubscription_ListByExternalBillingAccount(#[from] external_subscription::list_by_external_billing_account::Error),
+    #[error(transparent)]
+    ExternalSubscription_List(#[from] external_subscription::list::Error),
+    #[error(transparent)]
+    ExternalSubscription_Get(#[from] external_subscription::get::Error),
+    #[error(transparent)]
+    ExternalSubscription_ListByManagementGroup(#[from] external_subscription::list_by_management_group::Error),
+    #[error(transparent)]
+    ExternalSubscription_UpdateManagementGroup(#[from] external_subscription::update_management_group::Error),
+    #[error(transparent)]
+    ShowbackRules_List(#[from] showback_rules::list::Error),
+    #[error(transparent)]
+    ShowbackRule_GetBillingAccountId(#[from] showback_rule::get_billing_account_id::Error),
+    #[error(transparent)]
+    ShowbackRule_CreateUpdateRule(#[from] showback_rule::create_update_rule::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod dimensions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
@@ -12,7 +89,7 @@ pub mod dimensions {
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> std::result::Result<DimensionsListResult, list_by_billing_account::Error> {
+    ) -> std::result::Result<models::DimensionsListResult, list_by_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.CostManagement/dimensions",
@@ -54,13 +131,13 @@ pub mod dimensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DimensionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DimensionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_billing_account::Error::DefaultResponse {
                     status_code,
@@ -70,7 +147,7 @@ pub mod dimensions {
         }
     }
     pub mod list_by_billing_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -100,7 +177,7 @@ pub mod dimensions {
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> std::result::Result<DimensionsListResult, list_by_enrollment_account::Error> {
+    ) -> std::result::Result<models::DimensionsListResult, list_by_enrollment_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/enrollmentAccounts/{}/providers/Microsoft.CostManagement/dimensions",
@@ -143,13 +220,13 @@ pub mod dimensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DimensionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DimensionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_enrollment_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_enrollment_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_enrollment_account::Error::DefaultResponse {
                     status_code,
@@ -159,7 +236,7 @@ pub mod dimensions {
         }
     }
     pub mod list_by_enrollment_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -189,7 +266,7 @@ pub mod dimensions {
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> std::result::Result<DimensionsListResult, list_by_department::Error> {
+    ) -> std::result::Result<models::DimensionsListResult, list_by_department::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/departments/{}/providers/Microsoft.CostManagement/dimensions",
@@ -230,13 +307,13 @@ pub mod dimensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DimensionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DimensionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_department::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_department::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_department::Error::DefaultResponse {
                     status_code,
@@ -246,7 +323,7 @@ pub mod dimensions {
         }
     }
     pub mod list_by_department {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -275,7 +352,7 @@ pub mod dimensions {
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> std::result::Result<DimensionsListResult, list_by_management_group::Error> {
+    ) -> std::result::Result<models::DimensionsListResult, list_by_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.CostManagement/dimensions",
@@ -317,13 +394,13 @@ pub mod dimensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DimensionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DimensionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_management_group::Error::DefaultResponse {
                     status_code,
@@ -333,7 +410,7 @@ pub mod dimensions {
         }
     }
     pub mod list_by_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -362,7 +439,7 @@ pub mod dimensions {
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> std::result::Result<DimensionsListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::DimensionsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.CostManagement/dimensions",
@@ -402,13 +479,13 @@ pub mod dimensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DimensionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DimensionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -418,7 +495,7 @@ pub mod dimensions {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -448,7 +525,7 @@ pub mod dimensions {
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i64>,
-    ) -> std::result::Result<DimensionsListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DimensionsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CostManagement/dimensions",
@@ -491,13 +568,13 @@ pub mod dimensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DimensionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DimensionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -507,7 +584,7 @@ pub mod dimensions {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -531,12 +608,12 @@ pub mod dimensions {
     }
 }
 pub mod query {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn usage_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_subscription::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.CostManagement/Query",
@@ -567,13 +644,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -583,7 +660,7 @@ pub mod query {
         }
     }
     pub mod usage_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -609,8 +686,8 @@ pub mod query {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_resource_group::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.CostManagement/Query",
@@ -642,13 +719,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -658,7 +735,7 @@ pub mod query {
         }
     }
     pub mod usage_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -683,8 +760,8 @@ pub mod query {
     pub async fn usage_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_billing_account::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.CostManagement/Query",
@@ -715,13 +792,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_billing_account::Error::DefaultResponse {
                     status_code,
@@ -731,7 +808,7 @@ pub mod query {
         }
     }
     pub mod usage_by_billing_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -757,8 +834,8 @@ pub mod query {
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         enrollment_account_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_enrollment_account::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_enrollment_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/enrollmentAccounts/{}/providers/Microsoft.CostManagement/Query",
@@ -790,13 +867,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_enrollment_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_enrollment_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_enrollment_account::Error::DefaultResponse {
                     status_code,
@@ -806,7 +883,7 @@ pub mod query {
         }
     }
     pub mod usage_by_enrollment_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -832,8 +909,8 @@ pub mod query {
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         department_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_department::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_department::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/departments/{}/providers/Microsoft.CostManagement/Query",
@@ -863,13 +940,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_department::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_department::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_department::Error::DefaultResponse {
                     status_code,
@@ -879,7 +956,7 @@ pub mod query {
         }
     }
     pub mod usage_by_department {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -904,8 +981,8 @@ pub mod query {
     pub async fn usage_by_management_group(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_management_group::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.CostManagement/Query",
@@ -936,13 +1013,13 @@ pub mod query {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_management_group::Error::DefaultResponse {
                     status_code,
@@ -952,7 +1029,7 @@ pub mod query {
         }
     }
     pub mod usage_by_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -976,12 +1053,12 @@ pub mod query {
     }
 }
 pub mod forecast {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn usage_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_subscription::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.CostManagement/Forecast",
@@ -1012,13 +1089,13 @@ pub mod forecast {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -1028,7 +1105,7 @@ pub mod forecast {
         }
     }
     pub mod usage_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1054,8 +1131,8 @@ pub mod forecast {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_resource_group::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.CostManagement/Forecast",
@@ -1087,13 +1164,13 @@ pub mod forecast {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1103,7 +1180,7 @@ pub mod forecast {
         }
     }
     pub mod usage_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1128,8 +1205,8 @@ pub mod forecast {
     pub async fn usage_by_billing_account(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_billing_account::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.CostManagement/Forecast",
@@ -1160,13 +1237,13 @@ pub mod forecast {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_billing_account::Error::DefaultResponse {
                     status_code,
@@ -1176,7 +1253,7 @@ pub mod forecast {
         }
     }
     pub mod usage_by_billing_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1202,8 +1279,8 @@ pub mod forecast {
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         enrollment_account_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_enrollment_account::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_enrollment_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/enrollmentAccounts/{}/providers/Microsoft.CostManagement/Forecast",
@@ -1235,13 +1312,13 @@ pub mod forecast {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_enrollment_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_enrollment_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_enrollment_account::Error::DefaultResponse {
                     status_code,
@@ -1251,7 +1328,7 @@ pub mod forecast {
         }
     }
     pub mod usage_by_enrollment_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1277,8 +1354,8 @@ pub mod forecast {
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         department_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_department::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_department::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/departments/{}/providers/Microsoft.CostManagement/Forecast",
@@ -1308,13 +1385,13 @@ pub mod forecast {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_department::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_department::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_department::Error::DefaultResponse {
                     status_code,
@@ -1324,7 +1401,7 @@ pub mod forecast {
         }
     }
     pub mod usage_by_department {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1349,8 +1426,8 @@ pub mod forecast {
     pub async fn usage_by_management_group(
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_management_group::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.CostManagement/Forecast",
@@ -1381,13 +1458,13 @@ pub mod forecast {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_management_group::Error::DefaultResponse {
                     status_code,
@@ -1397,7 +1474,7 @@ pub mod forecast {
         }
     }
     pub mod usage_by_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1422,8 +1499,8 @@ pub mod forecast {
     pub async fn usage_by_external_billing_account(
         operation_config: &crate::OperationConfig,
         external_billing_account_name: &str,
-        parameters: &ReportConfigDefinition,
-    ) -> std::result::Result<QueryResult, usage_by_external_billing_account::Error> {
+        parameters: &models::ReportConfigDefinition,
+    ) -> std::result::Result<models::QueryResult, usage_by_external_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/externalBillingAccounts/{}/Forecast",
@@ -1454,13 +1531,13 @@ pub mod forecast {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QueryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::QueryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_external_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| usage_by_external_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(usage_by_external_billing_account::Error::DefaultResponse {
                     status_code,
@@ -1470,7 +1547,7 @@ pub mod forecast {
         }
     }
     pub mod usage_by_external_billing_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1494,8 +1571,10 @@ pub mod forecast {
     }
 }
 pub mod cloud_connector {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<ConnectorDefinitionListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::ConnectorDefinitionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/cloudConnectors",
@@ -1519,13 +1598,13 @@ pub mod cloud_connector {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectorDefinitionListResult =
+                let rsp_value: models::ConnectorDefinitionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1535,7 +1614,7 @@ pub mod cloud_connector {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1561,7 +1640,7 @@ pub mod cloud_connector {
         operation_config: &crate::OperationConfig,
         connector_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<ConnectorDefinition, get::Error> {
+    ) -> std::result::Result<models::ConnectorDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/cloudConnectors/{}",
@@ -1589,13 +1668,13 @@ pub mod cloud_connector {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectorDefinition =
+                let rsp_value: models::ConnectorDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1605,7 +1684,7 @@ pub mod cloud_connector {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1630,7 +1709,7 @@ pub mod cloud_connector {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         connector_name: &str,
-        connector: &ConnectorDefinition,
+        connector: &models::ConnectorDefinition,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1660,19 +1739,19 @@ pub mod cloud_connector {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectorDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectorDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectorDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectorDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1682,11 +1761,11 @@ pub mod cloud_connector {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ConnectorDefinition),
-            Created201(ConnectorDefinition),
+            Ok200(models::ConnectorDefinition),
+            Created201(models::ConnectorDefinition),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1712,8 +1791,8 @@ pub mod cloud_connector {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         connector_name: &str,
-        connector: &ConnectorDefinition,
-    ) -> std::result::Result<ConnectorDefinition, update::Error> {
+        connector: &models::ConnectorDefinition,
+    ) -> std::result::Result<models::ConnectorDefinition, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/cloudConnectors/{}",
@@ -1739,13 +1818,13 @@ pub mod cloud_connector {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectorDefinition =
+                let rsp_value: models::ConnectorDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1755,7 +1834,7 @@ pub mod cloud_connector {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1803,7 +1882,7 @@ pub mod cloud_connector {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1813,7 +1892,7 @@ pub mod cloud_connector {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1837,11 +1916,11 @@ pub mod cloud_connector {
     }
 }
 pub mod connector {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_eligibility(
         operation_config: &crate::OperationConfig,
-        connector_credentials: &CheckEligibilityDefinition,
-    ) -> std::result::Result<ConnectorDefinition, check_eligibility::Error> {
+        connector_credentials: &models::CheckEligibilityDefinition,
+    ) -> std::result::Result<models::ConnectorDefinition, check_eligibility::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/checkConnectorEligibility",
@@ -1869,13 +1948,13 @@ pub mod connector {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectorDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectorDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_eligibility::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_eligibility::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_eligibility::Error::DefaultResponse {
                     status_code,
@@ -1885,7 +1964,7 @@ pub mod connector {
         }
     }
     pub mod check_eligibility {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1909,10 +1988,10 @@ pub mod connector {
     }
 }
 pub mod external_billing_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<ExternalBillingAccountDefinitionListResult, list::Error> {
+    ) -> std::result::Result<models::ExternalBillingAccountDefinitionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/externalBillingAccounts",
@@ -1936,13 +2015,13 @@ pub mod external_billing_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExternalBillingAccountDefinitionListResult =
+                let rsp_value: models::ExternalBillingAccountDefinitionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1952,7 +2031,7 @@ pub mod external_billing_account {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1978,7 +2057,7 @@ pub mod external_billing_account {
         operation_config: &crate::OperationConfig,
         external_billing_account_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<ExternalBillingAccountDefinition, get::Error> {
+    ) -> std::result::Result<models::ExternalBillingAccountDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/externalBillingAccounts/{}",
@@ -2006,13 +2085,13 @@ pub mod external_billing_account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExternalBillingAccountDefinition =
+                let rsp_value: models::ExternalBillingAccountDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2022,7 +2101,7 @@ pub mod external_billing_account {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2046,11 +2125,11 @@ pub mod external_billing_account {
     }
 }
 pub mod external_subscription {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_external_billing_account(
         operation_config: &crate::OperationConfig,
         external_billing_account_name: &str,
-    ) -> std::result::Result<ExternalSubscriptionDefinitionListResult, list_by_external_billing_account::Error> {
+    ) -> std::result::Result<models::ExternalSubscriptionDefinitionListResult, list_by_external_billing_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/externalBillingAccounts/{}/externalSubscriptions",
@@ -2080,13 +2159,13 @@ pub mod external_subscription {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExternalSubscriptionDefinitionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExternalSubscriptionDefinitionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_external_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_external_billing_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_external_billing_account::Error::DefaultResponse {
                     status_code,
@@ -2096,7 +2175,7 @@ pub mod external_subscription {
         }
     }
     pub mod list_by_external_billing_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2120,7 +2199,7 @@ pub mod external_subscription {
     }
     pub async fn list(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<ExternalSubscriptionDefinitionListResult, list::Error> {
+    ) -> std::result::Result<models::ExternalSubscriptionDefinitionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/externalSubscriptions",
@@ -2144,13 +2223,13 @@ pub mod external_subscription {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExternalSubscriptionDefinitionListResult =
+                let rsp_value: models::ExternalSubscriptionDefinitionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2160,7 +2239,7 @@ pub mod external_subscription {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2186,7 +2265,7 @@ pub mod external_subscription {
         operation_config: &crate::OperationConfig,
         external_subscription_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<ExternalSubscriptionDefinition, get::Error> {
+    ) -> std::result::Result<models::ExternalSubscriptionDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CostManagement/externalSubscriptions/{}",
@@ -2214,13 +2293,13 @@ pub mod external_subscription {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExternalSubscriptionDefinition =
+                let rsp_value: models::ExternalSubscriptionDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2230,7 +2309,7 @@ pub mod external_subscription {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2256,7 +2335,7 @@ pub mod external_subscription {
         operation_config: &crate::OperationConfig,
         management_group_id: &str,
         recurse: Option<bool>,
-    ) -> std::result::Result<ExternalSubscriptionDefinitionListResult, list_by_management_group::Error> {
+    ) -> std::result::Result<models::ExternalSubscriptionDefinitionListResult, list_by_management_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.CostManagement/externalSubscriptions",
@@ -2289,13 +2368,13 @@ pub mod external_subscription {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExternalSubscriptionDefinitionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExternalSubscriptionDefinitionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_management_group::Error::DefaultResponse {
                     status_code,
@@ -2305,7 +2384,7 @@ pub mod external_subscription {
         }
     }
     pub mod list_by_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2363,7 +2442,7 @@ pub mod external_subscription {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_management_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_management_group::Error::DefaultResponse {
                     status_code,
@@ -2373,7 +2452,7 @@ pub mod external_subscription {
         }
     }
     pub mod update_management_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2397,11 +2476,11 @@ pub mod external_subscription {
     }
 }
 pub mod showback_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
-    ) -> std::result::Result<ShowbackRuleListResult, list::Error> {
+    ) -> std::result::Result<models::ShowbackRuleListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.CostManagement/showbackRules",
@@ -2426,13 +2505,13 @@ pub mod showback_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShowbackRuleListResult =
+                let rsp_value: models::ShowbackRuleListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2442,7 +2521,7 @@ pub mod showback_rules {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2466,12 +2545,12 @@ pub mod showback_rules {
     }
 }
 pub mod showback_rule {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_billing_account_id(
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         rule_name: &str,
-    ) -> std::result::Result<ShowbackRule, get_billing_account_id::Error> {
+    ) -> std::result::Result<models::ShowbackRule, get_billing_account_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.CostManagement/showbackRules/{}",
@@ -2502,13 +2581,13 @@ pub mod showback_rule {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShowbackRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShowbackRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_billing_account_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_billing_account_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_billing_account_id::Error::DefaultResponse {
                     status_code,
@@ -2518,7 +2597,7 @@ pub mod showback_rule {
         }
     }
     pub mod get_billing_account_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2544,8 +2623,8 @@ pub mod showback_rule {
         operation_config: &crate::OperationConfig,
         billing_account_id: &str,
         rule_name: &str,
-        showback_rule: &ShowbackRule,
-    ) -> std::result::Result<ShowbackRule, create_update_rule::Error> {
+        showback_rule: &models::ShowbackRule,
+    ) -> std::result::Result<models::ShowbackRule, create_update_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.CostManagement/showbackRules/{}",
@@ -2575,13 +2654,13 @@ pub mod showback_rule {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShowbackRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShowbackRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_update_rule::Error::DefaultResponse {
                     status_code,
@@ -2591,7 +2670,7 @@ pub mod showback_rule {
         }
     }
     pub mod create_update_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2615,8 +2694,8 @@ pub mod showback_rule {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.CostManagement/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2637,13 +2716,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2653,7 +2732,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

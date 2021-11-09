@@ -2,11 +2,52 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    CheckFrontDoorNameAvailability(#[from] check_front_door_name_availability::Error),
+    #[error(transparent)]
+    CheckFrontDoorNameAvailabilityWithSubscription(#[from] check_front_door_name_availability_with_subscription::Error),
+    #[error(transparent)]
+    FrontDoors_List(#[from] front_doors::list::Error),
+    #[error(transparent)]
+    FrontDoors_ListByResourceGroup(#[from] front_doors::list_by_resource_group::Error),
+    #[error(transparent)]
+    FrontDoors_Get(#[from] front_doors::get::Error),
+    #[error(transparent)]
+    FrontDoors_CreateOrUpdate(#[from] front_doors::create_or_update::Error),
+    #[error(transparent)]
+    FrontDoors_Delete(#[from] front_doors::delete::Error),
+    #[error(transparent)]
+    FrontendEndpoints_ListByFrontDoor(#[from] frontend_endpoints::list_by_front_door::Error),
+    #[error(transparent)]
+    FrontendEndpoints_Get(#[from] frontend_endpoints::get::Error),
+    #[error(transparent)]
+    Endpoints_PurgeContent(#[from] endpoints::purge_content::Error),
+    #[error(transparent)]
+    FrontendEndpoints_EnableHttps(#[from] frontend_endpoints::enable_https::Error),
+    #[error(transparent)]
+    FrontendEndpoints_DisableHttps(#[from] frontend_endpoints::disable_https::Error),
+    #[error(transparent)]
+    FrontDoors_ValidateCustomDomain(#[from] front_doors::validate_custom_domain::Error),
+    #[error(transparent)]
+    Policies_List(#[from] policies::list::Error),
+    #[error(transparent)]
+    Policies_Get(#[from] policies::get::Error),
+    #[error(transparent)]
+    Policies_CreateOrUpdate(#[from] policies::create_or_update::Error),
+    #[error(transparent)]
+    Policies_Delete(#[from] policies::delete::Error),
+    #[error(transparent)]
+    ManagedRuleSets_List(#[from] managed_rule_sets::list::Error),
+}
 pub async fn check_front_door_name_availability(
     operation_config: &crate::OperationConfig,
-    check_front_door_name_availability_input: &CheckNameAvailabilityInput,
-) -> std::result::Result<CheckNameAvailabilityOutput, check_front_door_name_availability::Error> {
+    check_front_door_name_availability_input: &models::CheckNameAvailabilityInput,
+) -> std::result::Result<models::CheckNameAvailabilityOutput, check_front_door_name_availability::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Network/checkFrontDoorNameAvailability",
@@ -37,13 +78,13 @@ pub async fn check_front_door_name_availability(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
                 .map_err(|source| check_front_door_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| check_front_door_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(check_front_door_name_availability::Error::DefaultResponse {
                 status_code,
@@ -53,7 +94,7 @@ pub async fn check_front_door_name_availability(
     }
 }
 pub mod check_front_door_name_availability {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -77,9 +118,9 @@ pub mod check_front_door_name_availability {
 }
 pub async fn check_front_door_name_availability_with_subscription(
     operation_config: &crate::OperationConfig,
-    check_front_door_name_availability_input: &CheckNameAvailabilityInput,
+    check_front_door_name_availability_input: &models::CheckNameAvailabilityInput,
     subscription_id: &str,
-) -> std::result::Result<CheckNameAvailabilityOutput, check_front_door_name_availability_with_subscription::Error> {
+) -> std::result::Result<models::CheckNameAvailabilityOutput, check_front_door_name_availability_with_subscription::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.Network/checkFrontDoorNameAvailability",
@@ -111,14 +152,14 @@ pub async fn check_front_door_name_availability_with_subscription(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body).map_err(|source| {
+            let rsp_value: models::CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body).map_err(|source| {
                 check_front_door_name_availability_with_subscription::Error::DeserializeError(source, rsp_body.clone())
             })?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| {
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body).map_err(|source| {
                 check_front_door_name_availability_with_subscription::Error::DeserializeError(source, rsp_body.clone())
             })?;
             Err(check_front_door_name_availability_with_subscription::Error::DefaultResponse {
@@ -129,7 +170,7 @@ pub async fn check_front_door_name_availability_with_subscription(
     }
 }
 pub mod check_front_door_name_availability_with_subscription {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -152,11 +193,11 @@ pub mod check_front_door_name_availability_with_subscription {
     }
 }
 pub mod front_doors {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<FrontDoorListResult, list::Error> {
+    ) -> std::result::Result<models::FrontDoorListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/frontDoors",
@@ -181,13 +222,13 @@ pub mod front_doors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FrontDoorListResult =
+                let rsp_value: models::FrontDoorListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -197,7 +238,7 @@ pub mod front_doors {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -223,7 +264,7 @@ pub mod front_doors {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<FrontDoorListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::FrontDoorListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors",
@@ -254,13 +295,13 @@ pub mod front_doors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FrontDoorListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FrontDoorListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -270,7 +311,7 @@ pub mod front_doors {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -297,7 +338,7 @@ pub mod front_doors {
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-    ) -> std::result::Result<FrontDoor, get::Error> {
+    ) -> std::result::Result<models::FrontDoor, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}",
@@ -324,13 +365,13 @@ pub mod front_doors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FrontDoor =
+                let rsp_value: models::FrontDoor =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -340,7 +381,7 @@ pub mod front_doors {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -367,7 +408,7 @@ pub mod front_doors {
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-        front_door_parameters: &FrontDoor,
+        front_door_parameters: &models::FrontDoor,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -399,25 +440,25 @@ pub mod front_doors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FrontDoor = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FrontDoor = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: FrontDoor = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FrontDoor = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: FrontDoor = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FrontDoor = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -427,12 +468,12 @@ pub mod front_doors {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(FrontDoor),
-            Created201(FrontDoor),
-            Accepted202(FrontDoor),
+            Ok200(models::FrontDoor),
+            Created201(models::FrontDoor),
+            Accepted202(models::FrontDoor),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -489,7 +530,7 @@ pub mod front_doors {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -499,7 +540,7 @@ pub mod front_doors {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -531,8 +572,8 @@ pub mod front_doors {
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-        custom_domain_properties: &ValidateCustomDomainInput,
-    ) -> std::result::Result<ValidateCustomDomainOutput, validate_custom_domain::Error> {
+        custom_domain_properties: &models::ValidateCustomDomainInput,
+    ) -> std::result::Result<models::ValidateCustomDomainOutput, validate_custom_domain::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/validateCustomDomain",
@@ -565,13 +606,13 @@ pub mod front_doors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ValidateCustomDomainOutput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ValidateCustomDomainOutput = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_custom_domain::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_custom_domain::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate_custom_domain::Error::DefaultResponse {
                     status_code,
@@ -581,7 +622,7 @@ pub mod front_doors {
         }
     }
     pub mod validate_custom_domain {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -605,13 +646,13 @@ pub mod front_doors {
     }
 }
 pub mod frontend_endpoints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_front_door(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-    ) -> std::result::Result<FrontendEndpointsListResult, list_by_front_door::Error> {
+    ) -> std::result::Result<models::FrontendEndpointsListResult, list_by_front_door::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/frontendEndpoints",
@@ -641,13 +682,13 @@ pub mod frontend_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FrontendEndpointsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FrontendEndpointsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_front_door::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_front_door::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_front_door::Error::DefaultResponse {
                     status_code,
@@ -657,7 +698,7 @@ pub mod frontend_endpoints {
         }
     }
     pub mod list_by_front_door {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -685,7 +726,7 @@ pub mod frontend_endpoints {
         resource_group_name: &str,
         front_door_name: &str,
         frontend_endpoint_name: &str,
-    ) -> std::result::Result<FrontendEndpoint, get::Error> {
+    ) -> std::result::Result<models::FrontendEndpoint, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/frontDoors/{}/frontendEndpoints/{}",
@@ -713,13 +754,13 @@ pub mod frontend_endpoints {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FrontendEndpoint =
+                let rsp_value: models::FrontendEndpoint =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -729,7 +770,7 @@ pub mod frontend_endpoints {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -757,7 +798,7 @@ pub mod frontend_endpoints {
         resource_group_name: &str,
         front_door_name: &str,
         frontend_endpoint_name: &str,
-        custom_https_configuration: &CustomHttpsConfiguration,
+        custom_https_configuration: &models::CustomHttpsConfiguration,
     ) -> std::result::Result<enable_https::Response, enable_https::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -792,7 +833,7 @@ pub mod frontend_endpoints {
             http::StatusCode::ACCEPTED => Ok(enable_https::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| enable_https::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(enable_https::Error::DefaultResponse {
                     status_code,
@@ -802,7 +843,7 @@ pub mod frontend_endpoints {
         }
     }
     pub mod enable_https {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -869,7 +910,7 @@ pub mod frontend_endpoints {
             http::StatusCode::ACCEPTED => Ok(disable_https::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| disable_https::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable_https::Error::DefaultResponse {
                     status_code,
@@ -879,7 +920,7 @@ pub mod frontend_endpoints {
         }
     }
     pub mod disable_https {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -908,13 +949,13 @@ pub mod frontend_endpoints {
     }
 }
 pub mod endpoints {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn purge_content(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         front_door_name: &str,
-        content_file_paths: &PurgeParameters,
+        content_file_paths: &models::PurgeParameters,
     ) -> std::result::Result<purge_content::Response, purge_content::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -948,7 +989,7 @@ pub mod endpoints {
             http::StatusCode::ACCEPTED => Ok(purge_content::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| purge_content::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(purge_content::Error::DefaultResponse {
                     status_code,
@@ -958,7 +999,7 @@ pub mod endpoints {
         }
     }
     pub mod purge_content {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -987,12 +1028,12 @@ pub mod endpoints {
     }
 }
 pub mod policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebApplicationFirewallPolicyList, list::Error> {
+    ) -> std::result::Result<models::WebApplicationFirewallPolicyList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/FrontDoorWebApplicationFirewallPolicies",
@@ -1018,13 +1059,13 @@ pub mod policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebApplicationFirewallPolicyList =
+                let rsp_value: models::WebApplicationFirewallPolicyList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1034,7 +1075,7 @@ pub mod policies {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1061,7 +1102,7 @@ pub mod policies {
         resource_group_name: &str,
         policy_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebApplicationFirewallPolicy, get::Error> {
+    ) -> std::result::Result<models::WebApplicationFirewallPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/FrontDoorWebApplicationFirewallPolicies/{}",
@@ -1088,13 +1129,13 @@ pub mod policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebApplicationFirewallPolicy =
+                let rsp_value: models::WebApplicationFirewallPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1104,7 +1145,7 @@ pub mod policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1131,7 +1172,7 @@ pub mod policies {
         resource_group_name: &str,
         policy_name: &str,
         subscription_id: &str,
-        parameters: &WebApplicationFirewallPolicy,
+        parameters: &models::WebApplicationFirewallPolicy,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1163,25 +1204,25 @@ pub mod policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebApplicationFirewallPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebApplicationFirewallPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebApplicationFirewallPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebApplicationFirewallPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebApplicationFirewallPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebApplicationFirewallPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1191,12 +1232,12 @@ pub mod policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(WebApplicationFirewallPolicy),
-            Created201(WebApplicationFirewallPolicy),
-            Accepted202(WebApplicationFirewallPolicy),
+            Ok200(models::WebApplicationFirewallPolicy),
+            Created201(models::WebApplicationFirewallPolicy),
+            Accepted202(models::WebApplicationFirewallPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1262,7 +1303,7 @@ pub mod policies {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1289,11 +1330,11 @@ pub mod policies {
     }
 }
 pub mod managed_rule_sets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedRuleSetDefinitionList, list::Error> {
+    ) -> std::result::Result<models::ManagedRuleSetDefinitionList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Network/FrontDoorWebApplicationFirewallManagedRuleSets",
@@ -1318,13 +1359,13 @@ pub mod managed_rule_sets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedRuleSetDefinitionList =
+                let rsp_value: models::ManagedRuleSetDefinitionList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1334,7 +1375,7 @@ pub mod managed_rule_sets {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

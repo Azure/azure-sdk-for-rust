@@ -2,14 +2,65 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Namespaces_CheckAvailability(#[from] namespaces::check_availability::Error),
+    #[error(transparent)]
+    Namespaces_Get(#[from] namespaces::get::Error),
+    #[error(transparent)]
+    Namespaces_CreateOrUpdate(#[from] namespaces::create_or_update::Error),
+    #[error(transparent)]
+    Namespaces_Delete(#[from] namespaces::delete::Error),
+    #[error(transparent)]
+    Namespaces_GetAuthorizationRule(#[from] namespaces::get_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_CreateOrUpdateAuthorizationRule(#[from] namespaces::create_or_update_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_DeleteAuthorizationRule(#[from] namespaces::delete_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_GetLongRunningOperationStatus(#[from] namespaces::get_long_running_operation_status::Error),
+    #[error(transparent)]
+    Namespaces_List(#[from] namespaces::list::Error),
+    #[error(transparent)]
+    Namespaces_ListAll(#[from] namespaces::list_all::Error),
+    #[error(transparent)]
+    Namespaces_ListAuthorizationRules(#[from] namespaces::list_authorization_rules::Error),
+    #[error(transparent)]
+    Namespaces_ListKeys(#[from] namespaces::list_keys::Error),
+    #[error(transparent)]
+    NotificationHubs_CheckAvailability(#[from] notification_hubs::check_availability::Error),
+    #[error(transparent)]
+    NotificationHubs_Get(#[from] notification_hubs::get::Error),
+    #[error(transparent)]
+    NotificationHubs_CreateOrUpdate(#[from] notification_hubs::create_or_update::Error),
+    #[error(transparent)]
+    NotificationHubs_Delete(#[from] notification_hubs::delete::Error),
+    #[error(transparent)]
+    NotificationHubs_GetAuthorizationRule(#[from] notification_hubs::get_authorization_rule::Error),
+    #[error(transparent)]
+    NotificationHubs_CreateOrUpdateAuthorizationRule(#[from] notification_hubs::create_or_update_authorization_rule::Error),
+    #[error(transparent)]
+    NotificationHubs_DeleteAuthorizationRule(#[from] notification_hubs::delete_authorization_rule::Error),
+    #[error(transparent)]
+    NotificationHubs_List(#[from] notification_hubs::list::Error),
+    #[error(transparent)]
+    NotificationHubs_ListAuthorizationRules(#[from] notification_hubs::list_authorization_rules::Error),
+    #[error(transparent)]
+    NotificationHubs_ListKeys(#[from] notification_hubs::list_keys::Error),
+    #[error(transparent)]
+    NotificationHubs_GetPnsCredentials(#[from] notification_hubs::get_pns_credentials::Error),
+}
 pub mod namespaces {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_availability(
         operation_config: &crate::OperationConfig,
-        parameters: &CheckAvailabilityParameters,
+        parameters: &models::CheckAvailabilityParameters,
         subscription_id: &str,
-    ) -> std::result::Result<CheckAvailabilityResource, check_availability::Error> {
+    ) -> std::result::Result<models::CheckAvailabilityResource, check_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.NotificationHubs/checkNamespaceAvailability",
@@ -38,7 +89,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckAvailabilityResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckAvailabilityResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -52,7 +103,7 @@ pub mod namespaces {
         }
     }
     pub mod check_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -76,7 +127,7 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NamespaceResource, get::Error> {
+    ) -> std::result::Result<models::NamespaceResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
@@ -103,7 +154,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource =
+                let rsp_value: models::NamespaceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -117,7 +168,7 @@ pub mod namespaces {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -140,7 +191,7 @@ pub mod namespaces {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
-        parameters: &NamespaceCreateOrUpdateParameters,
+        parameters: &models::NamespaceCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -173,13 +224,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NamespaceResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NamespaceResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -193,11 +244,11 @@ pub mod namespaces {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(NamespaceResource),
-            Ok200(NamespaceResource),
+            Created201(models::NamespaceResource),
+            Ok200(models::NamespaceResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -260,7 +311,7 @@ pub mod namespaces {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -291,7 +342,7 @@ pub mod namespaces {
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}",
@@ -325,7 +376,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -339,7 +390,7 @@ pub mod namespaces {
         }
     }
     pub mod get_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -363,9 +414,9 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
-        parameters: &SharedAccessAuthorizationRuleCreateOrUpdateParameters,
+        parameters: &models::SharedAccessAuthorizationRuleCreateOrUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}",
@@ -399,7 +450,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -413,7 +464,7 @@ pub mod namespaces {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -481,7 +532,7 @@ pub mod namespaces {
         }
     }
     pub mod delete_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -544,7 +595,7 @@ pub mod namespaces {
         }
     }
     pub mod get_long_running_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -574,7 +625,7 @@ pub mod namespaces {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NamespaceListResult, list::Error> {
+    ) -> std::result::Result<models::NamespaceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces",
@@ -600,7 +651,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceListResult =
+                let rsp_value: models::NamespaceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -614,7 +665,7 @@ pub mod namespaces {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -636,7 +687,7 @@ pub mod namespaces {
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<NamespaceListResult, list_all::Error> {
+    ) -> std::result::Result<models::NamespaceListResult, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.NotificationHubs/namespaces",
@@ -664,7 +715,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceListResult =
+                let rsp_value: models::NamespaceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -678,7 +729,7 @@ pub mod namespaces {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -702,7 +753,7 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules",
@@ -735,7 +786,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -749,7 +800,7 @@ pub mod namespaces {
         }
     }
     pub mod list_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -774,7 +825,7 @@ pub mod namespaces {
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceListKeys, list_keys::Error> {
+    ) -> std::result::Result<models::ResourceListKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}/listKeys",
@@ -806,7 +857,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceListKeys =
+                let rsp_value: models::ResourceListKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -820,7 +871,7 @@ pub mod namespaces {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -841,14 +892,14 @@ pub mod namespaces {
     }
 }
 pub mod notification_hubs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_availability(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
-        parameters: &CheckAvailabilityParameters,
+        parameters: &models::CheckAvailabilityParameters,
         subscription_id: &str,
-    ) -> std::result::Result<CheckAvailabilityResource, check_availability::Error> {
+    ) -> std::result::Result<models::CheckAvailabilityResource, check_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/checkNotificationHubAvailability",
@@ -879,7 +930,7 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckAvailabilityResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckAvailabilityResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -893,7 +944,7 @@ pub mod notification_hubs {
         }
     }
     pub mod check_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -918,7 +969,7 @@ pub mod notification_hubs {
         namespace_name: &str,
         notification_hub_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NotificationHubResource, get::Error> {
+    ) -> std::result::Result<models::NotificationHubResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}",
@@ -946,7 +997,7 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationHubResource =
+                let rsp_value: models::NotificationHubResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -960,7 +1011,7 @@ pub mod notification_hubs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -984,7 +1035,7 @@ pub mod notification_hubs {
         resource_group_name: &str,
         namespace_name: &str,
         notification_hub_name: &str,
-        parameters: &NotificationHubCreateOrUpdateParameters,
+        parameters: &models::NotificationHubCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1018,13 +1069,13 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationHubResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NotificationHubResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationHubResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NotificationHubResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -1038,11 +1089,11 @@ pub mod notification_hubs {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(NotificationHubResource),
-            Created201(NotificationHubResource),
+            Ok200(models::NotificationHubResource),
+            Created201(models::NotificationHubResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1105,7 +1156,7 @@ pub mod notification_hubs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1131,7 +1182,7 @@ pub mod notification_hubs {
         notification_hub_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , operation_config . base_path () , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_authorization_rule::Error::ParseUrlError)?;
@@ -1158,7 +1209,7 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1172,7 +1223,7 @@ pub mod notification_hubs {
         }
     }
     pub mod get_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1197,9 +1248,9 @@ pub mod notification_hubs {
         namespace_name: &str,
         notification_hub_name: &str,
         authorization_rule_name: &str,
-        parameters: &SharedAccessAuthorizationRuleCreateOrUpdateParameters,
+        parameters: &models::SharedAccessAuthorizationRuleCreateOrUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , operation_config . base_path () , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(create_or_update_authorization_rule::Error::ParseUrlError)?;
@@ -1226,7 +1277,7 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1240,7 +1291,7 @@ pub mod notification_hubs {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1302,7 +1353,7 @@ pub mod notification_hubs {
         }
     }
     pub mod delete_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1331,7 +1382,7 @@ pub mod notification_hubs {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NotificationHubListResult, list::Error> {
+    ) -> std::result::Result<models::NotificationHubListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs",
@@ -1358,7 +1409,7 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationHubListResult =
+                let rsp_value: models::NotificationHubListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1372,7 +1423,7 @@ pub mod notification_hubs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1397,7 +1448,7 @@ pub mod notification_hubs {
         namespace_name: &str,
         notification_hub_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules" , operation_config . base_path () , subscription_id , resource_group_name , namespace_name , notification_hub_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_authorization_rules::Error::ParseUrlError)?;
@@ -1424,7 +1475,7 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1438,7 +1489,7 @@ pub mod notification_hubs {
         }
     }
     pub mod list_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1464,7 +1515,7 @@ pub mod notification_hubs {
         notification_hub_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceListKeys, list_keys::Error> {
+    ) -> std::result::Result<models::ResourceListKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/listKeys" , operation_config . base_path () , subscription_id , resource_group_name , namespace_name , notification_hub_name , authorization_rule_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_keys::Error::ParseUrlError)?;
@@ -1489,7 +1540,7 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceListKeys =
+                let rsp_value: models::ResourceListKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1503,7 +1554,7 @@ pub mod notification_hubs {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1528,7 +1579,7 @@ pub mod notification_hubs {
         namespace_name: &str,
         notification_hub_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NotificationHubResource, get_pns_credentials::Error> {
+    ) -> std::result::Result<models::NotificationHubResource, get_pns_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/pnsCredentials",
@@ -1560,7 +1611,7 @@ pub mod notification_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NotificationHubResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NotificationHubResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_pns_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1574,7 +1625,7 @@ pub mod notification_hubs {
         }
     }
     pub mod get_pns_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

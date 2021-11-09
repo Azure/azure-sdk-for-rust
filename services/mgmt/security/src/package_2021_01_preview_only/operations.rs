@@ -2,13 +2,30 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    IngestionSettings_List(#[from] ingestion_settings::list::Error),
+    #[error(transparent)]
+    IngestionSettings_Get(#[from] ingestion_settings::get::Error),
+    #[error(transparent)]
+    IngestionSettings_Create(#[from] ingestion_settings::create::Error),
+    #[error(transparent)]
+    IngestionSettings_Delete(#[from] ingestion_settings::delete::Error),
+    #[error(transparent)]
+    IngestionSettings_ListTokens(#[from] ingestion_settings::list_tokens::Error),
+    #[error(transparent)]
+    IngestionSettings_ListConnectionStrings(#[from] ingestion_settings::list_connection_strings::Error),
+}
 pub mod ingestion_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<IngestionSettingList, list::Error> {
+    ) -> std::result::Result<models::IngestionSettingList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings",
@@ -33,13 +50,13 @@ pub mod ingestion_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IngestionSettingList =
+                let rsp_value: models::IngestionSettingList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -49,7 +66,7 @@ pub mod ingestion_settings {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -75,7 +92,7 @@ pub mod ingestion_settings {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         ingestion_setting_name: &str,
-    ) -> std::result::Result<IngestionSetting, get::Error> {
+    ) -> std::result::Result<models::IngestionSetting, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}",
@@ -101,13 +118,13 @@ pub mod ingestion_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IngestionSetting =
+                let rsp_value: models::IngestionSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -117,7 +134,7 @@ pub mod ingestion_settings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -143,8 +160,8 @@ pub mod ingestion_settings {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         ingestion_setting_name: &str,
-        ingestion_setting: &IngestionSetting,
-    ) -> std::result::Result<IngestionSetting, create::Error> {
+        ingestion_setting: &models::IngestionSetting,
+    ) -> std::result::Result<models::IngestionSetting, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}",
@@ -171,13 +188,13 @@ pub mod ingestion_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IngestionSetting =
+                let rsp_value: models::IngestionSetting =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -187,7 +204,7 @@ pub mod ingestion_settings {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -241,7 +258,7 @@ pub mod ingestion_settings {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -251,7 +268,7 @@ pub mod ingestion_settings {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -282,7 +299,7 @@ pub mod ingestion_settings {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         ingestion_setting_name: &str,
-    ) -> std::result::Result<IngestionSettingToken, list_tokens::Error> {
+    ) -> std::result::Result<models::IngestionSettingToken, list_tokens::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}/listTokens",
@@ -312,13 +329,13 @@ pub mod ingestion_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IngestionSettingToken =
+                let rsp_value: models::IngestionSettingToken =
                     serde_json::from_slice(rsp_body).map_err(|source| list_tokens::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_tokens::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_tokens::Error::DefaultResponse {
                     status_code,
@@ -328,7 +345,7 @@ pub mod ingestion_settings {
         }
     }
     pub mod list_tokens {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -354,7 +371,7 @@ pub mod ingestion_settings {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         ingestion_setting_name: &str,
-    ) -> std::result::Result<ConnectionStrings, list_connection_strings::Error> {
+    ) -> std::result::Result<models::ConnectionStrings, list_connection_strings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}/listConnectionStrings",
@@ -386,13 +403,13 @@ pub mod ingestion_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionStrings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionStrings = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_connection_strings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_connection_strings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_connection_strings::Error::DefaultResponse {
                     status_code,
@@ -402,7 +419,7 @@ pub mod ingestion_settings {
         }
     }
     pub mod list_connection_strings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,15 +2,198 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    DatabaseAccounts_Get(#[from] database_accounts::get::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateOrUpdate(#[from] database_accounts::create_or_update::Error),
+    #[error(transparent)]
+    DatabaseAccounts_Patch(#[from] database_accounts::patch::Error),
+    #[error(transparent)]
+    DatabaseAccounts_Delete(#[from] database_accounts::delete::Error),
+    #[error(transparent)]
+    DatabaseAccounts_FailoverPriorityChange(#[from] database_accounts::failover_priority_change::Error),
+    #[error(transparent)]
+    DatabaseAccounts_List(#[from] database_accounts::list::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListByResourceGroup(#[from] database_accounts::list_by_resource_group::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListKeys(#[from] database_accounts::list_keys::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListConnectionStrings(#[from] database_accounts::list_connection_strings::Error),
+    #[error(transparent)]
+    DatabaseAccounts_OfflineRegion(#[from] database_accounts::offline_region::Error),
+    #[error(transparent)]
+    DatabaseAccounts_OnlineRegion(#[from] database_accounts::online_region::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetReadOnlyKeys(#[from] database_accounts::get_read_only_keys::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListReadOnlyKeys(#[from] database_accounts::list_read_only_keys::Error),
+    #[error(transparent)]
+    DatabaseAccounts_RegenerateKey(#[from] database_accounts::regenerate_key::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CheckNameExists(#[from] database_accounts::check_name_exists::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListMetrics(#[from] database_accounts::list_metrics::Error),
+    #[error(transparent)]
+    Database_ListMetrics(#[from] database::list_metrics::Error),
+    #[error(transparent)]
+    Collection_ListMetrics(#[from] collection::list_metrics::Error),
+    #[error(transparent)]
+    CollectionRegion_ListMetrics(#[from] collection_region::list_metrics::Error),
+    #[error(transparent)]
+    DatabaseAccountRegion_ListMetrics(#[from] database_account_region::list_metrics::Error),
+    #[error(transparent)]
+    PercentileSourceTarget_ListMetrics(#[from] percentile_source_target::list_metrics::Error),
+    #[error(transparent)]
+    PercentileTarget_ListMetrics(#[from] percentile_target::list_metrics::Error),
+    #[error(transparent)]
+    Percentile_ListMetrics(#[from] percentile::list_metrics::Error),
+    #[error(transparent)]
+    CollectionPartitionRegion_ListMetrics(#[from] collection_partition_region::list_metrics::Error),
+    #[error(transparent)]
+    CollectionPartition_ListMetrics(#[from] collection_partition::list_metrics::Error),
+    #[error(transparent)]
+    PartitionKeyRangeId_ListMetrics(#[from] partition_key_range_id::list_metrics::Error),
+    #[error(transparent)]
+    PartitionKeyRangeIdRegion_ListMetrics(#[from] partition_key_range_id_region::list_metrics::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListUsages(#[from] database_accounts::list_usages::Error),
+    #[error(transparent)]
+    Database_ListUsages(#[from] database::list_usages::Error),
+    #[error(transparent)]
+    Collection_ListUsages(#[from] collection::list_usages::Error),
+    #[error(transparent)]
+    CollectionPartition_ListUsages(#[from] collection_partition::list_usages::Error),
+    #[error(transparent)]
+    Database_ListMetricDefinitions(#[from] database::list_metric_definitions::Error),
+    #[error(transparent)]
+    Collection_ListMetricDefinitions(#[from] collection::list_metric_definitions::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListMetricDefinitions(#[from] database_accounts::list_metric_definitions::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListSqlDatabases(#[from] database_accounts::list_sql_databases::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetSqlDatabase(#[from] database_accounts::get_sql_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateSqlDatabase(#[from] database_accounts::create_update_sql_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteSqlDatabase(#[from] database_accounts::delete_sql_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetSqlDatabaseThroughput(#[from] database_accounts::get_sql_database_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateSqlDatabaseThroughput(#[from] database_accounts::update_sql_database_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListSqlContainers(#[from] database_accounts::list_sql_containers::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetSqlContainer(#[from] database_accounts::get_sql_container::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateSqlContainer(#[from] database_accounts::create_update_sql_container::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteSqlContainer(#[from] database_accounts::delete_sql_container::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetSqlContainerThroughput(#[from] database_accounts::get_sql_container_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateSqlContainerThroughput(#[from] database_accounts::update_sql_container_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListMongoDbDatabases(#[from] database_accounts::list_mongo_db_databases::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetMongoDbDatabase(#[from] database_accounts::get_mongo_db_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateMongoDbDatabase(#[from] database_accounts::create_update_mongo_db_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteMongoDbDatabase(#[from] database_accounts::delete_mongo_db_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetMongoDbDatabaseThroughput(#[from] database_accounts::get_mongo_db_database_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateMongoDbDatabaseThroughput(#[from] database_accounts::update_mongo_db_database_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListMongoDbCollections(#[from] database_accounts::list_mongo_db_collections::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetMongoDbCollection(#[from] database_accounts::get_mongo_db_collection::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateMongoDbCollection(#[from] database_accounts::create_update_mongo_db_collection::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteMongoDbCollection(#[from] database_accounts::delete_mongo_db_collection::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetMongoDbCollectionThroughput(#[from] database_accounts::get_mongo_db_collection_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateMongoDbCollectionThroughput(#[from] database_accounts::update_mongo_db_collection_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListTables(#[from] database_accounts::list_tables::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetTable(#[from] database_accounts::get_table::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateTable(#[from] database_accounts::create_update_table::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteTable(#[from] database_accounts::delete_table::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetTableThroughput(#[from] database_accounts::get_table_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateTableThroughput(#[from] database_accounts::update_table_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListCassandraKeyspaces(#[from] database_accounts::list_cassandra_keyspaces::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetCassandraKeyspace(#[from] database_accounts::get_cassandra_keyspace::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateCassandraKeyspace(#[from] database_accounts::create_update_cassandra_keyspace::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteCassandraKeyspace(#[from] database_accounts::delete_cassandra_keyspace::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetCassandraKeyspaceThroughput(#[from] database_accounts::get_cassandra_keyspace_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateCassandraKeyspaceThroughput(#[from] database_accounts::update_cassandra_keyspace_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListCassandraTables(#[from] database_accounts::list_cassandra_tables::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetCassandraTable(#[from] database_accounts::get_cassandra_table::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateCassandraTable(#[from] database_accounts::create_update_cassandra_table::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteCassandraTable(#[from] database_accounts::delete_cassandra_table::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetCassandraTableThroughput(#[from] database_accounts::get_cassandra_table_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateCassandraTableThroughput(#[from] database_accounts::update_cassandra_table_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListGremlinDatabases(#[from] database_accounts::list_gremlin_databases::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetGremlinDatabase(#[from] database_accounts::get_gremlin_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateGremlinDatabase(#[from] database_accounts::create_update_gremlin_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteGremlinDatabase(#[from] database_accounts::delete_gremlin_database::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetGremlinDatabaseThroughput(#[from] database_accounts::get_gremlin_database_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateGremlinDatabaseThroughput(#[from] database_accounts::update_gremlin_database_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_ListGremlinGraphs(#[from] database_accounts::list_gremlin_graphs::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetGremlinGraph(#[from] database_accounts::get_gremlin_graph::Error),
+    #[error(transparent)]
+    DatabaseAccounts_CreateUpdateGremlinGraph(#[from] database_accounts::create_update_gremlin_graph::Error),
+    #[error(transparent)]
+    DatabaseAccounts_DeleteGremlinGraph(#[from] database_accounts::delete_gremlin_graph::Error),
+    #[error(transparent)]
+    DatabaseAccounts_GetGremlinGraphThroughput(#[from] database_accounts::get_gremlin_graph_throughput::Error),
+    #[error(transparent)]
+    DatabaseAccounts_UpdateGremlinGraphThroughput(#[from] database_accounts::update_gremlin_graph_throughput::Error),
+}
 pub mod database_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<DatabaseAccount, get::Error> {
+    ) -> std::result::Result<models::DatabaseAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}",
@@ -37,7 +220,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccount =
+                let rsp_value: models::DatabaseAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -51,7 +234,7 @@ pub mod database_accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -75,8 +258,8 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        create_update_parameters: &DatabaseAccountCreateUpdateParameters,
-    ) -> std::result::Result<DatabaseAccount, create_or_update::Error> {
+        create_update_parameters: &models::DatabaseAccountCreateUpdateParameters,
+    ) -> std::result::Result<models::DatabaseAccount, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}",
@@ -107,7 +290,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -121,7 +304,7 @@ pub mod database_accounts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -145,8 +328,8 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        update_parameters: &DatabaseAccountPatchParameters,
-    ) -> std::result::Result<DatabaseAccount, patch::Error> {
+        update_parameters: &models::DatabaseAccountPatchParameters,
+    ) -> std::result::Result<models::DatabaseAccount, patch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}",
@@ -174,7 +357,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccount =
+                let rsp_value: models::DatabaseAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -188,7 +371,7 @@ pub mod database_accounts {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -249,7 +432,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -278,7 +461,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        failover_parameters: &FailoverPolicies,
+        failover_parameters: &models::FailoverPolicies,
     ) -> std::result::Result<failover_priority_change::Response, failover_priority_change::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -322,7 +505,7 @@ pub mod database_accounts {
         }
     }
     pub mod failover_priority_change {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -349,7 +532,7 @@ pub mod database_accounts {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseAccountsListResult, list::Error> {
+    ) -> std::result::Result<models::DatabaseAccountsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DocumentDB/databaseAccounts",
@@ -374,7 +557,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccountsListResult =
+                let rsp_value: models::DatabaseAccountsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -388,7 +571,7 @@ pub mod database_accounts {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -411,7 +594,7 @@ pub mod database_accounts {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DatabaseAccountsListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DatabaseAccountsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts",
@@ -442,7 +625,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccountsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseAccountsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -456,7 +639,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -480,7 +663,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<DatabaseAccountListKeysResult, list_keys::Error> {
+    ) -> std::result::Result<models::DatabaseAccountListKeysResult, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/listKeys",
@@ -511,7 +694,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccountListKeysResult =
+                let rsp_value: models::DatabaseAccountListKeysResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -525,7 +708,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -549,7 +732,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<DatabaseAccountListConnectionStringsResult, list_connection_strings::Error> {
+    ) -> std::result::Result<models::DatabaseAccountListConnectionStringsResult, list_connection_strings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/listConnectionStrings",
@@ -582,7 +765,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccountListConnectionStringsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseAccountListConnectionStringsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_connection_strings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -596,7 +779,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_connection_strings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -620,7 +803,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        region_parameter_for_offline: &RegionForOnlineOffline,
+        region_parameter_for_offline: &models::RegionForOnlineOffline,
     ) -> std::result::Result<offline_region::Response, offline_region::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -654,7 +837,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(offline_region::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| offline_region::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(offline_region::Error::DefaultResponse {
                     status_code,
@@ -664,7 +847,7 @@ pub mod database_accounts {
         }
     }
     pub mod offline_region {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -696,7 +879,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        region_parameter_for_online: &RegionForOnlineOffline,
+        region_parameter_for_online: &models::RegionForOnlineOffline,
     ) -> std::result::Result<online_region::Response, online_region::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -730,7 +913,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(online_region::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| online_region::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(online_region::Error::DefaultResponse {
                     status_code,
@@ -740,7 +923,7 @@ pub mod database_accounts {
         }
     }
     pub mod online_region {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -772,7 +955,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<DatabaseAccountListReadOnlyKeysResult, get_read_only_keys::Error> {
+    ) -> std::result::Result<models::DatabaseAccountListReadOnlyKeysResult, get_read_only_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/readonlykeys",
@@ -802,7 +985,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccountListReadOnlyKeysResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseAccountListReadOnlyKeysResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_read_only_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -816,7 +999,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_read_only_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -840,7 +1023,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<DatabaseAccountListReadOnlyKeysResult, list_read_only_keys::Error> {
+    ) -> std::result::Result<models::DatabaseAccountListReadOnlyKeysResult, list_read_only_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/readonlykeys",
@@ -871,7 +1054,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseAccountListReadOnlyKeysResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseAccountListReadOnlyKeysResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_read_only_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -885,7 +1068,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_read_only_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -909,7 +1092,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        key_to_regenerate: &DatabaseAccountRegenerateKeyParameters,
+        key_to_regenerate: &models::DatabaseAccountRegenerateKeyParameters,
     ) -> std::result::Result<regenerate_key::Response, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -951,7 +1134,7 @@ pub mod database_accounts {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1016,7 +1199,7 @@ pub mod database_accounts {
         }
     }
     pub mod check_name_exists {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -1043,7 +1226,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         filter: &str,
-    ) -> std::result::Result<MetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/metrics",
@@ -1074,7 +1257,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricListResult =
+                let rsp_value: models::MetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1088,7 +1271,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1113,7 +1296,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<UsagesResult, list_usages::Error> {
+    ) -> std::result::Result<models::UsagesResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/usages",
@@ -1146,7 +1329,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsagesResult =
+                let rsp_value: models::UsagesResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usages::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1160,7 +1343,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_usages {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1184,7 +1367,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<MetricDefinitionsListResult, list_metric_definitions::Error> {
+    ) -> std::result::Result<models::MetricDefinitionsListResult, list_metric_definitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/metricDefinitions",
@@ -1216,7 +1399,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricDefinitionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricDefinitionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1230,7 +1413,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_metric_definitions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1254,7 +1437,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<SqlDatabaseListResult, list_sql_databases::Error> {
+    ) -> std::result::Result<models::SqlDatabaseListResult, list_sql_databases::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/sql/databases",
@@ -1284,7 +1467,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_sql_databases::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1298,7 +1481,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_sql_databases {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1323,7 +1506,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<SqlDatabase, get_sql_database::Error> {
+    ) -> std::result::Result<models::SqlDatabase, get_sql_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/sql/databases/{}",
@@ -1354,7 +1537,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_sql_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1368,7 +1551,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_sql_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1393,7 +1576,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-        create_update_sql_database_parameters: &SqlDatabaseCreateUpdateParameters,
+        create_update_sql_database_parameters: &models::SqlDatabaseCreateUpdateParameters,
     ) -> std::result::Result<create_update_sql_database::Response, create_update_sql_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1430,7 +1613,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_sql_database::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_sql_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_sql_database::Response::Ok200(rsp_value))
             }
@@ -1444,11 +1627,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_sql_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(SqlDatabase),
+            Ok200(models::SqlDatabase),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1515,7 +1698,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_sql_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1545,7 +1728,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<Throughput, get_sql_database_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_sql_database_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/sql/databases/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_sql_database_throughput::Error::ParseUrlError)?;
@@ -1571,7 +1754,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_sql_database_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1585,7 +1768,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_sql_database_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1610,7 +1793,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_sql_database_throughput::Response, update_sql_database_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/sql/databases/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name) ;
@@ -1639,7 +1822,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_sql_database_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_sql_database_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_sql_database_throughput::Response::Ok200(rsp_value))
             }
@@ -1653,11 +1836,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_sql_database_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1683,7 +1866,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<SqlContainerListResult, list_sql_containers::Error> {
+    ) -> std::result::Result<models::SqlContainerListResult, list_sql_containers::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/sql/databases/{}/containers",
@@ -1714,7 +1897,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlContainerListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlContainerListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_sql_containers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1728,7 +1911,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_sql_containers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1754,7 +1937,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         container_name: &str,
-    ) -> std::result::Result<SqlContainer, get_sql_container::Error> {
+    ) -> std::result::Result<models::SqlContainer, get_sql_container::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/sql/databases/{}/containers/{}",
@@ -1786,7 +1969,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlContainer = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlContainer = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_sql_container::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1800,7 +1983,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_sql_container {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1826,7 +2009,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         container_name: &str,
-        create_update_sql_container_parameters: &SqlContainerCreateUpdateParameters,
+        create_update_sql_container_parameters: &models::SqlContainerCreateUpdateParameters,
     ) -> std::result::Result<create_update_sql_container::Response, create_update_sql_container::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1864,7 +2047,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_sql_container::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlContainer = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlContainer = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_sql_container::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_sql_container::Response::Ok200(rsp_value))
             }
@@ -1878,11 +2061,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_sql_container {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(SqlContainer),
+            Ok200(models::SqlContainer),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1951,7 +2134,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_sql_container {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1982,7 +2165,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         container_name: &str,
-    ) -> std::result::Result<Throughput, get_sql_container_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_sql_container_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/sql/databases/{}/containers/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name , container_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_sql_container_throughput::Error::ParseUrlError)?;
@@ -2008,7 +2191,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_sql_container_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2022,7 +2205,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_sql_container_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2048,7 +2231,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         container_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_sql_container_throughput::Response, update_sql_container_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/sql/databases/{}/containers/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name , container_name) ;
@@ -2077,7 +2260,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_sql_container_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_sql_container_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_sql_container_throughput::Response::Ok200(rsp_value))
             }
@@ -2091,11 +2274,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_sql_container_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2120,7 +2303,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<MongoDbDatabaseListResult, list_mongo_db_databases::Error> {
+    ) -> std::result::Result<models::MongoDbDatabaseListResult, list_mongo_db_databases::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases",
@@ -2152,7 +2335,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MongoDbDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MongoDbDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_mongo_db_databases::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2166,7 +2349,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_mongo_db_databases {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2191,7 +2374,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<MongoDbDatabase, get_mongo_db_database::Error> {
+    ) -> std::result::Result<models::MongoDbDatabase, get_mongo_db_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases/{}",
@@ -2224,7 +2407,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MongoDbDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MongoDbDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mongo_db_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2238,7 +2421,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_mongo_db_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2263,7 +2446,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-        create_update_mongo_db_database_parameters: &MongoDbDatabaseCreateUpdateParameters,
+        create_update_mongo_db_database_parameters: &models::MongoDbDatabaseCreateUpdateParameters,
     ) -> std::result::Result<create_update_mongo_db_database::Response, create_update_mongo_db_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2300,7 +2483,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_mongo_db_database::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MongoDbDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MongoDbDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_mongo_db_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_mongo_db_database::Response::Ok200(rsp_value))
             }
@@ -2314,11 +2497,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_mongo_db_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(MongoDbDatabase),
+            Ok200(models::MongoDbDatabase),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2387,7 +2570,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_mongo_db_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -2417,7 +2600,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<Throughput, get_mongo_db_database_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_mongo_db_database_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_mongo_db_database_throughput::Error::ParseUrlError)?;
@@ -2443,7 +2626,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mongo_db_database_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2457,7 +2640,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_mongo_db_database_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2482,7 +2665,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_mongo_db_database_throughput::Response, update_mongo_db_database_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name) ;
@@ -2512,7 +2695,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_mongo_db_database_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_mongo_db_database_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_mongo_db_database_throughput::Response::Ok200(rsp_value))
             }
@@ -2526,11 +2709,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_mongo_db_database_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2556,7 +2739,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<MongoDbCollectionListResult, list_mongo_db_collections::Error> {
+    ) -> std::result::Result<models::MongoDbCollectionListResult, list_mongo_db_collections::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases/{}/collections" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_mongo_db_collections::Error::ParseUrlError)?;
@@ -2582,7 +2765,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MongoDbCollectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MongoDbCollectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_mongo_db_collections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2596,7 +2779,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_mongo_db_collections {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2622,7 +2805,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         collection_name: &str,
-    ) -> std::result::Result<MongoDbCollection, get_mongo_db_collection::Error> {
+    ) -> std::result::Result<models::MongoDbCollection, get_mongo_db_collection::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases/{}/collections/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name , collection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_mongo_db_collection::Error::ParseUrlError)?;
@@ -2648,7 +2831,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MongoDbCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MongoDbCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mongo_db_collection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2662,7 +2845,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_mongo_db_collection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2688,7 +2871,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         collection_name: &str,
-        create_update_mongo_db_collection_parameters: &MongoDbCollectionCreateUpdateParameters,
+        create_update_mongo_db_collection_parameters: &models::MongoDbCollectionCreateUpdateParameters,
     ) -> std::result::Result<create_update_mongo_db_collection::Response, create_update_mongo_db_collection::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases/{}/collections/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name , collection_name) ;
@@ -2718,7 +2901,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_mongo_db_collection::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MongoDbCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MongoDbCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_mongo_db_collection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_mongo_db_collection::Response::Ok200(rsp_value))
             }
@@ -2732,11 +2915,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_mongo_db_collection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(MongoDbCollection),
+            Ok200(models::MongoDbCollection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2799,7 +2982,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_mongo_db_collection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -2830,7 +3013,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         collection_name: &str,
-    ) -> std::result::Result<Throughput, get_mongo_db_collection_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_mongo_db_collection_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases/{}/collections/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name , collection_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_mongo_db_collection_throughput::Error::ParseUrlError)?;
@@ -2856,7 +3039,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_mongo_db_collection_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2870,7 +3053,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_mongo_db_collection_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2896,7 +3079,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         collection_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_mongo_db_collection_throughput::Response, update_mongo_db_collection_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/mongodb/databases/{}/collections/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name , collection_name) ;
@@ -2926,7 +3109,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_mongo_db_collection_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_mongo_db_collection_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_mongo_db_collection_throughput::Response::Ok200(rsp_value))
             }
@@ -2940,11 +3123,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_mongo_db_collection_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2969,7 +3152,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<TableListResult, list_tables::Error> {
+    ) -> std::result::Result<models::TableListResult, list_tables::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/table/tables",
@@ -2999,7 +3182,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TableListResult =
+                let rsp_value: models::TableListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_tables::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3013,7 +3196,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_tables {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3038,7 +3221,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         table_name: &str,
-    ) -> std::result::Result<Table, get_table::Error> {
+    ) -> std::result::Result<models::Table, get_table::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/table/tables/{}",
@@ -3069,7 +3252,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Table =
+                let rsp_value: models::Table =
                     serde_json::from_slice(rsp_body).map_err(|source| get_table::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3083,7 +3266,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_table {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3108,7 +3291,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         table_name: &str,
-        create_update_table_parameters: &TableCreateUpdateParameters,
+        create_update_table_parameters: &models::TableCreateUpdateParameters,
     ) -> std::result::Result<create_update_table::Response, create_update_table::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3142,7 +3325,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_table::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Table = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Table = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_table::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_table::Response::Ok200(rsp_value))
             }
@@ -3156,11 +3339,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_table {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Table),
+            Ok200(models::Table),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3227,7 +3410,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_table {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -3257,7 +3440,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         table_name: &str,
-    ) -> std::result::Result<Throughput, get_table_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_table_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/table/tables/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , table_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_table_throughput::Error::ParseUrlError)?;
@@ -3281,7 +3464,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_table_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3295,7 +3478,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_table_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3320,7 +3503,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         table_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_table_throughput::Response, update_table_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/table/tables/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , table_name) ;
@@ -3349,7 +3532,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_table_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_table_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_table_throughput::Response::Ok200(rsp_value))
             }
@@ -3363,11 +3546,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_table_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3392,7 +3575,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<CassandraKeyspaceListResult, list_cassandra_keyspaces::Error> {
+    ) -> std::result::Result<models::CassandraKeyspaceListResult, list_cassandra_keyspaces::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces",
@@ -3424,7 +3607,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CassandraKeyspaceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CassandraKeyspaceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_cassandra_keyspaces::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3438,7 +3621,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_cassandra_keyspaces {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3463,7 +3646,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         keyspace_name: &str,
-    ) -> std::result::Result<CassandraKeyspace, get_cassandra_keyspace::Error> {
+    ) -> std::result::Result<models::CassandraKeyspace, get_cassandra_keyspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces/{}",
@@ -3496,7 +3679,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CassandraKeyspace = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CassandraKeyspace = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_cassandra_keyspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3510,7 +3693,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_cassandra_keyspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3535,7 +3718,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         keyspace_name: &str,
-        create_update_cassandra_keyspace_parameters: &CassandraKeyspaceCreateUpdateParameters,
+        create_update_cassandra_keyspace_parameters: &models::CassandraKeyspaceCreateUpdateParameters,
     ) -> std::result::Result<create_update_cassandra_keyspace::Response, create_update_cassandra_keyspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3572,7 +3755,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_cassandra_keyspace::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CassandraKeyspace = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CassandraKeyspace = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_cassandra_keyspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_cassandra_keyspace::Response::Ok200(rsp_value))
             }
@@ -3586,11 +3769,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_cassandra_keyspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(CassandraKeyspace),
+            Ok200(models::CassandraKeyspace),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3659,7 +3842,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_cassandra_keyspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -3689,7 +3872,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         keyspace_name: &str,
-    ) -> std::result::Result<Throughput, get_cassandra_keyspace_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_cassandra_keyspace_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , keyspace_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_cassandra_keyspace_throughput::Error::ParseUrlError)?;
@@ -3715,7 +3898,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_cassandra_keyspace_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3729,7 +3912,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_cassandra_keyspace_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3754,7 +3937,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         keyspace_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_cassandra_keyspace_throughput::Response, update_cassandra_keyspace_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , keyspace_name) ;
@@ -3784,7 +3967,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_cassandra_keyspace_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_cassandra_keyspace_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_cassandra_keyspace_throughput::Response::Ok200(rsp_value))
             }
@@ -3798,11 +3981,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_cassandra_keyspace_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3828,7 +4011,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         keyspace_name: &str,
-    ) -> std::result::Result<CassandraTableListResult, list_cassandra_tables::Error> {
+    ) -> std::result::Result<models::CassandraTableListResult, list_cassandra_tables::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces/{}/tables",
@@ -3861,7 +4044,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CassandraTableListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CassandraTableListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_cassandra_tables::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3875,7 +4058,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_cassandra_tables {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3901,7 +4084,7 @@ pub mod database_accounts {
         account_name: &str,
         keyspace_name: &str,
         table_name: &str,
-    ) -> std::result::Result<CassandraTable, get_cassandra_table::Error> {
+    ) -> std::result::Result<models::CassandraTable, get_cassandra_table::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces/{}/tables/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , keyspace_name , table_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_cassandra_table::Error::ParseUrlError)?;
@@ -3925,7 +4108,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CassandraTable = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CassandraTable = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_cassandra_table::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3939,7 +4122,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_cassandra_table {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3965,7 +4148,7 @@ pub mod database_accounts {
         account_name: &str,
         keyspace_name: &str,
         table_name: &str,
-        create_update_cassandra_table_parameters: &CassandraTableCreateUpdateParameters,
+        create_update_cassandra_table_parameters: &models::CassandraTableCreateUpdateParameters,
     ) -> std::result::Result<create_update_cassandra_table::Response, create_update_cassandra_table::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces/{}/tables/{}" , operation_config . base_path () , subscription_id , resource_group_name , account_name , keyspace_name , table_name) ;
@@ -3995,7 +4178,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_cassandra_table::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CassandraTable = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CassandraTable = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_cassandra_table::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_cassandra_table::Response::Ok200(rsp_value))
             }
@@ -4009,11 +4192,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_cassandra_table {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(CassandraTable),
+            Ok200(models::CassandraTable),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4076,7 +4259,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_cassandra_table {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -4107,7 +4290,7 @@ pub mod database_accounts {
         account_name: &str,
         keyspace_name: &str,
         table_name: &str,
-    ) -> std::result::Result<Throughput, get_cassandra_table_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_cassandra_table_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces/{}/tables/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , keyspace_name , table_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_cassandra_table_throughput::Error::ParseUrlError)?;
@@ -4133,7 +4316,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_cassandra_table_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4147,7 +4330,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_cassandra_table_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4173,7 +4356,7 @@ pub mod database_accounts {
         account_name: &str,
         keyspace_name: &str,
         table_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_cassandra_table_throughput::Response, update_cassandra_table_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/cassandra/keyspaces/{}/tables/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , keyspace_name , table_name) ;
@@ -4203,7 +4386,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_cassandra_table_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_cassandra_table_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_cassandra_table_throughput::Response::Ok200(rsp_value))
             }
@@ -4217,11 +4400,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_cassandra_table_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4246,7 +4429,7 @@ pub mod database_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<GremlinDatabaseListResult, list_gremlin_databases::Error> {
+    ) -> std::result::Result<models::GremlinDatabaseListResult, list_gremlin_databases::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/gremlin/databases",
@@ -4278,7 +4461,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GremlinDatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GremlinDatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_gremlin_databases::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4292,7 +4475,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_gremlin_databases {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4317,7 +4500,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<GremlinDatabase, get_gremlin_database::Error> {
+    ) -> std::result::Result<models::GremlinDatabase, get_gremlin_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/gremlin/databases/{}",
@@ -4348,7 +4531,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GremlinDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GremlinDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_gremlin_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4362,7 +4545,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_gremlin_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4387,7 +4570,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-        create_update_gremlin_database_parameters: &GremlinDatabaseCreateUpdateParameters,
+        create_update_gremlin_database_parameters: &models::GremlinDatabaseCreateUpdateParameters,
     ) -> std::result::Result<create_update_gremlin_database::Response, create_update_gremlin_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4424,7 +4607,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_gremlin_database::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GremlinDatabase = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GremlinDatabase = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_gremlin_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_gremlin_database::Response::Ok200(rsp_value))
             }
@@ -4438,11 +4621,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_gremlin_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(GremlinDatabase),
+            Ok200(models::GremlinDatabase),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4511,7 +4694,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_gremlin_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -4541,7 +4724,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<Throughput, get_gremlin_database_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_gremlin_database_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/gremlin/databases/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_gremlin_database_throughput::Error::ParseUrlError)?;
@@ -4567,7 +4750,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_gremlin_database_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4581,7 +4764,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_gremlin_database_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4606,7 +4789,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_gremlin_database_throughput::Response, update_gremlin_database_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/gremlin/databases/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name) ;
@@ -4636,7 +4819,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_gremlin_database_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_gremlin_database_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_gremlin_database_throughput::Response::Ok200(rsp_value))
             }
@@ -4650,11 +4833,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_gremlin_database_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4680,7 +4863,7 @@ pub mod database_accounts {
         resource_group_name: &str,
         account_name: &str,
         database_name: &str,
-    ) -> std::result::Result<GremlinGraphListResult, list_gremlin_graphs::Error> {
+    ) -> std::result::Result<models::GremlinGraphListResult, list_gremlin_graphs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/gremlin/databases/{}/graphs",
@@ -4711,7 +4894,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GremlinGraphListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GremlinGraphListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_gremlin_graphs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4725,7 +4908,7 @@ pub mod database_accounts {
         }
     }
     pub mod list_gremlin_graphs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4751,7 +4934,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         graph_name: &str,
-    ) -> std::result::Result<GremlinGraph, get_gremlin_graph::Error> {
+    ) -> std::result::Result<models::GremlinGraph, get_gremlin_graph::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/gremlin/databases/{}/graphs/{}",
@@ -4783,7 +4966,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GremlinGraph = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GremlinGraph = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_gremlin_graph::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4797,7 +4980,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_gremlin_graph {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4823,7 +5006,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         graph_name: &str,
-        create_update_gremlin_graph_parameters: &GremlinGraphCreateUpdateParameters,
+        create_update_gremlin_graph_parameters: &models::GremlinGraphCreateUpdateParameters,
     ) -> std::result::Result<create_update_gremlin_graph::Response, create_update_gremlin_graph::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -4861,7 +5044,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(create_update_gremlin_graph::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GremlinGraph = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GremlinGraph = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_update_gremlin_graph::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_update_gremlin_graph::Response::Ok200(rsp_value))
             }
@@ -4875,11 +5058,11 @@ pub mod database_accounts {
         }
     }
     pub mod create_update_gremlin_graph {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(GremlinGraph),
+            Ok200(models::GremlinGraph),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -4948,7 +5131,7 @@ pub mod database_accounts {
         }
     }
     pub mod delete_gremlin_graph {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -4979,7 +5162,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         graph_name: &str,
-    ) -> std::result::Result<Throughput, get_gremlin_graph_throughput::Error> {
+    ) -> std::result::Result<models::Throughput, get_gremlin_graph_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/gremlin/databases/{}/graphs/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name , graph_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_gremlin_graph_throughput::Error::ParseUrlError)?;
@@ -5005,7 +5188,7 @@ pub mod database_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_gremlin_graph_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5019,7 +5202,7 @@ pub mod database_accounts {
         }
     }
     pub mod get_gremlin_graph_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5045,7 +5228,7 @@ pub mod database_accounts {
         account_name: &str,
         database_name: &str,
         graph_name: &str,
-        update_throughput_parameters: &ThroughputUpdateParameters,
+        update_throughput_parameters: &models::ThroughputUpdateParameters,
     ) -> std::result::Result<update_gremlin_graph_throughput::Response, update_gremlin_graph_throughput::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/apis/gremlin/databases/{}/graphs/{}/settings/throughput" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_name , graph_name) ;
@@ -5074,7 +5257,7 @@ pub mod database_accounts {
             http::StatusCode::ACCEPTED => Ok(update_gremlin_graph_throughput::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Throughput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Throughput = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_gremlin_graph_throughput::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_gremlin_graph_throughput::Response::Ok200(rsp_value))
             }
@@ -5088,11 +5271,11 @@ pub mod database_accounts {
         }
     }
     pub mod update_gremlin_graph_throughput {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(Throughput),
+            Ok200(models::Throughput),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -5114,8 +5297,8 @@ pub mod database_accounts {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DocumentDB/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -5136,7 +5319,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5150,7 +5333,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5171,7 +5354,7 @@ pub mod operations {
     }
 }
 pub mod database {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5179,7 +5362,7 @@ pub mod database {
         account_name: &str,
         database_rid: &str,
         filter: &str,
-    ) -> std::result::Result<MetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/metrics",
@@ -5211,7 +5394,7 @@ pub mod database {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricListResult =
+                let rsp_value: models::MetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5225,7 +5408,7 @@ pub mod database {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5251,7 +5434,7 @@ pub mod database {
         account_name: &str,
         database_rid: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<UsagesResult, list_usages::Error> {
+    ) -> std::result::Result<models::UsagesResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/usages",
@@ -5285,7 +5468,7 @@ pub mod database {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsagesResult =
+                let rsp_value: models::UsagesResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usages::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5299,7 +5482,7 @@ pub mod database {
         }
     }
     pub mod list_usages {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5324,7 +5507,7 @@ pub mod database {
         resource_group_name: &str,
         account_name: &str,
         database_rid: &str,
-    ) -> std::result::Result<MetricDefinitionsListResult, list_metric_definitions::Error> {
+    ) -> std::result::Result<models::MetricDefinitionsListResult, list_metric_definitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/metricDefinitions",
@@ -5357,7 +5540,7 @@ pub mod database {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricDefinitionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricDefinitionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5371,7 +5554,7 @@ pub mod database {
         }
     }
     pub mod list_metric_definitions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5392,7 +5575,7 @@ pub mod database {
     }
 }
 pub mod collection {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5401,7 +5584,7 @@ pub mod collection {
         database_rid: &str,
         collection_rid: &str,
         filter: &str,
-    ) -> std::result::Result<MetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/metrics",
@@ -5434,7 +5617,7 @@ pub mod collection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricListResult =
+                let rsp_value: models::MetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5448,7 +5631,7 @@ pub mod collection {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5475,7 +5658,7 @@ pub mod collection {
         database_rid: &str,
         collection_rid: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<UsagesResult, list_usages::Error> {
+    ) -> std::result::Result<models::UsagesResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/usages",
@@ -5510,7 +5693,7 @@ pub mod collection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsagesResult =
+                let rsp_value: models::UsagesResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usages::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5524,7 +5707,7 @@ pub mod collection {
         }
     }
     pub mod list_usages {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5550,7 +5733,7 @@ pub mod collection {
         account_name: &str,
         database_rid: &str,
         collection_rid: &str,
-    ) -> std::result::Result<MetricDefinitionsListResult, list_metric_definitions::Error> {
+    ) -> std::result::Result<models::MetricDefinitionsListResult, list_metric_definitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/metricDefinitions" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_rid , collection_rid) ;
         let mut url = url::Url::parse(url_str).map_err(list_metric_definitions::Error::ParseUrlError)?;
@@ -5576,7 +5759,7 @@ pub mod collection {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricDefinitionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricDefinitionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5590,7 +5773,7 @@ pub mod collection {
         }
     }
     pub mod list_metric_definitions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5611,7 +5794,7 @@ pub mod collection {
     }
 }
 pub mod collection_region {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5621,7 +5804,7 @@ pub mod collection_region {
         database_rid: &str,
         collection_rid: &str,
         filter: &str,
-    ) -> std::result::Result<MetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/region/{}/databases/{}/collections/{}/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , region , database_rid , collection_rid) ;
         let mut url = url::Url::parse(url_str).map_err(list_metrics::Error::ParseUrlError)?;
@@ -5646,7 +5829,7 @@ pub mod collection_region {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricListResult =
+                let rsp_value: models::MetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5660,7 +5843,7 @@ pub mod collection_region {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5681,7 +5864,7 @@ pub mod collection_region {
     }
 }
 pub mod database_account_region {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5689,7 +5872,7 @@ pub mod database_account_region {
         account_name: &str,
         region: &str,
         filter: &str,
-    ) -> std::result::Result<MetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::MetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/region/{}/metrics",
@@ -5721,7 +5904,7 @@ pub mod database_account_region {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricListResult =
+                let rsp_value: models::MetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5735,7 +5918,7 @@ pub mod database_account_region {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5756,7 +5939,7 @@ pub mod database_account_region {
     }
 }
 pub mod percentile_source_target {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5765,7 +5948,7 @@ pub mod percentile_source_target {
         source_region: &str,
         target_region: &str,
         filter: &str,
-    ) -> std::result::Result<PercentileMetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::PercentileMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/sourceRegion/{}/targetRegion/{}/percentile/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , source_region , target_region) ;
         let mut url = url::Url::parse(url_str).map_err(list_metrics::Error::ParseUrlError)?;
@@ -5790,7 +5973,7 @@ pub mod percentile_source_target {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PercentileMetricListResult =
+                let rsp_value: models::PercentileMetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5804,7 +5987,7 @@ pub mod percentile_source_target {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5825,7 +6008,7 @@ pub mod percentile_source_target {
     }
 }
 pub mod percentile_target {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5833,7 +6016,7 @@ pub mod percentile_target {
         account_name: &str,
         target_region: &str,
         filter: &str,
-    ) -> std::result::Result<PercentileMetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::PercentileMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/targetRegion/{}/percentile/metrics",
@@ -5865,7 +6048,7 @@ pub mod percentile_target {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PercentileMetricListResult =
+                let rsp_value: models::PercentileMetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5879,7 +6062,7 @@ pub mod percentile_target {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5900,14 +6083,14 @@ pub mod percentile_target {
     }
 }
 pub mod percentile {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         filter: &str,
-    ) -> std::result::Result<PercentileMetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::PercentileMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/percentile/metrics",
@@ -5938,7 +6121,7 @@ pub mod percentile {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PercentileMetricListResult =
+                let rsp_value: models::PercentileMetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5952,7 +6135,7 @@ pub mod percentile {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5973,7 +6156,7 @@ pub mod percentile {
     }
 }
 pub mod collection_partition_region {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -5983,7 +6166,7 @@ pub mod collection_partition_region {
         database_rid: &str,
         collection_rid: &str,
         filter: &str,
-    ) -> std::result::Result<PartitionMetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::PartitionMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/region/{}/databases/{}/collections/{}/partitions/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , region , database_rid , collection_rid) ;
         let mut url = url::Url::parse(url_str).map_err(list_metrics::Error::ParseUrlError)?;
@@ -6008,7 +6191,7 @@ pub mod collection_partition_region {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartitionMetricListResult =
+                let rsp_value: models::PartitionMetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6022,7 +6205,7 @@ pub mod collection_partition_region {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6043,7 +6226,7 @@ pub mod collection_partition_region {
     }
 }
 pub mod collection_partition {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -6052,7 +6235,7 @@ pub mod collection_partition {
         database_rid: &str,
         collection_rid: &str,
         filter: &str,
-    ) -> std::result::Result<PartitionMetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::PartitionMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/partitions/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_rid , collection_rid) ;
         let mut url = url::Url::parse(url_str).map_err(list_metrics::Error::ParseUrlError)?;
@@ -6077,7 +6260,7 @@ pub mod collection_partition {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartitionMetricListResult =
+                let rsp_value: models::PartitionMetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6091,7 +6274,7 @@ pub mod collection_partition {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6118,7 +6301,7 @@ pub mod collection_partition {
         database_rid: &str,
         collection_rid: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<PartitionUsagesResult, list_usages::Error> {
+    ) -> std::result::Result<models::PartitionUsagesResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/partitions/usages" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_rid , collection_rid) ;
         let mut url = url::Url::parse(url_str).map_err(list_usages::Error::ParseUrlError)?;
@@ -6145,7 +6328,7 @@ pub mod collection_partition {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartitionUsagesResult =
+                let rsp_value: models::PartitionUsagesResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usages::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6159,7 +6342,7 @@ pub mod collection_partition {
         }
     }
     pub mod list_usages {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6180,7 +6363,7 @@ pub mod collection_partition {
     }
 }
 pub mod partition_key_range_id {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -6190,7 +6373,7 @@ pub mod partition_key_range_id {
         collection_rid: &str,
         partition_key_range_id: &str,
         filter: &str,
-    ) -> std::result::Result<PartitionMetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::PartitionMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/databases/{}/collections/{}/partitionKeyRangeId/{}/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , database_rid , collection_rid , partition_key_range_id) ;
         let mut url = url::Url::parse(url_str).map_err(list_metrics::Error::ParseUrlError)?;
@@ -6215,7 +6398,7 @@ pub mod partition_key_range_id {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartitionMetricListResult =
+                let rsp_value: models::PartitionMetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6229,7 +6412,7 @@ pub mod partition_key_range_id {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6250,7 +6433,7 @@ pub mod partition_key_range_id {
     }
 }
 pub mod partition_key_range_id_region {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_metrics(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -6261,7 +6444,7 @@ pub mod partition_key_range_id_region {
         collection_rid: &str,
         partition_key_range_id: &str,
         filter: &str,
-    ) -> std::result::Result<PartitionMetricListResult, list_metrics::Error> {
+    ) -> std::result::Result<models::PartitionMetricListResult, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/region/{}/databases/{}/collections/{}/partitionKeyRangeId/{}/metrics" , operation_config . base_path () , subscription_id , resource_group_name , account_name , region , database_rid , collection_rid , partition_key_range_id) ;
         let mut url = url::Url::parse(url_str).map_err(list_metrics::Error::ParseUrlError)?;
@@ -6286,7 +6469,7 @@ pub mod partition_key_range_id_region {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PartitionMetricListResult =
+                let rsp_value: models::PartitionMetricListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6300,7 +6483,7 @@ pub mod partition_key_range_id_region {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

@@ -2,13 +2,62 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    MarketplaceAgreements_List(#[from] marketplace_agreements::list::Error),
+    #[error(transparent)]
+    MarketplaceAgreements_CreateOrUpdate(#[from] marketplace_agreements::create_or_update::Error),
+    #[error(transparent)]
+    Monitors_ListApiKeys(#[from] monitors::list_api_keys::Error),
+    #[error(transparent)]
+    Monitors_GetDefaultKey(#[from] monitors::get_default_key::Error),
+    #[error(transparent)]
+    Monitors_SetDefaultKey(#[from] monitors::set_default_key::Error),
+    #[error(transparent)]
+    Monitors_ListHosts(#[from] monitors::list_hosts::Error),
+    #[error(transparent)]
+    Monitors_ListLinkedResources(#[from] monitors::list_linked_resources::Error),
+    #[error(transparent)]
+    Monitors_ListMonitoredResources(#[from] monitors::list_monitored_resources::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Monitors_List(#[from] monitors::list::Error),
+    #[error(transparent)]
+    Monitors_ListByResourceGroup(#[from] monitors::list_by_resource_group::Error),
+    #[error(transparent)]
+    Monitors_Get(#[from] monitors::get::Error),
+    #[error(transparent)]
+    Monitors_Create(#[from] monitors::create::Error),
+    #[error(transparent)]
+    Monitors_Update(#[from] monitors::update::Error),
+    #[error(transparent)]
+    Monitors_Delete(#[from] monitors::delete::Error),
+    #[error(transparent)]
+    Monitors_RefreshSetPasswordLink(#[from] monitors::refresh_set_password_link::Error),
+    #[error(transparent)]
+    TagRules_List(#[from] tag_rules::list::Error),
+    #[error(transparent)]
+    TagRules_Get(#[from] tag_rules::get::Error),
+    #[error(transparent)]
+    TagRules_CreateOrUpdate(#[from] tag_rules::create_or_update::Error),
+    #[error(transparent)]
+    SingleSignOnConfigurations_List(#[from] single_sign_on_configurations::list::Error),
+    #[error(transparent)]
+    SingleSignOnConfigurations_Get(#[from] single_sign_on_configurations::get::Error),
+    #[error(transparent)]
+    SingleSignOnConfigurations_CreateOrUpdate(#[from] single_sign_on_configurations::create_or_update::Error),
+}
 pub mod marketplace_agreements {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DatadogAgreementResourceListResponse, list::Error> {
+    ) -> std::result::Result<models::DatadogAgreementResourceListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Datadog/agreements",
@@ -33,13 +82,13 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogAgreementResourceListResponse =
+                let rsp_value: models::DatadogAgreementResourceListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -49,7 +98,7 @@ pub mod marketplace_agreements {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -74,8 +123,8 @@ pub mod marketplace_agreements {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        body: Option<&DatadogAgreementResource>,
-    ) -> std::result::Result<DatadogAgreementResource, create_or_update::Error> {
+        body: Option<&models::DatadogAgreementResource>,
+    ) -> std::result::Result<models::DatadogAgreementResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Datadog/agreements/default",
@@ -108,13 +157,13 @@ pub mod marketplace_agreements {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogAgreementResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatadogAgreementResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -124,7 +173,7 @@ pub mod marketplace_agreements {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -148,13 +197,13 @@ pub mod marketplace_agreements {
     }
 }
 pub mod monitors {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_api_keys(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogApiKeyListResponse, list_api_keys::Error> {
+    ) -> std::result::Result<models::DatadogApiKeyListResponse, list_api_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/listApiKeys",
@@ -185,13 +234,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogApiKeyListResponse =
+                let rsp_value: models::DatadogApiKeyListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_api_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_api_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_api_keys::Error::DefaultResponse {
                     status_code,
@@ -201,7 +250,7 @@ pub mod monitors {
         }
     }
     pub mod list_api_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -228,7 +277,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogApiKey, get_default_key::Error> {
+    ) -> std::result::Result<models::DatadogApiKey, get_default_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/getDefaultKey",
@@ -259,13 +308,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogApiKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatadogApiKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_default_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_default_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_default_key::Error::DefaultResponse {
                     status_code,
@@ -275,7 +324,7 @@ pub mod monitors {
         }
     }
     pub mod get_default_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -302,7 +351,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-        body: Option<&DatadogApiKey>,
+        body: Option<&models::DatadogApiKey>,
     ) -> std::result::Result<(), set_default_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -339,7 +388,7 @@ pub mod monitors {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| set_default_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_default_key::Error::DefaultResponse {
                     status_code,
@@ -349,7 +398,7 @@ pub mod monitors {
         }
     }
     pub mod set_default_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -376,7 +425,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogHostListResponse, list_hosts::Error> {
+    ) -> std::result::Result<models::DatadogHostListResponse, list_hosts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/listHosts",
@@ -407,13 +456,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogHostListResponse =
+                let rsp_value: models::DatadogHostListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_hosts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_hosts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_hosts::Error::DefaultResponse {
                     status_code,
@@ -423,7 +472,7 @@ pub mod monitors {
         }
     }
     pub mod list_hosts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -450,7 +499,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<LinkedResourceListResponse, list_linked_resources::Error> {
+    ) -> std::result::Result<models::LinkedResourceListResponse, list_linked_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/listLinkedResources",
@@ -483,13 +532,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LinkedResourceListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LinkedResourceListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_linked_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_linked_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_linked_resources::Error::DefaultResponse {
                     status_code,
@@ -499,7 +548,7 @@ pub mod monitors {
         }
     }
     pub mod list_linked_resources {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -526,7 +575,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<MonitoredResourceListResponse, list_monitored_resources::Error> {
+    ) -> std::result::Result<models::MonitoredResourceListResponse, list_monitored_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/listMonitoredResources",
@@ -559,13 +608,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitoredResourceListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MonitoredResourceListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_monitored_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_monitored_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_monitored_resources::Error::DefaultResponse {
                     status_code,
@@ -575,7 +624,7 @@ pub mod monitors {
         }
     }
     pub mod list_monitored_resources {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -600,7 +649,7 @@ pub mod monitors {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DatadogMonitorResourceListResponse, list::Error> {
+    ) -> std::result::Result<models::DatadogMonitorResourceListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Datadog/monitors",
@@ -625,13 +674,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogMonitorResourceListResponse =
+                let rsp_value: models::DatadogMonitorResourceListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -641,7 +690,7 @@ pub mod monitors {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -667,7 +716,7 @@ pub mod monitors {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DatadogMonitorResourceListResponse, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DatadogMonitorResourceListResponse, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors",
@@ -698,13 +747,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogMonitorResourceListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatadogMonitorResourceListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -714,7 +763,7 @@ pub mod monitors {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -741,7 +790,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogMonitorResource, get::Error> {
+    ) -> std::result::Result<models::DatadogMonitorResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}",
@@ -768,13 +817,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogMonitorResource =
+                let rsp_value: models::DatadogMonitorResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -784,7 +833,7 @@ pub mod monitors {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -811,7 +860,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-        body: Option<&DatadogMonitorResource>,
+        body: Option<&models::DatadogMonitorResource>,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -844,19 +893,19 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogMonitorResource =
+                let rsp_value: models::DatadogMonitorResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogMonitorResource =
+                let rsp_value: models::DatadogMonitorResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -866,11 +915,11 @@ pub mod monitors {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatadogMonitorResource),
-            Created201(DatadogMonitorResource),
+            Ok200(models::DatadogMonitorResource),
+            Created201(models::DatadogMonitorResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -898,7 +947,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-        body: Option<&DatadogMonitorResourceUpdateParameters>,
+        body: Option<&models::DatadogMonitorResourceUpdateParameters>,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -931,19 +980,19 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogMonitorResource =
+                let rsp_value: models::DatadogMonitorResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogMonitorResource =
+                let rsp_value: models::DatadogMonitorResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -953,11 +1002,11 @@ pub mod monitors {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatadogMonitorResource),
-            Created201(DatadogMonitorResource),
+            Ok200(models::DatadogMonitorResource),
+            Created201(models::DatadogMonitorResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1015,7 +1064,7 @@ pub mod monitors {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1025,7 +1074,7 @@ pub mod monitors {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1058,7 +1107,7 @@ pub mod monitors {
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogSetPasswordLink, refresh_set_password_link::Error> {
+    ) -> std::result::Result<models::DatadogSetPasswordLink, refresh_set_password_link::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/refreshSetPasswordLink",
@@ -1091,13 +1140,13 @@ pub mod monitors {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogSetPasswordLink = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatadogSetPasswordLink = serde_json::from_slice(rsp_body)
                     .map_err(|source| refresh_set_password_link::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| refresh_set_password_link::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(refresh_set_password_link::Error::DefaultResponse {
                     status_code,
@@ -1107,7 +1156,7 @@ pub mod monitors {
         }
     }
     pub mod refresh_set_password_link {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1131,8 +1180,8 @@ pub mod monitors {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Datadog/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1153,13 +1202,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1169,7 +1218,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1193,13 +1242,13 @@ pub mod operations {
     }
 }
 pub mod tag_rules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<MonitoringTagRulesListResponse, list::Error> {
+    ) -> std::result::Result<models::MonitoringTagRulesListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/tagRules",
@@ -1226,13 +1275,13 @@ pub mod tag_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitoringTagRulesListResponse =
+                let rsp_value: models::MonitoringTagRulesListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1242,7 +1291,7 @@ pub mod tag_rules {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1270,7 +1319,7 @@ pub mod tag_rules {
         resource_group_name: &str,
         monitor_name: &str,
         rule_set_name: &str,
-    ) -> std::result::Result<MonitoringTagRules, get::Error> {
+    ) -> std::result::Result<models::MonitoringTagRules, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/tagRules/{}",
@@ -1298,13 +1347,13 @@ pub mod tag_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitoringTagRules =
+                let rsp_value: models::MonitoringTagRules =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1314,7 +1363,7 @@ pub mod tag_rules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1342,8 +1391,8 @@ pub mod tag_rules {
         resource_group_name: &str,
         monitor_name: &str,
         rule_set_name: &str,
-        body: Option<&MonitoringTagRules>,
-    ) -> std::result::Result<MonitoringTagRules, create_or_update::Error> {
+        body: Option<&models::MonitoringTagRules>,
+    ) -> std::result::Result<models::MonitoringTagRules, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/tagRules/{}",
@@ -1379,13 +1428,13 @@ pub mod tag_rules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitoringTagRules = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MonitoringTagRules = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1395,7 +1444,7 @@ pub mod tag_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1419,13 +1468,13 @@ pub mod tag_rules {
     }
 }
 pub mod single_sign_on_configurations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         monitor_name: &str,
-    ) -> std::result::Result<DatadogSingleSignOnResourceListResponse, list::Error> {
+    ) -> std::result::Result<models::DatadogSingleSignOnResourceListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/singleSignOnConfigurations",
@@ -1452,13 +1501,13 @@ pub mod single_sign_on_configurations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogSingleSignOnResourceListResponse =
+                let rsp_value: models::DatadogSingleSignOnResourceListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1468,7 +1517,7 @@ pub mod single_sign_on_configurations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1496,7 +1545,7 @@ pub mod single_sign_on_configurations {
         resource_group_name: &str,
         monitor_name: &str,
         configuration_name: &str,
-    ) -> std::result::Result<DatadogSingleSignOnResource, get::Error> {
+    ) -> std::result::Result<models::DatadogSingleSignOnResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Datadog/monitors/{}/singleSignOnConfigurations/{}",
@@ -1524,13 +1573,13 @@ pub mod single_sign_on_configurations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogSingleSignOnResource =
+                let rsp_value: models::DatadogSingleSignOnResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1540,7 +1589,7 @@ pub mod single_sign_on_configurations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1568,7 +1617,7 @@ pub mod single_sign_on_configurations {
         resource_group_name: &str,
         monitor_name: &str,
         configuration_name: &str,
-        body: Option<&DatadogSingleSignOnResource>,
+        body: Option<&models::DatadogSingleSignOnResource>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1605,19 +1654,19 @@ pub mod single_sign_on_configurations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogSingleSignOnResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatadogSingleSignOnResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatadogSingleSignOnResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatadogSingleSignOnResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1627,11 +1676,11 @@ pub mod single_sign_on_configurations {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatadogSingleSignOnResource),
-            Created201(DatadogSingleSignOnResource),
+            Ok200(models::DatadogSingleSignOnResource),
+            Created201(models::DatadogSingleSignOnResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

@@ -2,10 +2,35 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    MediaService_CheckNameAvailability(#[from] media_service::check_name_availability::Error),
+    #[error(transparent)]
+    MediaService_ListByResourceGroup(#[from] media_service::list_by_resource_group::Error),
+    #[error(transparent)]
+    MediaService_Get(#[from] media_service::get::Error),
+    #[error(transparent)]
+    MediaService_Create(#[from] media_service::create::Error),
+    #[error(transparent)]
+    MediaService_Update(#[from] media_service::update::Error),
+    #[error(transparent)]
+    MediaService_Delete(#[from] media_service::delete::Error),
+    #[error(transparent)]
+    MediaService_RegenerateKey(#[from] media_service::regenerate_key::Error),
+    #[error(transparent)]
+    MediaService_ListKeys(#[from] media_service::list_keys::Error),
+    #[error(transparent)]
+    MediaService_SyncStorageKeys(#[from] media_service::sync_storage_keys::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Media/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +51,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +65,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,12 +86,12 @@ pub mod operations {
     }
 }
 pub mod media_service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        parameters: &CheckNameAvailabilityInput,
-    ) -> std::result::Result<CheckNameAvailabilityOutput, check_name_availability::Error> {
+        parameters: &models::CheckNameAvailabilityInput,
+    ) -> std::result::Result<models::CheckNameAvailabilityOutput, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Media/CheckNameAvailability",
@@ -97,13 +122,13 @@ pub mod media_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityOutput = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -113,7 +138,7 @@ pub mod media_service {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -139,7 +164,7 @@ pub mod media_service {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<MediaServiceCollection, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::MediaServiceCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaservices",
@@ -170,13 +195,13 @@ pub mod media_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MediaServiceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MediaServiceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -186,7 +211,7 @@ pub mod media_service {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -213,7 +238,7 @@ pub mod media_service {
         subscription_id: &str,
         resource_group_name: &str,
         media_service_name: &str,
-    ) -> std::result::Result<MediaService, get::Error> {
+    ) -> std::result::Result<models::MediaService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaservices/{}",
@@ -240,13 +265,13 @@ pub mod media_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MediaService =
+                let rsp_value: models::MediaService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -256,7 +281,7 @@ pub mod media_service {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -283,8 +308,8 @@ pub mod media_service {
         subscription_id: &str,
         resource_group_name: &str,
         media_service_name: &str,
-        parameters: &MediaService,
-    ) -> std::result::Result<MediaService, create::Error> {
+        parameters: &models::MediaService,
+    ) -> std::result::Result<models::MediaService, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaservices/{}",
@@ -312,13 +337,13 @@ pub mod media_service {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MediaService =
+                let rsp_value: models::MediaService =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -328,7 +353,7 @@ pub mod media_service {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -355,8 +380,8 @@ pub mod media_service {
         subscription_id: &str,
         resource_group_name: &str,
         media_service_name: &str,
-        parameters: &MediaService,
-    ) -> std::result::Result<MediaService, update::Error> {
+        parameters: &models::MediaService,
+    ) -> std::result::Result<models::MediaService, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaservices/{}",
@@ -384,13 +409,13 @@ pub mod media_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MediaService =
+                let rsp_value: models::MediaService =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -400,7 +425,7 @@ pub mod media_service {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -456,7 +481,7 @@ pub mod media_service {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -466,7 +491,7 @@ pub mod media_service {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -498,8 +523,8 @@ pub mod media_service {
         subscription_id: &str,
         resource_group_name: &str,
         media_service_name: &str,
-        parameters: &RegenerateKeyInput,
-    ) -> std::result::Result<RegenerateKeyOutput, regenerate_key::Error> {
+        parameters: &models::RegenerateKeyInput,
+    ) -> std::result::Result<models::RegenerateKeyOutput, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaservices/{}/regenerateKey",
@@ -530,13 +555,13 @@ pub mod media_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegenerateKeyOutput =
+                let rsp_value: models::RegenerateKeyOutput =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_key::Error::DefaultResponse {
                     status_code,
@@ -546,7 +571,7 @@ pub mod media_service {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -573,7 +598,7 @@ pub mod media_service {
         subscription_id: &str,
         resource_group_name: &str,
         media_service_name: &str,
-    ) -> std::result::Result<ServiceKeys, list_keys::Error> {
+    ) -> std::result::Result<models::ServiceKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/mediaservices/{}/listKeys",
@@ -604,13 +629,13 @@ pub mod media_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceKeys =
+                let rsp_value: models::ServiceKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError =
+                let rsp_value: models::ApiError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_keys::Error::DefaultResponse {
                     status_code,
@@ -620,7 +645,7 @@ pub mod media_service {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -647,7 +672,7 @@ pub mod media_service {
         subscription_id: &str,
         resource_group_name: &str,
         media_service_name: &str,
-        parameters: &SyncStorageKeysInput,
+        parameters: &models::SyncStorageKeysInput,
     ) -> std::result::Result<(), sync_storage_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -680,7 +705,7 @@ pub mod media_service {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApiError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApiError = serde_json::from_slice(rsp_body)
                     .map_err(|source| sync_storage_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(sync_storage_keys::Error::DefaultResponse {
                     status_code,
@@ -690,7 +715,7 @@ pub mod media_service {
         }
     }
     pub mod sync_storage_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,9 +2,18 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    UsageAggregates_List(#[from] usage_aggregates::list::Error),
+    #[error(transparent)]
+    RateCard_Get(#[from] rate_card::get::Error),
+}
 pub mod usage_aggregates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         reported_start_time: &str,
@@ -13,7 +22,7 @@ pub mod usage_aggregates {
         aggregation_granularity: Option<&str>,
         continuation_token: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<UsageAggregationListResult, list::Error> {
+    ) -> std::result::Result<models::UsageAggregationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Commerce/UsageAggregates",
@@ -49,13 +58,13 @@ pub mod usage_aggregates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsageAggregationListResult =
+                let rsp_value: models::UsageAggregationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -65,7 +74,7 @@ pub mod usage_aggregates {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -89,12 +98,12 @@ pub mod usage_aggregates {
     }
 }
 pub mod rate_card {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         filter: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceRateCardInfo, get::Error> {
+    ) -> std::result::Result<models::ResourceRateCardInfo, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Commerce/RateCard",
@@ -120,13 +129,13 @@ pub mod rate_card {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceRateCardInfo =
+                let rsp_value: models::ResourceRateCardInfo =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -136,7 +145,7 @@ pub mod rate_card {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

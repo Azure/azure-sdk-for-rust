@@ -2,9 +2,62 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Capabilities_List(#[from] capabilities::list::Error),
+    #[error(transparent)]
+    Capabilities_Get(#[from] capabilities::get::Error),
+    #[error(transparent)]
+    Capabilities_CreateOrUpdate(#[from] capabilities::create_or_update::Error),
+    #[error(transparent)]
+    Capabilities_Delete(#[from] capabilities::delete::Error),
+    #[error(transparent)]
+    Experiments_ListAll(#[from] experiments::list_all::Error),
+    #[error(transparent)]
+    Experiments_List(#[from] experiments::list::Error),
+    #[error(transparent)]
+    Experiments_Get(#[from] experiments::get::Error),
+    #[error(transparent)]
+    Experiments_CreateOrUpdate(#[from] experiments::create_or_update::Error),
+    #[error(transparent)]
+    Experiments_Delete(#[from] experiments::delete::Error),
+    #[error(transparent)]
+    Experiments_Cancel(#[from] experiments::cancel::Error),
+    #[error(transparent)]
+    Experiments_Start(#[from] experiments::start::Error),
+    #[error(transparent)]
+    Experiments_ListAllStatuses(#[from] experiments::list_all_statuses::Error),
+    #[error(transparent)]
+    Experiments_GetStatus(#[from] experiments::get_status::Error),
+    #[error(transparent)]
+    Experiments_ListExecutionDetails(#[from] experiments::list_execution_details::Error),
+    #[error(transparent)]
+    Experiments_GetExecutionDetails(#[from] experiments::get_execution_details::Error),
+    #[error(transparent)]
+    Operations_ListAll(#[from] operations::list_all::Error),
+    #[error(transparent)]
+    Targets_List(#[from] targets::list::Error),
+    #[error(transparent)]
+    Targets_Get(#[from] targets::get::Error),
+    #[error(transparent)]
+    Targets_CreateOrUpdate(#[from] targets::create_or_update::Error),
+    #[error(transparent)]
+    Targets_Delete(#[from] targets::delete::Error),
+    #[error(transparent)]
+    TargetTypes_List(#[from] target_types::list::Error),
+    #[error(transparent)]
+    TargetTypes_Get(#[from] target_types::get::Error),
+    #[error(transparent)]
+    CapabilityTypes_List(#[from] capability_types::list::Error),
+    #[error(transparent)]
+    CapabilityTypes_Get(#[from] capability_types::get::Error),
+}
 pub mod capabilities {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -14,7 +67,7 @@ pub mod capabilities {
         parent_resource_name: &str,
         target_name: &str,
         continuation_token: Option<&str>,
-    ) -> std::result::Result<CapabilityListResult, list::Error> {
+    ) -> std::result::Result<models::CapabilityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Chaos/targets/{}/capabilities",
@@ -47,13 +100,13 @@ pub mod capabilities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapabilityListResult =
+                let rsp_value: models::CapabilityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -63,7 +116,7 @@ pub mod capabilities {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -94,7 +147,7 @@ pub mod capabilities {
         parent_resource_name: &str,
         target_name: &str,
         capability_name: &str,
-    ) -> std::result::Result<Capability, get::Error> {
+    ) -> std::result::Result<models::Capability, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Chaos/targets/{}/capabilities/{}",
@@ -125,13 +178,13 @@ pub mod capabilities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Capability =
+                let rsp_value: models::Capability =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -141,7 +194,7 @@ pub mod capabilities {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -172,8 +225,8 @@ pub mod capabilities {
         parent_resource_name: &str,
         target_name: &str,
         capability_name: &str,
-        capability: &Capability,
-    ) -> std::result::Result<Capability, create_or_update::Error> {
+        capability: &models::Capability,
+    ) -> std::result::Result<models::Capability, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Chaos/targets/{}/capabilities/{}",
@@ -208,13 +261,13 @@ pub mod capabilities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Capability = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Capability = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -224,7 +277,7 @@ pub mod capabilities {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -288,7 +341,7 @@ pub mod capabilities {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -298,7 +351,7 @@ pub mod capabilities {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -327,13 +380,13 @@ pub mod capabilities {
     }
 }
 pub mod experiments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         running: Option<bool>,
         continuation_token: Option<&str>,
-    ) -> std::result::Result<ExperimentListResult, list_all::Error> {
+    ) -> std::result::Result<models::ExperimentListResult, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Chaos/experiments",
@@ -367,13 +420,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExperimentListResult =
+                let rsp_value: models::ExperimentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_all::Error::DefaultResponse {
                     status_code,
@@ -383,7 +436,7 @@ pub mod experiments {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -411,7 +464,7 @@ pub mod experiments {
         resource_group_name: &str,
         running: Option<bool>,
         continuation_token: Option<&str>,
-    ) -> std::result::Result<ExperimentListResult, list::Error> {
+    ) -> std::result::Result<models::ExperimentListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments",
@@ -443,13 +496,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExperimentListResult =
+                let rsp_value: models::ExperimentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -459,7 +512,7 @@ pub mod experiments {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -486,7 +539,7 @@ pub mod experiments {
         subscription_id: &str,
         resource_group_name: &str,
         experiment_name: &str,
-    ) -> std::result::Result<Experiment, get::Error> {
+    ) -> std::result::Result<models::Experiment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments/{}",
@@ -513,13 +566,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Experiment =
+                let rsp_value: models::Experiment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -529,7 +582,7 @@ pub mod experiments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -556,8 +609,8 @@ pub mod experiments {
         subscription_id: &str,
         resource_group_name: &str,
         experiment_name: &str,
-        experiment: &Experiment,
-    ) -> std::result::Result<Experiment, create_or_update::Error> {
+        experiment: &models::Experiment,
+    ) -> std::result::Result<models::Experiment, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments/{}",
@@ -588,13 +641,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Experiment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Experiment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -604,7 +657,7 @@ pub mod experiments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -660,7 +713,7 @@ pub mod experiments {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -670,7 +723,7 @@ pub mod experiments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -702,7 +755,7 @@ pub mod experiments {
         subscription_id: &str,
         resource_group_name: &str,
         experiment_name: &str,
-    ) -> std::result::Result<ExperimentCancelOperationResult, cancel::Error> {
+    ) -> std::result::Result<models::ExperimentCancelOperationResult, cancel::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments/{}/cancel",
@@ -730,13 +783,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExperimentCancelOperationResult =
+                let rsp_value: models::ExperimentCancelOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel::Error::DefaultResponse {
                     status_code,
@@ -746,7 +799,7 @@ pub mod experiments {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -773,7 +826,7 @@ pub mod experiments {
         subscription_id: &str,
         resource_group_name: &str,
         experiment_name: &str,
-    ) -> std::result::Result<ExperimentStartOperationResult, start::Error> {
+    ) -> std::result::Result<models::ExperimentStartOperationResult, start::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments/{}/start",
@@ -801,13 +854,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExperimentStartOperationResult =
+                let rsp_value: models::ExperimentStartOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start::Error::DefaultResponse {
                     status_code,
@@ -817,7 +870,7 @@ pub mod experiments {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -844,7 +897,7 @@ pub mod experiments {
         subscription_id: &str,
         resource_group_name: &str,
         experiment_name: &str,
-    ) -> std::result::Result<ExperimentStatusListResult, list_all_statuses::Error> {
+    ) -> std::result::Result<models::ExperimentStatusListResult, list_all_statuses::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments/{}/statuses",
@@ -874,13 +927,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExperimentStatusListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExperimentStatusListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_all_statuses::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_all_statuses::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_all_statuses::Error::DefaultResponse {
                     status_code,
@@ -890,7 +943,7 @@ pub mod experiments {
         }
     }
     pub mod list_all_statuses {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -918,7 +971,7 @@ pub mod experiments {
         resource_group_name: &str,
         experiment_name: &str,
         status_id: &str,
-    ) -> std::result::Result<ExperimentStatus, get_status::Error> {
+    ) -> std::result::Result<models::ExperimentStatus, get_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments/{}/statuses/{}",
@@ -949,13 +1002,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExperimentStatus =
+                let rsp_value: models::ExperimentStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| get_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_status::Error::DefaultResponse {
                     status_code,
@@ -965,7 +1018,7 @@ pub mod experiments {
         }
     }
     pub mod get_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -992,7 +1045,7 @@ pub mod experiments {
         subscription_id: &str,
         resource_group_name: &str,
         experiment_name: &str,
-    ) -> std::result::Result<ExperimentExecutionDetailsListResult, list_execution_details::Error> {
+    ) -> std::result::Result<models::ExperimentExecutionDetailsListResult, list_execution_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments/{}/executionDetails",
@@ -1024,13 +1077,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExperimentExecutionDetailsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExperimentExecutionDetailsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_execution_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_execution_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_execution_details::Error::DefaultResponse {
                     status_code,
@@ -1040,7 +1093,7 @@ pub mod experiments {
         }
     }
     pub mod list_execution_details {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1068,7 +1121,7 @@ pub mod experiments {
         resource_group_name: &str,
         experiment_name: &str,
         execution_details_id: &str,
-    ) -> std::result::Result<ExperimentExecutionDetails, get_execution_details::Error> {
+    ) -> std::result::Result<models::ExperimentExecutionDetails, get_execution_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Chaos/experiments/{}/executionDetails/{}",
@@ -1101,13 +1154,13 @@ pub mod experiments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExperimentExecutionDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExperimentExecutionDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_execution_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_execution_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_execution_details::Error::DefaultResponse {
                     status_code,
@@ -1117,7 +1170,7 @@ pub mod experiments {
         }
     }
     pub mod get_execution_details {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1141,8 +1194,8 @@ pub mod experiments {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list_all(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list_all::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list_all(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Chaos/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_all::Error::ParseUrlError)?;
@@ -1166,13 +1219,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_all::Error::DefaultResponse {
                     status_code,
@@ -1182,7 +1235,7 @@ pub mod operations {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1206,7 +1259,7 @@ pub mod operations {
     }
 }
 pub mod targets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1215,7 +1268,7 @@ pub mod targets {
         parent_resource_type: &str,
         parent_resource_name: &str,
         continuation_token: Option<&str>,
-    ) -> std::result::Result<TargetListResult, list::Error> {
+    ) -> std::result::Result<models::TargetListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Chaos/targets",
@@ -1247,13 +1300,13 @@ pub mod targets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TargetListResult =
+                let rsp_value: models::TargetListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1263,7 +1316,7 @@ pub mod targets {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1293,7 +1346,7 @@ pub mod targets {
         parent_resource_type: &str,
         parent_resource_name: &str,
         target_name: &str,
-    ) -> std::result::Result<Target, get::Error> {
+    ) -> std::result::Result<models::Target, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Chaos/targets/{}",
@@ -1323,13 +1376,13 @@ pub mod targets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Target =
+                let rsp_value: models::Target =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1339,7 +1392,7 @@ pub mod targets {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1369,8 +1422,8 @@ pub mod targets {
         parent_resource_type: &str,
         parent_resource_name: &str,
         target_name: &str,
-        target: &Target,
-    ) -> std::result::Result<Target, create_or_update::Error> {
+        target: &models::Target,
+    ) -> std::result::Result<models::Target, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.Chaos/targets/{}",
@@ -1404,13 +1457,13 @@ pub mod targets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Target = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Target = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1420,7 +1473,7 @@ pub mod targets {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1482,7 +1535,7 @@ pub mod targets {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1492,7 +1545,7 @@ pub mod targets {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1521,13 +1574,13 @@ pub mod targets {
     }
 }
 pub mod target_types {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location_name: &str,
         continuation_token: Option<&str>,
-    ) -> std::result::Result<TargetTypeListResult, list::Error> {
+    ) -> std::result::Result<models::TargetTypeListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Chaos/locations/{}/targetTypes",
@@ -1556,13 +1609,13 @@ pub mod target_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TargetTypeListResult =
+                let rsp_value: models::TargetTypeListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1572,7 +1625,7 @@ pub mod target_types {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1599,7 +1652,7 @@ pub mod target_types {
         subscription_id: &str,
         location_name: &str,
         target_type_name: &str,
-    ) -> std::result::Result<TargetType, get::Error> {
+    ) -> std::result::Result<models::TargetType, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Chaos/locations/{}/targetTypes/{}",
@@ -1626,13 +1679,13 @@ pub mod target_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TargetType =
+                let rsp_value: models::TargetType =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1642,7 +1695,7 @@ pub mod target_types {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1666,14 +1719,14 @@ pub mod target_types {
     }
 }
 pub mod capability_types {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location_name: &str,
         target_type_name: &str,
         continuation_token: Option<&str>,
-    ) -> std::result::Result<CapabilityTypeListResult, list::Error> {
+    ) -> std::result::Result<models::CapabilityTypeListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Chaos/locations/{}/targetTypes/{}/capabilityTypes",
@@ -1703,13 +1756,13 @@ pub mod capability_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapabilityTypeListResult =
+                let rsp_value: models::CapabilityTypeListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1719,7 +1772,7 @@ pub mod capability_types {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1747,7 +1800,7 @@ pub mod capability_types {
         location_name: &str,
         target_type_name: &str,
         capability_type_name: &str,
-    ) -> std::result::Result<CapabilityType, get::Error> {
+    ) -> std::result::Result<models::CapabilityType, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Chaos/locations/{}/targetTypes/{}/capabilityTypes/{}",
@@ -1775,13 +1828,13 @@ pub mod capability_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapabilityType =
+                let rsp_value: models::CapabilityType =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1791,7 +1844,7 @@ pub mod capability_types {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

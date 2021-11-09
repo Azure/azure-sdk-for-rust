@@ -1193,7 +1193,7 @@ pub enum RoleScope {
     #[serde(rename = "/")]
     U2f,
     #[serde(rename = "/keys")]
-    U2fkeys,
+    Keys,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DataAction {

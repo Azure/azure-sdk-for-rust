@@ -6,24 +6,24 @@
 #[cfg(feature = "package-2020-03-preview")]
 pub mod package_2020_03_preview;
 #[cfg(all(feature = "package-2020-03-preview", not(feature = "no-default-version")))]
-pub use package_2020_03_preview::{models, operations};
+pub use package_2020_03_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-pure-2020-03")]
 pub mod package_pure_2020_03;
 #[cfg(all(feature = "package-pure-2020-03", not(feature = "no-default-version")))]
-pub use package_pure_2020_03::{models, operations};
+pub use package_pure_2020_03::{models, operations, operations::Error};
 #[cfg(feature = "package-pure-2020-03-preview")]
 pub mod package_pure_2020_03_preview;
 #[cfg(all(feature = "package-pure-2020-03-preview", not(feature = "no-default-version")))]
-pub use package_pure_2020_03_preview::{models, operations};
+pub use package_pure_2020_03_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-pure-2017-04-preview")]
 pub mod package_pure_2017_04_preview;
 #[cfg(all(feature = "package-pure-2017-04-preview", not(feature = "no-default-version")))]
-pub use package_pure_2017_04_preview::{models, operations};
+pub use package_pure_2017_04_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-pure-2016-03")]
 pub mod package_pure_2016_03;
 use azure_core::setters;
 #[cfg(all(feature = "package-pure-2016-03", not(feature = "no-default-version")))]
-pub use package_pure_2016_03::{models, operations};
+pub use package_pure_2016_03::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

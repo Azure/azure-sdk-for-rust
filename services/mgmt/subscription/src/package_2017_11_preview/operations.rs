@@ -2,10 +2,25 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    SubscriptionDefinitionsOperationMetadata_List(#[from] subscription_definitions_operation_metadata::list::Error),
+    #[error(transparent)]
+    SubscriptionDefinitions_Get(#[from] subscription_definitions::get::Error),
+    #[error(transparent)]
+    SubscriptionDefinitions_Create(#[from] subscription_definitions::create::Error),
+    #[error(transparent)]
+    SubscriptionDefinitions_List(#[from] subscription_definitions::list::Error),
+    #[error(transparent)]
+    SubscriptionDefinitions_GetOperationStatus(#[from] subscription_definitions::get_operation_status::Error),
+}
 pub mod subscription_definitions_operation_metadata {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Subscription/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +41,13 @@ pub mod subscription_definitions_operation_metadata {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +57,7 @@ pub mod subscription_definitions_operation_metadata {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,11 +81,11 @@ pub mod subscription_definitions_operation_metadata {
     }
 }
 pub mod subscription_definitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_definition_name: &str,
-    ) -> std::result::Result<SubscriptionDefinition, get::Error> {
+    ) -> std::result::Result<models::SubscriptionDefinition, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Subscription/subscriptionDefinitions/{}",
@@ -95,13 +110,13 @@ pub mod subscription_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionDefinition =
+                let rsp_value: models::SubscriptionDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -111,7 +126,7 @@ pub mod subscription_definitions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -136,7 +151,7 @@ pub mod subscription_definitions {
     pub async fn create(
         operation_config: &crate::OperationConfig,
         subscription_definition_name: &str,
-        body: &SubscriptionDefinition,
+        body: &models::SubscriptionDefinition,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -163,14 +178,14 @@ pub mod subscription_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionDefinition =
+                let rsp_value: models::SubscriptionDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -180,10 +195,10 @@ pub mod subscription_definitions {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SubscriptionDefinition),
+            Ok200(models::SubscriptionDefinition),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -207,7 +222,7 @@ pub mod subscription_definitions {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<SubscriptionDefinitionList, list::Error> {
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::SubscriptionDefinitionList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.Subscription/subscriptionDefinitions",
@@ -231,13 +246,13 @@ pub mod subscription_definitions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionDefinitionList =
+                let rsp_value: models::SubscriptionDefinitionList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -247,7 +262,7 @@ pub mod subscription_definitions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -301,7 +316,7 @@ pub mod subscription_definitions {
             http::StatusCode::ACCEPTED => Ok(get_operation_status::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SubscriptionDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SubscriptionDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get_operation_status::Response::Ok200(rsp_value))
             }
@@ -315,11 +330,11 @@ pub mod subscription_definitions {
         }
     }
     pub mod get_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(SubscriptionDefinition),
+            Ok200(models::SubscriptionDefinition),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {

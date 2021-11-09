@@ -2,15 +2,54 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    MigrateProjectsController_GetMigrateProject(#[from] migrate_projects_controller::get_migrate_project::Error),
+    #[error(transparent)]
+    MigrateProjectsController_PutMigrateProject(#[from] migrate_projects_controller::put_migrate_project::Error),
+    #[error(transparent)]
+    MigrateProjectsController_PatchMigrateProject(#[from] migrate_projects_controller::patch_migrate_project::Error),
+    #[error(transparent)]
+    MigrateProjectsController_DeleteMigrateProject(#[from] migrate_projects_controller::delete_migrate_project::Error),
+    #[error(transparent)]
+    PrivateEndpointConnectionsController_GetPrivateEndpointConnections(
+        #[from] private_endpoint_connections_controller::get_private_endpoint_connections::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionController_GetPrivateEndpointConnection(
+        #[from] private_endpoint_connection_controller::get_private_endpoint_connection::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionController_PutPrivateEndpointConnection(
+        #[from] private_endpoint_connection_controller::put_private_endpoint_connection::Error,
+    ),
+    #[error(transparent)]
+    PrivateEndpointConnectionController_DeletePrivateEndpointConnection(
+        #[from] private_endpoint_connection_controller::delete_private_endpoint_connection::Error,
+    ),
+    #[error(transparent)]
+    PrivateLinkResourceController_GetPrivateLinkResource(#[from] private_link_resource_controller::get_private_link_resource::Error),
+    #[error(transparent)]
+    PrivateLinkResourceController_GetPrivateLinkResources(#[from] private_link_resource_controller::get_private_link_resources::Error),
+    #[error(transparent)]
+    Projects_ListBySubscription(#[from] projects::list_by_subscription::Error),
+    #[error(transparent)]
+    Projects_List(#[from] projects::list::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod migrate_projects_controller {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_migrate_project(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-    ) -> std::result::Result<MigrateProject, get_migrate_project::Error> {
+    ) -> std::result::Result<models::MigrateProject, get_migrate_project::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}",
@@ -40,13 +79,13 @@ pub mod migrate_projects_controller {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateProject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateProject = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_migrate_project::Error::DefaultResponse {
                     status_code,
@@ -56,7 +95,7 @@ pub mod migrate_projects_controller {
         }
     }
     pub mod get_migrate_project {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -83,8 +122,8 @@ pub mod migrate_projects_controller {
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-        body: &MigrateProject,
-    ) -> std::result::Result<MigrateProject, put_migrate_project::Error> {
+        body: &models::MigrateProject,
+    ) -> std::result::Result<models::MigrateProject, put_migrate_project::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}",
@@ -115,13 +154,13 @@ pub mod migrate_projects_controller {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateProject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateProject = serde_json::from_slice(rsp_body)
                     .map_err(|source| put_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| put_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(put_migrate_project::Error::DefaultResponse {
                     status_code,
@@ -131,7 +170,7 @@ pub mod migrate_projects_controller {
         }
     }
     pub mod put_migrate_project {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -158,8 +197,8 @@ pub mod migrate_projects_controller {
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-        body: &MigrateProject,
-    ) -> std::result::Result<MigrateProject, patch_migrate_project::Error> {
+        body: &models::MigrateProject,
+    ) -> std::result::Result<models::MigrateProject, patch_migrate_project::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}",
@@ -192,13 +231,13 @@ pub mod migrate_projects_controller {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateProject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateProject = serde_json::from_slice(rsp_body)
                     .map_err(|source| patch_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| patch_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(patch_migrate_project::Error::DefaultResponse {
                     status_code,
@@ -208,7 +247,7 @@ pub mod migrate_projects_controller {
         }
     }
     pub mod patch_migrate_project {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -269,7 +308,7 @@ pub mod migrate_projects_controller {
             http::StatusCode::NO_CONTENT => Ok(delete_migrate_project::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_migrate_project::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_migrate_project::Error::DefaultResponse {
                     status_code,
@@ -279,7 +318,7 @@ pub mod migrate_projects_controller {
         }
     }
     pub mod delete_migrate_project {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -308,13 +347,13 @@ pub mod migrate_projects_controller {
     }
 }
 pub mod private_endpoint_connections_controller {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_private_endpoint_connections(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionCollection, get_private_endpoint_connections::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionCollection, get_private_endpoint_connections::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/privateEndpointConnections",
@@ -346,13 +385,13 @@ pub mod private_endpoint_connections_controller {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_endpoint_connections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_endpoint_connections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_private_endpoint_connections::Error::DefaultResponse {
                     status_code,
@@ -362,7 +401,7 @@ pub mod private_endpoint_connections_controller {
         }
     }
     pub mod get_private_endpoint_connections {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -386,14 +425,14 @@ pub mod private_endpoint_connections_controller {
     }
 }
 pub mod private_endpoint_connection_controller {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_private_endpoint_connection(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
         pe_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get_private_endpoint_connection::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get_private_endpoint_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/privateEndpointConnections/{}",
@@ -426,13 +465,13 @@ pub mod private_endpoint_connection_controller {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_private_endpoint_connection::Error::DefaultResponse {
                     status_code,
@@ -442,7 +481,7 @@ pub mod private_endpoint_connection_controller {
         }
     }
     pub mod get_private_endpoint_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -470,8 +509,8 @@ pub mod private_endpoint_connection_controller {
         resource_group_name: &str,
         migrate_project_name: &str,
         pe_connection_name: &str,
-        body: &ModifyConnectionStateBody,
-    ) -> std::result::Result<PrivateEndpointConnection, put_private_endpoint_connection::Error> {
+        body: &models::ModifyConnectionStateBody,
+    ) -> std::result::Result<models::PrivateEndpointConnection, put_private_endpoint_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/privateEndpointConnections/{}",
@@ -505,13 +544,13 @@ pub mod private_endpoint_connection_controller {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| put_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| put_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(put_private_endpoint_connection::Error::DefaultResponse {
                     status_code,
@@ -521,7 +560,7 @@ pub mod private_endpoint_connection_controller {
         }
     }
     pub mod put_private_endpoint_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -584,7 +623,7 @@ pub mod private_endpoint_connection_controller {
             http::StatusCode::NO_CONTENT => Ok(delete_private_endpoint_connection::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_private_endpoint_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_private_endpoint_connection::Error::DefaultResponse {
                     status_code,
@@ -594,7 +633,7 @@ pub mod private_endpoint_connection_controller {
         }
     }
     pub mod delete_private_endpoint_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -623,14 +662,14 @@ pub mod private_endpoint_connection_controller {
     }
 }
 pub mod private_link_resource_controller {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_private_link_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
         private_link_resource_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get_private_link_resource::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get_private_link_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/privateLinkResources/{}",
@@ -663,13 +702,13 @@ pub mod private_link_resource_controller {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_link_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_link_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_private_link_resource::Error::DefaultResponse {
                     status_code,
@@ -679,7 +718,7 @@ pub mod private_link_resource_controller {
         }
     }
     pub mod get_private_link_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -706,7 +745,7 @@ pub mod private_link_resource_controller {
         subscription_id: &str,
         resource_group_name: &str,
         migrate_project_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceCollection, get_private_link_resources::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceCollection, get_private_link_resources::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Migrate/migrateProjects/{}/privateLinkResources",
@@ -738,13 +777,13 @@ pub mod private_link_resource_controller {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_link_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_private_link_resources::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_private_link_resources::Error::DefaultResponse {
                     status_code,
@@ -754,7 +793,7 @@ pub mod private_link_resource_controller {
         }
     }
     pub mod get_private_link_resources {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -778,11 +817,11 @@ pub mod private_link_resource_controller {
     }
 }
 pub mod projects {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ProjectResultList, list_by_subscription::Error> {
+    ) -> std::result::Result<models::ProjectResultList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Migrate/migrateProjects",
@@ -810,13 +849,13 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProjectResultList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProjectResultList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -826,7 +865,7 @@ pub mod projects {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -852,7 +891,7 @@ pub mod projects {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ProjectResultList, list::Error> {
+    ) -> std::result::Result<models::ProjectResultList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Migrate/migrateProjects",
@@ -878,13 +917,13 @@ pub mod projects {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProjectResultList =
+                let rsp_value: models::ProjectResultList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -894,7 +933,7 @@ pub mod projects {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -918,8 +957,8 @@ pub mod projects {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<AvailableOperations, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::AvailableOperations, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Migrate/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -939,13 +978,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailableOperations =
+                let rsp_value: models::AvailableOperations =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -955,7 +994,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

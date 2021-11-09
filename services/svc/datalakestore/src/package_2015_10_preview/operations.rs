@@ -2,9 +2,52 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    FileSystem_Concat(#[from] file_system::concat::Error),
+    #[error(transparent)]
+    FileSystem_MsConcat(#[from] file_system::ms_concat::Error),
+    #[error(transparent)]
+    FileSystem_ListFileStatus(#[from] file_system::list_file_status::Error),
+    #[error(transparent)]
+    FileSystem_GetContentSummary(#[from] file_system::get_content_summary::Error),
+    #[error(transparent)]
+    FileSystem_GetFileStatus(#[from] file_system::get_file_status::Error),
+    #[error(transparent)]
+    FileSystem_Flush(#[from] file_system::flush::Error),
+    #[error(transparent)]
+    FileSystem_Open(#[from] file_system::open::Error),
+    #[error(transparent)]
+    FileSystem_Append(#[from] file_system::append::Error),
+    #[error(transparent)]
+    FileSystem_Create(#[from] file_system::create::Error),
+    #[error(transparent)]
+    FileSystem_SetAcl(#[from] file_system::set_acl::Error),
+    #[error(transparent)]
+    FileSystem_ModifyAclEntries(#[from] file_system::modify_acl_entries::Error),
+    #[error(transparent)]
+    FileSystem_RemoveAclEntries(#[from] file_system::remove_acl_entries::Error),
+    #[error(transparent)]
+    FileSystem_RemoveDefaultAcl(#[from] file_system::remove_default_acl::Error),
+    #[error(transparent)]
+    FileSystem_GetAclStatus(#[from] file_system::get_acl_status::Error),
+    #[error(transparent)]
+    FileSystem_RemoveAcl(#[from] file_system::remove_acl::Error),
+    #[error(transparent)]
+    FileSystem_Delete(#[from] file_system::delete::Error),
+    #[error(transparent)]
+    FileSystem_Rename(#[from] file_system::rename::Error),
+    #[error(transparent)]
+    FileSystem_SetOwner(#[from] file_system::set_owner::Error),
+    #[error(transparent)]
+    FileSystem_SetPermission(#[from] file_system::set_permission::Error),
+}
 pub mod file_system {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn concat(
         operation_config: &crate::OperationConfig,
         destination_path: &str,
@@ -34,7 +77,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| concat::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(concat::Error::DefaultResponse {
                     status_code,
@@ -44,7 +87,7 @@ pub mod file_system {
         }
     }
     pub mod concat {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -107,7 +150,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| ms_concat::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(ms_concat::Error::DefaultResponse {
                     status_code,
@@ -117,7 +160,7 @@ pub mod file_system {
         }
     }
     pub mod ms_concat {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -146,7 +189,7 @@ pub mod file_system {
         list_after: Option<&str>,
         list_before: Option<&str>,
         op: &str,
-    ) -> std::result::Result<FileStatusesResult, list_file_status::Error> {
+    ) -> std::result::Result<models::FileStatusesResult, list_file_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/webhdfs/v1/{}?op=MSLISTSTATUS", operation_config.base_path(), list_file_path);
         let mut url = url::Url::parse(url_str).map_err(list_file_status::Error::ParseUrlError)?;
@@ -180,13 +223,13 @@ pub mod file_system {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FileStatusesResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FileStatusesResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_file_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_file_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_file_status::Error::DefaultResponse {
                     status_code,
@@ -196,7 +239,7 @@ pub mod file_system {
         }
     }
     pub mod list_file_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -222,7 +265,7 @@ pub mod file_system {
         operation_config: &crate::OperationConfig,
         get_content_summary_file_path: &str,
         op: &str,
-    ) -> std::result::Result<ContentSummaryResult, get_content_summary::Error> {
+    ) -> std::result::Result<models::ContentSummaryResult, get_content_summary::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/webhdfs/va/{}?op=GETCONTENTSUMMARY",
@@ -251,13 +294,13 @@ pub mod file_system {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContentSummaryResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContentSummaryResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_content_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_content_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_content_summary::Error::DefaultResponse {
                     status_code,
@@ -267,7 +310,7 @@ pub mod file_system {
         }
     }
     pub mod get_content_summary {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -293,7 +336,7 @@ pub mod file_system {
         operation_config: &crate::OperationConfig,
         get_file_path: &str,
         op: &str,
-    ) -> std::result::Result<FileStatusResult, get_file_status::Error> {
+    ) -> std::result::Result<models::FileStatusResult, get_file_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/webhdfs/v1/{}?op=MSGETFILESTATUS", operation_config.base_path(), get_file_path);
         let mut url = url::Url::parse(url_str).map_err(get_file_status::Error::ParseUrlError)?;
@@ -318,13 +361,13 @@ pub mod file_system {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FileStatusResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FileStatusResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_file_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_file_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_file_status::Error::DefaultResponse {
                     status_code,
@@ -334,7 +377,7 @@ pub mod file_system {
         }
     }
     pub mod get_file_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -392,7 +435,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| flush::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(flush::Error::DefaultResponse {
                     status_code,
@@ -402,7 +445,7 @@ pub mod file_system {
         }
     }
     pub mod flush {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -465,7 +508,7 @@ pub mod file_system {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| open::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(open::Error::DefaultResponse {
                     status_code,
@@ -475,7 +518,7 @@ pub mod file_system {
         }
     }
     pub mod open {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -532,7 +575,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| append::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(append::Error::DefaultResponse {
                     status_code,
@@ -542,7 +585,7 @@ pub mod file_system {
         }
     }
     pub mod append {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -603,7 +646,7 @@ pub mod file_system {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -613,7 +656,7 @@ pub mod file_system {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -667,7 +710,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| set_acl::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_acl::Error::DefaultResponse {
                     status_code,
@@ -677,7 +720,7 @@ pub mod file_system {
         }
     }
     pub mod set_acl {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -735,7 +778,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| modify_acl_entries::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(modify_acl_entries::Error::DefaultResponse {
                     status_code,
@@ -745,7 +788,7 @@ pub mod file_system {
         }
     }
     pub mod modify_acl_entries {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -803,7 +846,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| remove_acl_entries::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(remove_acl_entries::Error::DefaultResponse {
                     status_code,
@@ -813,7 +856,7 @@ pub mod file_system {
         }
     }
     pub mod remove_acl_entries {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -869,7 +912,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
                     .map_err(|source| remove_default_acl::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(remove_default_acl::Error::DefaultResponse {
                     status_code,
@@ -879,7 +922,7 @@ pub mod file_system {
         }
     }
     pub mod remove_default_acl {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -905,7 +948,7 @@ pub mod file_system {
         operation_config: &crate::OperationConfig,
         acl_file_path: &str,
         op: &str,
-    ) -> std::result::Result<AclStatusResult, get_acl_status::Error> {
+    ) -> std::result::Result<models::AclStatusResult, get_acl_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACL", operation_config.base_path(), acl_file_path);
         let mut url = url::Url::parse(url_str).map_err(get_acl_status::Error::ParseUrlError)?;
@@ -930,13 +973,13 @@ pub mod file_system {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AclStatusResult =
+                let rsp_value: models::AclStatusResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get_acl_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_acl_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_acl_status::Error::DefaultResponse {
                     status_code,
@@ -946,7 +989,7 @@ pub mod file_system {
         }
     }
     pub mod get_acl_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -998,7 +1041,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| remove_acl::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(remove_acl::Error::DefaultResponse {
                     status_code,
@@ -1008,7 +1051,7 @@ pub mod file_system {
         }
     }
     pub mod remove_acl {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1035,7 +1078,7 @@ pub mod file_system {
         file_path: &str,
         recursive: Option<bool>,
         op: &str,
-    ) -> std::result::Result<FileOperationResult, delete::Error> {
+    ) -> std::result::Result<models::FileOperationResult, delete::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/webhdfs/v1/{}?op=DELETE", operation_config.base_path(), file_path);
         let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
@@ -1060,13 +1103,13 @@ pub mod file_system {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FileOperationResult =
+                let rsp_value: models::FileOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1076,7 +1119,7 @@ pub mod file_system {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1103,7 +1146,7 @@ pub mod file_system {
         rename_file_path: &str,
         destination: &str,
         op: &str,
-    ) -> std::result::Result<FileOperationResult, rename::Error> {
+    ) -> std::result::Result<models::FileOperationResult, rename::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/webhdfs/v1/{}?op=RENAME", operation_config.base_path(), rename_file_path);
         let mut url = url::Url::parse(url_str).map_err(rename::Error::ParseUrlError)?;
@@ -1126,13 +1169,13 @@ pub mod file_system {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FileOperationResult =
+                let rsp_value: models::FileOperationResult =
                     serde_json::from_slice(rsp_body).map_err(|source| rename::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| rename::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(rename::Error::DefaultResponse {
                     status_code,
@@ -1142,7 +1185,7 @@ pub mod file_system {
         }
     }
     pub mod rename {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1202,7 +1245,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| set_owner::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_owner::Error::DefaultResponse {
                     status_code,
@@ -1212,7 +1255,7 @@ pub mod file_system {
         }
     }
     pub mod set_owner {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1272,7 +1315,7 @@ pub mod file_system {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: AdlsError =
+                let rsp_value: models::AdlsError =
                     serde_json::from_slice(rsp_body).map_err(|source| set_permission::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(set_permission::Error::DefaultResponse {
                     status_code,
@@ -1282,7 +1325,7 @@ pub mod file_system {
         }
     }
     pub mod set_permission {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

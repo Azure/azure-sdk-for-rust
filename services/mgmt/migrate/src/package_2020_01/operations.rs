@@ -2,16 +2,103 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    HyperVCluster_GetCluster(#[from] hyper_v_cluster::get_cluster::Error),
+    #[error(transparent)]
+    HyperVCluster_PutCluster(#[from] hyper_v_cluster::put_cluster::Error),
+    #[error(transparent)]
+    HyperVCluster_GetAllClustersInSite(#[from] hyper_v_cluster::get_all_clusters_in_site::Error),
+    #[error(transparent)]
+    HyperVHost_GetHost(#[from] hyper_v_host::get_host::Error),
+    #[error(transparent)]
+    HyperVHost_PutHost(#[from] hyper_v_host::put_host::Error),
+    #[error(transparent)]
+    HyperVHost_GetAllHostsInSite(#[from] hyper_v_host::get_all_hosts_in_site::Error),
+    #[error(transparent)]
+    HyperVJobs_GetJob(#[from] hyper_v_jobs::get_job::Error),
+    #[error(transparent)]
+    HyperVJobs_GetAllJobsInSite(#[from] hyper_v_jobs::get_all_jobs_in_site::Error),
+    #[error(transparent)]
+    HyperVMachines_GetMachine(#[from] hyper_v_machines::get_machine::Error),
+    #[error(transparent)]
+    HyperVMachines_GetAllMachinesInSite(#[from] hyper_v_machines::get_all_machines_in_site::Error),
+    #[error(transparent)]
+    HyperVOperationsStatus_GetOperationStatus(#[from] hyper_v_operations_status::get_operation_status::Error),
+    #[error(transparent)]
+    HyperVRunAsAccounts_GetRunAsAccount(#[from] hyper_v_run_as_accounts::get_run_as_account::Error),
+    #[error(transparent)]
+    HyperVRunAsAccounts_GetAllRunAsAccountsInSite(#[from] hyper_v_run_as_accounts::get_all_run_as_accounts_in_site::Error),
+    #[error(transparent)]
+    HyperVSites_GetSite(#[from] hyper_v_sites::get_site::Error),
+    #[error(transparent)]
+    HyperVSites_PutSite(#[from] hyper_v_sites::put_site::Error),
+    #[error(transparent)]
+    HyperVSites_PatchSite(#[from] hyper_v_sites::patch_site::Error),
+    #[error(transparent)]
+    HyperVSites_DeleteSite(#[from] hyper_v_sites::delete_site::Error),
+    #[error(transparent)]
+    HyperVSites_RefreshSite(#[from] hyper_v_sites::refresh_site::Error),
+    #[error(transparent)]
+    HyperVSites_GetSiteHealthSummary(#[from] hyper_v_sites::get_site_health_summary::Error),
+    #[error(transparent)]
+    Jobs_GetJob(#[from] jobs::get_job::Error),
+    #[error(transparent)]
+    Jobs_GetAllJobsInSite(#[from] jobs::get_all_jobs_in_site::Error),
+    #[error(transparent)]
+    Machines_GetMachine(#[from] machines::get_machine::Error),
+    #[error(transparent)]
+    Machines_GetAllMachinesInSite(#[from] machines::get_all_machines_in_site::Error),
+    #[error(transparent)]
+    Machines_StopMachine(#[from] machines::stop_machine::Error),
+    #[error(transparent)]
+    Machines_StartMachine(#[from] machines::start_machine::Error),
+    #[error(transparent)]
+    RunAsAccounts_GetRunAsAccount(#[from] run_as_accounts::get_run_as_account::Error),
+    #[error(transparent)]
+    RunAsAccounts_GetAllRunAsAccountsInSite(#[from] run_as_accounts::get_all_run_as_accounts_in_site::Error),
+    #[error(transparent)]
+    Sites_GetSite(#[from] sites::get_site::Error),
+    #[error(transparent)]
+    Sites_PutSite(#[from] sites::put_site::Error),
+    #[error(transparent)]
+    Sites_PatchSite(#[from] sites::patch_site::Error),
+    #[error(transparent)]
+    Sites_DeleteSite(#[from] sites::delete_site::Error),
+    #[error(transparent)]
+    Sites_RefreshSite(#[from] sites::refresh_site::Error),
+    #[error(transparent)]
+    Sites_GetSiteHealthSummary(#[from] sites::get_site_health_summary::Error),
+    #[error(transparent)]
+    VCenter_GetVCenter(#[from] v_center::get_v_center::Error),
+    #[error(transparent)]
+    VCenter_PutVCenter(#[from] v_center::put_v_center::Error),
+    #[error(transparent)]
+    VCenter_DeleteVCenter(#[from] v_center::delete_v_center::Error),
+    #[error(transparent)]
+    VCenter_GetAllVCentersInSite(#[from] v_center::get_all_v_centers_in_site::Error),
+    #[error(transparent)]
+    VMwareOperationsStatus_GetOperationStatus(#[from] v_mware_operations_status::get_operation_status::Error),
+    #[error(transparent)]
+    HyperVSites_GetSiteUsage(#[from] hyper_v_sites::get_site_usage::Error),
+    #[error(transparent)]
+    Sites_GetSiteUsage(#[from] sites::get_site_usage::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod hyper_v_cluster {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_cluster(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<HyperVCluster, get_cluster::Error> {
+    ) -> std::result::Result<models::HyperVCluster, get_cluster::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/clusters/{}",
@@ -42,7 +129,7 @@ pub mod hyper_v_cluster {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVCluster =
+                let rsp_value: models::HyperVCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| get_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -56,7 +143,7 @@ pub mod hyper_v_cluster {
         }
     }
     pub mod get_cluster {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -81,7 +168,7 @@ pub mod hyper_v_cluster {
         resource_group_name: &str,
         site_name: &str,
         cluster_name: &str,
-        body: &HyperVCluster,
+        body: &models::HyperVCluster,
     ) -> std::result::Result<(), put_cluster::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -123,7 +210,7 @@ pub mod hyper_v_cluster {
         }
     }
     pub mod put_cluster {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -148,7 +235,7 @@ pub mod hyper_v_cluster {
         resource_group_name: &str,
         site_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<HyperVClusterCollection, get_all_clusters_in_site::Error> {
+    ) -> std::result::Result<models::HyperVClusterCollection, get_all_clusters_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/clusters",
@@ -183,7 +270,7 @@ pub mod hyper_v_cluster {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVClusterCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HyperVClusterCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_clusters_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -197,7 +284,7 @@ pub mod hyper_v_cluster {
         }
     }
     pub mod get_all_clusters_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -218,14 +305,14 @@ pub mod hyper_v_cluster {
     }
 }
 pub mod hyper_v_host {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_host(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         host_name: &str,
-    ) -> std::result::Result<HyperVHost, get_host::Error> {
+    ) -> std::result::Result<models::HyperVHost, get_host::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/hosts/{}",
@@ -256,7 +343,7 @@ pub mod hyper_v_host {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVHost =
+                let rsp_value: models::HyperVHost =
                     serde_json::from_slice(rsp_body).map_err(|source| get_host::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -270,7 +357,7 @@ pub mod hyper_v_host {
         }
     }
     pub mod get_host {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -295,7 +382,7 @@ pub mod hyper_v_host {
         resource_group_name: &str,
         site_name: &str,
         host_name: &str,
-        body: &HyperVHost,
+        body: &models::HyperVHost,
     ) -> std::result::Result<(), put_host::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -337,7 +424,7 @@ pub mod hyper_v_host {
         }
     }
     pub mod put_host {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -362,7 +449,7 @@ pub mod hyper_v_host {
         resource_group_name: &str,
         site_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<HyperVHostCollection, get_all_hosts_in_site::Error> {
+    ) -> std::result::Result<models::HyperVHostCollection, get_all_hosts_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/hosts",
@@ -397,7 +484,7 @@ pub mod hyper_v_host {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVHostCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HyperVHostCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_hosts_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -411,7 +498,7 @@ pub mod hyper_v_host {
         }
     }
     pub mod get_all_hosts_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -432,14 +519,14 @@ pub mod hyper_v_host {
     }
 }
 pub mod hyper_v_jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_job(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         job_name: &str,
-    ) -> std::result::Result<HyperVJob, get_job::Error> {
+    ) -> std::result::Result<models::HyperVJob, get_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/jobs/{}",
@@ -470,7 +557,7 @@ pub mod hyper_v_jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVJob =
+                let rsp_value: models::HyperVJob =
                     serde_json::from_slice(rsp_body).map_err(|source| get_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -484,7 +571,7 @@ pub mod hyper_v_jobs {
         }
     }
     pub mod get_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -508,7 +595,7 @@ pub mod hyper_v_jobs {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<HyperVJobCollection, get_all_jobs_in_site::Error> {
+    ) -> std::result::Result<models::HyperVJobCollection, get_all_jobs_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/jobs",
@@ -538,7 +625,7 @@ pub mod hyper_v_jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVJobCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HyperVJobCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_jobs_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -552,7 +639,7 @@ pub mod hyper_v_jobs {
         }
     }
     pub mod get_all_jobs_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -573,14 +660,14 @@ pub mod hyper_v_jobs {
     }
 }
 pub mod hyper_v_machines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_machine(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         machine_name: &str,
-    ) -> std::result::Result<HyperVMachine, get_machine::Error> {
+    ) -> std::result::Result<models::HyperVMachine, get_machine::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/machines/{}",
@@ -611,7 +698,7 @@ pub mod hyper_v_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVMachine =
+                let rsp_value: models::HyperVMachine =
                     serde_json::from_slice(rsp_body).map_err(|source| get_machine::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -625,7 +712,7 @@ pub mod hyper_v_machines {
         }
     }
     pub mod get_machine {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -653,7 +740,7 @@ pub mod hyper_v_machines {
         top: Option<i32>,
         continuation_token: Option<&str>,
         total_record_count: Option<i32>,
-    ) -> std::result::Result<HyperVMachineCollection, get_all_machines_in_site::Error> {
+    ) -> std::result::Result<models::HyperVMachineCollection, get_all_machines_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/machines",
@@ -698,7 +785,7 @@ pub mod hyper_v_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVMachineCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HyperVMachineCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_machines_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -712,7 +799,7 @@ pub mod hyper_v_machines {
         }
     }
     pub mod get_all_machines_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -733,14 +820,14 @@ pub mod hyper_v_machines {
     }
 }
 pub mod hyper_v_operations_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_operation_status(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         operation_status_name: &str,
-    ) -> std::result::Result<OperationStatus, get_operation_status::Error> {
+    ) -> std::result::Result<models::OperationStatus, get_operation_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/operationsStatus/{}",
@@ -771,7 +858,7 @@ pub mod hyper_v_operations_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OperationStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -785,7 +872,7 @@ pub mod hyper_v_operations_status {
         }
     }
     pub mod get_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -806,14 +893,14 @@ pub mod hyper_v_operations_status {
     }
 }
 pub mod hyper_v_run_as_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_run_as_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         account_name: &str,
-    ) -> std::result::Result<HyperVRunAsAccount, get_run_as_account::Error> {
+    ) -> std::result::Result<models::HyperVRunAsAccount, get_run_as_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/runAsAccounts/{}",
@@ -844,7 +931,7 @@ pub mod hyper_v_run_as_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVRunAsAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HyperVRunAsAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_run_as_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -858,7 +945,7 @@ pub mod hyper_v_run_as_accounts {
         }
     }
     pub mod get_run_as_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -882,7 +969,7 @@ pub mod hyper_v_run_as_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<HyperVRunAsAccountCollection, get_all_run_as_accounts_in_site::Error> {
+    ) -> std::result::Result<models::HyperVRunAsAccountCollection, get_all_run_as_accounts_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/runAsAccounts",
@@ -914,7 +1001,7 @@ pub mod hyper_v_run_as_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVRunAsAccountCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HyperVRunAsAccountCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_run_as_accounts_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -928,7 +1015,7 @@ pub mod hyper_v_run_as_accounts {
         }
     }
     pub mod get_all_run_as_accounts_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -949,13 +1036,13 @@ pub mod hyper_v_run_as_accounts {
     }
 }
 pub mod hyper_v_sites {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_site(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<HyperVSite, get_site::Error> {
+    ) -> std::result::Result<models::HyperVSite, get_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}",
@@ -985,7 +1072,7 @@ pub mod hyper_v_sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVSite =
+                let rsp_value: models::HyperVSite =
                     serde_json::from_slice(rsp_body).map_err(|source| get_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -999,7 +1086,7 @@ pub mod hyper_v_sites {
         }
     }
     pub mod get_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1023,7 +1110,7 @@ pub mod hyper_v_sites {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-        body: &HyperVSite,
+        body: &models::HyperVSite,
     ) -> std::result::Result<put_site::Response, put_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1055,13 +1142,13 @@ pub mod hyper_v_sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVSite =
+                let rsp_value: models::HyperVSite =
                     serde_json::from_slice(rsp_body).map_err(|source| put_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put_site::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVSite =
+                let rsp_value: models::HyperVSite =
                     serde_json::from_slice(rsp_body).map_err(|source| put_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put_site::Response::Created201(rsp_value))
             }
@@ -1075,11 +1162,11 @@ pub mod hyper_v_sites {
         }
     }
     pub mod put_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(HyperVSite),
-            Created201(HyperVSite),
+            Ok200(models::HyperVSite),
+            Created201(models::HyperVSite),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1104,7 +1191,7 @@ pub mod hyper_v_sites {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-        body: &HyperVSite,
+        body: &models::HyperVSite,
     ) -> std::result::Result<patch_site::Response, patch_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1136,13 +1223,13 @@ pub mod hyper_v_sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVSite =
+                let rsp_value: models::HyperVSite =
                     serde_json::from_slice(rsp_body).map_err(|source| patch_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(patch_site::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVSite =
+                let rsp_value: models::HyperVSite =
                     serde_json::from_slice(rsp_body).map_err(|source| patch_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(patch_site::Response::Created201(rsp_value))
             }
@@ -1156,11 +1243,11 @@ pub mod hyper_v_sites {
         }
     }
     pub mod patch_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(HyperVSite),
-            Created201(HyperVSite),
+            Ok200(models::HyperVSite),
+            Created201(models::HyperVSite),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1225,7 +1312,7 @@ pub mod hyper_v_sites {
         }
     }
     pub mod delete_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1294,7 +1381,7 @@ pub mod hyper_v_sites {
         }
     }
     pub mod refresh_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1318,7 +1405,7 @@ pub mod hyper_v_sites {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<SiteHealthSummaryCollection, get_site_health_summary::Error> {
+    ) -> std::result::Result<models::SiteHealthSummaryCollection, get_site_health_summary::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/healthSummary",
@@ -1351,7 +1438,7 @@ pub mod hyper_v_sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteHealthSummaryCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteHealthSummaryCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_site_health_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1365,7 +1452,7 @@ pub mod hyper_v_sites {
         }
     }
     pub mod get_site_health_summary {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1389,7 +1476,7 @@ pub mod hyper_v_sites {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<HyperVSiteUsage, get_site_usage::Error> {
+    ) -> std::result::Result<models::HyperVSiteUsage, get_site_usage::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/HyperVSites/{}/summary",
@@ -1420,7 +1507,7 @@ pub mod hyper_v_sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HyperVSiteUsage =
+                let rsp_value: models::HyperVSiteUsage =
                     serde_json::from_slice(rsp_body).map_err(|source| get_site_usage::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1434,7 +1521,7 @@ pub mod hyper_v_sites {
         }
     }
     pub mod get_site_usage {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1455,14 +1542,14 @@ pub mod hyper_v_sites {
     }
 }
 pub mod jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_job(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         job_name: &str,
-    ) -> std::result::Result<VMwareJob, get_job::Error> {
+    ) -> std::result::Result<models::VMwareJob, get_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/jobs/{}",
@@ -1493,7 +1580,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareJob =
+                let rsp_value: models::VMwareJob =
                     serde_json::from_slice(rsp_body).map_err(|source| get_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1507,7 +1594,7 @@ pub mod jobs {
         }
     }
     pub mod get_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1531,7 +1618,7 @@ pub mod jobs {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<VMwareJobCollection, get_all_jobs_in_site::Error> {
+    ) -> std::result::Result<models::VMwareJobCollection, get_all_jobs_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/jobs",
@@ -1561,7 +1648,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareJobCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VMwareJobCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_jobs_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1575,7 +1662,7 @@ pub mod jobs {
         }
     }
     pub mod get_all_jobs_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1596,14 +1683,14 @@ pub mod jobs {
     }
 }
 pub mod machines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_machine(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         machine_name: &str,
-    ) -> std::result::Result<VMwareMachine, get_machine::Error> {
+    ) -> std::result::Result<models::VMwareMachine, get_machine::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/machines/{}",
@@ -1634,7 +1721,7 @@ pub mod machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareMachine =
+                let rsp_value: models::VMwareMachine =
                     serde_json::from_slice(rsp_body).map_err(|source| get_machine::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1648,7 +1735,7 @@ pub mod machines {
         }
     }
     pub mod get_machine {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1676,7 +1763,7 @@ pub mod machines {
         top: Option<i32>,
         continuation_token: Option<&str>,
         total_record_count: Option<i32>,
-    ) -> std::result::Result<VMwareMachineCollection, get_all_machines_in_site::Error> {
+    ) -> std::result::Result<models::VMwareMachineCollection, get_all_machines_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/machines",
@@ -1721,7 +1808,7 @@ pub mod machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareMachineCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VMwareMachineCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_machines_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1735,7 +1822,7 @@ pub mod machines {
         }
     }
     pub mod get_all_machines_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1801,7 +1888,7 @@ pub mod machines {
         }
     }
     pub mod stop_machine {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1867,7 +1954,7 @@ pub mod machines {
         }
     }
     pub mod start_machine {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1888,14 +1975,14 @@ pub mod machines {
     }
 }
 pub mod run_as_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_run_as_account(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         account_name: &str,
-    ) -> std::result::Result<VMwareRunAsAccount, get_run_as_account::Error> {
+    ) -> std::result::Result<models::VMwareRunAsAccount, get_run_as_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/runAsAccounts/{}",
@@ -1926,7 +2013,7 @@ pub mod run_as_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareRunAsAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VMwareRunAsAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_run_as_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1940,7 +2027,7 @@ pub mod run_as_accounts {
         }
     }
     pub mod get_run_as_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1964,7 +2051,7 @@ pub mod run_as_accounts {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<VMwareRunAsAccountCollection, get_all_run_as_accounts_in_site::Error> {
+    ) -> std::result::Result<models::VMwareRunAsAccountCollection, get_all_run_as_accounts_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/runAsAccounts",
@@ -1996,7 +2083,7 @@ pub mod run_as_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareRunAsAccountCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VMwareRunAsAccountCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_run_as_accounts_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2010,7 +2097,7 @@ pub mod run_as_accounts {
         }
     }
     pub mod get_all_run_as_accounts_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2031,13 +2118,13 @@ pub mod run_as_accounts {
     }
 }
 pub mod sites {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_site(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<VMwareSite, get_site::Error> {
+    ) -> std::result::Result<models::VMwareSite, get_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}",
@@ -2067,7 +2154,7 @@ pub mod sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareSite =
+                let rsp_value: models::VMwareSite =
                     serde_json::from_slice(rsp_body).map_err(|source| get_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2081,7 +2168,7 @@ pub mod sites {
         }
     }
     pub mod get_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2105,7 +2192,7 @@ pub mod sites {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-        body: &VMwareSite,
+        body: &models::VMwareSite,
     ) -> std::result::Result<put_site::Response, put_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2137,13 +2224,13 @@ pub mod sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareSite =
+                let rsp_value: models::VMwareSite =
                     serde_json::from_slice(rsp_body).map_err(|source| put_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put_site::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareSite =
+                let rsp_value: models::VMwareSite =
                     serde_json::from_slice(rsp_body).map_err(|source| put_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(put_site::Response::Created201(rsp_value))
             }
@@ -2157,11 +2244,11 @@ pub mod sites {
         }
     }
     pub mod put_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VMwareSite),
-            Created201(VMwareSite),
+            Ok200(models::VMwareSite),
+            Created201(models::VMwareSite),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2186,7 +2273,7 @@ pub mod sites {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-        body: &VMwareSite,
+        body: &models::VMwareSite,
     ) -> std::result::Result<patch_site::Response, patch_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2218,13 +2305,13 @@ pub mod sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareSite =
+                let rsp_value: models::VMwareSite =
                     serde_json::from_slice(rsp_body).map_err(|source| patch_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(patch_site::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareSite =
+                let rsp_value: models::VMwareSite =
                     serde_json::from_slice(rsp_body).map_err(|source| patch_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(patch_site::Response::Created201(rsp_value))
             }
@@ -2238,11 +2325,11 @@ pub mod sites {
         }
     }
     pub mod patch_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VMwareSite),
-            Created201(VMwareSite),
+            Ok200(models::VMwareSite),
+            Created201(models::VMwareSite),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2307,7 +2394,7 @@ pub mod sites {
         }
     }
     pub mod delete_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2376,7 +2463,7 @@ pub mod sites {
         }
     }
     pub mod refresh_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2400,7 +2487,7 @@ pub mod sites {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<SiteHealthSummaryCollection, get_site_health_summary::Error> {
+    ) -> std::result::Result<models::SiteHealthSummaryCollection, get_site_health_summary::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/healthSummary",
@@ -2433,7 +2520,7 @@ pub mod sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteHealthSummaryCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteHealthSummaryCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_site_health_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2447,7 +2534,7 @@ pub mod sites {
         }
     }
     pub mod get_site_health_summary {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2471,7 +2558,7 @@ pub mod sites {
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
-    ) -> std::result::Result<VMwareSiteUsage, get_site_usage::Error> {
+    ) -> std::result::Result<models::VMwareSiteUsage, get_site_usage::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/summary",
@@ -2502,7 +2589,7 @@ pub mod sites {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VMwareSiteUsage =
+                let rsp_value: models::VMwareSiteUsage =
                     serde_json::from_slice(rsp_body).map_err(|source| get_site_usage::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2516,7 +2603,7 @@ pub mod sites {
         }
     }
     pub mod get_site_usage {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2537,14 +2624,14 @@ pub mod sites {
     }
 }
 pub mod v_center {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_v_center(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         vcenter_name: &str,
-    ) -> std::result::Result<VCenter, get_v_center::Error> {
+    ) -> std::result::Result<models::VCenter, get_v_center::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/vCenters/{}",
@@ -2575,7 +2662,7 @@ pub mod v_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VCenter =
+                let rsp_value: models::VCenter =
                     serde_json::from_slice(rsp_body).map_err(|source| get_v_center::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2589,7 +2676,7 @@ pub mod v_center {
         }
     }
     pub mod get_v_center {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2614,7 +2701,7 @@ pub mod v_center {
         resource_group_name: &str,
         site_name: &str,
         vcenter_name: &str,
-        body: &VCenter,
+        body: &models::VCenter,
     ) -> std::result::Result<(), put_v_center::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2656,7 +2743,7 @@ pub mod v_center {
         }
     }
     pub mod put_v_center {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2722,7 +2809,7 @@ pub mod v_center {
         }
     }
     pub mod delete_v_center {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2752,7 +2839,7 @@ pub mod v_center {
         resource_group_name: &str,
         site_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<VCenterCollection, get_all_v_centers_in_site::Error> {
+    ) -> std::result::Result<models::VCenterCollection, get_all_v_centers_in_site::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/vCenters",
@@ -2787,7 +2874,7 @@ pub mod v_center {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VCenterCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VCenterCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_v_centers_in_site::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2801,7 +2888,7 @@ pub mod v_center {
         }
     }
     pub mod get_all_v_centers_in_site {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2822,14 +2909,14 @@ pub mod v_center {
     }
 }
 pub mod v_mware_operations_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_operation_status(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         site_name: &str,
         operation_status_name: &str,
-    ) -> std::result::Result<OperationStatus, get_operation_status::Error> {
+    ) -> std::result::Result<models::OperationStatus, get_operation_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OffAzure/VMwareSites/{}/operationsStatus/{}",
@@ -2860,7 +2947,7 @@ pub mod v_mware_operations_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OperationStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2874,7 +2961,7 @@ pub mod v_mware_operations_status {
         }
     }
     pub mod get_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2895,8 +2982,8 @@ pub mod v_mware_operations_status {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationResultList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationResultList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.OffAzure/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2917,7 +3004,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationResultList =
+                let rsp_value: models::OperationResultList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2931,7 +3018,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

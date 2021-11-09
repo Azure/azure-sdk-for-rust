@@ -167,7 +167,8 @@ pub struct PrivateEndpointConnectionProxyListResult {
 pub struct PrivateEndpointConnectionProxy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    pub properties: PrivateEndpointConnectionProxyProperties,
+    #[serde(flatten)]
+    pub private_endpoint_connection_proxy_properties: PrivateEndpointConnectionProxyProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProxyProperties {
@@ -177,6 +178,8 @@ pub struct PrivateEndpointConnectionProxyProperties {
     pub remote_private_endpoint: Option<RemotePrivateEndpoint>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProxyProvisioningState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemotePrivateEndpoint {
@@ -232,6 +235,10 @@ pub struct GroupConnectivityInformation {
     pub customer_visible_fqdns: Vec<String>,
     #[serde(rename = "internalFqdn", default, skip_serializing_if = "Option::is_none")]
     pub internal_fqdn: Option<String>,
+    #[serde(rename = "redirectMapId", default, skip_serializing_if = "Option::is_none")]
+    pub redirect_map_id: Option<String>,
+    #[serde(rename = "privateLinkServiceArmRegion", default, skip_serializing_if = "Option::is_none")]
+    pub private_link_service_arm_region: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionDetails {

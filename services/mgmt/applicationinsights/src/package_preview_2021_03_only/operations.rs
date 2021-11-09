@@ -2,13 +2,22 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    DiagnosticServiceToken_GetReadOnly(#[from] diagnostic_service_token::get_read_only::Error),
+    #[error(transparent)]
+    DiagnosticServiceToken_GetReadWrite(#[from] diagnostic_service_token::get_read_write::Error),
+}
 pub mod diagnostic_service_token {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_read_only(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-    ) -> std::result::Result<DiagnosticServicesTokenResponse, get_read_only::Error> {
+    ) -> std::result::Result<models::DiagnosticServicesTokenResponse, get_read_only::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/generateDiagnosticServiceReadOnlyToken",
@@ -37,13 +46,13 @@ pub mod diagnostic_service_token {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiagnosticServicesTokenResponse =
+                let rsp_value: models::DiagnosticServicesTokenResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_read_only::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_read_only::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_read_only::Error::DefaultResponse {
                     status_code,
@@ -53,7 +62,7 @@ pub mod diagnostic_service_token {
         }
     }
     pub mod get_read_only {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -78,7 +87,7 @@ pub mod diagnostic_service_token {
     pub async fn get_read_write(
         operation_config: &crate::OperationConfig,
         resource_uri: &str,
-    ) -> std::result::Result<DiagnosticServicesTokenResponse, get_read_write::Error> {
+    ) -> std::result::Result<models::DiagnosticServicesTokenResponse, get_read_write::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.Insights/generateDiagnosticServiceReadWriteToken",
@@ -107,13 +116,13 @@ pub mod diagnostic_service_token {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiagnosticServicesTokenResponse =
+                let rsp_value: models::DiagnosticServicesTokenResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_read_write::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_read_write::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_read_write::Error::DefaultResponse {
                     status_code,
@@ -123,7 +132,7 @@ pub mod diagnostic_service_token {
         }
     }
     pub mod get_read_write {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,9 +2,48 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    HealthApi_GetServiceStatus(#[from] health_api::get_service_status::Error),
+    #[error(transparent)]
+    WebPubSub_SendToAll(#[from] web_pub_sub::send_to_all::Error),
+    #[error(transparent)]
+    WebPubSub_CloseConnection(#[from] web_pub_sub::close_connection::Error),
+    #[error(transparent)]
+    WebPubSub_ConnectionExists(#[from] web_pub_sub::connection_exists::Error),
+    #[error(transparent)]
+    WebPubSub_SendToConnection(#[from] web_pub_sub::send_to_connection::Error),
+    #[error(transparent)]
+    WebPubSub_GroupExists(#[from] web_pub_sub::group_exists::Error),
+    #[error(transparent)]
+    WebPubSub_SendToGroup(#[from] web_pub_sub::send_to_group::Error),
+    #[error(transparent)]
+    WebPubSub_AddConnectionToGroup(#[from] web_pub_sub::add_connection_to_group::Error),
+    #[error(transparent)]
+    WebPubSub_RemoveConnectionFromGroup(#[from] web_pub_sub::remove_connection_from_group::Error),
+    #[error(transparent)]
+    WebPubSub_UserExists(#[from] web_pub_sub::user_exists::Error),
+    #[error(transparent)]
+    WebPubSub_SendToUser(#[from] web_pub_sub::send_to_user::Error),
+    #[error(transparent)]
+    WebPubSub_AddUserToGroup(#[from] web_pub_sub::add_user_to_group::Error),
+    #[error(transparent)]
+    WebPubSub_RemoveUserFromGroup(#[from] web_pub_sub::remove_user_from_group::Error),
+    #[error(transparent)]
+    WebPubSub_RemoveUserFromAllGroups(#[from] web_pub_sub::remove_user_from_all_groups::Error),
+    #[error(transparent)]
+    WebPubSub_GrantPermission(#[from] web_pub_sub::grant_permission::Error),
+    #[error(transparent)]
+    WebPubSub_RevokePermission(#[from] web_pub_sub::revoke_permission::Error),
+    #[error(transparent)]
+    WebPubSub_CheckPermission(#[from] web_pub_sub::check_permission::Error),
+}
 pub mod health_api {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_service_status(operation_config: &crate::OperationConfig) -> std::result::Result<(), get_service_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/api/health", operation_config.base_path(),);
@@ -32,7 +71,7 @@ pub mod health_api {
         }
     }
     pub mod get_service_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -53,7 +92,7 @@ pub mod health_api {
     }
 }
 pub mod web_pub_sub {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn send_to_all(
         operation_config: &crate::OperationConfig,
         hub: &str,
@@ -90,7 +129,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod send_to_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -144,7 +183,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod close_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -195,7 +234,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod connection_exists {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -254,7 +293,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod send_to_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -305,7 +344,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod group_exists {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -363,7 +402,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod send_to_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -423,7 +462,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod add_connection_to_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -484,7 +523,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod remove_connection_from_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -535,7 +574,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod user_exists {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -589,7 +628,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod send_to_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -647,7 +686,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod add_user_to_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -708,7 +747,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod remove_user_from_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -760,7 +799,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod remove_user_from_all_groups {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -821,7 +860,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod grant_permission {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -882,7 +921,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod revoke_permission {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -944,7 +983,7 @@ pub mod web_pub_sub {
         }
     }
     pub mod check_permission {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

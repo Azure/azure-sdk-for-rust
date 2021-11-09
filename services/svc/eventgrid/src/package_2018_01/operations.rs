@@ -2,10 +2,19 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    PublishCloudEventEvents(#[from] publish_cloud_event_events::Error),
+    #[error(transparent)]
+    PublishCustomEventEvents(#[from] publish_custom_event_events::Error),
+}
 pub async fn publish_cloud_event_events(
     operation_config: &crate::OperationConfig,
-    events: &[&CloudEventEvent],
+    events: &[&models::CloudEventEvent],
 ) -> std::result::Result<(), publish_cloud_event_events::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/api/events?overload=cloudEvent", operation_config.base_path(),);
@@ -36,7 +45,7 @@ pub async fn publish_cloud_event_events(
     }
 }
 pub mod publish_cloud_event_events {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -57,7 +66,7 @@ pub mod publish_cloud_event_events {
 }
 pub async fn publish_custom_event_events(
     operation_config: &crate::OperationConfig,
-    events: &[&CustomEventEvent],
+    events: &[&models::CustomEventEvent],
 ) -> std::result::Result<(), publish_custom_event_events::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/api/events?overload=customEvent", operation_config.base_path(),);
@@ -88,7 +97,7 @@ pub async fn publish_custom_event_events(
     }
 }
 pub mod publish_custom_event_events {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

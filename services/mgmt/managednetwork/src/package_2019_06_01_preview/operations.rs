@@ -2,15 +2,58 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ManagedNetworks_Get(#[from] managed_networks::get::Error),
+    #[error(transparent)]
+    ManagedNetworks_CreateOrUpdate(#[from] managed_networks::create_or_update::Error),
+    #[error(transparent)]
+    ManagedNetworks_Update(#[from] managed_networks::update::Error),
+    #[error(transparent)]
+    ManagedNetworks_Delete(#[from] managed_networks::delete::Error),
+    #[error(transparent)]
+    ManagedNetworks_ListByResourceGroup(#[from] managed_networks::list_by_resource_group::Error),
+    #[error(transparent)]
+    ManagedNetworks_ListBySubscription(#[from] managed_networks::list_by_subscription::Error),
+    #[error(transparent)]
+    ScopeAssignments_Get(#[from] scope_assignments::get::Error),
+    #[error(transparent)]
+    ScopeAssignments_CreateOrUpdate(#[from] scope_assignments::create_or_update::Error),
+    #[error(transparent)]
+    ScopeAssignments_Delete(#[from] scope_assignments::delete::Error),
+    #[error(transparent)]
+    ScopeAssignments_List(#[from] scope_assignments::list::Error),
+    #[error(transparent)]
+    ManagedNetworkGroups_Get(#[from] managed_network_groups::get::Error),
+    #[error(transparent)]
+    ManagedNetworkGroups_CreateOrUpdate(#[from] managed_network_groups::create_or_update::Error),
+    #[error(transparent)]
+    ManagedNetworkGroups_Delete(#[from] managed_network_groups::delete::Error),
+    #[error(transparent)]
+    ManagedNetworkGroups_ListByManagedNetwork(#[from] managed_network_groups::list_by_managed_network::Error),
+    #[error(transparent)]
+    ManagedNetworkPeeringPolicies_Get(#[from] managed_network_peering_policies::get::Error),
+    #[error(transparent)]
+    ManagedNetworkPeeringPolicies_CreateOrUpdate(#[from] managed_network_peering_policies::create_or_update::Error),
+    #[error(transparent)]
+    ManagedNetworkPeeringPolicies_Delete(#[from] managed_network_peering_policies::delete::Error),
+    #[error(transparent)]
+    ManagedNetworkPeeringPolicies_ListByManagedNetwork(#[from] managed_network_peering_policies::list_by_managed_network::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod managed_networks {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
-    ) -> std::result::Result<ManagedNetwork, get::Error> {
+    ) -> std::result::Result<models::ManagedNetwork, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
@@ -37,13 +80,13 @@ pub mod managed_networks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetwork =
+                let rsp_value: models::ManagedNetwork =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +96,7 @@ pub mod managed_networks {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -77,7 +120,7 @@ pub mod managed_networks {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
-        managed_network: &ManagedNetwork,
+        managed_network: &models::ManagedNetwork,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
@@ -112,19 +155,19 @@ pub mod managed_networks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetwork = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetwork = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetwork = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetwork = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -134,11 +177,11 @@ pub mod managed_networks {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedNetwork),
-            Created201(ManagedNetwork),
+            Ok200(models::ManagedNetwork),
+            Created201(models::ManagedNetwork),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -163,7 +206,7 @@ pub mod managed_networks {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        parameters: &ManagedNetworkUpdate,
+        parameters: &models::ManagedNetworkUpdate,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
@@ -195,19 +238,19 @@ pub mod managed_networks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetwork =
+                let rsp_value: models::ManagedNetwork =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetwork =
+                let rsp_value: models::ManagedNetwork =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -217,11 +260,11 @@ pub mod managed_networks {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedNetwork),
-            Created201(ManagedNetwork),
+            Ok200(models::ManagedNetwork),
+            Created201(models::ManagedNetwork),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -279,7 +322,7 @@ pub mod managed_networks {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -289,7 +332,7 @@ pub mod managed_networks {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -323,7 +366,7 @@ pub mod managed_networks {
         resource_group_name: &str,
         top: Option<i64>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<ManagedNetworkListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ManagedNetworkListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks",
@@ -360,13 +403,13 @@ pub mod managed_networks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetworkListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -376,7 +419,7 @@ pub mod managed_networks {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -403,7 +446,7 @@ pub mod managed_networks {
         subscription_id: &str,
         top: Option<i64>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<ManagedNetworkListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::ManagedNetworkListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ManagedNetwork/managedNetworks",
@@ -437,13 +480,13 @@ pub mod managed_networks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetworkListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -453,7 +496,7 @@ pub mod managed_networks {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -477,12 +520,12 @@ pub mod managed_networks {
     }
 }
 pub mod scope_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
         scope_assignment_name: &str,
-    ) -> std::result::Result<ScopeAssignment, get::Error> {
+    ) -> std::result::Result<models::ScopeAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments/{}",
@@ -508,13 +551,13 @@ pub mod scope_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScopeAssignment =
+                let rsp_value: models::ScopeAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -524,7 +567,7 @@ pub mod scope_assignments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -548,7 +591,7 @@ pub mod scope_assignments {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
-        parameters: &ScopeAssignment,
+        parameters: &models::ScopeAssignment,
         scope: &str,
         scope_assignment_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -581,19 +624,19 @@ pub mod scope_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScopeAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ScopeAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScopeAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ScopeAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -603,11 +646,11 @@ pub mod scope_assignments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ScopeAssignment),
-            Created201(ScopeAssignment),
+            Ok200(models::ScopeAssignment),
+            Created201(models::ScopeAssignment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -663,7 +706,7 @@ pub mod scope_assignments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -685,7 +728,7 @@ pub mod scope_assignments {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         scope: &str,
-    ) -> std::result::Result<ScopeAssignmentListResult, list::Error> {
+    ) -> std::result::Result<models::ScopeAssignmentListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments",
@@ -710,13 +753,13 @@ pub mod scope_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScopeAssignmentListResult =
+                let rsp_value: models::ScopeAssignmentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -726,7 +769,7 @@ pub mod scope_assignments {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -750,14 +793,14 @@ pub mod scope_assignments {
     }
 }
 pub mod managed_network_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         managed_network_group_name: &str,
-    ) -> std::result::Result<ManagedNetworkGroup, get::Error> {
+    ) -> std::result::Result<models::ManagedNetworkGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}",
@@ -785,13 +828,13 @@ pub mod managed_network_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkGroup =
+                let rsp_value: models::ManagedNetworkGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -801,7 +844,7 @@ pub mod managed_network_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -825,7 +868,7 @@ pub mod managed_network_groups {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
-        managed_network_group: &ManagedNetworkGroup,
+        managed_network_group: &models::ManagedNetworkGroup,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
@@ -862,19 +905,19 @@ pub mod managed_network_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetworkGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetworkGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -884,11 +927,11 @@ pub mod managed_network_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedNetworkGroup),
-            Created201(ManagedNetworkGroup),
+            Ok200(models::ManagedNetworkGroup),
+            Created201(models::ManagedNetworkGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -948,7 +991,7 @@ pub mod managed_network_groups {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -958,7 +1001,7 @@ pub mod managed_network_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -993,7 +1036,7 @@ pub mod managed_network_groups {
         managed_network_name: &str,
         top: Option<i64>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<ManagedNetworkGroupListResult, list_by_managed_network::Error> {
+    ) -> std::result::Result<models::ManagedNetworkGroupListResult, list_by_managed_network::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups",
@@ -1031,13 +1074,13 @@ pub mod managed_network_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetworkGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_managed_network::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_managed_network::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_managed_network::Error::DefaultResponse {
                     status_code,
@@ -1047,7 +1090,7 @@ pub mod managed_network_groups {
         }
     }
     pub mod list_by_managed_network {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1071,14 +1114,14 @@ pub mod managed_network_groups {
     }
 }
 pub mod managed_network_peering_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
         managed_network_peering_policy_name: &str,
-    ) -> std::result::Result<ManagedNetworkPeeringPolicy, get::Error> {
+    ) -> std::result::Result<models::ManagedNetworkPeeringPolicy, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}",
@@ -1106,13 +1149,13 @@ pub mod managed_network_peering_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkPeeringPolicy =
+                let rsp_value: models::ManagedNetworkPeeringPolicy =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1122,7 +1165,7 @@ pub mod managed_network_peering_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1146,7 +1189,7 @@ pub mod managed_network_peering_policies {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
-        managed_network_policy: &ManagedNetworkPeeringPolicy,
+        managed_network_policy: &models::ManagedNetworkPeeringPolicy,
         subscription_id: &str,
         resource_group_name: &str,
         managed_network_name: &str,
@@ -1183,19 +1226,19 @@ pub mod managed_network_peering_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkPeeringPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetworkPeeringPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkPeeringPolicy = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetworkPeeringPolicy = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1205,11 +1248,11 @@ pub mod managed_network_peering_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedNetworkPeeringPolicy),
-            Created201(ManagedNetworkPeeringPolicy),
+            Ok200(models::ManagedNetworkPeeringPolicy),
+            Created201(models::ManagedNetworkPeeringPolicy),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1269,7 +1312,7 @@ pub mod managed_network_peering_policies {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1279,7 +1322,7 @@ pub mod managed_network_peering_policies {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1314,7 +1357,7 @@ pub mod managed_network_peering_policies {
         managed_network_name: &str,
         top: Option<i64>,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<ManagedNetworkPeeringPolicyListResult, list_by_managed_network::Error> {
+    ) -> std::result::Result<models::ManagedNetworkPeeringPolicyListResult, list_by_managed_network::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies",
@@ -1352,13 +1395,13 @@ pub mod managed_network_peering_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedNetworkPeeringPolicyListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedNetworkPeeringPolicyListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_managed_network::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_managed_network::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_managed_network::Error::DefaultResponse {
                     status_code,
@@ -1368,7 +1411,7 @@ pub mod managed_network_peering_policies {
         }
     }
     pub mod list_by_managed_network {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1392,8 +1435,8 @@ pub mod managed_network_peering_policies {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ManagedNetwork/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1414,13 +1457,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1430,7 +1473,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

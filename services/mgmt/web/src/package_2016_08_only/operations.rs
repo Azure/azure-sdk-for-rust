@@ -2,13 +2,640 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    WebApps_List(#[from] web_apps::list::Error),
+    #[error(transparent)]
+    WebApps_ListByResourceGroup(#[from] web_apps::list_by_resource_group::Error),
+    #[error(transparent)]
+    WebApps_Get(#[from] web_apps::get::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdate(#[from] web_apps::create_or_update::Error),
+    #[error(transparent)]
+    WebApps_Update(#[from] web_apps::update::Error),
+    #[error(transparent)]
+    WebApps_Delete(#[from] web_apps::delete::Error),
+    #[error(transparent)]
+    WebApps_AnalyzeCustomHostname(#[from] web_apps::analyze_custom_hostname::Error),
+    #[error(transparent)]
+    WebApps_ApplySlotConfigToProduction(#[from] web_apps::apply_slot_config_to_production::Error),
+    #[error(transparent)]
+    WebApps_Backup(#[from] web_apps::backup::Error),
+    #[error(transparent)]
+    WebApps_ListBackups(#[from] web_apps::list_backups::Error),
+    #[error(transparent)]
+    WebApps_DiscoverRestore(#[from] web_apps::discover_restore::Error),
+    #[error(transparent)]
+    WebApps_GetBackupStatus(#[from] web_apps::get_backup_status::Error),
+    #[error(transparent)]
+    WebApps_DeleteBackup(#[from] web_apps::delete_backup::Error),
+    #[error(transparent)]
+    WebApps_ListBackupStatusSecrets(#[from] web_apps::list_backup_status_secrets::Error),
+    #[error(transparent)]
+    WebApps_Restore(#[from] web_apps::restore::Error),
+    #[error(transparent)]
+    WebApps_ListConfigurations(#[from] web_apps::list_configurations::Error),
+    #[error(transparent)]
+    WebApps_UpdateApplicationSettings(#[from] web_apps::update_application_settings::Error),
+    #[error(transparent)]
+    WebApps_ListApplicationSettings(#[from] web_apps::list_application_settings::Error),
+    #[error(transparent)]
+    WebApps_UpdateAuthSettings(#[from] web_apps::update_auth_settings::Error),
+    #[error(transparent)]
+    WebApps_GetAuthSettings(#[from] web_apps::get_auth_settings::Error),
+    #[error(transparent)]
+    WebApps_UpdateBackupConfiguration(#[from] web_apps::update_backup_configuration::Error),
+    #[error(transparent)]
+    WebApps_DeleteBackupConfiguration(#[from] web_apps::delete_backup_configuration::Error),
+    #[error(transparent)]
+    WebApps_GetBackupConfiguration(#[from] web_apps::get_backup_configuration::Error),
+    #[error(transparent)]
+    WebApps_UpdateConnectionStrings(#[from] web_apps::update_connection_strings::Error),
+    #[error(transparent)]
+    WebApps_ListConnectionStrings(#[from] web_apps::list_connection_strings::Error),
+    #[error(transparent)]
+    WebApps_GetDiagnosticLogsConfiguration(#[from] web_apps::get_diagnostic_logs_configuration::Error),
+    #[error(transparent)]
+    WebApps_UpdateDiagnosticLogsConfig(#[from] web_apps::update_diagnostic_logs_config::Error),
+    #[error(transparent)]
+    WebApps_UpdateMetadata(#[from] web_apps::update_metadata::Error),
+    #[error(transparent)]
+    WebApps_ListMetadata(#[from] web_apps::list_metadata::Error),
+    #[error(transparent)]
+    WebApps_ListPublishingCredentials(#[from] web_apps::list_publishing_credentials::Error),
+    #[error(transparent)]
+    WebApps_UpdateSitePushSettings(#[from] web_apps::update_site_push_settings::Error),
+    #[error(transparent)]
+    WebApps_ListSitePushSettings(#[from] web_apps::list_site_push_settings::Error),
+    #[error(transparent)]
+    WebApps_ListSlotConfigurationNames(#[from] web_apps::list_slot_configuration_names::Error),
+    #[error(transparent)]
+    WebApps_UpdateSlotConfigurationNames(#[from] web_apps::update_slot_configuration_names::Error),
+    #[error(transparent)]
+    WebApps_GetConfiguration(#[from] web_apps::get_configuration::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateConfiguration(#[from] web_apps::create_or_update_configuration::Error),
+    #[error(transparent)]
+    WebApps_UpdateConfiguration(#[from] web_apps::update_configuration::Error),
+    #[error(transparent)]
+    WebApps_ListConfigurationSnapshotInfo(#[from] web_apps::list_configuration_snapshot_info::Error),
+    #[error(transparent)]
+    WebApps_GetConfigurationSnapshot(#[from] web_apps::get_configuration_snapshot::Error),
+    #[error(transparent)]
+    WebApps_RecoverSiteConfigurationSnapshot(#[from] web_apps::recover_site_configuration_snapshot::Error),
+    #[error(transparent)]
+    WebApps_GetWebSiteContainerLogs(#[from] web_apps::get_web_site_container_logs::Error),
+    #[error(transparent)]
+    WebApps_GetWebSiteContainerLogsZip(#[from] web_apps::get_web_site_container_logs_zip::Error),
+    #[error(transparent)]
+    WebApps_ListContinuousWebJobs(#[from] web_apps::list_continuous_web_jobs::Error),
+    #[error(transparent)]
+    WebApps_GetContinuousWebJob(#[from] web_apps::get_continuous_web_job::Error),
+    #[error(transparent)]
+    WebApps_DeleteContinuousWebJob(#[from] web_apps::delete_continuous_web_job::Error),
+    #[error(transparent)]
+    WebApps_StartContinuousWebJob(#[from] web_apps::start_continuous_web_job::Error),
+    #[error(transparent)]
+    WebApps_StopContinuousWebJob(#[from] web_apps::stop_continuous_web_job::Error),
+    #[error(transparent)]
+    WebApps_ListDeployments(#[from] web_apps::list_deployments::Error),
+    #[error(transparent)]
+    WebApps_GetDeployment(#[from] web_apps::get_deployment::Error),
+    #[error(transparent)]
+    WebApps_CreateDeployment(#[from] web_apps::create_deployment::Error),
+    #[error(transparent)]
+    WebApps_DeleteDeployment(#[from] web_apps::delete_deployment::Error),
+    #[error(transparent)]
+    WebApps_ListDeploymentLog(#[from] web_apps::list_deployment_log::Error),
+    #[error(transparent)]
+    WebApps_ListDomainOwnershipIdentifiers(#[from] web_apps::list_domain_ownership_identifiers::Error),
+    #[error(transparent)]
+    WebApps_GetDomainOwnershipIdentifier(#[from] web_apps::get_domain_ownership_identifier::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateDomainOwnershipIdentifier(#[from] web_apps::create_or_update_domain_ownership_identifier::Error),
+    #[error(transparent)]
+    WebApps_UpdateDomainOwnershipIdentifier(#[from] web_apps::update_domain_ownership_identifier::Error),
+    #[error(transparent)]
+    WebApps_DeleteDomainOwnershipIdentifier(#[from] web_apps::delete_domain_ownership_identifier::Error),
+    #[error(transparent)]
+    WebApps_GetMsDeployStatus(#[from] web_apps::get_ms_deploy_status::Error),
+    #[error(transparent)]
+    WebApps_CreateMsDeployOperation(#[from] web_apps::create_ms_deploy_operation::Error),
+    #[error(transparent)]
+    WebApps_GetMsDeployLog(#[from] web_apps::get_ms_deploy_log::Error),
+    #[error(transparent)]
+    WebApps_ListFunctions(#[from] web_apps::list_functions::Error),
+    #[error(transparent)]
+    WebApps_GetFunctionsAdminToken(#[from] web_apps::get_functions_admin_token::Error),
+    #[error(transparent)]
+    WebApps_GetFunction(#[from] web_apps::get_function::Error),
+    #[error(transparent)]
+    WebApps_CreateFunction(#[from] web_apps::create_function::Error),
+    #[error(transparent)]
+    WebApps_DeleteFunction(#[from] web_apps::delete_function::Error),
+    #[error(transparent)]
+    WebApps_ListFunctionSecrets(#[from] web_apps::list_function_secrets::Error),
+    #[error(transparent)]
+    WebApps_ListHostNameBindings(#[from] web_apps::list_host_name_bindings::Error),
+    #[error(transparent)]
+    WebApps_GetHostNameBinding(#[from] web_apps::get_host_name_binding::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateHostNameBinding(#[from] web_apps::create_or_update_host_name_binding::Error),
+    #[error(transparent)]
+    WebApps_DeleteHostNameBinding(#[from] web_apps::delete_host_name_binding::Error),
+    #[error(transparent)]
+    WebApps_GetHybridConnection(#[from] web_apps::get_hybrid_connection::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateHybridConnection(#[from] web_apps::create_or_update_hybrid_connection::Error),
+    #[error(transparent)]
+    WebApps_UpdateHybridConnection(#[from] web_apps::update_hybrid_connection::Error),
+    #[error(transparent)]
+    WebApps_DeleteHybridConnection(#[from] web_apps::delete_hybrid_connection::Error),
+    #[error(transparent)]
+    WebApps_ListHybridConnectionKeys(#[from] web_apps::list_hybrid_connection_keys::Error),
+    #[error(transparent)]
+    WebApps_ListHybridConnections(#[from] web_apps::list_hybrid_connections::Error),
+    #[error(transparent)]
+    WebApps_ListRelayServiceConnections(#[from] web_apps::list_relay_service_connections::Error),
+    #[error(transparent)]
+    WebApps_GetRelayServiceConnection(#[from] web_apps::get_relay_service_connection::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateRelayServiceConnection(#[from] web_apps::create_or_update_relay_service_connection::Error),
+    #[error(transparent)]
+    WebApps_UpdateRelayServiceConnection(#[from] web_apps::update_relay_service_connection::Error),
+    #[error(transparent)]
+    WebApps_DeleteRelayServiceConnection(#[from] web_apps::delete_relay_service_connection::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceIdentifiers(#[from] web_apps::list_instance_identifiers::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceMsDeployStatus(#[from] web_apps::get_instance_ms_deploy_status::Error),
+    #[error(transparent)]
+    WebApps_CreateInstanceMsDeployOperation(#[from] web_apps::create_instance_ms_deploy_operation::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceMsDeployLog(#[from] web_apps::get_instance_ms_deploy_log::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceProcesses(#[from] web_apps::list_instance_processes::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceProcess(#[from] web_apps::get_instance_process::Error),
+    #[error(transparent)]
+    WebApps_DeleteInstanceProcess(#[from] web_apps::delete_instance_process::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceProcessDump(#[from] web_apps::get_instance_process_dump::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceProcessModules(#[from] web_apps::list_instance_process_modules::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceProcessModule(#[from] web_apps::get_instance_process_module::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceProcessThreads(#[from] web_apps::list_instance_process_threads::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceProcessThread(#[from] web_apps::get_instance_process_thread::Error),
+    #[error(transparent)]
+    WebApps_IsCloneable(#[from] web_apps::is_cloneable::Error),
+    #[error(transparent)]
+    WebApps_ListSyncFunctionTriggers(#[from] web_apps::list_sync_function_triggers::Error),
+    #[error(transparent)]
+    WebApps_ListMetricDefinitions(#[from] web_apps::list_metric_definitions::Error),
+    #[error(transparent)]
+    WebApps_ListMetrics(#[from] web_apps::list_metrics::Error),
+    #[error(transparent)]
+    WebApps_MigrateStorage(#[from] web_apps::migrate_storage::Error),
+    #[error(transparent)]
+    WebApps_MigrateMySql(#[from] web_apps::migrate_my_sql::Error),
+    #[error(transparent)]
+    WebApps_GetMigrateMySqlStatus(#[from] web_apps::get_migrate_my_sql_status::Error),
+    #[error(transparent)]
+    WebApps_ListNetworkFeatures(#[from] web_apps::list_network_features::Error),
+    #[error(transparent)]
+    WebApps_StartWebSiteNetworkTrace(#[from] web_apps::start_web_site_network_trace::Error),
+    #[error(transparent)]
+    WebApps_StopWebSiteNetworkTrace(#[from] web_apps::stop_web_site_network_trace::Error),
+    #[error(transparent)]
+    WebApps_GenerateNewSitePublishingPassword(#[from] web_apps::generate_new_site_publishing_password::Error),
+    #[error(transparent)]
+    WebApps_ListPerfMonCounters(#[from] web_apps::list_perf_mon_counters::Error),
+    #[error(transparent)]
+    WebApps_GetSitePhpErrorLogFlag(#[from] web_apps::get_site_php_error_log_flag::Error),
+    #[error(transparent)]
+    WebApps_ListPremierAddOns(#[from] web_apps::list_premier_add_ons::Error),
+    #[error(transparent)]
+    WebApps_GetPremierAddOn(#[from] web_apps::get_premier_add_on::Error),
+    #[error(transparent)]
+    WebApps_AddPremierAddOn(#[from] web_apps::add_premier_add_on::Error),
+    #[error(transparent)]
+    WebApps_DeletePremierAddOn(#[from] web_apps::delete_premier_add_on::Error),
+    #[error(transparent)]
+    WebApps_ListProcesses(#[from] web_apps::list_processes::Error),
+    #[error(transparent)]
+    WebApps_GetProcess(#[from] web_apps::get_process::Error),
+    #[error(transparent)]
+    WebApps_DeleteProcess(#[from] web_apps::delete_process::Error),
+    #[error(transparent)]
+    WebApps_GetProcessDump(#[from] web_apps::get_process_dump::Error),
+    #[error(transparent)]
+    WebApps_ListProcessModules(#[from] web_apps::list_process_modules::Error),
+    #[error(transparent)]
+    WebApps_GetProcessModule(#[from] web_apps::get_process_module::Error),
+    #[error(transparent)]
+    WebApps_ListProcessThreads(#[from] web_apps::list_process_threads::Error),
+    #[error(transparent)]
+    WebApps_GetProcessThread(#[from] web_apps::get_process_thread::Error),
+    #[error(transparent)]
+    WebApps_ListPublicCertificates(#[from] web_apps::list_public_certificates::Error),
+    #[error(transparent)]
+    WebApps_GetPublicCertificate(#[from] web_apps::get_public_certificate::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdatePublicCertificate(#[from] web_apps::create_or_update_public_certificate::Error),
+    #[error(transparent)]
+    WebApps_DeletePublicCertificate(#[from] web_apps::delete_public_certificate::Error),
+    #[error(transparent)]
+    WebApps_ListPublishingProfileXmlWithSecrets(#[from] web_apps::list_publishing_profile_xml_with_secrets::Error),
+    #[error(transparent)]
+    WebApps_Recover(#[from] web_apps::recover::Error),
+    #[error(transparent)]
+    WebApps_ResetProductionSlotConfig(#[from] web_apps::reset_production_slot_config::Error),
+    #[error(transparent)]
+    WebApps_Restart(#[from] web_apps::restart::Error),
+    #[error(transparent)]
+    WebApps_ListSiteExtensions(#[from] web_apps::list_site_extensions::Error),
+    #[error(transparent)]
+    WebApps_GetSiteExtension(#[from] web_apps::get_site_extension::Error),
+    #[error(transparent)]
+    WebApps_InstallSiteExtension(#[from] web_apps::install_site_extension::Error),
+    #[error(transparent)]
+    WebApps_DeleteSiteExtension(#[from] web_apps::delete_site_extension::Error),
+    #[error(transparent)]
+    WebApps_ListSlots(#[from] web_apps::list_slots::Error),
+    #[error(transparent)]
+    WebApps_GetSlot(#[from] web_apps::get_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateSlot(#[from] web_apps::create_or_update_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateSlot(#[from] web_apps::update_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteSlot(#[from] web_apps::delete_slot::Error),
+    #[error(transparent)]
+    WebApps_AnalyzeCustomHostnameSlot(#[from] web_apps::analyze_custom_hostname_slot::Error),
+    #[error(transparent)]
+    WebApps_ApplySlotConfigurationSlot(#[from] web_apps::apply_slot_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_BackupSlot(#[from] web_apps::backup_slot::Error),
+    #[error(transparent)]
+    WebApps_ListBackupsSlot(#[from] web_apps::list_backups_slot::Error),
+    #[error(transparent)]
+    WebApps_DiscoverRestoreSlot(#[from] web_apps::discover_restore_slot::Error),
+    #[error(transparent)]
+    WebApps_GetBackupStatusSlot(#[from] web_apps::get_backup_status_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteBackupSlot(#[from] web_apps::delete_backup_slot::Error),
+    #[error(transparent)]
+    WebApps_ListBackupStatusSecretsSlot(#[from] web_apps::list_backup_status_secrets_slot::Error),
+    #[error(transparent)]
+    WebApps_RestoreSlot(#[from] web_apps::restore_slot::Error),
+    #[error(transparent)]
+    WebApps_ListConfigurationsSlot(#[from] web_apps::list_configurations_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateApplicationSettingsSlot(#[from] web_apps::update_application_settings_slot::Error),
+    #[error(transparent)]
+    WebApps_ListApplicationSettingsSlot(#[from] web_apps::list_application_settings_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateAuthSettingsSlot(#[from] web_apps::update_auth_settings_slot::Error),
+    #[error(transparent)]
+    WebApps_GetAuthSettingsSlot(#[from] web_apps::get_auth_settings_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateBackupConfigurationSlot(#[from] web_apps::update_backup_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteBackupConfigurationSlot(#[from] web_apps::delete_backup_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_GetBackupConfigurationSlot(#[from] web_apps::get_backup_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateConnectionStringsSlot(#[from] web_apps::update_connection_strings_slot::Error),
+    #[error(transparent)]
+    WebApps_ListConnectionStringsSlot(#[from] web_apps::list_connection_strings_slot::Error),
+    #[error(transparent)]
+    WebApps_GetDiagnosticLogsConfigurationSlot(#[from] web_apps::get_diagnostic_logs_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateDiagnosticLogsConfigSlot(#[from] web_apps::update_diagnostic_logs_config_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateMetadataSlot(#[from] web_apps::update_metadata_slot::Error),
+    #[error(transparent)]
+    WebApps_ListMetadataSlot(#[from] web_apps::list_metadata_slot::Error),
+    #[error(transparent)]
+    WebApps_ListPublishingCredentialsSlot(#[from] web_apps::list_publishing_credentials_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateSitePushSettingsSlot(#[from] web_apps::update_site_push_settings_slot::Error),
+    #[error(transparent)]
+    WebApps_ListSitePushSettingsSlot(#[from] web_apps::list_site_push_settings_slot::Error),
+    #[error(transparent)]
+    WebApps_GetConfigurationSlot(#[from] web_apps::get_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateConfigurationSlot(#[from] web_apps::create_or_update_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateConfigurationSlot(#[from] web_apps::update_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_ListConfigurationSnapshotInfoSlot(#[from] web_apps::list_configuration_snapshot_info_slot::Error),
+    #[error(transparent)]
+    WebApps_GetConfigurationSnapshotSlot(#[from] web_apps::get_configuration_snapshot_slot::Error),
+    #[error(transparent)]
+    WebApps_RecoverSiteConfigurationSnapshotSlot(#[from] web_apps::recover_site_configuration_snapshot_slot::Error),
+    #[error(transparent)]
+    WebApps_GetWebSiteContainerLogsSlot(#[from] web_apps::get_web_site_container_logs_slot::Error),
+    #[error(transparent)]
+    WebApps_GetWebSiteContainerLogsZipSlot(#[from] web_apps::get_web_site_container_logs_zip_slot::Error),
+    #[error(transparent)]
+    WebApps_ListContinuousWebJobsSlot(#[from] web_apps::list_continuous_web_jobs_slot::Error),
+    #[error(transparent)]
+    WebApps_GetContinuousWebJobSlot(#[from] web_apps::get_continuous_web_job_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteContinuousWebJobSlot(#[from] web_apps::delete_continuous_web_job_slot::Error),
+    #[error(transparent)]
+    WebApps_StartContinuousWebJobSlot(#[from] web_apps::start_continuous_web_job_slot::Error),
+    #[error(transparent)]
+    WebApps_StopContinuousWebJobSlot(#[from] web_apps::stop_continuous_web_job_slot::Error),
+    #[error(transparent)]
+    WebApps_ListDeploymentsSlot(#[from] web_apps::list_deployments_slot::Error),
+    #[error(transparent)]
+    WebApps_GetDeploymentSlot(#[from] web_apps::get_deployment_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateDeploymentSlot(#[from] web_apps::create_deployment_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteDeploymentSlot(#[from] web_apps::delete_deployment_slot::Error),
+    #[error(transparent)]
+    WebApps_ListDeploymentLogSlot(#[from] web_apps::list_deployment_log_slot::Error),
+    #[error(transparent)]
+    WebApps_ListDomainOwnershipIdentifiersSlot(#[from] web_apps::list_domain_ownership_identifiers_slot::Error),
+    #[error(transparent)]
+    WebApps_GetDomainOwnershipIdentifierSlot(#[from] web_apps::get_domain_ownership_identifier_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateDomainOwnershipIdentifierSlot(#[from] web_apps::create_or_update_domain_ownership_identifier_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateDomainOwnershipIdentifierSlot(#[from] web_apps::update_domain_ownership_identifier_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteDomainOwnershipIdentifierSlot(#[from] web_apps::delete_domain_ownership_identifier_slot::Error),
+    #[error(transparent)]
+    WebApps_GetMsDeployStatusSlot(#[from] web_apps::get_ms_deploy_status_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateMsDeployOperationSlot(#[from] web_apps::create_ms_deploy_operation_slot::Error),
+    #[error(transparent)]
+    WebApps_GetMsDeployLogSlot(#[from] web_apps::get_ms_deploy_log_slot::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceFunctionsSlot(#[from] web_apps::list_instance_functions_slot::Error),
+    #[error(transparent)]
+    WebApps_GetFunctionsAdminTokenSlot(#[from] web_apps::get_functions_admin_token_slot::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceFunctionSlot(#[from] web_apps::get_instance_function_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateInstanceFunctionSlot(#[from] web_apps::create_instance_function_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteInstanceFunctionSlot(#[from] web_apps::delete_instance_function_slot::Error),
+    #[error(transparent)]
+    WebApps_ListFunctionSecretsSlot(#[from] web_apps::list_function_secrets_slot::Error),
+    #[error(transparent)]
+    WebApps_ListHostNameBindingsSlot(#[from] web_apps::list_host_name_bindings_slot::Error),
+    #[error(transparent)]
+    WebApps_GetHostNameBindingSlot(#[from] web_apps::get_host_name_binding_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateHostNameBindingSlot(#[from] web_apps::create_or_update_host_name_binding_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteHostNameBindingSlot(#[from] web_apps::delete_host_name_binding_slot::Error),
+    #[error(transparent)]
+    WebApps_GetHybridConnectionSlot(#[from] web_apps::get_hybrid_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateHybridConnectionSlot(#[from] web_apps::create_or_update_hybrid_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateHybridConnectionSlot(#[from] web_apps::update_hybrid_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteHybridConnectionSlot(#[from] web_apps::delete_hybrid_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_ListHybridConnectionKeysSlot(#[from] web_apps::list_hybrid_connection_keys_slot::Error),
+    #[error(transparent)]
+    WebApps_ListHybridConnectionsSlot(#[from] web_apps::list_hybrid_connections_slot::Error),
+    #[error(transparent)]
+    WebApps_ListRelayServiceConnectionsSlot(#[from] web_apps::list_relay_service_connections_slot::Error),
+    #[error(transparent)]
+    WebApps_GetRelayServiceConnectionSlot(#[from] web_apps::get_relay_service_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateRelayServiceConnectionSlot(#[from] web_apps::create_or_update_relay_service_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateRelayServiceConnectionSlot(#[from] web_apps::update_relay_service_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteRelayServiceConnectionSlot(#[from] web_apps::delete_relay_service_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceIdentifiersSlot(#[from] web_apps::list_instance_identifiers_slot::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceMsDeployStatusSlot(#[from] web_apps::get_instance_ms_deploy_status_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateInstanceMsDeployOperationSlot(#[from] web_apps::create_instance_ms_deploy_operation_slot::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceMsDeployLogSlot(#[from] web_apps::get_instance_ms_deploy_log_slot::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceProcessesSlot(#[from] web_apps::list_instance_processes_slot::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceProcessSlot(#[from] web_apps::get_instance_process_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteInstanceProcessSlot(#[from] web_apps::delete_instance_process_slot::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceProcessDumpSlot(#[from] web_apps::get_instance_process_dump_slot::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceProcessModulesSlot(#[from] web_apps::list_instance_process_modules_slot::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceProcessModuleSlot(#[from] web_apps::get_instance_process_module_slot::Error),
+    #[error(transparent)]
+    WebApps_ListInstanceProcessThreadsSlot(#[from] web_apps::list_instance_process_threads_slot::Error),
+    #[error(transparent)]
+    WebApps_GetInstanceProcessThreadSlot(#[from] web_apps::get_instance_process_thread_slot::Error),
+    #[error(transparent)]
+    WebApps_IsCloneableSlot(#[from] web_apps::is_cloneable_slot::Error),
+    #[error(transparent)]
+    WebApps_ListSyncFunctionTriggersSlot(#[from] web_apps::list_sync_function_triggers_slot::Error),
+    #[error(transparent)]
+    WebApps_ListMetricDefinitionsSlot(#[from] web_apps::list_metric_definitions_slot::Error),
+    #[error(transparent)]
+    WebApps_ListMetricsSlot(#[from] web_apps::list_metrics_slot::Error),
+    #[error(transparent)]
+    WebApps_GetMigrateMySqlStatusSlot(#[from] web_apps::get_migrate_my_sql_status_slot::Error),
+    #[error(transparent)]
+    WebApps_ListNetworkFeaturesSlot(#[from] web_apps::list_network_features_slot::Error),
+    #[error(transparent)]
+    WebApps_StartWebSiteNetworkTraceSlot(#[from] web_apps::start_web_site_network_trace_slot::Error),
+    #[error(transparent)]
+    WebApps_StopWebSiteNetworkTraceSlot(#[from] web_apps::stop_web_site_network_trace_slot::Error),
+    #[error(transparent)]
+    WebApps_GenerateNewSitePublishingPasswordSlot(#[from] web_apps::generate_new_site_publishing_password_slot::Error),
+    #[error(transparent)]
+    WebApps_ListPerfMonCountersSlot(#[from] web_apps::list_perf_mon_counters_slot::Error),
+    #[error(transparent)]
+    WebApps_GetSitePhpErrorLogFlagSlot(#[from] web_apps::get_site_php_error_log_flag_slot::Error),
+    #[error(transparent)]
+    WebApps_ListPremierAddOnsSlot(#[from] web_apps::list_premier_add_ons_slot::Error),
+    #[error(transparent)]
+    WebApps_GetPremierAddOnSlot(#[from] web_apps::get_premier_add_on_slot::Error),
+    #[error(transparent)]
+    WebApps_AddPremierAddOnSlot(#[from] web_apps::add_premier_add_on_slot::Error),
+    #[error(transparent)]
+    WebApps_DeletePremierAddOnSlot(#[from] web_apps::delete_premier_add_on_slot::Error),
+    #[error(transparent)]
+    WebApps_ListProcessesSlot(#[from] web_apps::list_processes_slot::Error),
+    #[error(transparent)]
+    WebApps_GetProcessSlot(#[from] web_apps::get_process_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteProcessSlot(#[from] web_apps::delete_process_slot::Error),
+    #[error(transparent)]
+    WebApps_GetProcessDumpSlot(#[from] web_apps::get_process_dump_slot::Error),
+    #[error(transparent)]
+    WebApps_ListProcessModulesSlot(#[from] web_apps::list_process_modules_slot::Error),
+    #[error(transparent)]
+    WebApps_GetProcessModuleSlot(#[from] web_apps::get_process_module_slot::Error),
+    #[error(transparent)]
+    WebApps_ListProcessThreadsSlot(#[from] web_apps::list_process_threads_slot::Error),
+    #[error(transparent)]
+    WebApps_GetProcessThreadSlot(#[from] web_apps::get_process_thread_slot::Error),
+    #[error(transparent)]
+    WebApps_ListPublicCertificatesSlot(#[from] web_apps::list_public_certificates_slot::Error),
+    #[error(transparent)]
+    WebApps_GetPublicCertificateSlot(#[from] web_apps::get_public_certificate_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdatePublicCertificateSlot(#[from] web_apps::create_or_update_public_certificate_slot::Error),
+    #[error(transparent)]
+    WebApps_DeletePublicCertificateSlot(#[from] web_apps::delete_public_certificate_slot::Error),
+    #[error(transparent)]
+    WebApps_ListPublishingProfileXmlWithSecretsSlot(#[from] web_apps::list_publishing_profile_xml_with_secrets_slot::Error),
+    #[error(transparent)]
+    WebApps_RecoverSlot(#[from] web_apps::recover_slot::Error),
+    #[error(transparent)]
+    WebApps_ResetSlotConfigurationSlot(#[from] web_apps::reset_slot_configuration_slot::Error),
+    #[error(transparent)]
+    WebApps_RestartSlot(#[from] web_apps::restart_slot::Error),
+    #[error(transparent)]
+    WebApps_ListSiteExtensionsSlot(#[from] web_apps::list_site_extensions_slot::Error),
+    #[error(transparent)]
+    WebApps_GetSiteExtensionSlot(#[from] web_apps::get_site_extension_slot::Error),
+    #[error(transparent)]
+    WebApps_InstallSiteExtensionSlot(#[from] web_apps::install_site_extension_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteSiteExtensionSlot(#[from] web_apps::delete_site_extension_slot::Error),
+    #[error(transparent)]
+    WebApps_ListSlotDifferencesSlot(#[from] web_apps::list_slot_differences_slot::Error),
+    #[error(transparent)]
+    WebApps_SwapSlotSlot(#[from] web_apps::swap_slot_slot::Error),
+    #[error(transparent)]
+    WebApps_ListSnapshotsSlot(#[from] web_apps::list_snapshots_slot::Error),
+    #[error(transparent)]
+    WebApps_GetSourceControlSlot(#[from] web_apps::get_source_control_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateSourceControlSlot(#[from] web_apps::create_or_update_source_control_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateSourceControlSlot(#[from] web_apps::update_source_control_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteSourceControlSlot(#[from] web_apps::delete_source_control_slot::Error),
+    #[error(transparent)]
+    WebApps_StartSlot(#[from] web_apps::start_slot::Error),
+    #[error(transparent)]
+    WebApps_StopSlot(#[from] web_apps::stop_slot::Error),
+    #[error(transparent)]
+    WebApps_SyncRepositorySlot(#[from] web_apps::sync_repository_slot::Error),
+    #[error(transparent)]
+    WebApps_SyncFunctionTriggersSlot(#[from] web_apps::sync_function_triggers_slot::Error),
+    #[error(transparent)]
+    WebApps_ListTriggeredWebJobsSlot(#[from] web_apps::list_triggered_web_jobs_slot::Error),
+    #[error(transparent)]
+    WebApps_GetTriggeredWebJobSlot(#[from] web_apps::get_triggered_web_job_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteTriggeredWebJobSlot(#[from] web_apps::delete_triggered_web_job_slot::Error),
+    #[error(transparent)]
+    WebApps_ListTriggeredWebJobHistorySlot(#[from] web_apps::list_triggered_web_job_history_slot::Error),
+    #[error(transparent)]
+    WebApps_GetTriggeredWebJobHistorySlot(#[from] web_apps::get_triggered_web_job_history_slot::Error),
+    #[error(transparent)]
+    WebApps_RunTriggeredWebJobSlot(#[from] web_apps::run_triggered_web_job_slot::Error),
+    #[error(transparent)]
+    WebApps_ListUsagesSlot(#[from] web_apps::list_usages_slot::Error),
+    #[error(transparent)]
+    WebApps_ListVnetConnectionsSlot(#[from] web_apps::list_vnet_connections_slot::Error),
+    #[error(transparent)]
+    WebApps_GetVnetConnectionSlot(#[from] web_apps::get_vnet_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateVnetConnectionSlot(#[from] web_apps::create_or_update_vnet_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateVnetConnectionSlot(#[from] web_apps::update_vnet_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_DeleteVnetConnectionSlot(#[from] web_apps::delete_vnet_connection_slot::Error),
+    #[error(transparent)]
+    WebApps_GetVnetConnectionGatewaySlot(#[from] web_apps::get_vnet_connection_gateway_slot::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateVnetConnectionGatewaySlot(#[from] web_apps::create_or_update_vnet_connection_gateway_slot::Error),
+    #[error(transparent)]
+    WebApps_UpdateVnetConnectionGatewaySlot(#[from] web_apps::update_vnet_connection_gateway_slot::Error),
+    #[error(transparent)]
+    WebApps_ListWebJobsSlot(#[from] web_apps::list_web_jobs_slot::Error),
+    #[error(transparent)]
+    WebApps_GetWebJobSlot(#[from] web_apps::get_web_job_slot::Error),
+    #[error(transparent)]
+    WebApps_ListSlotDifferencesFromProduction(#[from] web_apps::list_slot_differences_from_production::Error),
+    #[error(transparent)]
+    WebApps_SwapSlotWithProduction(#[from] web_apps::swap_slot_with_production::Error),
+    #[error(transparent)]
+    WebApps_ListSnapshots(#[from] web_apps::list_snapshots::Error),
+    #[error(transparent)]
+    WebApps_GetSourceControl(#[from] web_apps::get_source_control::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateSourceControl(#[from] web_apps::create_or_update_source_control::Error),
+    #[error(transparent)]
+    WebApps_UpdateSourceControl(#[from] web_apps::update_source_control::Error),
+    #[error(transparent)]
+    WebApps_DeleteSourceControl(#[from] web_apps::delete_source_control::Error),
+    #[error(transparent)]
+    WebApps_Start(#[from] web_apps::start::Error),
+    #[error(transparent)]
+    WebApps_Stop(#[from] web_apps::stop::Error),
+    #[error(transparent)]
+    WebApps_SyncRepository(#[from] web_apps::sync_repository::Error),
+    #[error(transparent)]
+    WebApps_SyncFunctionTriggers(#[from] web_apps::sync_function_triggers::Error),
+    #[error(transparent)]
+    WebApps_ListTriggeredWebJobs(#[from] web_apps::list_triggered_web_jobs::Error),
+    #[error(transparent)]
+    WebApps_GetTriggeredWebJob(#[from] web_apps::get_triggered_web_job::Error),
+    #[error(transparent)]
+    WebApps_DeleteTriggeredWebJob(#[from] web_apps::delete_triggered_web_job::Error),
+    #[error(transparent)]
+    WebApps_ListTriggeredWebJobHistory(#[from] web_apps::list_triggered_web_job_history::Error),
+    #[error(transparent)]
+    WebApps_GetTriggeredWebJobHistory(#[from] web_apps::get_triggered_web_job_history::Error),
+    #[error(transparent)]
+    WebApps_RunTriggeredWebJob(#[from] web_apps::run_triggered_web_job::Error),
+    #[error(transparent)]
+    WebApps_ListUsages(#[from] web_apps::list_usages::Error),
+    #[error(transparent)]
+    WebApps_ListVnetConnections(#[from] web_apps::list_vnet_connections::Error),
+    #[error(transparent)]
+    WebApps_GetVnetConnection(#[from] web_apps::get_vnet_connection::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateVnetConnection(#[from] web_apps::create_or_update_vnet_connection::Error),
+    #[error(transparent)]
+    WebApps_UpdateVnetConnection(#[from] web_apps::update_vnet_connection::Error),
+    #[error(transparent)]
+    WebApps_DeleteVnetConnection(#[from] web_apps::delete_vnet_connection::Error),
+    #[error(transparent)]
+    WebApps_GetVnetConnectionGateway(#[from] web_apps::get_vnet_connection_gateway::Error),
+    #[error(transparent)]
+    WebApps_CreateOrUpdateVnetConnectionGateway(#[from] web_apps::create_or_update_vnet_connection_gateway::Error),
+    #[error(transparent)]
+    WebApps_UpdateVnetConnectionGateway(#[from] web_apps::update_vnet_connection_gateway::Error),
+    #[error(transparent)]
+    WebApps_ListWebJobs(#[from] web_apps::list_web_jobs::Error),
+    #[error(transparent)]
+    WebApps_GetWebJob(#[from] web_apps::get_web_job::Error),
+}
 pub mod web_apps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<WebAppCollection, list::Error> {
+    ) -> std::result::Result<models::WebAppCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Web/sites",
@@ -33,7 +660,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebAppCollection =
+                let rsp_value: models::WebAppCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -47,7 +674,7 @@ pub mod web_apps {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -71,7 +698,7 @@ pub mod web_apps {
         resource_group_name: &str,
         include_slots: Option<bool>,
         subscription_id: &str,
-    ) -> std::result::Result<WebAppCollection, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::WebAppCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites",
@@ -106,7 +733,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebAppCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebAppCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -120,7 +747,7 @@ pub mod web_apps {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -144,7 +771,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Site, get::Error> {
+    ) -> std::result::Result<models::Site, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}",
@@ -171,7 +798,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site =
+                let rsp_value: models::Site =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -186,7 +813,7 @@ pub mod web_apps {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -211,7 +838,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_envelope: &Site,
+        site_envelope: &models::Site,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -244,13 +871,13 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Site = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Site = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
@@ -264,11 +891,11 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Site),
-            Accepted202(Site),
+            Ok200(models::Site),
+            Accepted202(models::Site),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -292,7 +919,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_envelope: &SitePatchResource,
+        site_envelope: &models::SitePatchResource,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -322,13 +949,13 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site =
+                let rsp_value: models::Site =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site =
+                let rsp_value: models::Site =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
@@ -342,11 +969,11 @@ pub mod web_apps {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Site),
-            Accepted202(Site),
+            Ok200(models::Site),
+            Accepted202(models::Site),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -419,7 +1046,7 @@ pub mod web_apps {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -451,7 +1078,7 @@ pub mod web_apps {
         name: &str,
         host_name: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<CustomHostnameAnalysisResult, analyze_custom_hostname::Error> {
+    ) -> std::result::Result<models::CustomHostnameAnalysisResult, analyze_custom_hostname::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/analyzeCustomHostname",
@@ -486,7 +1113,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomHostnameAnalysisResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomHostnameAnalysisResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| analyze_custom_hostname::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -500,7 +1127,7 @@ pub mod web_apps {
         }
     }
     pub mod analyze_custom_hostname {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -523,7 +1150,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        slot_swap_entity: &CsmSlotEntity,
+        slot_swap_entity: &models::CsmSlotEntity,
         subscription_id: &str,
     ) -> std::result::Result<(), apply_slot_config_to_production::Error> {
         let http_client = operation_config.http_client();
@@ -567,7 +1194,7 @@ pub mod web_apps {
         }
     }
     pub mod apply_slot_config_to_production {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -590,9 +1217,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        request: &BackupRequest,
+        request: &models::BackupRequest,
         subscription_id: &str,
-    ) -> std::result::Result<BackupItem, backup::Error> {
+    ) -> std::result::Result<models::BackupItem, backup::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/backup",
@@ -620,7 +1247,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupItem =
+                let rsp_value: models::BackupItem =
                     serde_json::from_slice(rsp_body).map_err(|source| backup::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -634,7 +1261,7 @@ pub mod web_apps {
         }
     }
     pub mod backup {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -658,7 +1285,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupItemCollection, list_backups::Error> {
+    ) -> std::result::Result<models::BackupItemCollection, list_backups::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/backups",
@@ -688,7 +1315,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupItemCollection =
+                let rsp_value: models::BackupItemCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_backups::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -702,7 +1329,7 @@ pub mod web_apps {
         }
     }
     pub mod list_backups {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -725,9 +1352,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        request: &RestoreRequest,
+        request: &models::RestoreRequest,
         subscription_id: &str,
-    ) -> std::result::Result<RestoreRequest, discover_restore::Error> {
+    ) -> std::result::Result<models::RestoreRequest, discover_restore::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/backups/discover",
@@ -758,7 +1385,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestoreRequest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RestoreRequest = serde_json::from_slice(rsp_body)
                     .map_err(|source| discover_restore::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -772,7 +1399,7 @@ pub mod web_apps {
         }
     }
     pub mod discover_restore {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -797,7 +1424,7 @@ pub mod web_apps {
         name: &str,
         backup_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupItem, get_backup_status::Error> {
+    ) -> std::result::Result<models::BackupItem, get_backup_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/backups/{}",
@@ -828,7 +1455,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupItem = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupItem = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_backup_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -842,7 +1469,7 @@ pub mod web_apps {
         }
     }
     pub mod get_backup_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -908,7 +1535,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_backup {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -934,9 +1561,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         backup_id: &str,
-        request: &BackupRequest,
+        request: &models::BackupRequest,
         subscription_id: &str,
-    ) -> std::result::Result<BackupItem, list_backup_status_secrets::Error> {
+    ) -> std::result::Result<models::BackupItem, list_backup_status_secrets::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/backups/{}/list",
@@ -970,7 +1597,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupItem = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupItem = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_backup_status_secrets::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -984,7 +1611,7 @@ pub mod web_apps {
         }
     }
     pub mod list_backup_status_secrets {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1008,9 +1635,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         backup_id: &str,
-        request: &RestoreRequest,
+        request: &models::RestoreRequest,
         subscription_id: &str,
-    ) -> std::result::Result<RestoreResponse, restore::Error> {
+    ) -> std::result::Result<models::RestoreResponse, restore::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/backups/{}/restore",
@@ -1042,7 +1669,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestoreResponse =
+                let rsp_value: models::RestoreResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| restore::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1056,7 +1683,7 @@ pub mod web_apps {
         }
     }
     pub mod restore {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1080,7 +1707,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResourceCollection, list_configurations::Error> {
+    ) -> std::result::Result<models::SiteConfigResourceCollection, list_configurations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config",
@@ -1110,7 +1737,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResourceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResourceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_configurations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1124,7 +1751,7 @@ pub mod web_apps {
         }
     }
     pub mod list_configurations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1147,9 +1774,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        app_settings: &StringDictionary,
+        app_settings: &models::StringDictionary,
         subscription_id: &str,
-    ) -> std::result::Result<StringDictionary, update_application_settings::Error> {
+    ) -> std::result::Result<models::StringDictionary, update_application_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/appsettings",
@@ -1182,7 +1809,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_application_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1196,7 +1823,7 @@ pub mod web_apps {
         }
     }
     pub mod update_application_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1220,7 +1847,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StringDictionary, list_application_settings::Error> {
+    ) -> std::result::Result<models::StringDictionary, list_application_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/appsettings/list",
@@ -1253,7 +1880,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_application_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1267,7 +1894,7 @@ pub mod web_apps {
         }
     }
     pub mod list_application_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1290,9 +1917,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_auth_settings: &SiteAuthSettings,
+        site_auth_settings: &models::SiteAuthSettings,
         subscription_id: &str,
-    ) -> std::result::Result<SiteAuthSettings, update_auth_settings::Error> {
+    ) -> std::result::Result<models::SiteAuthSettings, update_auth_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/authsettings",
@@ -1323,7 +1950,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteAuthSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteAuthSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_auth_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1337,7 +1964,7 @@ pub mod web_apps {
         }
     }
     pub mod update_auth_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1361,7 +1988,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteAuthSettings, get_auth_settings::Error> {
+    ) -> std::result::Result<models::SiteAuthSettings, get_auth_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/authsettings/list",
@@ -1392,7 +2019,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteAuthSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteAuthSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_auth_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1406,7 +2033,7 @@ pub mod web_apps {
         }
     }
     pub mod get_auth_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1429,9 +2056,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        request: &BackupRequest,
+        request: &models::BackupRequest,
         subscription_id: &str,
-    ) -> std::result::Result<BackupRequest, update_backup_configuration::Error> {
+    ) -> std::result::Result<models::BackupRequest, update_backup_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/backup",
@@ -1464,7 +2091,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupRequest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupRequest = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_backup_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1478,7 +2105,7 @@ pub mod web_apps {
         }
     }
     pub mod update_backup_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1543,7 +2170,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_backup_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1567,7 +2194,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupRequest, get_backup_configuration::Error> {
+    ) -> std::result::Result<models::BackupRequest, get_backup_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/backup/list",
@@ -1600,7 +2227,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupRequest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupRequest = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_backup_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1614,7 +2241,7 @@ pub mod web_apps {
         }
     }
     pub mod get_backup_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1637,9 +2264,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        connection_strings: &ConnectionStringDictionary,
+        connection_strings: &models::ConnectionStringDictionary,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionStringDictionary, update_connection_strings::Error> {
+    ) -> std::result::Result<models::ConnectionStringDictionary, update_connection_strings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/connectionstrings",
@@ -1672,7 +2299,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionStringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionStringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_connection_strings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1686,7 +2313,7 @@ pub mod web_apps {
         }
     }
     pub mod update_connection_strings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1710,7 +2337,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionStringDictionary, list_connection_strings::Error> {
+    ) -> std::result::Result<models::ConnectionStringDictionary, list_connection_strings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/connectionstrings/list",
@@ -1743,7 +2370,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionStringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionStringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_connection_strings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1757,7 +2384,7 @@ pub mod web_apps {
         }
     }
     pub mod list_connection_strings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1781,7 +2408,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteLogsConfig, get_diagnostic_logs_configuration::Error> {
+    ) -> std::result::Result<models::SiteLogsConfig, get_diagnostic_logs_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/logs",
@@ -1813,7 +2440,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteLogsConfig = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteLogsConfig = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_diagnostic_logs_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1827,7 +2454,7 @@ pub mod web_apps {
         }
     }
     pub mod get_diagnostic_logs_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1850,9 +2477,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_logs_config: &SiteLogsConfig,
+        site_logs_config: &models::SiteLogsConfig,
         subscription_id: &str,
-    ) -> std::result::Result<SiteLogsConfig, update_diagnostic_logs_config::Error> {
+    ) -> std::result::Result<models::SiteLogsConfig, update_diagnostic_logs_config::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/logs",
@@ -1885,7 +2512,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteLogsConfig = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteLogsConfig = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_diagnostic_logs_config::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1899,7 +2526,7 @@ pub mod web_apps {
         }
     }
     pub mod update_diagnostic_logs_config {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1922,9 +2549,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        metadata: &StringDictionary,
+        metadata: &models::StringDictionary,
         subscription_id: &str,
-    ) -> std::result::Result<StringDictionary, update_metadata::Error> {
+    ) -> std::result::Result<models::StringDictionary, update_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/metadata",
@@ -1955,7 +2582,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1969,7 +2596,7 @@ pub mod web_apps {
         }
     }
     pub mod update_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1993,7 +2620,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StringDictionary, list_metadata::Error> {
+    ) -> std::result::Result<models::StringDictionary, list_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/metadata/list",
@@ -2024,7 +2651,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StringDictionary =
+                let rsp_value: models::StringDictionary =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2038,7 +2665,7 @@ pub mod web_apps {
         }
     }
     pub mod list_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2062,7 +2689,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<User, list_publishing_credentials::Error> {
+    ) -> std::result::Result<models::User, list_publishing_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/publishingcredentials/list",
@@ -2095,7 +2722,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: User = serde_json::from_slice(rsp_body)
+                let rsp_value: models::User = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_publishing_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2109,7 +2736,7 @@ pub mod web_apps {
         }
     }
     pub mod list_publishing_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2132,9 +2759,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        push_settings: &PushSettings,
+        push_settings: &models::PushSettings,
         subscription_id: &str,
-    ) -> std::result::Result<PushSettings, update_site_push_settings::Error> {
+    ) -> std::result::Result<models::PushSettings, update_site_push_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/pushsettings",
@@ -2167,7 +2794,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PushSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PushSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_site_push_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2181,7 +2808,7 @@ pub mod web_apps {
         }
     }
     pub mod update_site_push_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2205,7 +2832,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PushSettings, list_site_push_settings::Error> {
+    ) -> std::result::Result<models::PushSettings, list_site_push_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/pushsettings/list",
@@ -2238,7 +2865,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PushSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PushSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_site_push_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2252,7 +2879,7 @@ pub mod web_apps {
         }
     }
     pub mod list_site_push_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2276,7 +2903,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SlotConfigNamesResource, list_slot_configuration_names::Error> {
+    ) -> std::result::Result<models::SlotConfigNamesResource, list_slot_configuration_names::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/slotConfigNames",
@@ -2308,7 +2935,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SlotConfigNamesResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SlotConfigNamesResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_slot_configuration_names::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2322,7 +2949,7 @@ pub mod web_apps {
         }
     }
     pub mod list_slot_configuration_names {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2345,9 +2972,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        slot_config_names: &SlotConfigNamesResource,
+        slot_config_names: &models::SlotConfigNamesResource,
         subscription_id: &str,
-    ) -> std::result::Result<SlotConfigNamesResource, update_slot_configuration_names::Error> {
+    ) -> std::result::Result<models::SlotConfigNamesResource, update_slot_configuration_names::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/slotConfigNames",
@@ -2380,7 +3007,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SlotConfigNamesResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SlotConfigNamesResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_slot_configuration_names::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2394,7 +3021,7 @@ pub mod web_apps {
         }
     }
     pub mod update_slot_configuration_names {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2418,7 +3045,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResource, get_configuration::Error> {
+    ) -> std::result::Result<models::SiteConfigResource, get_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/web",
@@ -2448,7 +3075,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2462,7 +3089,7 @@ pub mod web_apps {
         }
     }
     pub mod get_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2485,9 +3112,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_config: &SiteConfigResource,
+        site_config: &models::SiteConfigResource,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResource, create_or_update_configuration::Error> {
+    ) -> std::result::Result<models::SiteConfigResource, create_or_update_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/web",
@@ -2520,7 +3147,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2534,7 +3161,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2557,9 +3184,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_config: &SiteConfigResource,
+        site_config: &models::SiteConfigResource,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResource, update_configuration::Error> {
+    ) -> std::result::Result<models::SiteConfigResource, update_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/web",
@@ -2590,7 +3217,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2604,7 +3231,7 @@ pub mod web_apps {
         }
     }
     pub mod update_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2628,7 +3255,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigurationSnapshotInfoCollection, list_configuration_snapshot_info::Error> {
+    ) -> std::result::Result<models::SiteConfigurationSnapshotInfoCollection, list_configuration_snapshot_info::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/web/snapshots",
@@ -2660,7 +3287,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigurationSnapshotInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigurationSnapshotInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_configuration_snapshot_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2674,7 +3301,7 @@ pub mod web_apps {
         }
     }
     pub mod list_configuration_snapshot_info {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2699,7 +3326,7 @@ pub mod web_apps {
         name: &str,
         snapshot_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResource, get_configuration_snapshot::Error> {
+    ) -> std::result::Result<models::SiteConfigResource, get_configuration_snapshot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/config/web/snapshots/{}",
@@ -2732,7 +3359,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_configuration_snapshot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2746,7 +3373,7 @@ pub mod web_apps {
         }
     }
     pub mod get_configuration_snapshot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2814,7 +3441,7 @@ pub mod web_apps {
         }
     }
     pub mod recover_site_configuration_snapshot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2885,7 +3512,7 @@ pub mod web_apps {
         }
     }
     pub mod get_web_site_container_logs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -2961,7 +3588,7 @@ pub mod web_apps {
         }
     }
     pub mod get_web_site_container_logs_zip {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -2990,7 +3617,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ContinuousWebJobCollection, list_continuous_web_jobs::Error> {
+    ) -> std::result::Result<models::ContinuousWebJobCollection, list_continuous_web_jobs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/continuouswebjobs",
@@ -3022,7 +3649,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContinuousWebJobCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContinuousWebJobCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_continuous_web_jobs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3036,7 +3663,7 @@ pub mod web_apps {
         }
     }
     pub mod list_continuous_web_jobs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3061,7 +3688,7 @@ pub mod web_apps {
         name: &str,
         web_job_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ContinuousWebJob, get_continuous_web_job::Error> {
+    ) -> std::result::Result<models::ContinuousWebJob, get_continuous_web_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/continuouswebjobs/{}",
@@ -3094,7 +3721,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContinuousWebJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContinuousWebJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_continuous_web_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3109,7 +3736,7 @@ pub mod web_apps {
         }
     }
     pub mod get_continuous_web_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -3179,7 +3806,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_continuous_web_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3253,7 +3880,7 @@ pub mod web_apps {
         }
     }
     pub mod start_continuous_web_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -3324,7 +3951,7 @@ pub mod web_apps {
         }
     }
     pub mod stop_continuous_web_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -3350,7 +3977,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DeploymentCollection, list_deployments::Error> {
+    ) -> std::result::Result<models::DeploymentCollection, list_deployments::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/deployments",
@@ -3380,7 +4007,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeploymentCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeploymentCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3394,7 +4021,7 @@ pub mod web_apps {
         }
     }
     pub mod list_deployments {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3419,7 +4046,7 @@ pub mod web_apps {
         name: &str,
         id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Deployment, get_deployment::Error> {
+    ) -> std::result::Result<models::Deployment, get_deployment::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/deployments/{}",
@@ -3450,7 +4077,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Deployment =
+                let rsp_value: models::Deployment =
                     serde_json::from_slice(rsp_body).map_err(|source| get_deployment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3464,7 +4091,7 @@ pub mod web_apps {
         }
     }
     pub mod get_deployment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3488,9 +4115,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         id: &str,
-        deployment: &Deployment,
+        deployment: &models::Deployment,
         subscription_id: &str,
-    ) -> std::result::Result<Deployment, create_deployment::Error> {
+    ) -> std::result::Result<models::Deployment, create_deployment::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/deployments/{}",
@@ -3522,7 +4149,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Deployment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Deployment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_deployment::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3536,7 +4163,7 @@ pub mod web_apps {
         }
     }
     pub mod create_deployment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3602,7 +4229,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_deployment {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3632,7 +4259,7 @@ pub mod web_apps {
         name: &str,
         id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Deployment, list_deployment_log::Error> {
+    ) -> std::result::Result<models::Deployment, list_deployment_log::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/deployments/{}/log",
@@ -3663,7 +4290,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Deployment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Deployment = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployment_log::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3677,7 +4304,7 @@ pub mod web_apps {
         }
     }
     pub mod list_deployment_log {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3701,7 +4328,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<IdentifierCollection, list_domain_ownership_identifiers::Error> {
+    ) -> std::result::Result<models::IdentifierCollection, list_domain_ownership_identifiers::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/domainOwnershipIdentifiers",
@@ -3733,7 +4360,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentifierCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IdentifierCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_domain_ownership_identifiers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3747,7 +4374,7 @@ pub mod web_apps {
         }
     }
     pub mod list_domain_ownership_identifiers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3772,7 +4399,7 @@ pub mod web_apps {
         name: &str,
         domain_ownership_identifier_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Identifier, get_domain_ownership_identifier::Error> {
+    ) -> std::result::Result<models::Identifier, get_domain_ownership_identifier::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/domainOwnershipIdentifiers/{}",
@@ -3805,7 +4432,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Identifier = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Identifier = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_domain_ownership_identifier::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3819,7 +4446,7 @@ pub mod web_apps {
         }
     }
     pub mod get_domain_ownership_identifier {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3843,9 +4470,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         domain_ownership_identifier_name: &str,
-        domain_ownership_identifier: &Identifier,
+        domain_ownership_identifier: &models::Identifier,
         subscription_id: &str,
-    ) -> std::result::Result<Identifier, create_or_update_domain_ownership_identifier::Error> {
+    ) -> std::result::Result<models::Identifier, create_or_update_domain_ownership_identifier::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/domainOwnershipIdentifiers/{}",
@@ -3880,7 +4507,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Identifier = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Identifier = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_domain_ownership_identifier::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3894,7 +4521,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_domain_ownership_identifier {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3918,9 +4545,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         domain_ownership_identifier_name: &str,
-        domain_ownership_identifier: &Identifier,
+        domain_ownership_identifier: &models::Identifier,
         subscription_id: &str,
-    ) -> std::result::Result<Identifier, update_domain_ownership_identifier::Error> {
+    ) -> std::result::Result<models::Identifier, update_domain_ownership_identifier::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/domainOwnershipIdentifiers/{}",
@@ -3955,7 +4582,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Identifier = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Identifier = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_domain_ownership_identifier::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3969,7 +4596,7 @@ pub mod web_apps {
         }
     }
     pub mod update_domain_ownership_identifier {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4037,7 +4664,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_domain_ownership_identifier {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4066,7 +4693,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployStatus, get_ms_deploy_status::Error> {
+    ) -> std::result::Result<models::MsDeployStatus, get_ms_deploy_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/extensions/MSDeploy",
@@ -4096,7 +4723,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ms_deploy_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4110,7 +4737,7 @@ pub mod web_apps {
         }
     }
     pub mod get_ms_deploy_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4133,9 +4760,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        ms_deploy: &MsDeploy,
+        ms_deploy: &models::MsDeploy,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployStatus, create_ms_deploy_operation::Error> {
+    ) -> std::result::Result<models::MsDeployStatus, create_ms_deploy_operation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/extensions/MSDeploy",
@@ -4168,7 +4795,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_ms_deploy_operation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4183,7 +4810,7 @@ pub mod web_apps {
         }
     }
     pub mod create_ms_deploy_operation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -4209,7 +4836,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployLog, get_ms_deploy_log::Error> {
+    ) -> std::result::Result<models::MsDeployLog, get_ms_deploy_log::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/extensions/MSDeploy/log",
@@ -4239,7 +4866,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployLog = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployLog = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ms_deploy_log::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4254,7 +4881,7 @@ pub mod web_apps {
         }
     }
     pub mod get_ms_deploy_log {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -4280,7 +4907,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionEnvelopeCollection, list_functions::Error> {
+    ) -> std::result::Result<models::FunctionEnvelopeCollection, list_functions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/functions",
@@ -4310,7 +4937,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionEnvelopeCollection =
+                let rsp_value: models::FunctionEnvelopeCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_functions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4325,7 +4952,7 @@ pub mod web_apps {
         }
     }
     pub mod list_functions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -4397,7 +5024,7 @@ pub mod web_apps {
         }
     }
     pub mod get_functions_admin_token {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4422,7 +5049,7 @@ pub mod web_apps {
         name: &str,
         function_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionEnvelope, get_function::Error> {
+    ) -> std::result::Result<models::FunctionEnvelope, get_function::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/functions/{}",
@@ -4453,7 +5080,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionEnvelope =
+                let rsp_value: models::FunctionEnvelope =
                     serde_json::from_slice(rsp_body).map_err(|source| get_function::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4468,7 +5095,7 @@ pub mod web_apps {
         }
     }
     pub mod get_function {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -4494,9 +5121,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         function_name: &str,
-        function_envelope: &FunctionEnvelope,
+        function_envelope: &models::FunctionEnvelope,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionEnvelope, create_function::Error> {
+    ) -> std::result::Result<models::FunctionEnvelope, create_function::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/functions/{}",
@@ -4528,7 +5155,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionEnvelope = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionEnvelope = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_function::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4542,7 +5169,7 @@ pub mod web_apps {
         }
     }
     pub mod create_function {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4608,7 +5235,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_function {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -4635,7 +5262,7 @@ pub mod web_apps {
         name: &str,
         function_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionSecrets, list_function_secrets::Error> {
+    ) -> std::result::Result<models::FunctionSecrets, list_function_secrets::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/functions/{}/listsecrets",
@@ -4669,7 +5296,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionSecrets = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionSecrets = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_function_secrets::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4683,7 +5310,7 @@ pub mod web_apps {
         }
     }
     pub mod list_function_secrets {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4707,7 +5334,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HostNameBindingCollection, list_host_name_bindings::Error> {
+    ) -> std::result::Result<models::HostNameBindingCollection, list_host_name_bindings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hostNameBindings",
@@ -4739,7 +5366,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostNameBindingCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HostNameBindingCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_host_name_bindings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4753,7 +5380,7 @@ pub mod web_apps {
         }
     }
     pub mod list_host_name_bindings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4778,7 +5405,7 @@ pub mod web_apps {
         name: &str,
         host_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HostNameBinding, get_host_name_binding::Error> {
+    ) -> std::result::Result<models::HostNameBinding, get_host_name_binding::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hostNameBindings/{}",
@@ -4811,7 +5438,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostNameBinding = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HostNameBinding = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_host_name_binding::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4825,7 +5452,7 @@ pub mod web_apps {
         }
     }
     pub mod get_host_name_binding {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4849,9 +5476,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         host_name: &str,
-        host_name_binding: &HostNameBinding,
+        host_name_binding: &models::HostNameBinding,
         subscription_id: &str,
-    ) -> std::result::Result<HostNameBinding, create_or_update_host_name_binding::Error> {
+    ) -> std::result::Result<models::HostNameBinding, create_or_update_host_name_binding::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hostNameBindings/{}",
@@ -4885,7 +5512,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostNameBinding = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HostNameBinding = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_host_name_binding::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4899,7 +5526,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_host_name_binding {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4967,7 +5594,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_host_name_binding {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4998,7 +5625,7 @@ pub mod web_apps {
         namespace_name: &str,
         relay_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, get_hybrid_connection::Error> {
+    ) -> std::result::Result<models::HybridConnection, get_hybrid_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridConnectionNamespaces/{}/relays/{}",
@@ -5032,7 +5659,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_hybrid_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5046,7 +5673,7 @@ pub mod web_apps {
         }
     }
     pub mod get_hybrid_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5071,9 +5698,9 @@ pub mod web_apps {
         name: &str,
         namespace_name: &str,
         relay_name: &str,
-        connection_envelope: &HybridConnection,
+        connection_envelope: &models::HybridConnection,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, create_or_update_hybrid_connection::Error> {
+    ) -> std::result::Result<models::HybridConnection, create_or_update_hybrid_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridConnectionNamespaces/{}/relays/{}",
@@ -5108,7 +5735,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_hybrid_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5122,7 +5749,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_hybrid_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5147,9 +5774,9 @@ pub mod web_apps {
         name: &str,
         namespace_name: &str,
         relay_name: &str,
-        connection_envelope: &HybridConnection,
+        connection_envelope: &models::HybridConnection,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, update_hybrid_connection::Error> {
+    ) -> std::result::Result<models::HybridConnection, update_hybrid_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridConnectionNamespaces/{}/relays/{}",
@@ -5184,7 +5811,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_hybrid_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5198,7 +5825,7 @@ pub mod web_apps {
         }
     }
     pub mod update_hybrid_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5268,7 +5895,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_hybrid_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -5296,7 +5923,7 @@ pub mod web_apps {
         namespace_name: &str,
         relay_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnectionKey, list_hybrid_connection_keys::Error> {
+    ) -> std::result::Result<models::HybridConnectionKey, list_hybrid_connection_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridConnectionNamespaces/{}/relays/{}/listKeys",
@@ -5331,7 +5958,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnectionKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnectionKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_hybrid_connection_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5345,7 +5972,7 @@ pub mod web_apps {
         }
     }
     pub mod list_hybrid_connection_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5369,7 +5996,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, list_hybrid_connections::Error> {
+    ) -> std::result::Result<models::HybridConnection, list_hybrid_connections::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridConnectionRelays",
@@ -5401,7 +6028,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_hybrid_connections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5415,7 +6042,7 @@ pub mod web_apps {
         }
     }
     pub mod list_hybrid_connections {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5439,7 +6066,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RelayServiceConnectionEntity, list_relay_service_connections::Error> {
+    ) -> std::result::Result<models::RelayServiceConnectionEntity, list_relay_service_connections::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridconnection",
@@ -5471,7 +6098,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_relay_service_connections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5485,7 +6112,7 @@ pub mod web_apps {
         }
     }
     pub mod list_relay_service_connections {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5510,7 +6137,7 @@ pub mod web_apps {
         name: &str,
         entity_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RelayServiceConnectionEntity, get_relay_service_connection::Error> {
+    ) -> std::result::Result<models::RelayServiceConnectionEntity, get_relay_service_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridconnection/{}",
@@ -5543,7 +6170,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_relay_service_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5557,7 +6184,7 @@ pub mod web_apps {
         }
     }
     pub mod get_relay_service_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5581,9 +6208,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         entity_name: &str,
-        connection_envelope: &RelayServiceConnectionEntity,
+        connection_envelope: &models::RelayServiceConnectionEntity,
         subscription_id: &str,
-    ) -> std::result::Result<RelayServiceConnectionEntity, create_or_update_relay_service_connection::Error> {
+    ) -> std::result::Result<models::RelayServiceConnectionEntity, create_or_update_relay_service_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridconnection/{}",
@@ -5618,7 +6245,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_relay_service_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5632,7 +6259,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_relay_service_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5656,9 +6283,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         entity_name: &str,
-        connection_envelope: &RelayServiceConnectionEntity,
+        connection_envelope: &models::RelayServiceConnectionEntity,
         subscription_id: &str,
-    ) -> std::result::Result<RelayServiceConnectionEntity, update_relay_service_connection::Error> {
+    ) -> std::result::Result<models::RelayServiceConnectionEntity, update_relay_service_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/hybridconnection/{}",
@@ -5692,7 +6319,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_relay_service_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5706,7 +6333,7 @@ pub mod web_apps {
         }
     }
     pub mod update_relay_service_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5774,7 +6401,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_relay_service_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -5800,7 +6427,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebAppInstanceCollection, list_instance_identifiers::Error> {
+    ) -> std::result::Result<models::WebAppInstanceCollection, list_instance_identifiers::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances",
@@ -5832,7 +6459,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebAppInstanceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebAppInstanceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_identifiers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5846,7 +6473,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_identifiers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5871,7 +6498,7 @@ pub mod web_apps {
         name: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployStatus, get_instance_ms_deploy_status::Error> {
+    ) -> std::result::Result<models::MsDeployStatus, get_instance_ms_deploy_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/extensions/MSDeploy",
@@ -5904,7 +6531,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_ms_deploy_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5918,7 +6545,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_ms_deploy_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5942,9 +6569,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         instance_id: &str,
-        ms_deploy: &MsDeploy,
+        ms_deploy: &models::MsDeploy,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployStatus, create_instance_ms_deploy_operation::Error> {
+    ) -> std::result::Result<models::MsDeployStatus, create_instance_ms_deploy_operation::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/extensions/MSDeploy",
@@ -5978,7 +6605,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_instance_ms_deploy_operation::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5993,7 +6620,7 @@ pub mod web_apps {
         }
     }
     pub mod create_instance_ms_deploy_operation {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6020,7 +6647,7 @@ pub mod web_apps {
         name: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployLog, get_instance_ms_deploy_log::Error> {
+    ) -> std::result::Result<models::MsDeployLog, get_instance_ms_deploy_log::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/extensions/MSDeploy/log",
@@ -6053,7 +6680,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployLog = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployLog = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_ms_deploy_log::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6068,7 +6695,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_ms_deploy_log {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6095,7 +6722,7 @@ pub mod web_apps {
         name: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessInfoCollection, list_instance_processes::Error> {
+    ) -> std::result::Result<models::ProcessInfoCollection, list_instance_processes::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/processes",
@@ -6128,7 +6755,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_processes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6143,7 +6770,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_processes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6171,7 +6798,7 @@ pub mod web_apps {
         process_id: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessInfo, get_instance_process::Error> {
+    ) -> std::result::Result<models::ProcessInfo, get_instance_process::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/processes/{}",
@@ -6203,7 +6830,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_process::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6218,7 +6845,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_process {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6290,7 +6917,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_instance_process {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6366,7 +6993,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_process_dump {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6394,7 +7021,7 @@ pub mod web_apps {
         process_id: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessModuleInfoCollection, list_instance_process_modules::Error> {
+    ) -> std::result::Result<models::ProcessModuleInfoCollection, list_instance_process_modules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/processes/{}/modules",
@@ -6428,7 +7055,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessModuleInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessModuleInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_process_modules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6443,7 +7070,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_process_modules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6472,7 +7099,7 @@ pub mod web_apps {
         base_address: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessModuleInfo, get_instance_process_module::Error> {
+    ) -> std::result::Result<models::ProcessModuleInfo, get_instance_process_module::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/processes/{}/modules/{}",
@@ -6507,7 +7134,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessModuleInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessModuleInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_process_module::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6522,7 +7149,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_process_module {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6550,7 +7177,7 @@ pub mod web_apps {
         process_id: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessThreadInfoCollection, list_instance_process_threads::Error> {
+    ) -> std::result::Result<models::ProcessThreadInfoCollection, list_instance_process_threads::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/processes/{}/threads",
@@ -6584,7 +7211,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessThreadInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessThreadInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_process_threads::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6599,7 +7226,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_process_threads {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6628,7 +7255,7 @@ pub mod web_apps {
         thread_id: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessThreadInfo, get_instance_process_thread::Error> {
+    ) -> std::result::Result<models::ProcessThreadInfo, get_instance_process_thread::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/instances/{}/processes/{}/threads/{}",
@@ -6663,7 +7290,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessThreadInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessThreadInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_process_thread::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6678,7 +7305,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_process_thread {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -6704,7 +7331,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteCloneability, is_cloneable::Error> {
+    ) -> std::result::Result<models::SiteCloneability, is_cloneable::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/iscloneable",
@@ -6735,7 +7362,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteCloneability =
+                let rsp_value: models::SiteCloneability =
                     serde_json::from_slice(rsp_body).map_err(|source| is_cloneable::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6749,7 +7376,7 @@ pub mod web_apps {
         }
     }
     pub mod is_cloneable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6773,7 +7400,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionSecrets, list_sync_function_triggers::Error> {
+    ) -> std::result::Result<models::FunctionSecrets, list_sync_function_triggers::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/listsyncfunctiontriggerstatus",
@@ -6806,7 +7433,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionSecrets = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionSecrets = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_sync_function_triggers::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6820,7 +7447,7 @@ pub mod web_apps {
         }
     }
     pub mod list_sync_function_triggers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6844,7 +7471,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceMetricDefinitionCollection, list_metric_definitions::Error> {
+    ) -> std::result::Result<models::ResourceMetricDefinitionCollection, list_metric_definitions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/metricdefinitions",
@@ -6876,7 +7503,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceMetricDefinitionCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ResourceMetricDefinitionCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6890,7 +7517,7 @@ pub mod web_apps {
         }
     }
     pub mod list_metric_definitions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6916,7 +7543,7 @@ pub mod web_apps {
         details: Option<bool>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceMetricCollection, list_metrics::Error> {
+    ) -> std::result::Result<models::ResourceMetricCollection, list_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/metrics",
@@ -6952,7 +7579,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceMetricCollection =
+                let rsp_value: models::ResourceMetricCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -6966,7 +7593,7 @@ pub mod web_apps {
         }
     }
     pub mod list_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6990,9 +7617,9 @@ pub mod web_apps {
         subscription_name: &str,
         resource_group_name: &str,
         name: &str,
-        migration_options: &StorageMigrationOptions,
+        migration_options: &models::StorageMigrationOptions,
         subscription_id: &str,
-    ) -> std::result::Result<StorageMigrationResponse, migrate_storage::Error> {
+    ) -> std::result::Result<models::StorageMigrationResponse, migrate_storage::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/migrate",
@@ -7024,7 +7651,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageMigrationResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageMigrationResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| migrate_storage::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7038,7 +7665,7 @@ pub mod web_apps {
         }
     }
     pub mod migrate_storage {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7061,9 +7688,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        migration_request_envelope: &MigrateMySqlRequest,
+        migration_request_envelope: &models::MigrateMySqlRequest,
         subscription_id: &str,
-    ) -> std::result::Result<Operation, migrate_my_sql::Error> {
+    ) -> std::result::Result<models::Operation, migrate_my_sql::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/migratemysql",
@@ -7094,7 +7721,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Operation =
+                let rsp_value: models::Operation =
                     serde_json::from_slice(rsp_body).map_err(|source| migrate_my_sql::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7108,7 +7735,7 @@ pub mod web_apps {
         }
     }
     pub mod migrate_my_sql {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7132,7 +7759,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MigrateMySqlStatus, get_migrate_my_sql_status::Error> {
+    ) -> std::result::Result<models::MigrateMySqlStatus, get_migrate_my_sql_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/migratemysql/status",
@@ -7164,7 +7791,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateMySqlStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateMySqlStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_migrate_my_sql_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7178,7 +7805,7 @@ pub mod web_apps {
         }
     }
     pub mod get_migrate_my_sql_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7203,7 +7830,7 @@ pub mod web_apps {
         name: &str,
         view: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NetworkFeatures, list_network_features::Error> {
+    ) -> std::result::Result<models::NetworkFeatures, list_network_features::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/networkFeatures/{}",
@@ -7236,7 +7863,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkFeatures = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NetworkFeatures = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_network_features::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7251,7 +7878,7 @@ pub mod web_apps {
         }
     }
     pub mod list_network_features {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -7338,7 +7965,7 @@ pub mod web_apps {
         }
     }
     pub mod start_web_site_network_trace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7409,7 +8036,7 @@ pub mod web_apps {
         }
     }
     pub mod stop_web_site_network_trace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7476,7 +8103,7 @@ pub mod web_apps {
         }
     }
     pub mod generate_new_site_publishing_password {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -7506,7 +8133,7 @@ pub mod web_apps {
         name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PerfMonCounterCollection, list_perf_mon_counters::Error> {
+    ) -> std::result::Result<models::PerfMonCounterCollection, list_perf_mon_counters::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/perfcounters",
@@ -7541,7 +8168,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PerfMonCounterCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PerfMonCounterCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_perf_mon_counters::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7555,7 +8182,7 @@ pub mod web_apps {
         }
     }
     pub mod list_perf_mon_counters {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7579,7 +8206,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SitePhpErrorLogFlag, get_site_php_error_log_flag::Error> {
+    ) -> std::result::Result<models::SitePhpErrorLogFlag, get_site_php_error_log_flag::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/phplogging",
@@ -7611,7 +8238,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SitePhpErrorLogFlag = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SitePhpErrorLogFlag = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_site_php_error_log_flag::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7625,7 +8252,7 @@ pub mod web_apps {
         }
     }
     pub mod get_site_php_error_log_flag {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7649,7 +8276,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PremierAddOn, list_premier_add_ons::Error> {
+    ) -> std::result::Result<models::PremierAddOn, list_premier_add_ons::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/premieraddons",
@@ -7679,7 +8306,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PremierAddOn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PremierAddOn = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_premier_add_ons::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7693,7 +8320,7 @@ pub mod web_apps {
         }
     }
     pub mod list_premier_add_ons {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7718,7 +8345,7 @@ pub mod web_apps {
         name: &str,
         premier_add_on_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PremierAddOn, get_premier_add_on::Error> {
+    ) -> std::result::Result<models::PremierAddOn, get_premier_add_on::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/premieraddons/{}",
@@ -7749,7 +8376,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PremierAddOn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PremierAddOn = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_premier_add_on::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7763,7 +8390,7 @@ pub mod web_apps {
         }
     }
     pub mod get_premier_add_on {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7787,9 +8414,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         premier_add_on_name: &str,
-        premier_add_on: &PremierAddOn,
+        premier_add_on: &models::PremierAddOn,
         subscription_id: &str,
-    ) -> std::result::Result<PremierAddOn, add_premier_add_on::Error> {
+    ) -> std::result::Result<models::PremierAddOn, add_premier_add_on::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/premieraddons/{}",
@@ -7821,7 +8448,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PremierAddOn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PremierAddOn = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_premier_add_on::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7835,7 +8462,7 @@ pub mod web_apps {
         }
     }
     pub mod add_premier_add_on {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7902,7 +8529,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_premier_add_on {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7926,7 +8553,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessInfoCollection, list_processes::Error> {
+    ) -> std::result::Result<models::ProcessInfoCollection, list_processes::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/processes",
@@ -7956,7 +8583,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessInfoCollection =
+                let rsp_value: models::ProcessInfoCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_processes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -7971,7 +8598,7 @@ pub mod web_apps {
         }
     }
     pub mod list_processes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -7998,7 +8625,7 @@ pub mod web_apps {
         name: &str,
         process_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessInfo, get_process::Error> {
+    ) -> std::result::Result<models::ProcessInfo, get_process::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/processes/{}",
@@ -8029,7 +8656,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessInfo =
+                let rsp_value: models::ProcessInfo =
                     serde_json::from_slice(rsp_body).map_err(|source| get_process::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8044,7 +8671,7 @@ pub mod web_apps {
         }
     }
     pub mod get_process {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -8112,7 +8739,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_process {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -8184,7 +8811,7 @@ pub mod web_apps {
         }
     }
     pub mod get_process_dump {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -8211,7 +8838,7 @@ pub mod web_apps {
         name: &str,
         process_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessModuleInfoCollection, list_process_modules::Error> {
+    ) -> std::result::Result<models::ProcessModuleInfoCollection, list_process_modules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/processes/{}/modules",
@@ -8242,7 +8869,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessModuleInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessModuleInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_process_modules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8257,7 +8884,7 @@ pub mod web_apps {
         }
     }
     pub mod list_process_modules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -8285,7 +8912,7 @@ pub mod web_apps {
         process_id: &str,
         base_address: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessModuleInfo, get_process_module::Error> {
+    ) -> std::result::Result<models::ProcessModuleInfo, get_process_module::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/processes/{}/modules/{}",
@@ -8317,7 +8944,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessModuleInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessModuleInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_process_module::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8332,7 +8959,7 @@ pub mod web_apps {
         }
     }
     pub mod get_process_module {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -8359,7 +8986,7 @@ pub mod web_apps {
         name: &str,
         process_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessThreadInfoCollection, list_process_threads::Error> {
+    ) -> std::result::Result<models::ProcessThreadInfoCollection, list_process_threads::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/processes/{}/threads",
@@ -8390,7 +9017,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessThreadInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessThreadInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_process_threads::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8405,7 +9032,7 @@ pub mod web_apps {
         }
     }
     pub mod list_process_threads {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -8433,7 +9060,7 @@ pub mod web_apps {
         process_id: &str,
         thread_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessThreadInfo, get_process_thread::Error> {
+    ) -> std::result::Result<models::ProcessThreadInfo, get_process_thread::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/processes/{}/threads/{}",
@@ -8465,7 +9092,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessThreadInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessThreadInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_process_thread::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8480,7 +9107,7 @@ pub mod web_apps {
         }
     }
     pub mod get_process_thread {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -8506,7 +9133,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PublicCertificateCollection, list_public_certificates::Error> {
+    ) -> std::result::Result<models::PublicCertificateCollection, list_public_certificates::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/publicCertificates",
@@ -8538,7 +9165,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicCertificateCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PublicCertificateCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_public_certificates::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8552,7 +9179,7 @@ pub mod web_apps {
         }
     }
     pub mod list_public_certificates {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8577,7 +9204,7 @@ pub mod web_apps {
         name: &str,
         public_certificate_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PublicCertificate, get_public_certificate::Error> {
+    ) -> std::result::Result<models::PublicCertificate, get_public_certificate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/publicCertificates/{}",
@@ -8610,7 +9237,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicCertificate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PublicCertificate = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_public_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8624,7 +9251,7 @@ pub mod web_apps {
         }
     }
     pub mod get_public_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8648,9 +9275,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         public_certificate_name: &str,
-        public_certificate: &PublicCertificate,
+        public_certificate: &models::PublicCertificate,
         subscription_id: &str,
-    ) -> std::result::Result<PublicCertificate, create_or_update_public_certificate::Error> {
+    ) -> std::result::Result<models::PublicCertificate, create_or_update_public_certificate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/publicCertificates/{}",
@@ -8684,7 +9311,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicCertificate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PublicCertificate = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_public_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -8698,7 +9325,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_public_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8766,7 +9393,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_public_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -8794,7 +9421,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        publishing_profile_options: &CsmPublishingProfileOptions,
+        publishing_profile_options: &models::CsmPublishingProfileOptions,
         subscription_id: &str,
     ) -> std::result::Result<bytes::Bytes, list_publishing_profile_xml_with_secrets::Error> {
         let http_client = operation_config.http_client();
@@ -8843,7 +9470,7 @@ pub mod web_apps {
         }
     }
     pub mod list_publishing_profile_xml_with_secrets {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8866,7 +9493,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        recovery_entity: &SnapshotRecoveryRequest,
+        recovery_entity: &models::SnapshotRecoveryRequest,
         subscription_id: &str,
     ) -> std::result::Result<recover::Response, recover::Error> {
         let http_client = operation_config.http_client();
@@ -8909,7 +9536,7 @@ pub mod web_apps {
         }
     }
     pub mod recover {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -8980,7 +9607,7 @@ pub mod web_apps {
         }
     }
     pub mod reset_production_slot_config {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9052,7 +9679,7 @@ pub mod web_apps {
         }
     }
     pub mod restart {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9076,7 +9703,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteExtensionInfoCollection, list_site_extensions::Error> {
+    ) -> std::result::Result<models::SiteExtensionInfoCollection, list_site_extensions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/siteextensions",
@@ -9106,7 +9733,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteExtensionInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteExtensionInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_site_extensions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9121,7 +9748,7 @@ pub mod web_apps {
         }
     }
     pub mod list_site_extensions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -9148,7 +9775,7 @@ pub mod web_apps {
         name: &str,
         site_extension_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteExtensionInfo, get_site_extension::Error> {
+    ) -> std::result::Result<models::SiteExtensionInfo, get_site_extension::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/siteextensions/{}",
@@ -9179,7 +9806,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteExtensionInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_site_extension::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9194,7 +9821,7 @@ pub mod web_apps {
         }
     }
     pub mod get_site_extension {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -9254,13 +9881,13 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteExtensionInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| install_site_extension::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(install_site_extension::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteExtensionInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| install_site_extension::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(install_site_extension::Response::Ok200(rsp_value))
             }
@@ -9275,11 +9902,11 @@ pub mod web_apps {
         }
     }
     pub mod install_site_extension {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(SiteExtensionInfo),
-            Ok200(SiteExtensionInfo),
+            Created201(models::SiteExtensionInfo),
+            Ok200(models::SiteExtensionInfo),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -9350,7 +9977,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_site_extension {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -9376,7 +10003,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebAppCollection, list_slots::Error> {
+    ) -> std::result::Result<models::WebAppCollection, list_slots::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots",
@@ -9406,7 +10033,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebAppCollection =
+                let rsp_value: models::WebAppCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_slots::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9420,7 +10047,7 @@ pub mod web_apps {
         }
     }
     pub mod list_slots {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9445,7 +10072,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Site, get_slot::Error> {
+    ) -> std::result::Result<models::Site, get_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}",
@@ -9476,7 +10103,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site =
+                let rsp_value: models::Site =
                     serde_json::from_slice(rsp_body).map_err(|source| get_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9491,7 +10118,7 @@ pub mod web_apps {
         }
     }
     pub mod get_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -9516,7 +10143,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_envelope: &Site,
+        site_envelope: &models::Site,
         slot: &str,
         skip_dns_registration: Option<bool>,
         skip_custom_domain_verification: Option<bool>,
@@ -9572,13 +10199,13 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Site = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_slot::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Site = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_slot::Response::Accepted202(rsp_value))
             }
@@ -9592,11 +10219,11 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Site),
-            Accepted202(Site),
+            Ok200(models::Site),
+            Accepted202(models::Site),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -9620,7 +10247,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_envelope: &SitePatchResource,
+        site_envelope: &models::SitePatchResource,
         slot: &str,
         skip_dns_registration: Option<bool>,
         skip_custom_domain_verification: Option<bool>,
@@ -9674,13 +10301,13 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site =
+                let rsp_value: models::Site =
                     serde_json::from_slice(rsp_body).map_err(|source| update_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_slot::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Site =
+                let rsp_value: models::Site =
                     serde_json::from_slice(rsp_body).map_err(|source| update_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_slot::Response::Accepted202(rsp_value))
             }
@@ -9694,11 +10321,11 @@ pub mod web_apps {
         }
     }
     pub mod update_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Site),
-            Accepted202(Site),
+            Ok200(models::Site),
+            Accepted202(models::Site),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -9781,7 +10408,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -9814,7 +10441,7 @@ pub mod web_apps {
         slot: &str,
         host_name: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<CustomHostnameAnalysisResult, analyze_custom_hostname_slot::Error> {
+    ) -> std::result::Result<models::CustomHostnameAnalysisResult, analyze_custom_hostname_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/analyzeCustomHostname",
@@ -9850,7 +10477,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CustomHostnameAnalysisResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CustomHostnameAnalysisResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| analyze_custom_hostname_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -9864,7 +10491,7 @@ pub mod web_apps {
         }
     }
     pub mod analyze_custom_hostname_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9887,7 +10514,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        slot_swap_entity: &CsmSlotEntity,
+        slot_swap_entity: &models::CsmSlotEntity,
         slot: &str,
         subscription_id: &str,
     ) -> std::result::Result<(), apply_slot_configuration_slot::Error> {
@@ -9933,7 +10560,7 @@ pub mod web_apps {
         }
     }
     pub mod apply_slot_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9956,10 +10583,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        request: &BackupRequest,
+        request: &models::BackupRequest,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupItem, backup_slot::Error> {
+    ) -> std::result::Result<models::BackupItem, backup_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/backup",
@@ -9991,7 +10618,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupItem =
+                let rsp_value: models::BackupItem =
                     serde_json::from_slice(rsp_body).map_err(|source| backup_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10005,7 +10632,7 @@ pub mod web_apps {
         }
     }
     pub mod backup_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10030,7 +10657,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupItemCollection, list_backups_slot::Error> {
+    ) -> std::result::Result<models::BackupItemCollection, list_backups_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/backups",
@@ -10061,7 +10688,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupItemCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupItemCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_backups_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10075,7 +10702,7 @@ pub mod web_apps {
         }
     }
     pub mod list_backups_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10098,10 +10725,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        request: &RestoreRequest,
+        request: &models::RestoreRequest,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RestoreRequest, discover_restore_slot::Error> {
+    ) -> std::result::Result<models::RestoreRequest, discover_restore_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/backups/discover",
@@ -10135,7 +10762,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestoreRequest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RestoreRequest = serde_json::from_slice(rsp_body)
                     .map_err(|source| discover_restore_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10149,7 +10776,7 @@ pub mod web_apps {
         }
     }
     pub mod discover_restore_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10175,7 +10802,7 @@ pub mod web_apps {
         backup_id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupItem, get_backup_status_slot::Error> {
+    ) -> std::result::Result<models::BackupItem, get_backup_status_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/backups/{}",
@@ -10209,7 +10836,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupItem = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupItem = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_backup_status_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10223,7 +10850,7 @@ pub mod web_apps {
         }
     }
     pub mod get_backup_status_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10291,7 +10918,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_backup_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -10317,10 +10944,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         backup_id: &str,
-        request: &BackupRequest,
+        request: &models::BackupRequest,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupItem, list_backup_status_secrets_slot::Error> {
+    ) -> std::result::Result<models::BackupItem, list_backup_status_secrets_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/backups/{}/list",
@@ -10355,7 +10982,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupItem = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupItem = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_backup_status_secrets_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10369,7 +10996,7 @@ pub mod web_apps {
         }
     }
     pub mod list_backup_status_secrets_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10393,10 +11020,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         backup_id: &str,
-        request: &RestoreRequest,
+        request: &models::RestoreRequest,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RestoreResponse, restore_slot::Error> {
+    ) -> std::result::Result<models::RestoreResponse, restore_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/backups/{}/restore",
@@ -10429,7 +11056,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestoreResponse =
+                let rsp_value: models::RestoreResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| restore_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10443,7 +11070,7 @@ pub mod web_apps {
         }
     }
     pub mod restore_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10468,7 +11095,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResourceCollection, list_configurations_slot::Error> {
+    ) -> std::result::Result<models::SiteConfigResourceCollection, list_configurations_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config",
@@ -10501,7 +11128,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResourceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResourceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_configurations_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10515,7 +11142,7 @@ pub mod web_apps {
         }
     }
     pub mod list_configurations_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10538,10 +11165,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        app_settings: &StringDictionary,
+        app_settings: &models::StringDictionary,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StringDictionary, update_application_settings_slot::Error> {
+    ) -> std::result::Result<models::StringDictionary, update_application_settings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/appsettings",
@@ -10575,7 +11202,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_application_settings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10589,7 +11216,7 @@ pub mod web_apps {
         }
     }
     pub mod update_application_settings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10614,7 +11241,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StringDictionary, list_application_settings_slot::Error> {
+    ) -> std::result::Result<models::StringDictionary, list_application_settings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/appsettings/list",
@@ -10648,7 +11275,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_application_settings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10662,7 +11289,7 @@ pub mod web_apps {
         }
     }
     pub mod list_application_settings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10685,10 +11312,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_auth_settings: &SiteAuthSettings,
+        site_auth_settings: &models::SiteAuthSettings,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteAuthSettings, update_auth_settings_slot::Error> {
+    ) -> std::result::Result<models::SiteAuthSettings, update_auth_settings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/authsettings",
@@ -10722,7 +11349,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteAuthSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteAuthSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_auth_settings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10736,7 +11363,7 @@ pub mod web_apps {
         }
     }
     pub mod update_auth_settings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10761,7 +11388,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteAuthSettings, get_auth_settings_slot::Error> {
+    ) -> std::result::Result<models::SiteAuthSettings, get_auth_settings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/authsettings/list",
@@ -10795,7 +11422,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteAuthSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteAuthSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_auth_settings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10809,7 +11436,7 @@ pub mod web_apps {
         }
     }
     pub mod get_auth_settings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10832,10 +11459,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        request: &BackupRequest,
+        request: &models::BackupRequest,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupRequest, update_backup_configuration_slot::Error> {
+    ) -> std::result::Result<models::BackupRequest, update_backup_configuration_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/backup",
@@ -10869,7 +11496,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupRequest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupRequest = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_backup_configuration_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -10883,7 +11510,7 @@ pub mod web_apps {
         }
     }
     pub mod update_backup_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10950,7 +11577,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_backup_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10975,7 +11602,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupRequest, get_backup_configuration_slot::Error> {
+    ) -> std::result::Result<models::BackupRequest, get_backup_configuration_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/backup/list",
@@ -11009,7 +11636,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupRequest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BackupRequest = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_backup_configuration_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11023,7 +11650,7 @@ pub mod web_apps {
         }
     }
     pub mod get_backup_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11046,10 +11673,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        connection_strings: &ConnectionStringDictionary,
+        connection_strings: &models::ConnectionStringDictionary,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionStringDictionary, update_connection_strings_slot::Error> {
+    ) -> std::result::Result<models::ConnectionStringDictionary, update_connection_strings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/connectionstrings",
@@ -11083,7 +11710,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionStringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionStringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_connection_strings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11097,7 +11724,7 @@ pub mod web_apps {
         }
     }
     pub mod update_connection_strings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11122,7 +11749,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionStringDictionary, list_connection_strings_slot::Error> {
+    ) -> std::result::Result<models::ConnectionStringDictionary, list_connection_strings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/connectionstrings/list",
@@ -11156,7 +11783,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionStringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionStringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_connection_strings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11170,7 +11797,7 @@ pub mod web_apps {
         }
     }
     pub mod list_connection_strings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11195,7 +11822,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteLogsConfig, get_diagnostic_logs_configuration_slot::Error> {
+    ) -> std::result::Result<models::SiteLogsConfig, get_diagnostic_logs_configuration_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/logs",
@@ -11228,7 +11855,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteLogsConfig = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteLogsConfig = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_diagnostic_logs_configuration_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11242,7 +11869,7 @@ pub mod web_apps {
         }
     }
     pub mod get_diagnostic_logs_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11265,10 +11892,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_logs_config: &SiteLogsConfig,
+        site_logs_config: &models::SiteLogsConfig,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteLogsConfig, update_diagnostic_logs_config_slot::Error> {
+    ) -> std::result::Result<models::SiteLogsConfig, update_diagnostic_logs_config_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/logs",
@@ -11302,7 +11929,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteLogsConfig = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteLogsConfig = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_diagnostic_logs_config_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11316,7 +11943,7 @@ pub mod web_apps {
         }
     }
     pub mod update_diagnostic_logs_config_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11339,10 +11966,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        metadata: &StringDictionary,
+        metadata: &models::StringDictionary,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StringDictionary, update_metadata_slot::Error> {
+    ) -> std::result::Result<models::StringDictionary, update_metadata_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/metadata",
@@ -11374,7 +12001,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_metadata_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11388,7 +12015,7 @@ pub mod web_apps {
         }
     }
     pub mod update_metadata_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11413,7 +12040,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<StringDictionary, list_metadata_slot::Error> {
+    ) -> std::result::Result<models::StringDictionary, list_metadata_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/metadata/list",
@@ -11445,7 +12072,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StringDictionary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StringDictionary = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metadata_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11459,7 +12086,7 @@ pub mod web_apps {
         }
     }
     pub mod list_metadata_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11484,7 +12111,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<User, list_publishing_credentials_slot::Error> {
+    ) -> std::result::Result<models::User, list_publishing_credentials_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/publishingcredentials/list",
@@ -11518,7 +12145,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: User = serde_json::from_slice(rsp_body)
+                let rsp_value: models::User = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_publishing_credentials_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11532,7 +12159,7 @@ pub mod web_apps {
         }
     }
     pub mod list_publishing_credentials_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11555,10 +12182,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        push_settings: &PushSettings,
+        push_settings: &models::PushSettings,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PushSettings, update_site_push_settings_slot::Error> {
+    ) -> std::result::Result<models::PushSettings, update_site_push_settings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/pushsettings",
@@ -11592,7 +12219,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PushSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PushSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_site_push_settings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11606,7 +12233,7 @@ pub mod web_apps {
         }
     }
     pub mod update_site_push_settings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11631,7 +12258,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PushSettings, list_site_push_settings_slot::Error> {
+    ) -> std::result::Result<models::PushSettings, list_site_push_settings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/pushsettings/list",
@@ -11665,7 +12292,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PushSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PushSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_site_push_settings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11679,7 +12306,7 @@ pub mod web_apps {
         }
     }
     pub mod list_site_push_settings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11704,7 +12331,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResource, get_configuration_slot::Error> {
+    ) -> std::result::Result<models::SiteConfigResource, get_configuration_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/web",
@@ -11737,7 +12364,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_configuration_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11751,7 +12378,7 @@ pub mod web_apps {
         }
     }
     pub mod get_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11774,10 +12401,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_config: &SiteConfigResource,
+        site_config: &models::SiteConfigResource,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResource, create_or_update_configuration_slot::Error> {
+    ) -> std::result::Result<models::SiteConfigResource, create_or_update_configuration_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/web",
@@ -11811,7 +12438,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_configuration_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11825,7 +12452,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11848,10 +12475,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_config: &SiteConfigResource,
+        site_config: &models::SiteConfigResource,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResource, update_configuration_slot::Error> {
+    ) -> std::result::Result<models::SiteConfigResource, update_configuration_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/web",
@@ -11885,7 +12512,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_configuration_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11899,7 +12526,7 @@ pub mod web_apps {
         }
     }
     pub mod update_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11924,7 +12551,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigurationSnapshotInfoCollection, list_configuration_snapshot_info_slot::Error> {
+    ) -> std::result::Result<models::SiteConfigurationSnapshotInfoCollection, list_configuration_snapshot_info_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/web/snapshots",
@@ -11957,7 +12584,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigurationSnapshotInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigurationSnapshotInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_configuration_snapshot_info_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -11971,7 +12598,7 @@ pub mod web_apps {
         }
     }
     pub mod list_configuration_snapshot_info_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -11997,7 +12624,7 @@ pub mod web_apps {
         snapshot_id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteConfigResource, get_configuration_snapshot_slot::Error> {
+    ) -> std::result::Result<models::SiteConfigResource, get_configuration_snapshot_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/config/web/snapshots/{}",
@@ -12031,7 +12658,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteConfigResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteConfigResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_configuration_snapshot_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12045,7 +12672,7 @@ pub mod web_apps {
         }
     }
     pub mod get_configuration_snapshot_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12115,7 +12742,7 @@ pub mod web_apps {
         }
     }
     pub mod recover_site_configuration_snapshot_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12188,7 +12815,7 @@ pub mod web_apps {
         }
     }
     pub mod get_web_site_container_logs_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -12266,7 +12893,7 @@ pub mod web_apps {
         }
     }
     pub mod get_web_site_container_logs_zip_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -12296,7 +12923,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ContinuousWebJobCollection, list_continuous_web_jobs_slot::Error> {
+    ) -> std::result::Result<models::ContinuousWebJobCollection, list_continuous_web_jobs_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/continuouswebjobs",
@@ -12329,7 +12956,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContinuousWebJobCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContinuousWebJobCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_continuous_web_jobs_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12343,7 +12970,7 @@ pub mod web_apps {
         }
     }
     pub mod list_continuous_web_jobs_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12369,7 +12996,7 @@ pub mod web_apps {
         web_job_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ContinuousWebJob, get_continuous_web_job_slot::Error> {
+    ) -> std::result::Result<models::ContinuousWebJob, get_continuous_web_job_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/continuouswebjobs/{}",
@@ -12403,7 +13030,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContinuousWebJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContinuousWebJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_continuous_web_job_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12418,7 +13045,7 @@ pub mod web_apps {
         }
     }
     pub mod get_continuous_web_job_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -12490,7 +13117,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_continuous_web_job_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -12566,7 +13193,7 @@ pub mod web_apps {
         }
     }
     pub mod start_continuous_web_job_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -12639,7 +13266,7 @@ pub mod web_apps {
         }
     }
     pub mod stop_continuous_web_job_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -12666,7 +13293,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DeploymentCollection, list_deployments_slot::Error> {
+    ) -> std::result::Result<models::DeploymentCollection, list_deployments_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/deployments",
@@ -12699,7 +13326,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeploymentCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeploymentCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployments_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12713,7 +13340,7 @@ pub mod web_apps {
         }
     }
     pub mod list_deployments_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12739,7 +13366,7 @@ pub mod web_apps {
         id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Deployment, get_deployment_slot::Error> {
+    ) -> std::result::Result<models::Deployment, get_deployment_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/deployments/{}",
@@ -12771,7 +13398,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Deployment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Deployment = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_deployment_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12785,7 +13412,7 @@ pub mod web_apps {
         }
     }
     pub mod get_deployment_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12810,9 +13437,9 @@ pub mod web_apps {
         name: &str,
         id: &str,
         slot: &str,
-        deployment: &Deployment,
+        deployment: &models::Deployment,
         subscription_id: &str,
-    ) -> std::result::Result<Deployment, create_deployment_slot::Error> {
+    ) -> std::result::Result<models::Deployment, create_deployment_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/deployments/{}",
@@ -12847,7 +13474,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Deployment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Deployment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_deployment_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -12861,7 +13488,7 @@ pub mod web_apps {
         }
     }
     pub mod create_deployment_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -12931,7 +13558,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_deployment_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -12962,7 +13589,7 @@ pub mod web_apps {
         id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Deployment, list_deployment_log_slot::Error> {
+    ) -> std::result::Result<models::Deployment, list_deployment_log_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/deployments/{}/log",
@@ -12996,7 +13623,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Deployment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Deployment = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_deployment_log_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13010,7 +13637,7 @@ pub mod web_apps {
         }
     }
     pub mod list_deployment_log_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13035,7 +13662,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<IdentifierCollection, list_domain_ownership_identifiers_slot::Error> {
+    ) -> std::result::Result<models::IdentifierCollection, list_domain_ownership_identifiers_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/domainOwnershipIdentifiers",
@@ -13068,7 +13695,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IdentifierCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IdentifierCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_domain_ownership_identifiers_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13082,7 +13709,7 @@ pub mod web_apps {
         }
     }
     pub mod list_domain_ownership_identifiers_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13108,7 +13735,7 @@ pub mod web_apps {
         domain_ownership_identifier_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Identifier, get_domain_ownership_identifier_slot::Error> {
+    ) -> std::result::Result<models::Identifier, get_domain_ownership_identifier_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/domainOwnershipIdentifiers/{}",
@@ -13142,7 +13769,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Identifier = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Identifier = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_domain_ownership_identifier_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13156,7 +13783,7 @@ pub mod web_apps {
         }
     }
     pub mod get_domain_ownership_identifier_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13180,10 +13807,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         domain_ownership_identifier_name: &str,
-        domain_ownership_identifier: &Identifier,
+        domain_ownership_identifier: &models::Identifier,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Identifier, create_or_update_domain_ownership_identifier_slot::Error> {
+    ) -> std::result::Result<models::Identifier, create_or_update_domain_ownership_identifier_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/domainOwnershipIdentifiers/{}",
@@ -13219,7 +13846,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Identifier = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::Identifier = serde_json::from_slice(rsp_body).map_err(|source| {
                     create_or_update_domain_ownership_identifier_slot::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
@@ -13234,7 +13861,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_domain_ownership_identifier_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13258,10 +13885,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         domain_ownership_identifier_name: &str,
-        domain_ownership_identifier: &Identifier,
+        domain_ownership_identifier: &models::Identifier,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Identifier, update_domain_ownership_identifier_slot::Error> {
+    ) -> std::result::Result<models::Identifier, update_domain_ownership_identifier_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/domainOwnershipIdentifiers/{}",
@@ -13297,7 +13924,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Identifier = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Identifier = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_domain_ownership_identifier_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13311,7 +13938,7 @@ pub mod web_apps {
         }
     }
     pub mod update_domain_ownership_identifier_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13381,7 +14008,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_domain_ownership_identifier_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -13411,7 +14038,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployStatus, get_ms_deploy_status_slot::Error> {
+    ) -> std::result::Result<models::MsDeployStatus, get_ms_deploy_status_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/extensions/MSDeploy",
@@ -13444,7 +14071,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ms_deploy_status_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13458,7 +14085,7 @@ pub mod web_apps {
         }
     }
     pub mod get_ms_deploy_status_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13482,9 +14109,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         slot: &str,
-        ms_deploy: &MsDeploy,
+        ms_deploy: &models::MsDeploy,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployStatus, create_ms_deploy_operation_slot::Error> {
+    ) -> std::result::Result<models::MsDeployStatus, create_ms_deploy_operation_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/extensions/MSDeploy",
@@ -13518,7 +14145,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_ms_deploy_operation_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13533,7 +14160,7 @@ pub mod web_apps {
         }
     }
     pub mod create_ms_deploy_operation_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -13560,7 +14187,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployLog, get_ms_deploy_log_slot::Error> {
+    ) -> std::result::Result<models::MsDeployLog, get_ms_deploy_log_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/extensions/MSDeploy/log",
@@ -13593,7 +14220,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployLog = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployLog = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ms_deploy_log_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13608,7 +14235,7 @@ pub mod web_apps {
         }
     }
     pub mod get_ms_deploy_log_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -13635,7 +14262,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionEnvelopeCollection, list_instance_functions_slot::Error> {
+    ) -> std::result::Result<models::FunctionEnvelopeCollection, list_instance_functions_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/functions",
@@ -13668,7 +14295,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionEnvelopeCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionEnvelopeCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_functions_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13683,7 +14310,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_functions_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -13757,7 +14384,7 @@ pub mod web_apps {
         }
     }
     pub mod get_functions_admin_token_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13783,7 +14410,7 @@ pub mod web_apps {
         function_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionEnvelope, get_instance_function_slot::Error> {
+    ) -> std::result::Result<models::FunctionEnvelope, get_instance_function_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/functions/{}",
@@ -13817,7 +14444,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionEnvelope = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionEnvelope = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_function_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13832,7 +14459,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_function_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -13859,9 +14486,9 @@ pub mod web_apps {
         name: &str,
         function_name: &str,
         slot: &str,
-        function_envelope: &FunctionEnvelope,
+        function_envelope: &models::FunctionEnvelope,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionEnvelope, create_instance_function_slot::Error> {
+    ) -> std::result::Result<models::FunctionEnvelope, create_instance_function_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/functions/{}",
@@ -13896,7 +14523,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionEnvelope = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionEnvelope = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_instance_function_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -13910,7 +14537,7 @@ pub mod web_apps {
         }
     }
     pub mod create_instance_function_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -13980,7 +14607,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_instance_function_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -14008,7 +14635,7 @@ pub mod web_apps {
         function_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionSecrets, list_function_secrets_slot::Error> {
+    ) -> std::result::Result<models::FunctionSecrets, list_function_secrets_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/functions/{}/listsecrets",
@@ -14043,7 +14670,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionSecrets = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionSecrets = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_function_secrets_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14057,7 +14684,7 @@ pub mod web_apps {
         }
     }
     pub mod list_function_secrets_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14082,7 +14709,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HostNameBindingCollection, list_host_name_bindings_slot::Error> {
+    ) -> std::result::Result<models::HostNameBindingCollection, list_host_name_bindings_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hostNameBindings",
@@ -14115,7 +14742,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostNameBindingCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HostNameBindingCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_host_name_bindings_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14129,7 +14756,7 @@ pub mod web_apps {
         }
     }
     pub mod list_host_name_bindings_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14155,7 +14782,7 @@ pub mod web_apps {
         slot: &str,
         host_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HostNameBinding, get_host_name_binding_slot::Error> {
+    ) -> std::result::Result<models::HostNameBinding, get_host_name_binding_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hostNameBindings/{}",
@@ -14189,7 +14816,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostNameBinding = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HostNameBinding = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_host_name_binding_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14203,7 +14830,7 @@ pub mod web_apps {
         }
     }
     pub mod get_host_name_binding_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14227,10 +14854,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         host_name: &str,
-        host_name_binding: &HostNameBinding,
+        host_name_binding: &models::HostNameBinding,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HostNameBinding, create_or_update_host_name_binding_slot::Error> {
+    ) -> std::result::Result<models::HostNameBinding, create_or_update_host_name_binding_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hostNameBindings/{}",
@@ -14265,7 +14892,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostNameBinding = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HostNameBinding = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_host_name_binding_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14279,7 +14906,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_host_name_binding_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14349,7 +14976,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_host_name_binding_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -14381,7 +15008,7 @@ pub mod web_apps {
         relay_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, get_hybrid_connection_slot::Error> {
+    ) -> std::result::Result<models::HybridConnection, get_hybrid_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridConnectionNamespaces/{}/relays/{}",
@@ -14416,7 +15043,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_hybrid_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14430,7 +15057,7 @@ pub mod web_apps {
         }
     }
     pub mod get_hybrid_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14455,10 +15082,10 @@ pub mod web_apps {
         name: &str,
         namespace_name: &str,
         relay_name: &str,
-        connection_envelope: &HybridConnection,
+        connection_envelope: &models::HybridConnection,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, create_or_update_hybrid_connection_slot::Error> {
+    ) -> std::result::Result<models::HybridConnection, create_or_update_hybrid_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridConnectionNamespaces/{}/relays/{}",
@@ -14494,7 +15121,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_hybrid_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14508,7 +15135,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_hybrid_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14533,10 +15160,10 @@ pub mod web_apps {
         name: &str,
         namespace_name: &str,
         relay_name: &str,
-        connection_envelope: &HybridConnection,
+        connection_envelope: &models::HybridConnection,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, update_hybrid_connection_slot::Error> {
+    ) -> std::result::Result<models::HybridConnection, update_hybrid_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridConnectionNamespaces/{}/relays/{}",
@@ -14572,7 +15199,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_hybrid_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14586,7 +15213,7 @@ pub mod web_apps {
         }
     }
     pub mod update_hybrid_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14658,7 +15285,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_hybrid_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -14687,7 +15314,7 @@ pub mod web_apps {
         relay_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnectionKey, list_hybrid_connection_keys_slot::Error> {
+    ) -> std::result::Result<models::HybridConnectionKey, list_hybrid_connection_keys_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridConnectionNamespaces/{}/relays/{}/listKeys" , operation_config . base_path () , subscription_id , resource_group_name , name , slot , namespace_name , relay_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_hybrid_connection_keys_slot::Error::ParseUrlError)?;
@@ -14714,7 +15341,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnectionKey = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnectionKey = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_hybrid_connection_keys_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14728,7 +15355,7 @@ pub mod web_apps {
         }
     }
     pub mod list_hybrid_connection_keys_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14753,7 +15380,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<HybridConnection, list_hybrid_connections_slot::Error> {
+    ) -> std::result::Result<models::HybridConnection, list_hybrid_connections_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridConnectionRelays",
@@ -14786,7 +15413,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HybridConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::HybridConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_hybrid_connections_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14800,7 +15427,7 @@ pub mod web_apps {
         }
     }
     pub mod list_hybrid_connections_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14825,7 +15452,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RelayServiceConnectionEntity, list_relay_service_connections_slot::Error> {
+    ) -> std::result::Result<models::RelayServiceConnectionEntity, list_relay_service_connections_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridconnection",
@@ -14858,7 +15485,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_relay_service_connections_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14872,7 +15499,7 @@ pub mod web_apps {
         }
     }
     pub mod list_relay_service_connections_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14898,7 +15525,7 @@ pub mod web_apps {
         entity_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RelayServiceConnectionEntity, get_relay_service_connection_slot::Error> {
+    ) -> std::result::Result<models::RelayServiceConnectionEntity, get_relay_service_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridconnection/{}",
@@ -14932,7 +15559,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_relay_service_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -14946,7 +15573,7 @@ pub mod web_apps {
         }
     }
     pub mod get_relay_service_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -14970,10 +15597,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         entity_name: &str,
-        connection_envelope: &RelayServiceConnectionEntity,
+        connection_envelope: &models::RelayServiceConnectionEntity,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RelayServiceConnectionEntity, create_or_update_relay_service_connection_slot::Error> {
+    ) -> std::result::Result<models::RelayServiceConnectionEntity, create_or_update_relay_service_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridconnection/{}",
@@ -15009,7 +15636,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_relay_service_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15023,7 +15650,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_relay_service_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -15047,10 +15674,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         entity_name: &str,
-        connection_envelope: &RelayServiceConnectionEntity,
+        connection_envelope: &models::RelayServiceConnectionEntity,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<RelayServiceConnectionEntity, update_relay_service_connection_slot::Error> {
+    ) -> std::result::Result<models::RelayServiceConnectionEntity, update_relay_service_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/hybridconnection/{}",
@@ -15085,7 +15712,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RelayServiceConnectionEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_relay_service_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15099,7 +15726,7 @@ pub mod web_apps {
         }
     }
     pub mod update_relay_service_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -15169,7 +15796,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_relay_service_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15196,7 +15823,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebAppInstanceCollection, list_instance_identifiers_slot::Error> {
+    ) -> std::result::Result<models::WebAppInstanceCollection, list_instance_identifiers_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances",
@@ -15229,7 +15856,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebAppInstanceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebAppInstanceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_identifiers_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15243,7 +15870,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_identifiers_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -15269,7 +15896,7 @@ pub mod web_apps {
         slot: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployStatus, get_instance_ms_deploy_status_slot::Error> {
+    ) -> std::result::Result<models::MsDeployStatus, get_instance_ms_deploy_status_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/extensions/MSDeploy",
@@ -15303,7 +15930,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_ms_deploy_status_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15317,7 +15944,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_ms_deploy_status_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -15342,9 +15969,9 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         instance_id: &str,
-        ms_deploy: &MsDeploy,
+        ms_deploy: &models::MsDeploy,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployStatus, create_instance_ms_deploy_operation_slot::Error> {
+    ) -> std::result::Result<models::MsDeployStatus, create_instance_ms_deploy_operation_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/extensions/MSDeploy",
@@ -15379,7 +16006,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_instance_ms_deploy_operation_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15394,7 +16021,7 @@ pub mod web_apps {
         }
     }
     pub mod create_instance_ms_deploy_operation_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15422,7 +16049,7 @@ pub mod web_apps {
         slot: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MsDeployLog, get_instance_ms_deploy_log_slot::Error> {
+    ) -> std::result::Result<models::MsDeployLog, get_instance_ms_deploy_log_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/extensions/MSDeploy/log",
@@ -15456,7 +16083,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MsDeployLog = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MsDeployLog = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_ms_deploy_log_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15471,7 +16098,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_ms_deploy_log_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15499,7 +16126,7 @@ pub mod web_apps {
         slot: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessInfoCollection, list_instance_processes_slot::Error> {
+    ) -> std::result::Result<models::ProcessInfoCollection, list_instance_processes_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/processes",
@@ -15533,7 +16160,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_processes_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15548,7 +16175,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_processes_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15577,7 +16204,7 @@ pub mod web_apps {
         slot: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessInfo, get_instance_process_slot::Error> {
+    ) -> std::result::Result<models::ProcessInfo, get_instance_process_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/processes/{}",
@@ -15612,7 +16239,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_process_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15627,7 +16254,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_process_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15701,7 +16328,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_instance_process_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15779,7 +16406,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_process_dump_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15808,7 +16435,7 @@ pub mod web_apps {
         slot: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessModuleInfoCollection, list_instance_process_modules_slot::Error> {
+    ) -> std::result::Result<models::ProcessModuleInfoCollection, list_instance_process_modules_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/processes/{}/modules",
@@ -15843,7 +16470,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessModuleInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessModuleInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_process_modules_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15858,7 +16485,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_process_modules_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15888,7 +16515,7 @@ pub mod web_apps {
         slot: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessModuleInfo, get_instance_process_module_slot::Error> {
+    ) -> std::result::Result<models::ProcessModuleInfo, get_instance_process_module_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/processes/{}/modules/{}",
@@ -15924,7 +16551,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessModuleInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessModuleInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_process_module_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -15939,7 +16566,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_process_module_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -15968,7 +16595,7 @@ pub mod web_apps {
         slot: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessThreadInfoCollection, list_instance_process_threads_slot::Error> {
+    ) -> std::result::Result<models::ProcessThreadInfoCollection, list_instance_process_threads_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/processes/{}/threads",
@@ -16003,7 +16630,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessThreadInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessThreadInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_instance_process_threads_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16018,7 +16645,7 @@ pub mod web_apps {
         }
     }
     pub mod list_instance_process_threads_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -16048,7 +16675,7 @@ pub mod web_apps {
         slot: &str,
         instance_id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessThreadInfo, get_instance_process_thread_slot::Error> {
+    ) -> std::result::Result<models::ProcessThreadInfo, get_instance_process_thread_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/instances/{}/processes/{}/threads/{}",
@@ -16084,7 +16711,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessThreadInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessThreadInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_instance_process_thread_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16099,7 +16726,7 @@ pub mod web_apps {
         }
     }
     pub mod get_instance_process_thread_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -16126,7 +16753,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteCloneability, is_cloneable_slot::Error> {
+    ) -> std::result::Result<models::SiteCloneability, is_cloneable_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/iscloneable",
@@ -16158,7 +16785,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteCloneability = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteCloneability = serde_json::from_slice(rsp_body)
                     .map_err(|source| is_cloneable_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16172,7 +16799,7 @@ pub mod web_apps {
         }
     }
     pub mod is_cloneable_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16197,7 +16824,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FunctionSecrets, list_sync_function_triggers_slot::Error> {
+    ) -> std::result::Result<models::FunctionSecrets, list_sync_function_triggers_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/listsyncfunctiontriggerstatus",
@@ -16231,7 +16858,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FunctionSecrets = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FunctionSecrets = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_sync_function_triggers_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16245,7 +16872,7 @@ pub mod web_apps {
         }
     }
     pub mod list_sync_function_triggers_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16270,7 +16897,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceMetricDefinitionCollection, list_metric_definitions_slot::Error> {
+    ) -> std::result::Result<models::ResourceMetricDefinitionCollection, list_metric_definitions_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/metricdefinitions",
@@ -16303,7 +16930,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceMetricDefinitionCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ResourceMetricDefinitionCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_definitions_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16317,7 +16944,7 @@ pub mod web_apps {
         }
     }
     pub mod list_metric_definitions_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16344,7 +16971,7 @@ pub mod web_apps {
         details: Option<bool>,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceMetricCollection, list_metrics_slot::Error> {
+    ) -> std::result::Result<models::ResourceMetricCollection, list_metrics_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/metrics",
@@ -16381,7 +17008,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceMetricCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ResourceMetricCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metrics_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16395,7 +17022,7 @@ pub mod web_apps {
         }
     }
     pub mod list_metrics_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16420,7 +17047,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<MigrateMySqlStatus, get_migrate_my_sql_status_slot::Error> {
+    ) -> std::result::Result<models::MigrateMySqlStatus, get_migrate_my_sql_status_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/migratemysql/status",
@@ -16453,7 +17080,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MigrateMySqlStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MigrateMySqlStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_migrate_my_sql_status_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16467,7 +17094,7 @@ pub mod web_apps {
         }
     }
     pub mod get_migrate_my_sql_status_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16493,7 +17120,7 @@ pub mod web_apps {
         view: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NetworkFeatures, list_network_features_slot::Error> {
+    ) -> std::result::Result<models::NetworkFeatures, list_network_features_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/networkFeatures/{}",
@@ -16527,7 +17154,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkFeatures = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NetworkFeatures = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_network_features_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16542,7 +17169,7 @@ pub mod web_apps {
         }
     }
     pub mod list_network_features_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -16631,7 +17258,7 @@ pub mod web_apps {
         }
     }
     pub mod start_web_site_network_trace_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16704,7 +17331,7 @@ pub mod web_apps {
         }
     }
     pub mod stop_web_site_network_trace_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16773,7 +17400,7 @@ pub mod web_apps {
         }
     }
     pub mod generate_new_site_publishing_password_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -16804,7 +17431,7 @@ pub mod web_apps {
         slot: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PerfMonCounterCollection, list_perf_mon_counters_slot::Error> {
+    ) -> std::result::Result<models::PerfMonCounterCollection, list_perf_mon_counters_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/perfcounters",
@@ -16840,7 +17467,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PerfMonCounterCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PerfMonCounterCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_perf_mon_counters_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16854,7 +17481,7 @@ pub mod web_apps {
         }
     }
     pub mod list_perf_mon_counters_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16879,7 +17506,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SitePhpErrorLogFlag, get_site_php_error_log_flag_slot::Error> {
+    ) -> std::result::Result<models::SitePhpErrorLogFlag, get_site_php_error_log_flag_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/phplogging",
@@ -16912,7 +17539,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SitePhpErrorLogFlag = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SitePhpErrorLogFlag = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_site_php_error_log_flag_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16926,7 +17553,7 @@ pub mod web_apps {
         }
     }
     pub mod get_site_php_error_log_flag_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -16951,7 +17578,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PremierAddOn, list_premier_add_ons_slot::Error> {
+    ) -> std::result::Result<models::PremierAddOn, list_premier_add_ons_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/premieraddons",
@@ -16984,7 +17611,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PremierAddOn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PremierAddOn = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_premier_add_ons_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -16998,7 +17625,7 @@ pub mod web_apps {
         }
     }
     pub mod list_premier_add_ons_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -17024,7 +17651,7 @@ pub mod web_apps {
         premier_add_on_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PremierAddOn, get_premier_add_on_slot::Error> {
+    ) -> std::result::Result<models::PremierAddOn, get_premier_add_on_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/premieraddons/{}",
@@ -17058,7 +17685,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PremierAddOn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PremierAddOn = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_premier_add_on_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17072,7 +17699,7 @@ pub mod web_apps {
         }
     }
     pub mod get_premier_add_on_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -17096,10 +17723,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         premier_add_on_name: &str,
-        premier_add_on: &PremierAddOn,
+        premier_add_on: &models::PremierAddOn,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PremierAddOn, add_premier_add_on_slot::Error> {
+    ) -> std::result::Result<models::PremierAddOn, add_premier_add_on_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/premieraddons/{}",
@@ -17134,7 +17761,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PremierAddOn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PremierAddOn = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_premier_add_on_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17148,7 +17775,7 @@ pub mod web_apps {
         }
     }
     pub mod add_premier_add_on_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -17217,7 +17844,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_premier_add_on_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -17242,7 +17869,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessInfoCollection, list_processes_slot::Error> {
+    ) -> std::result::Result<models::ProcessInfoCollection, list_processes_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/processes",
@@ -17273,7 +17900,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_processes_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17288,7 +17915,7 @@ pub mod web_apps {
         }
     }
     pub mod list_processes_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -17316,7 +17943,7 @@ pub mod web_apps {
         process_id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessInfo, get_process_slot::Error> {
+    ) -> std::result::Result<models::ProcessInfo, get_process_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/processes/{}",
@@ -17348,7 +17975,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_process_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17363,7 +17990,7 @@ pub mod web_apps {
         }
     }
     pub mod get_process_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -17433,7 +18060,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_process_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -17509,7 +18136,7 @@ pub mod web_apps {
         }
     }
     pub mod get_process_dump_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -17537,7 +18164,7 @@ pub mod web_apps {
         process_id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessModuleInfoCollection, list_process_modules_slot::Error> {
+    ) -> std::result::Result<models::ProcessModuleInfoCollection, list_process_modules_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/processes/{}/modules",
@@ -17571,7 +18198,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessModuleInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessModuleInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_process_modules_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17586,7 +18213,7 @@ pub mod web_apps {
         }
     }
     pub mod list_process_modules_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -17615,7 +18242,7 @@ pub mod web_apps {
         base_address: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessModuleInfo, get_process_module_slot::Error> {
+    ) -> std::result::Result<models::ProcessModuleInfo, get_process_module_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/processes/{}/modules/{}",
@@ -17650,7 +18277,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessModuleInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessModuleInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_process_module_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17665,7 +18292,7 @@ pub mod web_apps {
         }
     }
     pub mod get_process_module_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -17693,7 +18320,7 @@ pub mod web_apps {
         process_id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessThreadInfoCollection, list_process_threads_slot::Error> {
+    ) -> std::result::Result<models::ProcessThreadInfoCollection, list_process_threads_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/processes/{}/threads",
@@ -17727,7 +18354,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessThreadInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessThreadInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_process_threads_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17742,7 +18369,7 @@ pub mod web_apps {
         }
     }
     pub mod list_process_threads_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -17771,7 +18398,7 @@ pub mod web_apps {
         thread_id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ProcessThreadInfo, get_process_thread_slot::Error> {
+    ) -> std::result::Result<models::ProcessThreadInfo, get_process_thread_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/processes/{}/threads/{}",
@@ -17806,7 +18433,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProcessThreadInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ProcessThreadInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_process_thread_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17821,7 +18448,7 @@ pub mod web_apps {
         }
     }
     pub mod get_process_thread_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -17848,7 +18475,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PublicCertificateCollection, list_public_certificates_slot::Error> {
+    ) -> std::result::Result<models::PublicCertificateCollection, list_public_certificates_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/publicCertificates",
@@ -17881,7 +18508,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicCertificateCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PublicCertificateCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_public_certificates_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17895,7 +18522,7 @@ pub mod web_apps {
         }
     }
     pub mod list_public_certificates_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -17921,7 +18548,7 @@ pub mod web_apps {
         slot: &str,
         public_certificate_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PublicCertificate, get_public_certificate_slot::Error> {
+    ) -> std::result::Result<models::PublicCertificate, get_public_certificate_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/publicCertificates/{}",
@@ -17955,7 +18582,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicCertificate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PublicCertificate = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_public_certificate_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -17969,7 +18596,7 @@ pub mod web_apps {
         }
     }
     pub mod get_public_certificate_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -17993,10 +18620,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         public_certificate_name: &str,
-        public_certificate: &PublicCertificate,
+        public_certificate: &models::PublicCertificate,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PublicCertificate, create_or_update_public_certificate_slot::Error> {
+    ) -> std::result::Result<models::PublicCertificate, create_or_update_public_certificate_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/publicCertificates/{}",
@@ -18031,7 +18658,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicCertificate = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PublicCertificate = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_public_certificate_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18045,7 +18672,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_public_certificate_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -18115,7 +18742,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_public_certificate_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -18143,7 +18770,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        publishing_profile_options: &CsmPublishingProfileOptions,
+        publishing_profile_options: &models::CsmPublishingProfileOptions,
         slot: &str,
         subscription_id: &str,
     ) -> std::result::Result<bytes::Bytes, list_publishing_profile_xml_with_secrets_slot::Error> {
@@ -18194,7 +18821,7 @@ pub mod web_apps {
         }
     }
     pub mod list_publishing_profile_xml_with_secrets_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -18217,7 +18844,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        recovery_entity: &SnapshotRecoveryRequest,
+        recovery_entity: &models::SnapshotRecoveryRequest,
         slot: &str,
         subscription_id: &str,
     ) -> std::result::Result<recover_slot::Response, recover_slot::Error> {
@@ -18262,7 +18889,7 @@ pub mod web_apps {
         }
     }
     pub mod recover_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -18335,7 +18962,7 @@ pub mod web_apps {
         }
     }
     pub mod reset_slot_configuration_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -18409,7 +19036,7 @@ pub mod web_apps {
         }
     }
     pub mod restart_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -18434,7 +19061,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteExtensionInfoCollection, list_site_extensions_slot::Error> {
+    ) -> std::result::Result<models::SiteExtensionInfoCollection, list_site_extensions_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/siteextensions",
@@ -18467,7 +19094,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteExtensionInfoCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteExtensionInfoCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_site_extensions_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18482,7 +19109,7 @@ pub mod web_apps {
         }
     }
     pub mod list_site_extensions_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -18510,7 +19137,7 @@ pub mod web_apps {
         site_extension_id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SiteExtensionInfo, get_site_extension_slot::Error> {
+    ) -> std::result::Result<models::SiteExtensionInfo, get_site_extension_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/siteextensions/{}",
@@ -18544,7 +19171,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteExtensionInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_site_extension_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18559,7 +19186,7 @@ pub mod web_apps {
         }
     }
     pub mod get_site_extension_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -18621,13 +19248,13 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteExtensionInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| install_site_extension_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(install_site_extension_slot::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteExtensionInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteExtensionInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| install_site_extension_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(install_site_extension_slot::Response::Ok200(rsp_value))
             }
@@ -18642,11 +19269,11 @@ pub mod web_apps {
         }
     }
     pub mod install_site_extension_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(SiteExtensionInfo),
-            Ok200(SiteExtensionInfo),
+            Created201(models::SiteExtensionInfo),
+            Ok200(models::SiteExtensionInfo),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -18719,7 +19346,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_site_extension_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -18744,10 +19371,10 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        slot_swap_entity: &CsmSlotEntity,
+        slot_swap_entity: &models::CsmSlotEntity,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SlotDifferenceCollection, list_slot_differences_slot::Error> {
+    ) -> std::result::Result<models::SlotDifferenceCollection, list_slot_differences_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/slotsdiffs",
@@ -18781,7 +19408,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SlotDifferenceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SlotDifferenceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_slot_differences_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18795,7 +19422,7 @@ pub mod web_apps {
         }
     }
     pub mod list_slot_differences_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -18818,7 +19445,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        slot_swap_entity: &CsmSlotEntity,
+        slot_swap_entity: &models::CsmSlotEntity,
         slot: &str,
         subscription_id: &str,
     ) -> std::result::Result<swap_slot_slot::Response, swap_slot_slot::Error> {
@@ -18863,7 +19490,7 @@ pub mod web_apps {
         }
     }
     pub mod swap_slot_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -18893,7 +19520,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SnapshotCollection, list_snapshots_slot::Error> {
+    ) -> std::result::Result<models::SnapshotCollection, list_snapshots_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/snapshots",
@@ -18924,7 +19551,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SnapshotCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SnapshotCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_snapshots_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -18938,7 +19565,7 @@ pub mod web_apps {
         }
     }
     pub mod list_snapshots_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -18996,19 +19623,19 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_source_control_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get_source_control_slot::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_source_control_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get_source_control_slot::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_source_control_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get_source_control_slot::Response::Accepted202(rsp_value))
             }
@@ -19022,12 +19649,12 @@ pub mod web_apps {
         }
     }
     pub mod get_source_control_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SiteSourceControl),
-            Created201(SiteSourceControl),
-            Accepted202(SiteSourceControl),
+            Ok200(models::SiteSourceControl),
+            Created201(models::SiteSourceControl),
+            Accepted202(models::SiteSourceControl),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -19051,7 +19678,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_source_control: &SiteSourceControl,
+        site_source_control: &models::SiteSourceControl,
         slot: &str,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update_source_control_slot::Response, create_or_update_source_control_slot::Error> {
@@ -19088,19 +19715,19 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_source_control_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_source_control_slot::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_source_control_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_source_control_slot::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_source_control_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_source_control_slot::Response::Accepted202(rsp_value))
             }
@@ -19114,12 +19741,12 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_source_control_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SiteSourceControl),
-            Created201(SiteSourceControl),
-            Accepted202(SiteSourceControl),
+            Ok200(models::SiteSourceControl),
+            Created201(models::SiteSourceControl),
+            Accepted202(models::SiteSourceControl),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -19143,7 +19770,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_source_control: &SiteSourceControl,
+        site_source_control: &models::SiteSourceControl,
         slot: &str,
         subscription_id: &str,
     ) -> std::result::Result<update_source_control_slot::Response, update_source_control_slot::Error> {
@@ -19180,13 +19807,13 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_source_control_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_source_control_slot::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_source_control_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_source_control_slot::Response::Created201(rsp_value))
             }
@@ -19200,11 +19827,11 @@ pub mod web_apps {
         }
     }
     pub mod update_source_control_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SiteSourceControl),
-            Created201(SiteSourceControl),
+            Ok200(models::SiteSourceControl),
+            Created201(models::SiteSourceControl),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -19274,7 +19901,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_source_control_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -19347,7 +19974,7 @@ pub mod web_apps {
         }
     }
     pub mod start_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -19413,7 +20040,7 @@ pub mod web_apps {
         }
     }
     pub mod stop_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -19479,7 +20106,7 @@ pub mod web_apps {
         }
     }
     pub mod sync_repository_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -19547,7 +20174,7 @@ pub mod web_apps {
         }
     }
     pub mod sync_function_triggers_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -19572,7 +20199,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TriggeredWebJobCollection, list_triggered_web_jobs_slot::Error> {
+    ) -> std::result::Result<models::TriggeredWebJobCollection, list_triggered_web_jobs_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/triggeredwebjobs",
@@ -19605,7 +20232,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggeredWebJobCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggeredWebJobCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_triggered_web_jobs_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19619,7 +20246,7 @@ pub mod web_apps {
         }
     }
     pub mod list_triggered_web_jobs_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -19645,7 +20272,7 @@ pub mod web_apps {
         web_job_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TriggeredWebJob, get_triggered_web_job_slot::Error> {
+    ) -> std::result::Result<models::TriggeredWebJob, get_triggered_web_job_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/triggeredwebjobs/{}",
@@ -19679,7 +20306,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggeredWebJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggeredWebJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_triggered_web_job_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19694,7 +20321,7 @@ pub mod web_apps {
         }
     }
     pub mod get_triggered_web_job_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -19766,7 +20393,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_triggered_web_job_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -19797,7 +20424,7 @@ pub mod web_apps {
         web_job_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TriggeredJobHistoryCollection, list_triggered_web_job_history_slot::Error> {
+    ) -> std::result::Result<models::TriggeredJobHistoryCollection, list_triggered_web_job_history_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/triggeredwebjobs/{}/history",
@@ -19831,7 +20458,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggeredJobHistoryCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggeredJobHistoryCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_triggered_web_job_history_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19846,7 +20473,7 @@ pub mod web_apps {
         }
     }
     pub mod list_triggered_web_job_history_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -19875,7 +20502,7 @@ pub mod web_apps {
         id: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TriggeredJobHistory, get_triggered_web_job_history_slot::Error> {
+    ) -> std::result::Result<models::TriggeredJobHistory, get_triggered_web_job_history_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/triggeredwebjobs/{}/history/{}",
@@ -19910,7 +20537,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggeredJobHistory = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggeredJobHistory = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_triggered_web_job_history_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -19925,7 +20552,7 @@ pub mod web_apps {
         }
     }
     pub mod get_triggered_web_job_history_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -19998,7 +20625,7 @@ pub mod web_apps {
         }
     }
     pub mod run_triggered_web_job_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -20026,7 +20653,7 @@ pub mod web_apps {
         slot: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<CsmUsageQuotaCollection, list_usages_slot::Error> {
+    ) -> std::result::Result<models::CsmUsageQuotaCollection, list_usages_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/usages",
@@ -20060,7 +20687,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsmUsageQuotaCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsmUsageQuotaCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_usages_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20074,7 +20701,7 @@ pub mod web_apps {
         }
     }
     pub mod list_usages_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20099,7 +20726,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Vec<VnetInfo>, list_vnet_connections_slot::Error> {
+    ) -> std::result::Result<Vec<models::VnetInfo>, list_vnet_connections_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/virtualNetworkConnections",
@@ -20132,7 +20759,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<VnetInfo> = serde_json::from_slice(rsp_body)
+                let rsp_value: Vec<models::VnetInfo> = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_vnet_connections_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20146,7 +20773,7 @@ pub mod web_apps {
         }
     }
     pub mod list_vnet_connections_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20172,7 +20799,7 @@ pub mod web_apps {
         vnet_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VnetInfo, get_vnet_connection_slot::Error> {
+    ) -> std::result::Result<models::VnetInfo, get_vnet_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/virtualNetworkConnections/{}",
@@ -20206,7 +20833,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_vnet_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20220,7 +20847,7 @@ pub mod web_apps {
         }
     }
     pub mod get_vnet_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20244,10 +20871,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         vnet_name: &str,
-        connection_envelope: &VnetInfo,
+        connection_envelope: &models::VnetInfo,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VnetInfo, create_or_update_vnet_connection_slot::Error> {
+    ) -> std::result::Result<models::VnetInfo, create_or_update_vnet_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/virtualNetworkConnections/{}",
@@ -20282,7 +20909,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_vnet_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20296,7 +20923,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_vnet_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20320,10 +20947,10 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         vnet_name: &str,
-        connection_envelope: &VnetInfo,
+        connection_envelope: &models::VnetInfo,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VnetInfo, update_vnet_connection_slot::Error> {
+    ) -> std::result::Result<models::VnetInfo, update_vnet_connection_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/virtualNetworkConnections/{}",
@@ -20358,7 +20985,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_vnet_connection_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20372,7 +20999,7 @@ pub mod web_apps {
         }
     }
     pub mod update_vnet_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20442,7 +21069,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_vnet_connection_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -20471,7 +21098,7 @@ pub mod web_apps {
         gateway_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VnetGateway, get_vnet_connection_gateway_slot::Error> {
+    ) -> std::result::Result<models::VnetGateway, get_vnet_connection_gateway_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/virtualNetworkConnections/{}/gateways/{}",
@@ -20506,7 +21133,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetGateway = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetGateway = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_vnet_connection_gateway_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20521,7 +21148,7 @@ pub mod web_apps {
         }
     }
     pub mod get_vnet_connection_gateway_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -20548,10 +21175,10 @@ pub mod web_apps {
         name: &str,
         vnet_name: &str,
         gateway_name: &str,
-        connection_envelope: &VnetGateway,
+        connection_envelope: &models::VnetGateway,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VnetGateway, create_or_update_vnet_connection_gateway_slot::Error> {
+    ) -> std::result::Result<models::VnetGateway, create_or_update_vnet_connection_gateway_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/virtualNetworkConnections/{}/gateways/{}",
@@ -20588,7 +21215,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetGateway = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetGateway = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_vnet_connection_gateway_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20602,7 +21229,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_vnet_connection_gateway_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20627,10 +21254,10 @@ pub mod web_apps {
         name: &str,
         vnet_name: &str,
         gateway_name: &str,
-        connection_envelope: &VnetGateway,
+        connection_envelope: &models::VnetGateway,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VnetGateway, update_vnet_connection_gateway_slot::Error> {
+    ) -> std::result::Result<models::VnetGateway, update_vnet_connection_gateway_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/virtualNetworkConnections/{}/gateways/{}",
@@ -20666,7 +21293,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetGateway = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetGateway = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_vnet_connection_gateway_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20680,7 +21307,7 @@ pub mod web_apps {
         }
     }
     pub mod update_vnet_connection_gateway_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20705,7 +21332,7 @@ pub mod web_apps {
         name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebJobCollection, list_web_jobs_slot::Error> {
+    ) -> std::result::Result<models::WebJobCollection, list_web_jobs_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/webjobs",
@@ -20736,7 +21363,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebJobCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebJobCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_web_jobs_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20750,7 +21377,7 @@ pub mod web_apps {
         }
     }
     pub mod list_web_jobs_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20776,7 +21403,7 @@ pub mod web_apps {
         web_job_name: &str,
         slot: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebJob, get_web_job_slot::Error> {
+    ) -> std::result::Result<models::WebJob, get_web_job_slot::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slots/{}/webjobs/{}",
@@ -20808,7 +21435,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WebJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_web_job_slot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20822,7 +21449,7 @@ pub mod web_apps {
         }
     }
     pub mod get_web_job_slot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20845,9 +21472,9 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        slot_swap_entity: &CsmSlotEntity,
+        slot_swap_entity: &models::CsmSlotEntity,
         subscription_id: &str,
-    ) -> std::result::Result<SlotDifferenceCollection, list_slot_differences_from_production::Error> {
+    ) -> std::result::Result<models::SlotDifferenceCollection, list_slot_differences_from_production::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/slotsdiffs",
@@ -20880,7 +21507,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SlotDifferenceCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SlotDifferenceCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_slot_differences_from_production::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -20894,7 +21521,7 @@ pub mod web_apps {
         }
     }
     pub mod list_slot_differences_from_production {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -20917,7 +21544,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        slot_swap_entity: &CsmSlotEntity,
+        slot_swap_entity: &models::CsmSlotEntity,
         subscription_id: &str,
     ) -> std::result::Result<swap_slot_with_production::Response, swap_slot_with_production::Error> {
         let http_client = operation_config.http_client();
@@ -20962,7 +21589,7 @@ pub mod web_apps {
         }
     }
     pub mod swap_slot_with_production {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -20991,7 +21618,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SnapshotCollection, list_snapshots::Error> {
+    ) -> std::result::Result<models::SnapshotCollection, list_snapshots::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/snapshots",
@@ -21021,7 +21648,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SnapshotCollection =
+                let rsp_value: models::SnapshotCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_snapshots::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21035,7 +21662,7 @@ pub mod web_apps {
         }
     }
     pub mod list_snapshots {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -21089,19 +21716,19 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_source_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get_source_control::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_source_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get_source_control::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_source_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get_source_control::Response::Accepted202(rsp_value))
             }
@@ -21115,12 +21742,12 @@ pub mod web_apps {
         }
     }
     pub mod get_source_control {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SiteSourceControl),
-            Created201(SiteSourceControl),
-            Accepted202(SiteSourceControl),
+            Ok200(models::SiteSourceControl),
+            Created201(models::SiteSourceControl),
+            Accepted202(models::SiteSourceControl),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -21144,7 +21771,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_source_control: &SiteSourceControl,
+        site_source_control: &models::SiteSourceControl,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update_source_control::Response, create_or_update_source_control::Error> {
         let http_client = operation_config.http_client();
@@ -21179,19 +21806,19 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_source_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_source_control::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_source_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_source_control::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_source_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_source_control::Response::Accepted202(rsp_value))
             }
@@ -21205,12 +21832,12 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_source_control {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SiteSourceControl),
-            Created201(SiteSourceControl),
-            Accepted202(SiteSourceControl),
+            Ok200(models::SiteSourceControl),
+            Created201(models::SiteSourceControl),
+            Accepted202(models::SiteSourceControl),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -21234,7 +21861,7 @@ pub mod web_apps {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        site_source_control: &SiteSourceControl,
+        site_source_control: &models::SiteSourceControl,
         subscription_id: &str,
     ) -> std::result::Result<update_source_control::Response, update_source_control::Error> {
         let http_client = operation_config.http_client();
@@ -21269,13 +21896,13 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_source_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_source_control::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSourceControl = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSourceControl = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_source_control::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_source_control::Response::Created201(rsp_value))
             }
@@ -21289,11 +21916,11 @@ pub mod web_apps {
         }
     }
     pub mod update_source_control {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SiteSourceControl),
-            Created201(SiteSourceControl),
+            Ok200(models::SiteSourceControl),
+            Created201(models::SiteSourceControl),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -21361,7 +21988,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_source_control {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21429,7 +22056,7 @@ pub mod web_apps {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -21490,7 +22117,7 @@ pub mod web_apps {
         }
     }
     pub mod stop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -21554,7 +22181,7 @@ pub mod web_apps {
         }
     }
     pub mod sync_repository {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -21620,7 +22247,7 @@ pub mod web_apps {
         }
     }
     pub mod sync_function_triggers {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -21644,7 +22271,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TriggeredWebJobCollection, list_triggered_web_jobs::Error> {
+    ) -> std::result::Result<models::TriggeredWebJobCollection, list_triggered_web_jobs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/triggeredwebjobs",
@@ -21676,7 +22303,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggeredWebJobCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggeredWebJobCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_triggered_web_jobs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21690,7 +22317,7 @@ pub mod web_apps {
         }
     }
     pub mod list_triggered_web_jobs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -21715,7 +22342,7 @@ pub mod web_apps {
         name: &str,
         web_job_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TriggeredWebJob, get_triggered_web_job::Error> {
+    ) -> std::result::Result<models::TriggeredWebJob, get_triggered_web_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/triggeredwebjobs/{}",
@@ -21748,7 +22375,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggeredWebJob = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggeredWebJob = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_triggered_web_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21763,7 +22390,7 @@ pub mod web_apps {
         }
     }
     pub mod get_triggered_web_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -21833,7 +22460,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_triggered_web_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21863,7 +22490,7 @@ pub mod web_apps {
         name: &str,
         web_job_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TriggeredJobHistoryCollection, list_triggered_web_job_history::Error> {
+    ) -> std::result::Result<models::TriggeredJobHistoryCollection, list_triggered_web_job_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/triggeredwebjobs/{}/history",
@@ -21896,7 +22523,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggeredJobHistoryCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggeredJobHistoryCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_triggered_web_job_history::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21911,7 +22538,7 @@ pub mod web_apps {
         }
     }
     pub mod list_triggered_web_job_history {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -21939,7 +22566,7 @@ pub mod web_apps {
         web_job_name: &str,
         id: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TriggeredJobHistory, get_triggered_web_job_history::Error> {
+    ) -> std::result::Result<models::TriggeredJobHistory, get_triggered_web_job_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/triggeredwebjobs/{}/history/{}",
@@ -21973,7 +22600,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggeredJobHistory = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggeredJobHistory = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_triggered_web_job_history::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -21988,7 +22615,7 @@ pub mod web_apps {
         }
     }
     pub mod get_triggered_web_job_history {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -22059,7 +22686,7 @@ pub mod web_apps {
         }
     }
     pub mod run_triggered_web_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -22086,7 +22713,7 @@ pub mod web_apps {
         name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<CsmUsageQuotaCollection, list_usages::Error> {
+    ) -> std::result::Result<models::CsmUsageQuotaCollection, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/usages",
@@ -22119,7 +22746,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsmUsageQuotaCollection =
+                let rsp_value: models::CsmUsageQuotaCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usages::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22133,7 +22760,7 @@ pub mod web_apps {
         }
     }
     pub mod list_usages {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -22157,7 +22784,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Vec<VnetInfo>, list_vnet_connections::Error> {
+    ) -> std::result::Result<Vec<models::VnetInfo>, list_vnet_connections::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/virtualNetworkConnections",
@@ -22189,7 +22816,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<VnetInfo> = serde_json::from_slice(rsp_body)
+                let rsp_value: Vec<models::VnetInfo> = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_vnet_connections::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22203,7 +22830,7 @@ pub mod web_apps {
         }
     }
     pub mod list_vnet_connections {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -22228,7 +22855,7 @@ pub mod web_apps {
         name: &str,
         vnet_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VnetInfo, get_vnet_connection::Error> {
+    ) -> std::result::Result<models::VnetInfo, get_vnet_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/virtualNetworkConnections/{}",
@@ -22259,7 +22886,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_vnet_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22273,7 +22900,7 @@ pub mod web_apps {
         }
     }
     pub mod get_vnet_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -22297,9 +22924,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         vnet_name: &str,
-        connection_envelope: &VnetInfo,
+        connection_envelope: &models::VnetInfo,
         subscription_id: &str,
-    ) -> std::result::Result<VnetInfo, create_or_update_vnet_connection::Error> {
+    ) -> std::result::Result<models::VnetInfo, create_or_update_vnet_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/virtualNetworkConnections/{}",
@@ -22333,7 +22960,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_vnet_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22347,7 +22974,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_vnet_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -22371,9 +22998,9 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         vnet_name: &str,
-        connection_envelope: &VnetInfo,
+        connection_envelope: &models::VnetInfo,
         subscription_id: &str,
-    ) -> std::result::Result<VnetInfo, update_vnet_connection::Error> {
+    ) -> std::result::Result<models::VnetInfo, update_vnet_connection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/virtualNetworkConnections/{}",
@@ -22407,7 +23034,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_vnet_connection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22421,7 +23048,7 @@ pub mod web_apps {
         }
     }
     pub mod update_vnet_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -22489,7 +23116,7 @@ pub mod web_apps {
         }
     }
     pub mod delete_vnet_connection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -22517,7 +23144,7 @@ pub mod web_apps {
         vnet_name: &str,
         gateway_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<VnetGateway, get_vnet_connection_gateway::Error> {
+    ) -> std::result::Result<models::VnetGateway, get_vnet_connection_gateway::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/virtualNetworkConnections/{}/gateways/{}",
@@ -22551,7 +23178,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetGateway = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetGateway = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_vnet_connection_gateway::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22566,7 +23193,7 @@ pub mod web_apps {
         }
     }
     pub mod get_vnet_connection_gateway {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -22593,9 +23220,9 @@ pub mod web_apps {
         name: &str,
         vnet_name: &str,
         gateway_name: &str,
-        connection_envelope: &VnetGateway,
+        connection_envelope: &models::VnetGateway,
         subscription_id: &str,
-    ) -> std::result::Result<VnetGateway, create_or_update_vnet_connection_gateway::Error> {
+    ) -> std::result::Result<models::VnetGateway, create_or_update_vnet_connection_gateway::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/virtualNetworkConnections/{}/gateways/{}",
@@ -22630,7 +23257,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetGateway = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetGateway = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_vnet_connection_gateway::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22644,7 +23271,7 @@ pub mod web_apps {
         }
     }
     pub mod create_or_update_vnet_connection_gateway {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -22669,9 +23296,9 @@ pub mod web_apps {
         name: &str,
         vnet_name: &str,
         gateway_name: &str,
-        connection_envelope: &VnetGateway,
+        connection_envelope: &models::VnetGateway,
         subscription_id: &str,
-    ) -> std::result::Result<VnetGateway, update_vnet_connection_gateway::Error> {
+    ) -> std::result::Result<models::VnetGateway, update_vnet_connection_gateway::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/virtualNetworkConnections/{}/gateways/{}",
@@ -22706,7 +23333,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VnetGateway = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VnetGateway = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_vnet_connection_gateway::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22720,7 +23347,7 @@ pub mod web_apps {
         }
     }
     pub mod update_vnet_connection_gateway {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -22744,7 +23371,7 @@ pub mod web_apps {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebJobCollection, list_web_jobs::Error> {
+    ) -> std::result::Result<models::WebJobCollection, list_web_jobs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/webjobs",
@@ -22774,7 +23401,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebJobCollection =
+                let rsp_value: models::WebJobCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list_web_jobs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22788,7 +23415,7 @@ pub mod web_apps {
         }
     }
     pub mod list_web_jobs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -22813,7 +23440,7 @@ pub mod web_apps {
         name: &str,
         web_job_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<WebJob, get_web_job::Error> {
+    ) -> std::result::Result<models::WebJob, get_web_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Web/sites/{}/webjobs/{}",
@@ -22844,7 +23471,7 @@ pub mod web_apps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WebJob =
+                let rsp_value: models::WebJob =
                     serde_json::from_slice(rsp_body).map_err(|source| get_web_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -22858,7 +23485,7 @@ pub mod web_apps {
         }
     }
     pub mod get_web_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

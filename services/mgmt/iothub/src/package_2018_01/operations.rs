@@ -2,10 +2,69 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    IotHubResource_Get(#[from] iot_hub_resource::get::Error),
+    #[error(transparent)]
+    IotHubResource_CreateOrUpdate(#[from] iot_hub_resource::create_or_update::Error),
+    #[error(transparent)]
+    IotHubResource_Update(#[from] iot_hub_resource::update::Error),
+    #[error(transparent)]
+    IotHubResource_Delete(#[from] iot_hub_resource::delete::Error),
+    #[error(transparent)]
+    IotHubResource_ListBySubscription(#[from] iot_hub_resource::list_by_subscription::Error),
+    #[error(transparent)]
+    IotHubResource_ListByResourceGroup(#[from] iot_hub_resource::list_by_resource_group::Error),
+    #[error(transparent)]
+    IotHubResource_GetStats(#[from] iot_hub_resource::get_stats::Error),
+    #[error(transparent)]
+    IotHubResource_GetValidSkus(#[from] iot_hub_resource::get_valid_skus::Error),
+    #[error(transparent)]
+    IotHubResource_ListEventHubConsumerGroups(#[from] iot_hub_resource::list_event_hub_consumer_groups::Error),
+    #[error(transparent)]
+    IotHubResource_GetEventHubConsumerGroup(#[from] iot_hub_resource::get_event_hub_consumer_group::Error),
+    #[error(transparent)]
+    IotHubResource_CreateEventHubConsumerGroup(#[from] iot_hub_resource::create_event_hub_consumer_group::Error),
+    #[error(transparent)]
+    IotHubResource_DeleteEventHubConsumerGroup(#[from] iot_hub_resource::delete_event_hub_consumer_group::Error),
+    #[error(transparent)]
+    IotHubResource_ListJobs(#[from] iot_hub_resource::list_jobs::Error),
+    #[error(transparent)]
+    IotHubResource_GetJob(#[from] iot_hub_resource::get_job::Error),
+    #[error(transparent)]
+    IotHubResource_GetQuotaMetrics(#[from] iot_hub_resource::get_quota_metrics::Error),
+    #[error(transparent)]
+    IotHubResource_CheckNameAvailability(#[from] iot_hub_resource::check_name_availability::Error),
+    #[error(transparent)]
+    IotHubResource_ListKeys(#[from] iot_hub_resource::list_keys::Error),
+    #[error(transparent)]
+    IotHubResource_GetKeysForKeyName(#[from] iot_hub_resource::get_keys_for_key_name::Error),
+    #[error(transparent)]
+    IotHubResource_ExportDevices(#[from] iot_hub_resource::export_devices::Error),
+    #[error(transparent)]
+    IotHubResource_ImportDevices(#[from] iot_hub_resource::import_devices::Error),
+    #[error(transparent)]
+    Certificates_ListByIotHub(#[from] certificates::list_by_iot_hub::Error),
+    #[error(transparent)]
+    Certificates_Get(#[from] certificates::get::Error),
+    #[error(transparent)]
+    Certificates_CreateOrUpdate(#[from] certificates::create_or_update::Error),
+    #[error(transparent)]
+    Certificates_Delete(#[from] certificates::delete::Error),
+    #[error(transparent)]
+    Certificates_GenerateVerificationCode(#[from] certificates::generate_verification_code::Error),
+    #[error(transparent)]
+    Certificates_Verify(#[from] certificates::verify::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Devices/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +85,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +101,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,13 +125,13 @@ pub mod operations {
     }
 }
 pub mod iot_hub_resource {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<IotHubDescription, get::Error> {
+    ) -> std::result::Result<models::IotHubDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}",
@@ -99,13 +158,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription =
+                let rsp_value: models::IotHubDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -115,7 +174,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -142,7 +201,7 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        iot_hub_description: &IotHubDescription,
+        iot_hub_description: &models::IotHubDescription,
         if_match: Option<&str>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -178,19 +237,19 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IotHubDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IotHubDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -200,11 +259,11 @@ pub mod iot_hub_resource {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(IotHubDescription),
-            Ok200(IotHubDescription),
+            Created201(models::IotHubDescription),
+            Ok200(models::IotHubDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -232,8 +291,8 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        iot_hub_tags: &TagsResource,
-    ) -> std::result::Result<IotHubDescription, update::Error> {
+        iot_hub_tags: &models::TagsResource,
+    ) -> std::result::Result<models::IotHubDescription, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}",
@@ -261,7 +320,7 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription =
+                let rsp_value: models::IotHubDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -275,7 +334,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -326,26 +385,26 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription =
+                let rsp_value: models::IotHubDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Accepted202(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescription =
+                let rsp_value: models::IotHubDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             http::StatusCode::NOT_FOUND => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::NotFound404 { value: rsp_value })
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -355,11 +414,11 @@ pub mod iot_hub_resource {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Accepted202(IotHubDescription),
-            Ok200(IotHubDescription),
+            Accepted202(models::IotHubDescription),
+            Ok200(models::IotHubDescription),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -388,7 +447,7 @@ pub mod iot_hub_resource {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<IotHubDescriptionListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::IotHubDescriptionListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Devices/IotHubs",
@@ -416,13 +475,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescriptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IotHubDescriptionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -432,7 +491,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -458,7 +517,7 @@ pub mod iot_hub_resource {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<IotHubDescriptionListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::IotHubDescriptionListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs",
@@ -489,13 +548,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubDescriptionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IotHubDescriptionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -505,7 +564,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -532,7 +591,7 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<RegistryStatistics, get_stats::Error> {
+    ) -> std::result::Result<models::RegistryStatistics, get_stats::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/IotHubStats",
@@ -562,13 +621,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RegistryStatistics =
+                let rsp_value: models::RegistryStatistics =
                     serde_json::from_slice(rsp_body).map_err(|source| get_stats::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get_stats::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_stats::Error::DefaultResponse {
                     status_code,
@@ -578,7 +637,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_stats {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -605,7 +664,7 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<IotHubSkuDescriptionListResult, get_valid_skus::Error> {
+    ) -> std::result::Result<models::IotHubSkuDescriptionListResult, get_valid_skus::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/skus",
@@ -635,13 +694,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubSkuDescriptionListResult =
+                let rsp_value: models::IotHubSkuDescriptionListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get_valid_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get_valid_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_valid_skus::Error::DefaultResponse {
                     status_code,
@@ -651,7 +710,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_valid_skus {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -679,7 +738,7 @@ pub mod iot_hub_resource {
         resource_group_name: &str,
         resource_name: &str,
         event_hub_endpoint_name: &str,
-    ) -> std::result::Result<EventHubConsumerGroupsListResult, list_event_hub_consumer_groups::Error> {
+    ) -> std::result::Result<models::EventHubConsumerGroupsListResult, list_event_hub_consumer_groups::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/eventHubEndpoints/{}/ConsumerGroups",
@@ -712,13 +771,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConsumerGroupsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventHubConsumerGroupsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_event_hub_consumer_groups::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_event_hub_consumer_groups::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_event_hub_consumer_groups::Error::DefaultResponse {
                     status_code,
@@ -728,7 +787,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_event_hub_consumer_groups {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -757,7 +816,7 @@ pub mod iot_hub_resource {
         resource_name: &str,
         event_hub_endpoint_name: &str,
         name: &str,
-    ) -> std::result::Result<EventHubConsumerGroupInfo, get_event_hub_consumer_group::Error> {
+    ) -> std::result::Result<models::EventHubConsumerGroupInfo, get_event_hub_consumer_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/eventHubEndpoints/{}/ConsumerGroups/{}",
@@ -791,13 +850,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConsumerGroupInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventHubConsumerGroupInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_event_hub_consumer_group::Error::DefaultResponse {
                     status_code,
@@ -807,7 +866,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_event_hub_consumer_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -836,7 +895,7 @@ pub mod iot_hub_resource {
         resource_name: &str,
         event_hub_endpoint_name: &str,
         name: &str,
-    ) -> std::result::Result<EventHubConsumerGroupInfo, create_event_hub_consumer_group::Error> {
+    ) -> std::result::Result<models::EventHubConsumerGroupInfo, create_event_hub_consumer_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/eventHubEndpoints/{}/ConsumerGroups/{}",
@@ -870,13 +929,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubConsumerGroupInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventHubConsumerGroupInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_event_hub_consumer_group::Error::DefaultResponse {
                     status_code,
@@ -886,7 +945,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod create_event_hub_consumer_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -950,7 +1009,7 @@ pub mod iot_hub_resource {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_event_hub_consumer_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_event_hub_consumer_group::Error::DefaultResponse {
                     status_code,
@@ -960,7 +1019,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod delete_event_hub_consumer_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -987,7 +1046,7 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<JobResponseListResult, list_jobs::Error> {
+    ) -> std::result::Result<models::JobResponseListResult, list_jobs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/jobs",
@@ -1017,13 +1076,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResponseListResult =
+                let rsp_value: models::JobResponseListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_jobs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list_jobs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_jobs::Error::DefaultResponse {
                     status_code,
@@ -1033,7 +1092,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_jobs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1061,7 +1120,7 @@ pub mod iot_hub_resource {
         resource_group_name: &str,
         resource_name: &str,
         job_id: &str,
-    ) -> std::result::Result<JobResponse, get_job::Error> {
+    ) -> std::result::Result<models::JobResponse, get_job::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/jobs/{}",
@@ -1092,13 +1151,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResponse =
+                let rsp_value: models::JobResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get_job::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_job::Error::DefaultResponse {
                     status_code,
@@ -1108,7 +1167,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_job {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1135,7 +1194,7 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<IotHubQuotaMetricInfoListResult, get_quota_metrics::Error> {
+    ) -> std::result::Result<models::IotHubQuotaMetricInfoListResult, get_quota_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/quotaMetrics",
@@ -1165,13 +1224,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubQuotaMetricInfoListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IotHubQuotaMetricInfoListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_quota_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_quota_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_quota_metrics::Error::DefaultResponse {
                     status_code,
@@ -1181,7 +1240,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_quota_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1206,8 +1265,8 @@ pub mod iot_hub_resource {
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        operation_inputs: &OperationInputs,
-    ) -> std::result::Result<IotHubNameAvailabilityInfo, check_name_availability::Error> {
+        operation_inputs: &models::OperationInputs,
+    ) -> std::result::Result<models::IotHubNameAvailabilityInfo, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Devices/checkNameAvailability",
@@ -1238,13 +1297,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IotHubNameAvailabilityInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IotHubNameAvailabilityInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -1254,7 +1313,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1281,7 +1340,7 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<SharedAccessSignatureAuthorizationRuleListResult, list_keys::Error> {
+    ) -> std::result::Result<models::SharedAccessSignatureAuthorizationRuleListResult, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/listkeys",
@@ -1312,13 +1371,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessSignatureAuthorizationRuleListResult =
+                let rsp_value: models::SharedAccessSignatureAuthorizationRuleListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_keys::Error::DefaultResponse {
                     status_code,
@@ -1328,7 +1387,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1356,7 +1415,7 @@ pub mod iot_hub_resource {
         resource_group_name: &str,
         resource_name: &str,
         key_name: &str,
-    ) -> std::result::Result<SharedAccessSignatureAuthorizationRule, get_keys_for_key_name::Error> {
+    ) -> std::result::Result<models::SharedAccessSignatureAuthorizationRule, get_keys_for_key_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/IotHubKeys/{}/listkeys",
@@ -1390,13 +1449,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessSignatureAuthorizationRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessSignatureAuthorizationRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_keys_for_key_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_keys_for_key_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_keys_for_key_name::Error::DefaultResponse {
                     status_code,
@@ -1406,7 +1465,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod get_keys_for_key_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1433,8 +1492,8 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        export_devices_parameters: &ExportDevicesRequest,
-    ) -> std::result::Result<JobResponse, export_devices::Error> {
+        export_devices_parameters: &models::ExportDevicesRequest,
+    ) -> std::result::Result<models::JobResponse, export_devices::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/exportDevices",
@@ -1465,13 +1524,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResponse =
+                let rsp_value: models::JobResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| export_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| export_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(export_devices::Error::DefaultResponse {
                     status_code,
@@ -1481,7 +1540,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod export_devices {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1508,8 +1567,8 @@ pub mod iot_hub_resource {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        import_devices_parameters: &ImportDevicesRequest,
-    ) -> std::result::Result<JobResponse, import_devices::Error> {
+        import_devices_parameters: &models::ImportDevicesRequest,
+    ) -> std::result::Result<models::JobResponse, import_devices::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/importDevices",
@@ -1540,13 +1599,13 @@ pub mod iot_hub_resource {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobResponse =
+                let rsp_value: models::JobResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| import_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| import_devices::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(import_devices::Error::DefaultResponse {
                     status_code,
@@ -1556,7 +1615,7 @@ pub mod iot_hub_resource {
         }
     }
     pub mod import_devices {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1580,13 +1639,13 @@ pub mod iot_hub_resource {
     }
 }
 pub mod certificates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_iot_hub(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<CertificateListDescription, list_by_iot_hub::Error> {
+    ) -> std::result::Result<models::CertificateListDescription, list_by_iot_hub::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates",
@@ -1616,13 +1675,13 @@ pub mod certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CertificateListDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CertificateListDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_iot_hub::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_iot_hub::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_iot_hub::Error::DefaultResponse {
                     status_code,
@@ -1632,7 +1691,7 @@ pub mod certificates {
         }
     }
     pub mod list_by_iot_hub {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1660,7 +1719,7 @@ pub mod certificates {
         resource_group_name: &str,
         resource_name: &str,
         certificate_name: &str,
-    ) -> std::result::Result<CertificateDescription, get::Error> {
+    ) -> std::result::Result<models::CertificateDescription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates/{}",
@@ -1688,13 +1747,13 @@ pub mod certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CertificateDescription =
+                let rsp_value: models::CertificateDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1704,7 +1763,7 @@ pub mod certificates {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1732,7 +1791,7 @@ pub mod certificates {
         resource_group_name: &str,
         resource_name: &str,
         certificate_name: &str,
-        certificate_description: &CertificateBodyDescription,
+        certificate_description: &models::CertificateBodyDescription,
         if_match: Option<&str>,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1769,19 +1828,19 @@ pub mod certificates {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CertificateDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CertificateDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CertificateDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CertificateDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1791,11 +1850,11 @@ pub mod certificates {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(CertificateDescription),
-            Ok200(CertificateDescription),
+            Created201(models::CertificateDescription),
+            Ok200(models::CertificateDescription),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1856,7 +1915,7 @@ pub mod certificates {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1866,7 +1925,7 @@ pub mod certificates {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1900,7 +1959,7 @@ pub mod certificates {
         resource_name: &str,
         certificate_name: &str,
         if_match: &str,
-    ) -> std::result::Result<CertificateWithNonceDescription, generate_verification_code::Error> {
+    ) -> std::result::Result<models::CertificateWithNonceDescription, generate_verification_code::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates/{}/generateVerificationCode",
@@ -1935,13 +1994,13 @@ pub mod certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CertificateWithNonceDescription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CertificateWithNonceDescription = serde_json::from_slice(rsp_body)
                     .map_err(|source| generate_verification_code::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| generate_verification_code::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(generate_verification_code::Error::DefaultResponse {
                     status_code,
@@ -1951,7 +2010,7 @@ pub mod certificates {
         }
     }
     pub mod generate_verification_code {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1979,9 +2038,9 @@ pub mod certificates {
         resource_group_name: &str,
         resource_name: &str,
         certificate_name: &str,
-        certificate_verification_body: &CertificateVerificationDescription,
+        certificate_verification_body: &models::CertificateVerificationDescription,
         if_match: &str,
-    ) -> std::result::Result<CertificateDescription, verify::Error> {
+    ) -> std::result::Result<models::CertificateDescription, verify::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Devices/IotHubs/{}/certificates/{}/verify",
@@ -2011,13 +2070,13 @@ pub mod certificates {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CertificateDescription =
+                let rsp_value: models::CertificateDescription =
                     serde_json::from_slice(rsp_body).map_err(|source| verify::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDetails =
+                let rsp_value: models::ErrorDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| verify::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(verify::Error::DefaultResponse {
                     status_code,
@@ -2027,7 +2086,7 @@ pub mod certificates {
         }
     }
     pub mod verify {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

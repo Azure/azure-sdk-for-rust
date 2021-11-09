@@ -2,16 +2,57 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    AvailabilityGroupListeners_Get(#[from] availability_group_listeners::get::Error),
+    #[error(transparent)]
+    AvailabilityGroupListeners_CreateOrUpdate(#[from] availability_group_listeners::create_or_update::Error),
+    #[error(transparent)]
+    AvailabilityGroupListeners_Delete(#[from] availability_group_listeners::delete::Error),
+    #[error(transparent)]
+    AvailabilityGroupListeners_ListByGroup(#[from] availability_group_listeners::list_by_group::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    SqlVirtualMachineGroups_Get(#[from] sql_virtual_machine_groups::get::Error),
+    #[error(transparent)]
+    SqlVirtualMachineGroups_CreateOrUpdate(#[from] sql_virtual_machine_groups::create_or_update::Error),
+    #[error(transparent)]
+    SqlVirtualMachineGroups_Update(#[from] sql_virtual_machine_groups::update::Error),
+    #[error(transparent)]
+    SqlVirtualMachineGroups_Delete(#[from] sql_virtual_machine_groups::delete::Error),
+    #[error(transparent)]
+    SqlVirtualMachineGroups_ListByResourceGroup(#[from] sql_virtual_machine_groups::list_by_resource_group::Error),
+    #[error(transparent)]
+    SqlVirtualMachineGroups_List(#[from] sql_virtual_machine_groups::list::Error),
+    #[error(transparent)]
+    SqlVirtualMachines_ListBySqlVmGroup(#[from] sql_virtual_machines::list_by_sql_vm_group::Error),
+    #[error(transparent)]
+    SqlVirtualMachines_List(#[from] sql_virtual_machines::list::Error),
+    #[error(transparent)]
+    SqlVirtualMachines_Get(#[from] sql_virtual_machines::get::Error),
+    #[error(transparent)]
+    SqlVirtualMachines_CreateOrUpdate(#[from] sql_virtual_machines::create_or_update::Error),
+    #[error(transparent)]
+    SqlVirtualMachines_Update(#[from] sql_virtual_machines::update::Error),
+    #[error(transparent)]
+    SqlVirtualMachines_Delete(#[from] sql_virtual_machines::delete::Error),
+    #[error(transparent)]
+    SqlVirtualMachines_ListByResourceGroup(#[from] sql_virtual_machines::list_by_resource_group::Error),
+}
 pub mod availability_group_listeners {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         sql_virtual_machine_group_name: &str,
         availability_group_listener_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AvailabilityGroupListener, get::Error> {
+    ) -> std::result::Result<models::AvailabilityGroupListener, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners/{}" , operation_config . base_path () , subscription_id , resource_group_name , sql_virtual_machine_group_name , availability_group_listener_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -32,7 +73,7 @@ pub mod availability_group_listeners {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityGroupListener =
+                let rsp_value: models::AvailabilityGroupListener =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +81,7 @@ pub mod availability_group_listeners {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -64,7 +105,7 @@ pub mod availability_group_listeners {
         resource_group_name: &str,
         sql_virtual_machine_group_name: &str,
         availability_group_listener_name: &str,
-        parameters: &AvailabilityGroupListener,
+        parameters: &models::AvailabilityGroupListener,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -91,13 +132,13 @@ pub mod availability_group_listeners {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityGroupListener = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailabilityGroupListener = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityGroupListener = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailabilityGroupListener = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -105,11 +146,11 @@ pub mod availability_group_listeners {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AvailabilityGroupListener),
-            Created201(AvailabilityGroupListener),
+            Ok200(models::AvailabilityGroupListener),
+            Created201(models::AvailabilityGroupListener),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -161,7 +202,7 @@ pub mod availability_group_listeners {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -191,7 +232,7 @@ pub mod availability_group_listeners {
         resource_group_name: &str,
         sql_virtual_machine_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AvailabilityGroupListenerListResult, list_by_group::Error> {
+    ) -> std::result::Result<models::AvailabilityGroupListenerListResult, list_by_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners" , operation_config . base_path () , subscription_id , resource_group_name , sql_virtual_machine_group_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_group::Error::ParseUrlError)?;
@@ -215,7 +256,7 @@ pub mod availability_group_listeners {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailabilityGroupListenerListResult =
+                let rsp_value: models::AvailabilityGroupListenerListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -223,7 +264,7 @@ pub mod availability_group_listeners {
         }
     }
     pub mod list_by_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -244,8 +285,8 @@ pub mod availability_group_listeners {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.SqlVirtualMachine/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -266,7 +307,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -274,7 +315,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -295,13 +336,13 @@ pub mod operations {
     }
 }
 pub mod sql_virtual_machine_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         sql_virtual_machine_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachineGroup, get::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachineGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}",
@@ -328,7 +369,7 @@ pub mod sql_virtual_machine_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineGroup =
+                let rsp_value: models::SqlVirtualMachineGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -336,7 +377,7 @@ pub mod sql_virtual_machine_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -359,7 +400,7 @@ pub mod sql_virtual_machine_groups {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         sql_virtual_machine_group_name: &str,
-        parameters: &SqlVirtualMachineGroup,
+        parameters: &models::SqlVirtualMachineGroup,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -392,13 +433,13 @@ pub mod sql_virtual_machine_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlVirtualMachineGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlVirtualMachineGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -406,11 +447,11 @@ pub mod sql_virtual_machine_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SqlVirtualMachineGroup),
-            Created201(SqlVirtualMachineGroup),
+            Ok200(models::SqlVirtualMachineGroup),
+            Created201(models::SqlVirtualMachineGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -434,9 +475,9 @@ pub mod sql_virtual_machine_groups {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         sql_virtual_machine_group_name: &str,
-        parameters: &SqlVirtualMachineGroupUpdate,
+        parameters: &models::SqlVirtualMachineGroupUpdate,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachineGroup, update::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachineGroup, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}",
@@ -464,7 +505,7 @@ pub mod sql_virtual_machine_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineGroup =
+                let rsp_value: models::SqlVirtualMachineGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -472,7 +513,7 @@ pub mod sql_virtual_machine_groups {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -528,7 +569,7 @@ pub mod sql_virtual_machine_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -557,7 +598,7 @@ pub mod sql_virtual_machine_groups {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachineGroupListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachineGroupListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups",
@@ -588,7 +629,7 @@ pub mod sql_virtual_machine_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlVirtualMachineGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -596,7 +637,7 @@ pub mod sql_virtual_machine_groups {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -618,7 +659,7 @@ pub mod sql_virtual_machine_groups {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachineGroupListResult, list::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachineGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups",
@@ -643,7 +684,7 @@ pub mod sql_virtual_machine_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineGroupListResult =
+                let rsp_value: models::SqlVirtualMachineGroupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -651,7 +692,7 @@ pub mod sql_virtual_machine_groups {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -672,13 +713,13 @@ pub mod sql_virtual_machine_groups {
     }
 }
 pub mod sql_virtual_machines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_sql_vm_group(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         sql_virtual_machine_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachineListResult, list_by_sql_vm_group::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachineListResult, list_by_sql_vm_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/sqlVirtualMachines",
@@ -708,7 +749,7 @@ pub mod sql_virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlVirtualMachineListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_sql_vm_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -716,7 +757,7 @@ pub mod sql_virtual_machines {
         }
     }
     pub mod list_by_sql_vm_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -738,7 +779,7 @@ pub mod sql_virtual_machines {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachineListResult, list::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachineListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines",
@@ -763,7 +804,7 @@ pub mod sql_virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineListResult =
+                let rsp_value: models::SqlVirtualMachineListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -771,7 +812,7 @@ pub mod sql_virtual_machines {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -796,7 +837,7 @@ pub mod sql_virtual_machines {
         sql_virtual_machine_name: &str,
         expand: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachine, get::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachine, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}",
@@ -826,7 +867,7 @@ pub mod sql_virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachine =
+                let rsp_value: models::SqlVirtualMachine =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -834,7 +875,7 @@ pub mod sql_virtual_machines {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -857,7 +898,7 @@ pub mod sql_virtual_machines {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         sql_virtual_machine_name: &str,
-        parameters: &SqlVirtualMachine,
+        parameters: &models::SqlVirtualMachine,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -890,13 +931,13 @@ pub mod sql_virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachine = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlVirtualMachine = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachine = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlVirtualMachine = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -904,11 +945,11 @@ pub mod sql_virtual_machines {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SqlVirtualMachine),
-            Created201(SqlVirtualMachine),
+            Ok200(models::SqlVirtualMachine),
+            Created201(models::SqlVirtualMachine),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -932,9 +973,9 @@ pub mod sql_virtual_machines {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         sql_virtual_machine_name: &str,
-        parameters: &SqlVirtualMachineUpdate,
+        parameters: &models::SqlVirtualMachineUpdate,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachine, update::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachine, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}",
@@ -962,7 +1003,7 @@ pub mod sql_virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachine =
+                let rsp_value: models::SqlVirtualMachine =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -970,7 +1011,7 @@ pub mod sql_virtual_machines {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1026,7 +1067,7 @@ pub mod sql_virtual_machines {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1055,7 +1096,7 @@ pub mod sql_virtual_machines {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SqlVirtualMachineListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::SqlVirtualMachineListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines",
@@ -1086,7 +1127,7 @@ pub mod sql_virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SqlVirtualMachineListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SqlVirtualMachineListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1094,7 +1135,7 @@ pub mod sql_virtual_machines {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

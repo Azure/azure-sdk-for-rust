@@ -2,10 +2,25 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    SupportPlanTypes_Get(#[from] support_plan_types::get::Error),
+    #[error(transparent)]
+    SupportPlanTypes_CreateOrUpdate(#[from] support_plan_types::create_or_update::Error),
+    #[error(transparent)]
+    SupportPlanTypes_Delete(#[from] support_plan_types::delete::Error),
+    #[error(transparent)]
+    SupportPlanTypes_ListInfo(#[from] support_plan_types::list_info::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListValue, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListValue, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Addons/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +41,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListValue =
+                let rsp_value: models::OperationListValue =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition =
+                let rsp_value: models::ErrorDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +57,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,13 +81,13 @@ pub mod operations {
     }
 }
 pub mod support_plan_types {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         provider_name: &str,
         plan_type_name: &str,
-    ) -> std::result::Result<CanonicalSupportPlanResponseEnvelope, get::Error> {
+    ) -> std::result::Result<models::CanonicalSupportPlanResponseEnvelope, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Addons/supportProviders/{}/supportPlanTypes/{}",
@@ -99,14 +114,14 @@ pub mod support_plan_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CanonicalSupportPlanResponseEnvelope =
+                let rsp_value: models::CanonicalSupportPlanResponseEnvelope =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::NOT_FOUND => Err(get::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition =
+                let rsp_value: models::ErrorDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -116,7 +131,7 @@ pub mod support_plan_types {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -175,20 +190,20 @@ pub mod support_plan_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CanonicalSupportPlanResponseEnvelope = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CanonicalSupportPlanResponseEnvelope = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CanonicalSupportPlanResponseEnvelope = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CanonicalSupportPlanResponseEnvelope = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::NOT_FOUND => Err(create_or_update::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -198,11 +213,11 @@ pub mod support_plan_types {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CanonicalSupportPlanResponseEnvelope),
-            Created201(CanonicalSupportPlanResponseEnvelope),
+            Ok200(models::CanonicalSupportPlanResponseEnvelope),
+            Created201(models::CanonicalSupportPlanResponseEnvelope),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -259,14 +274,14 @@ pub mod support_plan_types {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CanonicalSupportPlanResponseEnvelope =
+                let rsp_value: models::CanonicalSupportPlanResponseEnvelope =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Accepted202(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition =
+                let rsp_value: models::ErrorDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -276,10 +291,10 @@ pub mod support_plan_types {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Accepted202(CanonicalSupportPlanResponseEnvelope),
+            Accepted202(models::CanonicalSupportPlanResponseEnvelope),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -306,7 +321,7 @@ pub mod support_plan_types {
     pub async fn list_info(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<CanonicalSupportPlanInfo, list_info::Error> {
+    ) -> std::result::Result<models::CanonicalSupportPlanInfo, list_info::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Addons/supportProviders/canonical/listSupportPlanInfo",
@@ -335,14 +350,14 @@ pub mod support_plan_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CanonicalSupportPlanInfo =
+                let rsp_value: models::CanonicalSupportPlanInfo =
                     serde_json::from_slice(rsp_body).map_err(|source| list_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             http::StatusCode::NOT_FOUND => Err(list_info::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorDefinition =
+                let rsp_value: models::ErrorDefinition =
                     serde_json::from_slice(rsp_body).map_err(|source| list_info::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_info::Error::DefaultResponse {
                     status_code,
@@ -352,7 +367,7 @@ pub mod support_plan_types {
         }
     }
     pub mod list_info {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

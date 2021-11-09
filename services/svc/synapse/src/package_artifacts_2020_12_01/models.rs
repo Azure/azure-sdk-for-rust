@@ -211,6 +211,8 @@ pub struct DataFlowReference {
     pub reference_name: String,
     #[serde(rename = "datasetParameters", default, skip_serializing_if = "Option::is_none")]
     pub dataset_parameters: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<ParameterValueSpecification>,
 }
 pub mod data_flow_reference {
     use super::*;
@@ -962,6 +964,10 @@ pub struct Transformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dataset: Option<DatasetReference>,
+    #[serde(rename = "linkedService", default, skip_serializing_if = "Option::is_none")]
+    pub linked_service: Option<LinkedServiceReference>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub flowlet: Option<DataFlowReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1002,8 +1008,6 @@ pub struct FlowletTypeProperties {
     pub script: Option<String>,
     #[serde(rename = "scriptLines", default, skip_serializing_if = "Vec::is_empty")]
     pub script_lines: Vec<String>,
-    #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
-    pub additional_properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetListResponse {
@@ -1208,43 +1212,7 @@ pub struct ParquetFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetCompression {
     #[serde(rename = "type")]
-    pub type_: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetBZip2Compression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetGZipCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetDeflateCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetZipDeflateCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetTarCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetTarGZipCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
+    pub type_: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<serde_json::Value>,
 }

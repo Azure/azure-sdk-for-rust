@@ -2,16 +2,61 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    GuestConfigurationAssignments_Get(#[from] guest_configuration_assignments::get::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignments_CreateOrUpdate(#[from] guest_configuration_assignments::create_or_update::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignments_Delete(#[from] guest_configuration_assignments::delete::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignments_SubscriptionList(#[from] guest_configuration_assignments::subscription_list::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignments_RgList(#[from] guest_configuration_assignments::rg_list::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignments_List(#[from] guest_configuration_assignments::list::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignmentReports_List(#[from] guest_configuration_assignment_reports::list::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignmentReports_Get(#[from] guest_configuration_assignment_reports::get::Error),
+    #[error(transparent)]
+    GuestConfigurationHcrpAssignments_Get(#[from] guest_configuration_hcrp_assignments::get::Error),
+    #[error(transparent)]
+    GuestConfigurationHcrpAssignments_CreateOrUpdate(#[from] guest_configuration_hcrp_assignments::create_or_update::Error),
+    #[error(transparent)]
+    GuestConfigurationHcrpAssignments_Delete(#[from] guest_configuration_hcrp_assignments::delete::Error),
+    #[error(transparent)]
+    GuestConfigurationHcrpAssignments_List(#[from] guest_configuration_hcrp_assignments::list::Error),
+    #[error(transparent)]
+    GuestConfigurationHcrpAssignmentReports_List(#[from] guest_configuration_hcrp_assignment_reports::list::Error),
+    #[error(transparent)]
+    GuestConfigurationHcrpAssignmentReports_Get(#[from] guest_configuration_hcrp_assignment_reports::get::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignmentsVmss_Get(#[from] guest_configuration_assignments_vmss::get::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignmentsVmss_Delete(#[from] guest_configuration_assignments_vmss::delete::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignmentsVmss_List(#[from] guest_configuration_assignments_vmss::list::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignmentReportsVmss_List(#[from] guest_configuration_assignment_reports_vmss::list::Error),
+    #[error(transparent)]
+    GuestConfigurationAssignmentReportsVmss_Get(#[from] guest_configuration_assignment_reports_vmss::get::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod guest_configuration_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         vm_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignment, get::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , operation_config . base_path () , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -32,13 +77,13 @@ pub mod guest_configuration_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignment =
+                let rsp_value: models::GuestConfigurationAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -48,7 +93,7 @@ pub mod guest_configuration_assignments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -73,7 +118,7 @@ pub mod guest_configuration_assignments {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         guest_configuration_assignment_name: &str,
-        parameters: &GuestConfigurationAssignment,
+        parameters: &models::GuestConfigurationAssignment,
         subscription_id: &str,
         resource_group_name: &str,
         vm_name: &str,
@@ -102,19 +147,19 @@ pub mod guest_configuration_assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GuestConfigurationAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GuestConfigurationAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -124,11 +169,11 @@ pub mod guest_configuration_assignments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(GuestConfigurationAssignment),
-            Ok200(GuestConfigurationAssignment),
+            Created201(models::GuestConfigurationAssignment),
+            Ok200(models::GuestConfigurationAssignment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -179,7 +224,7 @@ pub mod guest_configuration_assignments {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -189,7 +234,7 @@ pub mod guest_configuration_assignments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -242,14 +287,14 @@ pub mod guest_configuration_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GuestConfigurationAssignmentList = serde_json::from_slice(rsp_body)
                     .map_err(|source| subscription_list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(subscription_list::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(subscription_list::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| subscription_list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(subscription_list::Error::DefaultResponse {
                     status_code,
@@ -259,10 +304,10 @@ pub mod guest_configuration_assignments {
         }
     }
     pub mod subscription_list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(GuestConfigurationAssignmentList),
+            Ok200(models::GuestConfigurationAssignmentList),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -319,14 +364,14 @@ pub mod guest_configuration_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentList =
+                let rsp_value: models::GuestConfigurationAssignmentList =
                     serde_json::from_slice(rsp_body).map_err(|source| rg_list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rg_list::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(rg_list::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| rg_list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(rg_list::Error::DefaultResponse {
                     status_code,
@@ -336,10 +381,10 @@ pub mod guest_configuration_assignments {
         }
     }
     pub mod rg_list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(GuestConfigurationAssignmentList),
+            Ok200(models::GuestConfigurationAssignmentList),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -368,7 +413,7 @@ pub mod guest_configuration_assignments {
         resource_group_name: &str,
         subscription_id: &str,
         vm_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentList, list::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , operation_config . base_path () , subscription_id , resource_group_name , vm_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -389,13 +434,13 @@ pub mod guest_configuration_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentList =
+                let rsp_value: models::GuestConfigurationAssignmentList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -405,7 +450,7 @@ pub mod guest_configuration_assignments {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -429,14 +474,14 @@ pub mod guest_configuration_assignments {
     }
 }
 pub mod guest_configuration_assignment_reports {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         vm_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentReportList, list::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentReportList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , operation_config . base_path () , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -457,13 +502,13 @@ pub mod guest_configuration_assignment_reports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentReportList =
+                let rsp_value: models::GuestConfigurationAssignmentReportList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -473,7 +518,7 @@ pub mod guest_configuration_assignment_reports {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -502,7 +547,7 @@ pub mod guest_configuration_assignment_reports {
         report_id: &str,
         subscription_id: &str,
         vm_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentReport, get::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentReport, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , operation_config . base_path () , subscription_id , resource_group_name , vm_name , guest_configuration_assignment_name , report_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -523,13 +568,13 @@ pub mod guest_configuration_assignment_reports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentReport =
+                let rsp_value: models::GuestConfigurationAssignmentReport =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -539,7 +584,7 @@ pub mod guest_configuration_assignment_reports {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -563,14 +608,14 @@ pub mod guest_configuration_assignment_reports {
     }
 }
 pub mod guest_configuration_hcrp_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         machine_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignment, get::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , operation_config . base_path () , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -591,13 +636,13 @@ pub mod guest_configuration_hcrp_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignment =
+                let rsp_value: models::GuestConfigurationAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -607,7 +652,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -632,7 +677,7 @@ pub mod guest_configuration_hcrp_assignments {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         guest_configuration_assignment_name: &str,
-        parameters: &GuestConfigurationAssignment,
+        parameters: &models::GuestConfigurationAssignment,
         subscription_id: &str,
         resource_group_name: &str,
         machine_name: &str,
@@ -661,19 +706,19 @@ pub mod guest_configuration_hcrp_assignments {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GuestConfigurationAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GuestConfigurationAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -683,11 +728,11 @@ pub mod guest_configuration_hcrp_assignments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(GuestConfigurationAssignment),
-            Ok200(GuestConfigurationAssignment),
+            Created201(models::GuestConfigurationAssignment),
+            Ok200(models::GuestConfigurationAssignment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -738,7 +783,7 @@ pub mod guest_configuration_hcrp_assignments {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -748,7 +793,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -775,7 +820,7 @@ pub mod guest_configuration_hcrp_assignments {
         resource_group_name: &str,
         subscription_id: &str,
         machine_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentList, list::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , operation_config . base_path () , subscription_id , resource_group_name , machine_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -796,13 +841,13 @@ pub mod guest_configuration_hcrp_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentList =
+                let rsp_value: models::GuestConfigurationAssignmentList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -812,7 +857,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -836,14 +881,14 @@ pub mod guest_configuration_hcrp_assignments {
     }
 }
 pub mod guest_configuration_hcrp_assignment_reports {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         guest_configuration_assignment_name: &str,
         subscription_id: &str,
         machine_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentReportList, list::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentReportList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , operation_config . base_path () , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -864,13 +909,13 @@ pub mod guest_configuration_hcrp_assignment_reports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentReportList =
+                let rsp_value: models::GuestConfigurationAssignmentReportList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -880,7 +925,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -909,7 +954,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
         report_id: &str,
         subscription_id: &str,
         machine_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentReport, get::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentReport, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridCompute/machines/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , operation_config . base_path () , subscription_id , resource_group_name , machine_name , guest_configuration_assignment_name , report_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -930,13 +975,13 @@ pub mod guest_configuration_hcrp_assignment_reports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentReport =
+                let rsp_value: models::GuestConfigurationAssignmentReport =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -946,7 +991,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -970,14 +1015,14 @@ pub mod guest_configuration_hcrp_assignment_reports {
     }
 }
 pub mod guest_configuration_assignments_vmss {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
         vmss_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignment, get::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}" , operation_config . base_path () , subscription_id , resource_group_name , vmss_name , name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -998,13 +1043,13 @@ pub mod guest_configuration_assignments_vmss {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignment =
+                let rsp_value: models::GuestConfigurationAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1014,7 +1059,7 @@ pub mod guest_configuration_assignments_vmss {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1063,14 +1108,14 @@ pub mod guest_configuration_assignments_vmss {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignment =
+                let rsp_value: models::GuestConfigurationAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1080,10 +1125,10 @@ pub mod guest_configuration_assignments_vmss {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(GuestConfigurationAssignment),
+            Ok200(models::GuestConfigurationAssignment),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1112,7 +1157,7 @@ pub mod guest_configuration_assignments_vmss {
         resource_group_name: &str,
         subscription_id: &str,
         vmss_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentList, list::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments" , operation_config . base_path () , subscription_id , resource_group_name , vmss_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1133,13 +1178,13 @@ pub mod guest_configuration_assignments_vmss {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentList =
+                let rsp_value: models::GuestConfigurationAssignmentList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1149,7 +1194,7 @@ pub mod guest_configuration_assignments_vmss {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1173,14 +1218,14 @@ pub mod guest_configuration_assignments_vmss {
     }
 }
 pub mod guest_configuration_assignment_reports_vmss {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
         vmss_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentReportList, list::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentReportList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports" , operation_config . base_path () , subscription_id , resource_group_name , vmss_name , name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1201,13 +1246,13 @@ pub mod guest_configuration_assignment_reports_vmss {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentReportList =
+                let rsp_value: models::GuestConfigurationAssignmentReportList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1217,7 +1262,7 @@ pub mod guest_configuration_assignment_reports_vmss {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1246,7 +1291,7 @@ pub mod guest_configuration_assignment_reports_vmss {
         id: &str,
         subscription_id: &str,
         vmss_name: &str,
-    ) -> std::result::Result<GuestConfigurationAssignmentReport, get::Error> {
+    ) -> std::result::Result<models::GuestConfigurationAssignmentReport, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/providers/Microsoft.GuestConfiguration/guestConfigurationAssignments/{}/reports/{}" , operation_config . base_path () , subscription_id , resource_group_name , vmss_name , name , id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1267,13 +1312,13 @@ pub mod guest_configuration_assignment_reports_vmss {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GuestConfigurationAssignmentReport =
+                let rsp_value: models::GuestConfigurationAssignmentReport =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1283,7 +1328,7 @@ pub mod guest_configuration_assignment_reports_vmss {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1307,8 +1352,8 @@ pub mod guest_configuration_assignment_reports_vmss {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.GuestConfiguration/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1329,13 +1374,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationList =
+                let rsp_value: models::OperationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1345,7 +1390,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

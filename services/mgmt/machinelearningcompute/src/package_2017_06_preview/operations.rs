@@ -2,15 +2,40 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    OperationalizationClusters_Get(#[from] operationalization_clusters::get::Error),
+    #[error(transparent)]
+    OperationalizationClusters_CreateOrUpdate(#[from] operationalization_clusters::create_or_update::Error),
+    #[error(transparent)]
+    OperationalizationClusters_Update(#[from] operationalization_clusters::update::Error),
+    #[error(transparent)]
+    OperationalizationClusters_Delete(#[from] operationalization_clusters::delete::Error),
+    #[error(transparent)]
+    OperationalizationClusters_ListKeys(#[from] operationalization_clusters::list_keys::Error),
+    #[error(transparent)]
+    OperationalizationClusters_CheckUpdate(#[from] operationalization_clusters::check_update::Error),
+    #[error(transparent)]
+    OperationalizationClusters_UpdateSystem(#[from] operationalization_clusters::update_system::Error),
+    #[error(transparent)]
+    OperationalizationClusters_ListByResourceGroup(#[from] operationalization_clusters::list_by_resource_group::Error),
+    #[error(transparent)]
+    OperationalizationClusters_ListBySubscriptionId(#[from] operationalization_clusters::list_by_subscription_id::Error),
+    #[error(transparent)]
+    MachineLearningCompute_ListAvailableOperations(#[from] machine_learning_compute::list_available_operations::Error),
+}
 pub mod operationalization_clusters {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<OperationalizationCluster, get::Error> {
+    ) -> std::result::Result<models::OperationalizationCluster, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningCompute/operationalizationClusters/{}",
@@ -37,13 +62,13 @@ pub mod operationalization_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationalizationCluster =
+                let rsp_value: models::OperationalizationCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +78,7 @@ pub mod operationalization_clusters {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,7 +105,7 @@ pub mod operationalization_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &OperationalizationCluster,
+        parameters: &models::OperationalizationCluster,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -112,19 +137,19 @@ pub mod operationalization_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationalizationCluster = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OperationalizationCluster = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationalizationCluster = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OperationalizationCluster = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -134,11 +159,11 @@ pub mod operationalization_clusters {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationalizationCluster),
-            Created201(OperationalizationCluster),
+            Ok200(models::OperationalizationCluster),
+            Created201(models::OperationalizationCluster),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -166,8 +191,8 @@ pub mod operationalization_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &OperationalizationClusterUpdateParameters,
-    ) -> std::result::Result<OperationalizationCluster, update::Error> {
+        parameters: &models::OperationalizationClusterUpdateParameters,
+    ) -> std::result::Result<models::OperationalizationCluster, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningCompute/operationalizationClusters/{}",
@@ -195,13 +220,13 @@ pub mod operationalization_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationalizationCluster =
+                let rsp_value: models::OperationalizationCluster =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -211,7 +236,7 @@ pub mod operationalization_clusters {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -268,7 +293,7 @@ pub mod operationalization_clusters {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -278,7 +303,7 @@ pub mod operationalization_clusters {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -342,7 +367,7 @@ pub mod operationalization_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationalizationClusterCredentials =
+                let rsp_value: models::OperationalizationClusterCredentials =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(list_keys::Response::Ok200(rsp_value))
             }
@@ -357,10 +382,10 @@ pub mod operationalization_clusters {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(OperationalizationClusterCredentials),
+            Ok200(models::OperationalizationClusterCredentials),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -417,7 +442,7 @@ pub mod operationalization_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckUpdateResponse =
+                let rsp_value: models::CheckUpdateResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| check_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(check_update::Response::Ok200(rsp_value))
             }
@@ -432,10 +457,10 @@ pub mod operationalization_clusters {
         }
     }
     pub mod check_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CheckUpdateResponse),
+            Ok200(models::CheckUpdateResponse),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -492,7 +517,7 @@ pub mod operationalization_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UpdateSystemResponse =
+                let rsp_value: models::UpdateSystemResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update_system::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_system::Response::Ok200(rsp_value))
             }
@@ -507,10 +532,10 @@ pub mod operationalization_clusters {
         }
     }
     pub mod update_system {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(UpdateSystemResponse),
+            Ok200(models::UpdateSystemResponse),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -536,7 +561,7 @@ pub mod operationalization_clusters {
         subscription_id: &str,
         resource_group_name: &str,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<PaginatedOperationalizationClustersList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PaginatedOperationalizationClustersList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningCompute/operationalizationClusters",
@@ -570,7 +595,7 @@ pub mod operationalization_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PaginatedOperationalizationClustersList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PaginatedOperationalizationClustersList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -584,7 +609,7 @@ pub mod operationalization_clusters {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -607,7 +632,7 @@ pub mod operationalization_clusters {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<PaginatedOperationalizationClustersList, list_by_subscription_id::Error> {
+    ) -> std::result::Result<models::PaginatedOperationalizationClustersList, list_by_subscription_id::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MachineLearningCompute/operationalizationClusters",
@@ -640,7 +665,7 @@ pub mod operationalization_clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PaginatedOperationalizationClustersList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PaginatedOperationalizationClustersList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription_id::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -654,7 +679,7 @@ pub mod operationalization_clusters {
         }
     }
     pub mod list_by_subscription_id {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -675,10 +700,10 @@ pub mod operationalization_clusters {
     }
 }
 pub mod machine_learning_compute {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_available_operations(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<AvailableOperations, list_available_operations::Error> {
+    ) -> std::result::Result<models::AvailableOperations, list_available_operations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.MachineLearningCompute/operations",
@@ -707,7 +732,7 @@ pub mod machine_learning_compute {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AvailableOperations = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AvailableOperations = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_available_operations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -721,7 +746,7 @@ pub mod machine_learning_compute {
         }
     }
     pub mod list_available_operations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

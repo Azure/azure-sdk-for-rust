@@ -7,7 +7,7 @@
 pub mod package_2020_06_30_preview;
 use azure_core::setters;
 #[cfg(all(feature = "package-2020-06-30-preview", not(feature = "no-default-version")))]
-pub use package_2020_06_30_preview::{models, operations};
+pub use package_2020_06_30_preview::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

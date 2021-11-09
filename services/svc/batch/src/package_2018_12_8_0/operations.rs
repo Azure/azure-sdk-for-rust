@@ -2,9 +2,166 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Application_List(#[from] application::list::Error),
+    #[error(transparent)]
+    Application_Get(#[from] application::get::Error),
+    #[error(transparent)]
+    Pool_ListUsageMetrics(#[from] pool::list_usage_metrics::Error),
+    #[error(transparent)]
+    Account_ListNodeAgentSkus(#[from] account::list_node_agent_skus::Error),
+    #[error(transparent)]
+    Account_ListPoolNodeCounts(#[from] account::list_pool_node_counts::Error),
+    #[error(transparent)]
+    Pool_GetAllLifetimeStatistics(#[from] pool::get_all_lifetime_statistics::Error),
+    #[error(transparent)]
+    Job_GetAllLifetimeStatistics(#[from] job::get_all_lifetime_statistics::Error),
+    #[error(transparent)]
+    Certificate_List(#[from] certificate::list::Error),
+    #[error(transparent)]
+    Certificate_Add(#[from] certificate::add::Error),
+    #[error(transparent)]
+    Certificate_CancelDeletion(#[from] certificate::cancel_deletion::Error),
+    #[error(transparent)]
+    Certificate_Get(#[from] certificate::get::Error),
+    #[error(transparent)]
+    Certificate_Delete(#[from] certificate::delete::Error),
+    #[error(transparent)]
+    File_GetFromTask(#[from] file::get_from_task::Error),
+    #[error(transparent)]
+    File_DeleteFromTask(#[from] file::delete_from_task::Error),
+    #[error(transparent)]
+    File_GetPropertiesFromTask(#[from] file::get_properties_from_task::Error),
+    #[error(transparent)]
+    File_GetFromComputeNode(#[from] file::get_from_compute_node::Error),
+    #[error(transparent)]
+    File_DeleteFromComputeNode(#[from] file::delete_from_compute_node::Error),
+    #[error(transparent)]
+    File_GetPropertiesFromComputeNode(#[from] file::get_properties_from_compute_node::Error),
+    #[error(transparent)]
+    File_ListFromTask(#[from] file::list_from_task::Error),
+    #[error(transparent)]
+    File_ListFromComputeNode(#[from] file::list_from_compute_node::Error),
+    #[error(transparent)]
+    JobSchedule_Get(#[from] job_schedule::get::Error),
+    #[error(transparent)]
+    JobSchedule_Update(#[from] job_schedule::update::Error),
+    #[error(transparent)]
+    JobSchedule_Patch(#[from] job_schedule::patch::Error),
+    #[error(transparent)]
+    JobSchedule_Delete(#[from] job_schedule::delete::Error),
+    #[error(transparent)]
+    JobSchedule_Exists(#[from] job_schedule::exists::Error),
+    #[error(transparent)]
+    JobSchedule_Disable(#[from] job_schedule::disable::Error),
+    #[error(transparent)]
+    JobSchedule_Enable(#[from] job_schedule::enable::Error),
+    #[error(transparent)]
+    JobSchedule_Terminate(#[from] job_schedule::terminate::Error),
+    #[error(transparent)]
+    JobSchedule_List(#[from] job_schedule::list::Error),
+    #[error(transparent)]
+    JobSchedule_Add(#[from] job_schedule::add::Error),
+    #[error(transparent)]
+    Job_Get(#[from] job::get::Error),
+    #[error(transparent)]
+    Job_Update(#[from] job::update::Error),
+    #[error(transparent)]
+    Job_Patch(#[from] job::patch::Error),
+    #[error(transparent)]
+    Job_Delete(#[from] job::delete::Error),
+    #[error(transparent)]
+    Job_Disable(#[from] job::disable::Error),
+    #[error(transparent)]
+    Job_Enable(#[from] job::enable::Error),
+    #[error(transparent)]
+    Job_Terminate(#[from] job::terminate::Error),
+    #[error(transparent)]
+    Job_List(#[from] job::list::Error),
+    #[error(transparent)]
+    Job_Add(#[from] job::add::Error),
+    #[error(transparent)]
+    Job_ListFromJobSchedule(#[from] job::list_from_job_schedule::Error),
+    #[error(transparent)]
+    Job_ListPreparationAndReleaseTaskStatus(#[from] job::list_preparation_and_release_task_status::Error),
+    #[error(transparent)]
+    Job_GetTaskCounts(#[from] job::get_task_counts::Error),
+    #[error(transparent)]
+    Pool_List(#[from] pool::list::Error),
+    #[error(transparent)]
+    Pool_Add(#[from] pool::add::Error),
+    #[error(transparent)]
+    Pool_Get(#[from] pool::get::Error),
+    #[error(transparent)]
+    Pool_Patch(#[from] pool::patch::Error),
+    #[error(transparent)]
+    Pool_Delete(#[from] pool::delete::Error),
+    #[error(transparent)]
+    Pool_Exists(#[from] pool::exists::Error),
+    #[error(transparent)]
+    Pool_DisableAutoScale(#[from] pool::disable_auto_scale::Error),
+    #[error(transparent)]
+    Pool_EnableAutoScale(#[from] pool::enable_auto_scale::Error),
+    #[error(transparent)]
+    Pool_EvaluateAutoScale(#[from] pool::evaluate_auto_scale::Error),
+    #[error(transparent)]
+    Pool_Resize(#[from] pool::resize::Error),
+    #[error(transparent)]
+    Pool_StopResize(#[from] pool::stop_resize::Error),
+    #[error(transparent)]
+    Pool_UpdateProperties(#[from] pool::update_properties::Error),
+    #[error(transparent)]
+    Pool_RemoveNodes(#[from] pool::remove_nodes::Error),
+    #[error(transparent)]
+    Task_List(#[from] task::list::Error),
+    #[error(transparent)]
+    Task_Add(#[from] task::add::Error),
+    #[error(transparent)]
+    Task_AddCollection(#[from] task::add_collection::Error),
+    #[error(transparent)]
+    Task_Get(#[from] task::get::Error),
+    #[error(transparent)]
+    Task_Update(#[from] task::update::Error),
+    #[error(transparent)]
+    Task_Delete(#[from] task::delete::Error),
+    #[error(transparent)]
+    Task_ListSubtasks(#[from] task::list_subtasks::Error),
+    #[error(transparent)]
+    Task_Terminate(#[from] task::terminate::Error),
+    #[error(transparent)]
+    Task_Reactivate(#[from] task::reactivate::Error),
+    #[error(transparent)]
+    ComputeNode_AddUser(#[from] compute_node::add_user::Error),
+    #[error(transparent)]
+    ComputeNode_UpdateUser(#[from] compute_node::update_user::Error),
+    #[error(transparent)]
+    ComputeNode_DeleteUser(#[from] compute_node::delete_user::Error),
+    #[error(transparent)]
+    ComputeNode_Get(#[from] compute_node::get::Error),
+    #[error(transparent)]
+    ComputeNode_Reboot(#[from] compute_node::reboot::Error),
+    #[error(transparent)]
+    ComputeNode_Reimage(#[from] compute_node::reimage::Error),
+    #[error(transparent)]
+    ComputeNode_DisableScheduling(#[from] compute_node::disable_scheduling::Error),
+    #[error(transparent)]
+    ComputeNode_EnableScheduling(#[from] compute_node::enable_scheduling::Error),
+    #[error(transparent)]
+    ComputeNode_GetRemoteLoginSettings(#[from] compute_node::get_remote_login_settings::Error),
+    #[error(transparent)]
+    ComputeNode_GetRemoteDesktop(#[from] compute_node::get_remote_desktop::Error),
+    #[error(transparent)]
+    ComputeNode_UploadBatchServiceLogs(#[from] compute_node::upload_batch_service_logs::Error),
+    #[error(transparent)]
+    ComputeNode_List(#[from] compute_node::list::Error),
+}
 pub mod application {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         maxresults: Option<i32>,
@@ -12,7 +169,7 @@ pub mod application {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<ApplicationListResult, list::Error> {
+    ) -> std::result::Result<models::ApplicationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/applications", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -48,13 +205,13 @@ pub mod application {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationListResult =
+                let rsp_value: models::ApplicationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -64,7 +221,7 @@ pub mod application {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -93,7 +250,7 @@ pub mod application {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<ApplicationSummary, get::Error> {
+    ) -> std::result::Result<models::ApplicationSummary, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/applications/{}", operation_config.base_path(), application_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -126,13 +283,13 @@ pub mod application {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationSummary =
+                let rsp_value: models::ApplicationSummary =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -142,7 +299,7 @@ pub mod application {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -166,7 +323,7 @@ pub mod application {
     }
 }
 pub mod pool {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_usage_metrics(
         operation_config: &crate::OperationConfig,
         starttime: Option<&str>,
@@ -177,7 +334,7 @@ pub mod pool {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<PoolListUsageMetricsResult, list_usage_metrics::Error> {
+    ) -> std::result::Result<models::PoolListUsageMetricsResult, list_usage_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/poolusagemetrics", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_usage_metrics::Error::ParseUrlError)?;
@@ -225,13 +382,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PoolListUsageMetricsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PoolListUsageMetricsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_usage_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_usage_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_usage_metrics::Error::DefaultResponse {
                     status_code,
@@ -241,7 +398,7 @@ pub mod pool {
         }
     }
     pub mod list_usage_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -269,7 +426,7 @@ pub mod pool {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<PoolStatistics, get_all_lifetime_statistics::Error> {
+    ) -> std::result::Result<models::PoolStatistics, get_all_lifetime_statistics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/lifetimepoolstats", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_all_lifetime_statistics::Error::ParseUrlError)?;
@@ -307,13 +464,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PoolStatistics = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PoolStatistics = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_lifetime_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_lifetime_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_all_lifetime_statistics::Error::DefaultResponse {
                     status_code,
@@ -323,7 +480,7 @@ pub mod pool {
         }
     }
     pub mod get_all_lifetime_statistics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -355,7 +512,7 @@ pub mod pool {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudPoolListResult, list::Error> {
+    ) -> std::result::Result<models::CloudPoolListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/pools", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -400,13 +557,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudPoolListResult =
+                let rsp_value: models::CloudPoolListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -416,7 +573,7 @@ pub mod pool {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -440,7 +597,7 @@ pub mod pool {
     }
     pub async fn add(
         operation_config: &crate::OperationConfig,
-        pool: &PoolAddParameter,
+        pool: &models::PoolAddParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -480,7 +637,7 @@ pub mod pool {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -490,7 +647,7 @@ pub mod pool {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -525,7 +682,7 @@ pub mod pool {
         if_none_match: Option<&str>,
         if_modified_since: Option<&str>,
         if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<CloudPool, get::Error> {
+    ) -> std::result::Result<models::CloudPool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/pools/{}", operation_config.base_path(), pool_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -576,13 +733,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudPool =
+                let rsp_value: models::CloudPool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -592,7 +749,7 @@ pub mod pool {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -617,7 +774,7 @@ pub mod pool {
     pub async fn patch(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
-        pool_patch_parameter: &PoolPatchParameter,
+        pool_patch_parameter: &models::PoolPatchParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -673,7 +830,7 @@ pub mod pool {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(patch::Error::DefaultResponse {
                     status_code,
@@ -683,7 +840,7 @@ pub mod pool {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -762,7 +919,7 @@ pub mod pool {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -772,7 +929,7 @@ pub mod pool {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -852,7 +1009,7 @@ pub mod pool {
             http::StatusCode::NOT_FOUND => Err(exists::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| exists::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(exists::Error::DefaultResponse {
                     status_code,
@@ -862,7 +1019,7 @@ pub mod pool {
         }
     }
     pub mod exists {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -931,7 +1088,7 @@ pub mod pool {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| disable_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable_auto_scale::Error::DefaultResponse {
                     status_code,
@@ -941,7 +1098,7 @@ pub mod pool {
         }
     }
     pub mod disable_auto_scale {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -966,7 +1123,7 @@ pub mod pool {
     pub async fn enable_auto_scale(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
-        pool_enable_auto_scale_parameter: &PoolEnableAutoScaleParameter,
+        pool_enable_auto_scale_parameter: &models::PoolEnableAutoScaleParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -1025,7 +1182,7 @@ pub mod pool {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| enable_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(enable_auto_scale::Error::DefaultResponse {
                     status_code,
@@ -1035,7 +1192,7 @@ pub mod pool {
         }
     }
     pub mod enable_auto_scale {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1060,12 +1217,12 @@ pub mod pool {
     pub async fn evaluate_auto_scale(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
-        pool_evaluate_auto_scale_parameter: &PoolEvaluateAutoScaleParameter,
+        pool_evaluate_auto_scale_parameter: &models::PoolEvaluateAutoScaleParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<AutoScaleRun, evaluate_auto_scale::Error> {
+    ) -> std::result::Result<models::AutoScaleRun, evaluate_auto_scale::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/pools/{}/evaluateautoscale", operation_config.base_path(), pool_id);
         let mut url = url::Url::parse(url_str).map_err(evaluate_auto_scale::Error::ParseUrlError)?;
@@ -1102,13 +1259,13 @@ pub mod pool {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AutoScaleRun = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AutoScaleRun = serde_json::from_slice(rsp_body)
                     .map_err(|source| evaluate_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| evaluate_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(evaluate_auto_scale::Error::DefaultResponse {
                     status_code,
@@ -1118,7 +1275,7 @@ pub mod pool {
         }
     }
     pub mod evaluate_auto_scale {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1143,7 +1300,7 @@ pub mod pool {
     pub async fn resize(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
-        pool_resize_parameter: &PoolResizeParameter,
+        pool_resize_parameter: &models::PoolResizeParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -1199,7 +1356,7 @@ pub mod pool {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| resize::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(resize::Error::DefaultResponse {
                     status_code,
@@ -1209,7 +1366,7 @@ pub mod pool {
         }
     }
     pub mod resize {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1292,7 +1449,7 @@ pub mod pool {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| stop_resize::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(stop_resize::Error::DefaultResponse {
                     status_code,
@@ -1302,7 +1459,7 @@ pub mod pool {
         }
     }
     pub mod stop_resize {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1327,7 +1484,7 @@ pub mod pool {
     pub async fn update_properties(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
-        pool_update_properties_parameter: &PoolUpdatePropertiesParameter,
+        pool_update_properties_parameter: &models::PoolUpdatePropertiesParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -1370,7 +1527,7 @@ pub mod pool {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_properties::Error::DefaultResponse {
                     status_code,
@@ -1380,7 +1537,7 @@ pub mod pool {
         }
     }
     pub mod update_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1405,7 +1562,7 @@ pub mod pool {
     pub async fn remove_nodes(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
-        node_remove_parameter: &NodeRemoveParameter,
+        node_remove_parameter: &models::NodeRemoveParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -1464,7 +1621,7 @@ pub mod pool {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| remove_nodes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(remove_nodes::Error::DefaultResponse {
                     status_code,
@@ -1474,7 +1631,7 @@ pub mod pool {
         }
     }
     pub mod remove_nodes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1498,7 +1655,7 @@ pub mod pool {
     }
 }
 pub mod account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_node_agent_skus(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -1507,7 +1664,7 @@ pub mod account {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<AccountListNodeAgentSkusResult, list_node_agent_skus::Error> {
+    ) -> std::result::Result<models::AccountListNodeAgentSkusResult, list_node_agent_skus::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/nodeagentskus", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_node_agent_skus::Error::ParseUrlError)?;
@@ -1549,13 +1706,13 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccountListNodeAgentSkusResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccountListNodeAgentSkusResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_node_agent_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_node_agent_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_node_agent_skus::Error::DefaultResponse {
                     status_code,
@@ -1565,7 +1722,7 @@ pub mod account {
         }
     }
     pub mod list_node_agent_skus {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1595,7 +1752,7 @@ pub mod account {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<PoolNodeCountsListResult, list_pool_node_counts::Error> {
+    ) -> std::result::Result<models::PoolNodeCountsListResult, list_pool_node_counts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/nodecounts", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list_pool_node_counts::Error::ParseUrlError)?;
@@ -1639,13 +1796,13 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PoolNodeCountsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PoolNodeCountsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_pool_node_counts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_pool_node_counts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_pool_node_counts::Error::DefaultResponse {
                     status_code,
@@ -1655,7 +1812,7 @@ pub mod account {
         }
     }
     pub mod list_pool_node_counts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1679,14 +1836,14 @@ pub mod account {
     }
 }
 pub mod job {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_all_lifetime_statistics(
         operation_config: &crate::OperationConfig,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<JobStatistics, get_all_lifetime_statistics::Error> {
+    ) -> std::result::Result<models::JobStatistics, get_all_lifetime_statistics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/lifetimejobstats", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(get_all_lifetime_statistics::Error::ParseUrlError)?;
@@ -1724,13 +1881,13 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobStatistics = serde_json::from_slice(rsp_body)
+                let rsp_value: models::JobStatistics = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_lifetime_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_all_lifetime_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_all_lifetime_statistics::Error::DefaultResponse {
                     status_code,
@@ -1740,7 +1897,7 @@ pub mod job {
         }
     }
     pub mod get_all_lifetime_statistics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1775,7 +1932,7 @@ pub mod job {
         if_none_match: Option<&str>,
         if_modified_since: Option<&str>,
         if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<CloudJob, get::Error> {
+    ) -> std::result::Result<models::CloudJob, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}", operation_config.base_path(), job_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1826,13 +1983,13 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudJob =
+                let rsp_value: models::CloudJob =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1842,7 +1999,7 @@ pub mod job {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1867,7 +2024,7 @@ pub mod job {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        job_update_parameter: &JobUpdateParameter,
+        job_update_parameter: &models::JobUpdateParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -1923,7 +2080,7 @@ pub mod job {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1933,7 +2090,7 @@ pub mod job {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1958,7 +2115,7 @@ pub mod job {
     pub async fn patch(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        job_patch_parameter: &JobPatchParameter,
+        job_patch_parameter: &models::JobPatchParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -2014,7 +2171,7 @@ pub mod job {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(patch::Error::DefaultResponse {
                     status_code,
@@ -2024,7 +2181,7 @@ pub mod job {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2103,7 +2260,7 @@ pub mod job {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2113,7 +2270,7 @@ pub mod job {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2138,7 +2295,7 @@ pub mod job {
     pub async fn disable(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        job_disable_parameter: &JobDisableParameter,
+        job_disable_parameter: &models::JobDisableParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -2197,7 +2354,7 @@ pub mod job {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| disable::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable::Error::DefaultResponse {
                     status_code,
@@ -2207,7 +2364,7 @@ pub mod job {
         }
     }
     pub mod disable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2287,7 +2444,7 @@ pub mod job {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| enable::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(enable::Error::DefaultResponse {
                     status_code,
@@ -2297,7 +2454,7 @@ pub mod job {
         }
     }
     pub mod enable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2322,7 +2479,7 @@ pub mod job {
     pub async fn terminate(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        job_terminate_parameter: Option<&JobTerminateParameter>,
+        job_terminate_parameter: Option<&models::JobTerminateParameter>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -2385,7 +2542,7 @@ pub mod job {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| terminate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(terminate::Error::DefaultResponse {
                     status_code,
@@ -2395,7 +2552,7 @@ pub mod job {
         }
     }
     pub mod terminate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2427,7 +2584,7 @@ pub mod job {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudJobListResult, list::Error> {
+    ) -> std::result::Result<models::CloudJobListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2472,13 +2629,13 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudJobListResult =
+                let rsp_value: models::CloudJobListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2488,7 +2645,7 @@ pub mod job {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2512,7 +2669,7 @@ pub mod job {
     }
     pub async fn add(
         operation_config: &crate::OperationConfig,
-        job: &JobAddParameter,
+        job: &models::JobAddParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -2552,7 +2709,7 @@ pub mod job {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -2562,7 +2719,7 @@ pub mod job {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2595,7 +2752,7 @@ pub mod job {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudJobListResult, list_from_job_schedule::Error> {
+    ) -> std::result::Result<models::CloudJobListResult, list_from_job_schedule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobschedules/{}/jobs", operation_config.base_path(), job_schedule_id);
         let mut url = url::Url::parse(url_str).map_err(list_from_job_schedule::Error::ParseUrlError)?;
@@ -2645,13 +2802,13 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudJobListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudJobListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_from_job_schedule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_from_job_schedule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_from_job_schedule::Error::DefaultResponse {
                     status_code,
@@ -2661,7 +2818,7 @@ pub mod job {
         }
     }
     pub mod list_from_job_schedule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2693,7 +2850,8 @@ pub mod job {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudJobListPreparationAndReleaseTaskStatusResult, list_preparation_and_release_task_status::Error> {
+    ) -> std::result::Result<models::CloudJobListPreparationAndReleaseTaskStatusResult, list_preparation_and_release_task_status::Error>
+    {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/jobs/{}/jobpreparationandreleasetaskstatus",
@@ -2744,13 +2902,13 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudJobListPreparationAndReleaseTaskStatusResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudJobListPreparationAndReleaseTaskStatusResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_preparation_and_release_task_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_preparation_and_release_task_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_preparation_and_release_task_status::Error::DefaultResponse {
                     status_code,
@@ -2760,7 +2918,7 @@ pub mod job {
         }
     }
     pub mod list_preparation_and_release_task_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2789,7 +2947,7 @@ pub mod job {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<TaskCounts, get_task_counts::Error> {
+    ) -> std::result::Result<models::TaskCounts, get_task_counts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}/taskcounts", operation_config.base_path(), job_id);
         let mut url = url::Url::parse(url_str).map_err(get_task_counts::Error::ParseUrlError)?;
@@ -2825,13 +2983,13 @@ pub mod job {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TaskCounts = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TaskCounts = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_task_counts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_task_counts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_task_counts::Error::DefaultResponse {
                     status_code,
@@ -2841,7 +2999,7 @@ pub mod job {
         }
     }
     pub mod get_task_counts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2865,7 +3023,7 @@ pub mod job {
     }
 }
 pub mod certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
@@ -2875,7 +3033,7 @@ pub mod certificate {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<CertificateListResult, list::Error> {
+    ) -> std::result::Result<models::CertificateListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/certificates", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2917,13 +3075,13 @@ pub mod certificate {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CertificateListResult =
+                let rsp_value: models::CertificateListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2933,7 +3091,7 @@ pub mod certificate {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2957,7 +3115,7 @@ pub mod certificate {
     }
     pub async fn add(
         operation_config: &crate::OperationConfig,
-        certificate: &CertificateAddParameter,
+        certificate: &models::CertificateAddParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -2997,7 +3155,7 @@ pub mod certificate {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -3007,7 +3165,7 @@ pub mod certificate {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3080,7 +3238,7 @@ pub mod certificate {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| cancel_deletion::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel_deletion::Error::DefaultResponse {
                     status_code,
@@ -3090,7 +3248,7 @@ pub mod certificate {
         }
     }
     pub mod cancel_deletion {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3121,7 +3279,7 @@ pub mod certificate {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<Certificate, get::Error> {
+    ) -> std::result::Result<models::Certificate, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
@@ -3162,13 +3320,13 @@ pub mod certificate {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Certificate =
+                let rsp_value: models::Certificate =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3178,7 +3336,7 @@ pub mod certificate {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3247,7 +3405,7 @@ pub mod certificate {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3257,7 +3415,7 @@ pub mod certificate {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3281,7 +3439,7 @@ pub mod certificate {
     }
 }
 pub mod file {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_from_task(
         operation_config: &crate::OperationConfig,
         job_id: &str,
@@ -3351,7 +3509,7 @@ pub mod file {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_from_task::Error::DefaultResponse {
                     status_code,
@@ -3361,7 +3519,7 @@ pub mod file {
         }
     }
     pub mod get_from_task {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3439,7 +3597,7 @@ pub mod file {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_from_task::Error::DefaultResponse {
                     status_code,
@@ -3449,7 +3607,7 @@ pub mod file {
         }
     }
     pub mod delete_from_task {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3533,7 +3691,7 @@ pub mod file {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_properties_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_properties_from_task::Error::DefaultResponse {
                     status_code,
@@ -3543,7 +3701,7 @@ pub mod file {
         }
     }
     pub mod get_properties_from_task {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3636,7 +3794,7 @@ pub mod file {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_from_compute_node::Error::DefaultResponse {
                     status_code,
@@ -3646,7 +3804,7 @@ pub mod file {
         }
     }
     pub mod get_from_compute_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3726,7 +3884,7 @@ pub mod file {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| delete_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_from_compute_node::Error::DefaultResponse {
                     status_code,
@@ -3736,7 +3894,7 @@ pub mod file {
         }
     }
     pub mod delete_from_compute_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3820,7 +3978,7 @@ pub mod file {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_properties_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_properties_from_compute_node::Error::DefaultResponse {
                     status_code,
@@ -3830,7 +3988,7 @@ pub mod file {
         }
     }
     pub mod get_properties_from_compute_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3863,7 +4021,7 @@ pub mod file {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<NodeFileListResult, list_from_task::Error> {
+    ) -> std::result::Result<models::NodeFileListResult, list_from_task::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}/tasks/{}/files", operation_config.base_path(), job_id, task_id);
         let mut url = url::Url::parse(url_str).map_err(list_from_task::Error::ParseUrlError)?;
@@ -3908,13 +4066,13 @@ pub mod file {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NodeFileListResult =
+                let rsp_value: models::NodeFileListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_from_task::Error::DefaultResponse {
                     status_code,
@@ -3924,7 +4082,7 @@ pub mod file {
         }
     }
     pub mod list_from_task {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3957,7 +4115,7 @@ pub mod file {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<NodeFileListResult, list_from_compute_node::Error> {
+    ) -> std::result::Result<models::NodeFileListResult, list_from_compute_node::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/pools/{}/nodes/{}/files", operation_config.base_path(), pool_id, node_id);
         let mut url = url::Url::parse(url_str).map_err(list_from_compute_node::Error::ParseUrlError)?;
@@ -4004,13 +4162,13 @@ pub mod file {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NodeFileListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NodeFileListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_from_compute_node::Error::DefaultResponse {
                     status_code,
@@ -4020,7 +4178,7 @@ pub mod file {
         }
     }
     pub mod list_from_compute_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4044,7 +4202,7 @@ pub mod file {
     }
 }
 pub mod job_schedule {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         job_schedule_id: &str,
@@ -4058,7 +4216,7 @@ pub mod job_schedule {
         if_none_match: Option<&str>,
         if_modified_since: Option<&str>,
         if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<CloudJobSchedule, get::Error> {
+    ) -> std::result::Result<models::CloudJobSchedule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobschedules/{}", operation_config.base_path(), job_schedule_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -4109,13 +4267,13 @@ pub mod job_schedule {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudJobSchedule =
+                let rsp_value: models::CloudJobSchedule =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4125,7 +4283,7 @@ pub mod job_schedule {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4150,7 +4308,7 @@ pub mod job_schedule {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         job_schedule_id: &str,
-        job_schedule_update_parameter: &JobScheduleUpdateParameter,
+        job_schedule_update_parameter: &models::JobScheduleUpdateParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -4206,7 +4364,7 @@ pub mod job_schedule {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -4216,7 +4374,7 @@ pub mod job_schedule {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4241,7 +4399,7 @@ pub mod job_schedule {
     pub async fn patch(
         operation_config: &crate::OperationConfig,
         job_schedule_id: &str,
-        job_schedule_patch_parameter: &JobSchedulePatchParameter,
+        job_schedule_patch_parameter: &models::JobSchedulePatchParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -4297,7 +4455,7 @@ pub mod job_schedule {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(patch::Error::DefaultResponse {
                     status_code,
@@ -4307,7 +4465,7 @@ pub mod job_schedule {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4386,7 +4544,7 @@ pub mod job_schedule {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4396,7 +4554,7 @@ pub mod job_schedule {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4476,7 +4634,7 @@ pub mod job_schedule {
             http::StatusCode::NOT_FOUND => Err(exists::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| exists::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(exists::Error::DefaultResponse {
                     status_code,
@@ -4486,7 +4644,7 @@ pub mod job_schedule {
         }
     }
     pub mod exists {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -4571,7 +4729,7 @@ pub mod job_schedule {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| disable::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable::Error::DefaultResponse {
                     status_code,
@@ -4581,7 +4739,7 @@ pub mod job_schedule {
         }
     }
     pub mod disable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4661,7 +4819,7 @@ pub mod job_schedule {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| enable::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(enable::Error::DefaultResponse {
                     status_code,
@@ -4671,7 +4829,7 @@ pub mod job_schedule {
         }
     }
     pub mod enable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4754,7 +4912,7 @@ pub mod job_schedule {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| terminate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(terminate::Error::DefaultResponse {
                     status_code,
@@ -4764,7 +4922,7 @@ pub mod job_schedule {
         }
     }
     pub mod terminate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4796,7 +4954,7 @@ pub mod job_schedule {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudJobScheduleListResult, list::Error> {
+    ) -> std::result::Result<models::CloudJobScheduleListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobschedules", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -4841,13 +4999,13 @@ pub mod job_schedule {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudJobScheduleListResult =
+                let rsp_value: models::CloudJobScheduleListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -4857,7 +5015,7 @@ pub mod job_schedule {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4882,7 +5040,7 @@ pub mod job_schedule {
     pub async fn add(
         operation_config: &crate::OperationConfig,
         timeout: Option<i32>,
-        cloud_job_schedule: &JobScheduleAddParameter,
+        cloud_job_schedule: &models::JobScheduleAddParameter,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
@@ -4921,7 +5079,7 @@ pub mod job_schedule {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -4931,7 +5089,7 @@ pub mod job_schedule {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4955,7 +5113,7 @@ pub mod job_schedule {
     }
 }
 pub mod task {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         job_id: &str,
@@ -4967,7 +5125,7 @@ pub mod task {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudTaskListResult, list::Error> {
+    ) -> std::result::Result<models::CloudTaskListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}/tasks", operation_config.base_path(), job_id);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -5012,13 +5170,13 @@ pub mod task {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudTaskListResult =
+                let rsp_value: models::CloudTaskListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -5028,7 +5186,7 @@ pub mod task {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5053,7 +5211,7 @@ pub mod task {
     pub async fn add(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        task: &TaskAddParameter,
+        task: &models::TaskAddParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -5093,7 +5251,7 @@ pub mod task {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add::Error::DefaultResponse {
                     status_code,
@@ -5103,7 +5261,7 @@ pub mod task {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5128,12 +5286,12 @@ pub mod task {
     pub async fn add_collection(
         operation_config: &crate::OperationConfig,
         job_id: &str,
-        task_collection: &TaskAddCollectionParameter,
+        task_collection: &models::TaskAddCollectionParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<TaskAddCollectionResult, add_collection::Error> {
+    ) -> std::result::Result<models::TaskAddCollectionResult, add_collection::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}/addtaskcollection", operation_config.base_path(), job_id);
         let mut url = url::Url::parse(url_str).map_err(add_collection::Error::ParseUrlError)?;
@@ -5170,13 +5328,13 @@ pub mod task {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TaskAddCollectionResult =
+                let rsp_value: models::TaskAddCollectionResult =
                     serde_json::from_slice(rsp_body).map_err(|source| add_collection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| add_collection::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_collection::Error::DefaultResponse {
                     status_code,
@@ -5186,7 +5344,7 @@ pub mod task {
         }
     }
     pub mod add_collection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5222,7 +5380,7 @@ pub mod task {
         if_none_match: Option<&str>,
         if_modified_since: Option<&str>,
         if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<CloudTask, get::Error> {
+    ) -> std::result::Result<models::CloudTask, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}/tasks/{}", operation_config.base_path(), job_id, task_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -5273,13 +5431,13 @@ pub mod task {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudTask =
+                let rsp_value: models::CloudTask =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -5289,7 +5447,7 @@ pub mod task {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5315,7 +5473,7 @@ pub mod task {
         operation_config: &crate::OperationConfig,
         job_id: &str,
         task_id: &str,
-        task_update_parameter: &TaskUpdateParameter,
+        task_update_parameter: &models::TaskUpdateParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -5371,7 +5529,7 @@ pub mod task {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -5381,7 +5539,7 @@ pub mod task {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5461,7 +5619,7 @@ pub mod task {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -5471,7 +5629,7 @@ pub mod task {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5502,7 +5660,7 @@ pub mod task {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudTaskListSubtasksResult, list_subtasks::Error> {
+    ) -> std::result::Result<models::CloudTaskListSubtasksResult, list_subtasks::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/jobs/{}/tasks/{}/subtasksinfo", operation_config.base_path(), job_id, task_id);
         let mut url = url::Url::parse(url_str).map_err(list_subtasks::Error::ParseUrlError)?;
@@ -5541,13 +5699,13 @@ pub mod task {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudTaskListSubtasksResult =
+                let rsp_value: models::CloudTaskListSubtasksResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_subtasks::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_subtasks::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_subtasks::Error::DefaultResponse {
                     status_code,
@@ -5557,7 +5715,7 @@ pub mod task {
         }
     }
     pub mod list_subtasks {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5641,7 +5799,7 @@ pub mod task {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| terminate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(terminate::Error::DefaultResponse {
                     status_code,
@@ -5651,7 +5809,7 @@ pub mod task {
         }
     }
     pub mod terminate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5735,7 +5893,7 @@ pub mod task {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| reactivate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(reactivate::Error::DefaultResponse {
                     status_code,
@@ -5745,7 +5903,7 @@ pub mod task {
         }
     }
     pub mod reactivate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5769,12 +5927,12 @@ pub mod task {
     }
 }
 pub mod compute_node {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn add_user(
         operation_config: &crate::OperationConfig,
         pool_id: &str,
         node_id: &str,
-        user: &ComputeNodeUser,
+        user: &models::ComputeNodeUser,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -5817,7 +5975,7 @@ pub mod compute_node {
             http::StatusCode::CREATED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| add_user::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(add_user::Error::DefaultResponse {
                     status_code,
@@ -5827,7 +5985,7 @@ pub mod compute_node {
         }
     }
     pub mod add_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5854,7 +6012,7 @@ pub mod compute_node {
         pool_id: &str,
         node_id: &str,
         user_name: &str,
-        node_update_user_parameter: &NodeUpdateUserParameter,
+        node_update_user_parameter: &models::NodeUpdateUserParameter,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -5903,7 +6061,7 @@ pub mod compute_node {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| update_user::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_user::Error::DefaultResponse {
                     status_code,
@@ -5913,7 +6071,7 @@ pub mod compute_node {
         }
     }
     pub mod update_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5987,7 +6145,7 @@ pub mod compute_node {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete_user::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete_user::Error::DefaultResponse {
                     status_code,
@@ -5997,7 +6155,7 @@ pub mod compute_node {
         }
     }
     pub mod delete_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6028,7 +6186,7 @@ pub mod compute_node {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<ComputeNode, get::Error> {
+    ) -> std::result::Result<models::ComputeNode, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/pools/{}/nodes/{}", operation_config.base_path(), pool_id, node_id);
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -6064,13 +6222,13 @@ pub mod compute_node {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputeNode =
+                let rsp_value: models::ComputeNode =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -6080,7 +6238,7 @@ pub mod compute_node {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6106,7 +6264,7 @@ pub mod compute_node {
         operation_config: &crate::OperationConfig,
         pool_id: &str,
         node_id: &str,
-        node_reboot_parameter: Option<&NodeRebootParameter>,
+        node_reboot_parameter: Option<&models::NodeRebootParameter>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -6150,7 +6308,7 @@ pub mod compute_node {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| reboot::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(reboot::Error::DefaultResponse {
                     status_code,
@@ -6160,7 +6318,7 @@ pub mod compute_node {
         }
     }
     pub mod reboot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6186,7 +6344,7 @@ pub mod compute_node {
         operation_config: &crate::OperationConfig,
         pool_id: &str,
         node_id: &str,
-        node_reimage_parameter: Option<&NodeReimageParameter>,
+        node_reimage_parameter: Option<&models::NodeReimageParameter>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -6233,7 +6391,7 @@ pub mod compute_node {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| reimage::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(reimage::Error::DefaultResponse {
                     status_code,
@@ -6243,7 +6401,7 @@ pub mod compute_node {
         }
     }
     pub mod reimage {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6269,7 +6427,7 @@ pub mod compute_node {
         operation_config: &crate::OperationConfig,
         pool_id: &str,
         node_id: &str,
-        node_disable_scheduling_parameter: Option<&NodeDisableSchedulingParameter>,
+        node_disable_scheduling_parameter: Option<&models::NodeDisableSchedulingParameter>,
         timeout: Option<i32>,
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
@@ -6321,7 +6479,7 @@ pub mod compute_node {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| disable_scheduling::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable_scheduling::Error::DefaultResponse {
                     status_code,
@@ -6331,7 +6489,7 @@ pub mod compute_node {
         }
     }
     pub mod disable_scheduling {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6404,7 +6562,7 @@ pub mod compute_node {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| enable_scheduling::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(enable_scheduling::Error::DefaultResponse {
                     status_code,
@@ -6414,7 +6572,7 @@ pub mod compute_node {
         }
     }
     pub mod enable_scheduling {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6444,7 +6602,7 @@ pub mod compute_node {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<ComputeNodeGetRemoteLoginSettingsResult, get_remote_login_settings::Error> {
+    ) -> std::result::Result<models::ComputeNodeGetRemoteLoginSettingsResult, get_remote_login_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/pools/{}/nodes/{}/remoteloginsettings",
@@ -6487,13 +6645,13 @@ pub mod compute_node {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputeNodeGetRemoteLoginSettingsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ComputeNodeGetRemoteLoginSettingsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_remote_login_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_remote_login_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_remote_login_settings::Error::DefaultResponse {
                     status_code,
@@ -6503,7 +6661,7 @@ pub mod compute_node {
         }
     }
     pub mod get_remote_login_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6575,7 +6733,7 @@ pub mod compute_node {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_remote_desktop::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_remote_desktop::Error::DefaultResponse {
                     status_code,
@@ -6585,7 +6743,7 @@ pub mod compute_node {
         }
     }
     pub mod get_remote_desktop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6615,8 +6773,8 @@ pub mod compute_node {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-        upload_batch_service_logs_configuration: &UploadBatchServiceLogsConfiguration,
-    ) -> std::result::Result<UploadBatchServiceLogsResult, upload_batch_service_logs::Error> {
+        upload_batch_service_logs_configuration: &models::UploadBatchServiceLogsConfiguration,
+    ) -> std::result::Result<models::UploadBatchServiceLogsResult, upload_batch_service_logs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/pools/{}/nodes/{}/uploadbatchservicelogs",
@@ -6661,13 +6819,13 @@ pub mod compute_node {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UploadBatchServiceLogsResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UploadBatchServiceLogsResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| upload_batch_service_logs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BatchError = serde_json::from_slice(rsp_body)
                     .map_err(|source| upload_batch_service_logs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(upload_batch_service_logs::Error::DefaultResponse {
                     status_code,
@@ -6677,7 +6835,7 @@ pub mod compute_node {
         }
     }
     pub mod upload_batch_service_logs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6709,7 +6867,7 @@ pub mod compute_node {
         client_request_id: Option<&str>,
         return_client_request_id: Option<bool>,
         ocp_date: Option<&str>,
-    ) -> std::result::Result<ComputeNodeListResult, list::Error> {
+    ) -> std::result::Result<models::ComputeNodeListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/pools/{}/nodes", operation_config.base_path(), pool_id);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -6751,13 +6909,13 @@ pub mod compute_node {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ComputeNodeListResult =
+                let rsp_value: models::ComputeNodeListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: BatchError =
+                let rsp_value: models::BatchError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -6767,7 +6925,7 @@ pub mod compute_node {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,10 +2,49 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    DiskPools_ListBySubscription(#[from] disk_pools::list_by_subscription::Error),
+    #[error(transparent)]
+    DiskPools_ListByResourceGroup(#[from] disk_pools::list_by_resource_group::Error),
+    #[error(transparent)]
+    DiskPools_Get(#[from] disk_pools::get::Error),
+    #[error(transparent)]
+    DiskPools_CreateOrUpdate(#[from] disk_pools::create_or_update::Error),
+    #[error(transparent)]
+    DiskPools_Update(#[from] disk_pools::update::Error),
+    #[error(transparent)]
+    DiskPools_Delete(#[from] disk_pools::delete::Error),
+    #[error(transparent)]
+    DiskPoolZones_List(#[from] disk_pool_zones::list::Error),
+    #[error(transparent)]
+    DiskPools_ListOutboundNetworkDependenciesEndpoints(#[from] disk_pools::list_outbound_network_dependencies_endpoints::Error),
+    #[error(transparent)]
+    DiskPools_Start(#[from] disk_pools::start::Error),
+    #[error(transparent)]
+    DiskPools_Deallocate(#[from] disk_pools::deallocate::Error),
+    #[error(transparent)]
+    IscsiTargets_ListByDiskPool(#[from] iscsi_targets::list_by_disk_pool::Error),
+    #[error(transparent)]
+    IscsiTargets_Get(#[from] iscsi_targets::get::Error),
+    #[error(transparent)]
+    IscsiTargets_CreateOrUpdate(#[from] iscsi_targets::create_or_update::Error),
+    #[error(transparent)]
+    IscsiTargets_Update(#[from] iscsi_targets::update::Error),
+    #[error(transparent)]
+    IscsiTargets_Delete(#[from] iscsi_targets::delete::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<StoragePoolOperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+    ) -> std::result::Result<models::StoragePoolOperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.StoragePool/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +65,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StoragePoolOperationListResult =
+                let rsp_value: models::StoragePoolOperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +81,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,11 +105,11 @@ pub mod operations {
     }
 }
 pub mod disk_pools {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DiskPoolListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::DiskPoolListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StoragePool/diskPools",
@@ -98,13 +137,13 @@ pub mod disk_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskPoolListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskPoolListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -114,7 +153,7 @@ pub mod disk_pools {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -140,7 +179,7 @@ pub mod disk_pools {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DiskPoolListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DiskPoolListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StoragePool/diskPools",
@@ -171,13 +210,13 @@ pub mod disk_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskPoolListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskPoolListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -187,7 +226,7 @@ pub mod disk_pools {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -214,7 +253,7 @@ pub mod disk_pools {
         subscription_id: &str,
         resource_group_name: &str,
         disk_pool_name: &str,
-    ) -> std::result::Result<DiskPool, get::Error> {
+    ) -> std::result::Result<models::DiskPool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StoragePool/diskPools/{}",
@@ -241,13 +280,13 @@ pub mod disk_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskPool =
+                let rsp_value: models::DiskPool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -257,7 +296,7 @@ pub mod disk_pools {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -284,7 +323,7 @@ pub mod disk_pools {
         subscription_id: &str,
         resource_group_name: &str,
         disk_pool_name: &str,
-        disk_pool_create_payload: &DiskPoolCreate,
+        disk_pool_create_payload: &models::DiskPoolCreate,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -316,19 +355,19 @@ pub mod disk_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskPool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskPool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskPool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiskPool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -338,11 +377,11 @@ pub mod disk_pools {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DiskPool),
-            Created201(DiskPool),
+            Ok200(models::DiskPool),
+            Created201(models::DiskPool),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -370,7 +409,7 @@ pub mod disk_pools {
         subscription_id: &str,
         resource_group_name: &str,
         disk_pool_name: &str,
-        disk_pool_update_payload: &DiskPoolUpdate,
+        disk_pool_update_payload: &models::DiskPoolUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -399,14 +438,14 @@ pub mod disk_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskPool =
+                let rsp_value: models::DiskPool =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -416,10 +455,10 @@ pub mod disk_pools {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DiskPool),
+            Ok200(models::DiskPool),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -478,7 +517,7 @@ pub mod disk_pools {
             http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -488,7 +527,7 @@ pub mod disk_pools {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -521,7 +560,7 @@ pub mod disk_pools {
         subscription_id: &str,
         resource_group_name: &str,
         disk_pool_name: &str,
-    ) -> std::result::Result<OutboundEnvironmentEndpointList, list_outbound_network_dependencies_endpoints::Error> {
+    ) -> std::result::Result<models::OutboundEnvironmentEndpointList, list_outbound_network_dependencies_endpoints::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StoragePool/diskPools/{}/outboundNetworkDependenciesEndpoints",
@@ -553,13 +592,13 @@ pub mod disk_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OutboundEnvironmentEndpointList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OutboundEnvironmentEndpointList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_outbound_network_dependencies_endpoints::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_outbound_network_dependencies_endpoints::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_outbound_network_dependencies_endpoints::Error::DefaultResponse {
                     status_code,
@@ -569,7 +608,7 @@ pub mod disk_pools {
         }
     }
     pub mod list_outbound_network_dependencies_endpoints {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -626,7 +665,7 @@ pub mod disk_pools {
             http::StatusCode::ACCEPTED => Ok(start::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| start::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(start::Error::DefaultResponse {
                     status_code,
@@ -636,7 +675,7 @@ pub mod disk_pools {
         }
     }
     pub mod start {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -701,7 +740,7 @@ pub mod disk_pools {
             http::StatusCode::ACCEPTED => Ok(deallocate::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| deallocate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(deallocate::Error::DefaultResponse {
                     status_code,
@@ -711,7 +750,7 @@ pub mod disk_pools {
         }
     }
     pub mod deallocate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -740,12 +779,12 @@ pub mod disk_pools {
     }
 }
 pub mod disk_pool_zones {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<DiskPoolZoneListResult, list::Error> {
+    ) -> std::result::Result<models::DiskPoolZoneListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.StoragePool/locations/{}/diskPoolZones",
@@ -771,13 +810,13 @@ pub mod disk_pool_zones {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiskPoolZoneListResult =
+                let rsp_value: models::DiskPoolZoneListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -787,7 +826,7 @@ pub mod disk_pool_zones {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -811,13 +850,13 @@ pub mod disk_pool_zones {
     }
 }
 pub mod iscsi_targets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_disk_pool(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         disk_pool_name: &str,
-    ) -> std::result::Result<IscsiTargetList, list_by_disk_pool::Error> {
+    ) -> std::result::Result<models::IscsiTargetList, list_by_disk_pool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StoragePool/diskPools/{}/iscsiTargets",
@@ -847,13 +886,13 @@ pub mod iscsi_targets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IscsiTargetList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IscsiTargetList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_disk_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_disk_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_disk_pool::Error::DefaultResponse {
                     status_code,
@@ -863,7 +902,7 @@ pub mod iscsi_targets {
         }
     }
     pub mod list_by_disk_pool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -891,7 +930,7 @@ pub mod iscsi_targets {
         resource_group_name: &str,
         disk_pool_name: &str,
         iscsi_target_name: &str,
-    ) -> std::result::Result<IscsiTarget, get::Error> {
+    ) -> std::result::Result<models::IscsiTarget, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StoragePool/diskPools/{}/iscsiTargets/{}",
@@ -919,13 +958,13 @@ pub mod iscsi_targets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IscsiTarget =
+                let rsp_value: models::IscsiTarget =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -935,7 +974,7 @@ pub mod iscsi_targets {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -963,7 +1002,7 @@ pub mod iscsi_targets {
         resource_group_name: &str,
         disk_pool_name: &str,
         iscsi_target_name: &str,
-        iscsi_target_create_payload: &IscsiTargetCreate,
+        iscsi_target_create_payload: &models::IscsiTargetCreate,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -996,19 +1035,19 @@ pub mod iscsi_targets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IscsiTarget = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IscsiTarget = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: IscsiTarget = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IscsiTarget = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1018,11 +1057,11 @@ pub mod iscsi_targets {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IscsiTarget),
-            Created201(IscsiTarget),
+            Ok200(models::IscsiTarget),
+            Created201(models::IscsiTarget),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1051,7 +1090,7 @@ pub mod iscsi_targets {
         resource_group_name: &str,
         disk_pool_name: &str,
         iscsi_target_name: &str,
-        iscsi_target_update_payload: &IscsiTargetUpdate,
+        iscsi_target_update_payload: &models::IscsiTargetUpdate,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1081,14 +1120,14 @@ pub mod iscsi_targets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IscsiTarget =
+                let rsp_value: models::IscsiTarget =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1098,10 +1137,10 @@ pub mod iscsi_targets {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(IscsiTarget),
+            Ok200(models::IscsiTarget),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1162,7 +1201,7 @@ pub mod iscsi_targets {
             http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1172,7 +1211,7 @@ pub mod iscsi_targets {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

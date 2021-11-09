@@ -2,15 +2,116 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Clusters_Get(#[from] clusters::get::Error),
+    #[error(transparent)]
+    Clusters_Create(#[from] clusters::create::Error),
+    #[error(transparent)]
+    Clusters_Update(#[from] clusters::update::Error),
+    #[error(transparent)]
+    Clusters_Delete(#[from] clusters::delete::Error),
+    #[error(transparent)]
+    Clusters_ListByResourceGroup(#[from] clusters::list_by_resource_group::Error),
+    #[error(transparent)]
+    Clusters_Resize(#[from] clusters::resize::Error),
+    #[error(transparent)]
+    Clusters_UpdateAutoScaleConfiguration(#[from] clusters::update_auto_scale_configuration::Error),
+    #[error(transparent)]
+    Clusters_List(#[from] clusters::list::Error),
+    #[error(transparent)]
+    Clusters_RotateDiskEncryptionKey(#[from] clusters::rotate_disk_encryption_key::Error),
+    #[error(transparent)]
+    Clusters_GetGatewaySettings(#[from] clusters::get_gateway_settings::Error),
+    #[error(transparent)]
+    Clusters_UpdateGatewaySettings(#[from] clusters::update_gateway_settings::Error),
+    #[error(transparent)]
+    Clusters_GetAzureAsyncOperationStatus(#[from] clusters::get_azure_async_operation_status::Error),
+    #[error(transparent)]
+    Clusters_UpdateIdentityCertificate(#[from] clusters::update_identity_certificate::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    ScriptActions_Delete(#[from] script_actions::delete::Error),
+    #[error(transparent)]
+    Clusters_ExecuteScriptActions(#[from] clusters::execute_script_actions::Error),
+    #[error(transparent)]
+    ScriptActions_ListByCluster(#[from] script_actions::list_by_cluster::Error),
+    #[error(transparent)]
+    ScriptActions_GetExecutionDetail(#[from] script_actions::get_execution_detail::Error),
+    #[error(transparent)]
+    ScriptExecutionHistory_ListByCluster(#[from] script_execution_history::list_by_cluster::Error),
+    #[error(transparent)]
+    ScriptExecutionHistory_Promote(#[from] script_execution_history::promote::Error),
+    #[error(transparent)]
+    ScriptActions_GetExecutionAsyncOperationStatus(#[from] script_actions::get_execution_async_operation_status::Error),
+    #[error(transparent)]
+    Applications_ListByCluster(#[from] applications::list_by_cluster::Error),
+    #[error(transparent)]
+    Applications_Get(#[from] applications::get::Error),
+    #[error(transparent)]
+    Applications_Create(#[from] applications::create::Error),
+    #[error(transparent)]
+    Applications_Delete(#[from] applications::delete::Error),
+    #[error(transparent)]
+    Applications_GetAzureAsyncOperationStatus(#[from] applications::get_azure_async_operation_status::Error),
+    #[error(transparent)]
+    Locations_GetCapabilities(#[from] locations::get_capabilities::Error),
+    #[error(transparent)]
+    Locations_ListUsages(#[from] locations::list_usages::Error),
+    #[error(transparent)]
+    Locations_ListBillingSpecs(#[from] locations::list_billing_specs::Error),
+    #[error(transparent)]
+    Locations_GetAzureAsyncOperationStatus(#[from] locations::get_azure_async_operation_status::Error),
+    #[error(transparent)]
+    Locations_CheckNameAvailability(#[from] locations::check_name_availability::Error),
+    #[error(transparent)]
+    Locations_ValidateClusterCreateRequest(#[from] locations::validate_cluster_create_request::Error),
+    #[error(transparent)]
+    Configurations_List(#[from] configurations::list::Error),
+    #[error(transparent)]
+    Configurations_Get(#[from] configurations::get::Error),
+    #[error(transparent)]
+    Configurations_Update(#[from] configurations::update::Error),
+    #[error(transparent)]
+    Extensions_GetMonitoringStatus(#[from] extensions::get_monitoring_status::Error),
+    #[error(transparent)]
+    Extensions_EnableMonitoring(#[from] extensions::enable_monitoring::Error),
+    #[error(transparent)]
+    Extensions_DisableMonitoring(#[from] extensions::disable_monitoring::Error),
+    #[error(transparent)]
+    Extensions_GetAzureMonitorStatus(#[from] extensions::get_azure_monitor_status::Error),
+    #[error(transparent)]
+    Extensions_EnableAzureMonitor(#[from] extensions::enable_azure_monitor::Error),
+    #[error(transparent)]
+    Extensions_DisableAzureMonitor(#[from] extensions::disable_azure_monitor::Error),
+    #[error(transparent)]
+    Extensions_Get(#[from] extensions::get::Error),
+    #[error(transparent)]
+    Extensions_Create(#[from] extensions::create::Error),
+    #[error(transparent)]
+    Extensions_Delete(#[from] extensions::delete::Error),
+    #[error(transparent)]
+    Extensions_GetAzureAsyncOperationStatus(#[from] extensions::get_azure_async_operation_status::Error),
+    #[error(transparent)]
+    VirtualMachines_ListHosts(#[from] virtual_machines::list_hosts::Error),
+    #[error(transparent)]
+    VirtualMachines_RestartHosts(#[from] virtual_machines::restart_hosts::Error),
+    #[error(transparent)]
+    VirtualMachines_GetAsyncOperationStatus(#[from] virtual_machines::get_async_operation_status::Error),
+}
 pub mod clusters {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<Cluster, get::Error> {
+    ) -> std::result::Result<models::Cluster, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}",
@@ -37,13 +138,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Cluster =
+                let rsp_value: models::Cluster =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -53,7 +154,7 @@ pub mod clusters {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -80,8 +181,8 @@ pub mod clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &ClusterCreateParametersExtended,
-    ) -> std::result::Result<Cluster, create::Error> {
+        parameters: &models::ClusterCreateParametersExtended,
+    ) -> std::result::Result<models::Cluster, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}",
@@ -109,13 +210,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Cluster =
+                let rsp_value: models::Cluster =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -125,7 +226,7 @@ pub mod clusters {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -152,8 +253,8 @@ pub mod clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &ClusterPatchParameters,
-    ) -> std::result::Result<Cluster, update::Error> {
+        parameters: &models::ClusterPatchParameters,
+    ) -> std::result::Result<models::Cluster, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}",
@@ -181,13 +282,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Cluster =
+                let rsp_value: models::Cluster =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -197,7 +298,7 @@ pub mod clusters {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -254,7 +355,7 @@ pub mod clusters {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -264,7 +365,7 @@ pub mod clusters {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -296,7 +397,7 @@ pub mod clusters {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ClusterListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ClusterListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters",
@@ -327,13 +428,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ClusterListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -343,7 +444,7 @@ pub mod clusters {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -371,7 +472,7 @@ pub mod clusters {
         resource_group_name: &str,
         cluster_name: &str,
         role_name: &str,
-        parameters: &ClusterResizeParameters,
+        parameters: &models::ClusterResizeParameters,
     ) -> std::result::Result<resize::Response, resize::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -403,7 +504,7 @@ pub mod clusters {
             http::StatusCode::ACCEPTED => Ok(resize::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| resize::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(resize::Error::DefaultResponse {
                     status_code,
@@ -413,7 +514,7 @@ pub mod clusters {
         }
     }
     pub mod resize {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -446,7 +547,7 @@ pub mod clusters {
         resource_group_name: &str,
         cluster_name: &str,
         role_name: &str,
-        parameters: &AutoscaleConfigurationUpdateParameter,
+        parameters: &models::AutoscaleConfigurationUpdateParameter,
     ) -> std::result::Result<update_auto_scale_configuration::Response, update_auto_scale_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -483,7 +584,7 @@ pub mod clusters {
             http::StatusCode::ACCEPTED => Ok(update_auto_scale_configuration::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_auto_scale_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_auto_scale_configuration::Error::DefaultResponse {
                     status_code,
@@ -493,7 +594,7 @@ pub mod clusters {
         }
     }
     pub mod update_auto_scale_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -523,7 +624,7 @@ pub mod clusters {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ClusterListResult, list::Error> {
+    ) -> std::result::Result<models::ClusterListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HDInsight/clusters",
@@ -548,13 +649,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterListResult =
+                let rsp_value: models::ClusterListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -564,7 +665,7 @@ pub mod clusters {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -591,7 +692,7 @@ pub mod clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &ClusterDiskEncryptionParameters,
+        parameters: &models::ClusterDiskEncryptionParameters,
     ) -> std::result::Result<rotate_disk_encryption_key::Response, rotate_disk_encryption_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -627,7 +728,7 @@ pub mod clusters {
             http::StatusCode::ACCEPTED => Ok(rotate_disk_encryption_key::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| rotate_disk_encryption_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(rotate_disk_encryption_key::Error::DefaultResponse {
                     status_code,
@@ -637,7 +738,7 @@ pub mod clusters {
         }
     }
     pub mod rotate_disk_encryption_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -669,7 +770,7 @@ pub mod clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<GatewaySettings, get_gateway_settings::Error> {
+    ) -> std::result::Result<models::GatewaySettings, get_gateway_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/getGatewaySettings",
@@ -700,13 +801,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GatewaySettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GatewaySettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_gateway_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_gateway_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_gateway_settings::Error::DefaultResponse {
                     status_code,
@@ -716,7 +817,7 @@ pub mod clusters {
         }
     }
     pub mod get_gateway_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -743,7 +844,7 @@ pub mod clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &UpdateGatewaySettingsParameters,
+        parameters: &models::UpdateGatewaySettingsParameters,
     ) -> std::result::Result<update_gateway_settings::Response, update_gateway_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -779,7 +880,7 @@ pub mod clusters {
             http::StatusCode::ACCEPTED => Ok(update_gateway_settings::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_gateway_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_gateway_settings::Error::DefaultResponse {
                     status_code,
@@ -789,7 +890,7 @@ pub mod clusters {
         }
     }
     pub mod update_gateway_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -822,7 +923,7 @@ pub mod clusters {
         resource_group_name: &str,
         cluster_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<AsyncOperationResult, get_azure_async_operation_status::Error> {
+    ) -> std::result::Result<models::AsyncOperationResult, get_azure_async_operation_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/azureasyncoperations/{}",
@@ -855,13 +956,13 @@ pub mod clusters {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AsyncOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AsyncOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_azure_async_operation_status::Error::DefaultResponse {
                     status_code,
@@ -871,7 +972,7 @@ pub mod clusters {
         }
     }
     pub mod get_azure_async_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -898,7 +999,7 @@ pub mod clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &UpdateClusterIdentityCertificateParameters,
+        parameters: &models::UpdateClusterIdentityCertificateParameters,
     ) -> std::result::Result<update_identity_certificate::Response, update_identity_certificate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -934,7 +1035,7 @@ pub mod clusters {
             http::StatusCode::ACCEPTED => Ok(update_identity_certificate::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_identity_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_identity_certificate::Error::DefaultResponse {
                     status_code,
@@ -944,7 +1045,7 @@ pub mod clusters {
         }
     }
     pub mod update_identity_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -976,7 +1077,7 @@ pub mod clusters {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &ExecuteScriptActionParameters,
+        parameters: &models::ExecuteScriptActionParameters,
     ) -> std::result::Result<execute_script_actions::Response, execute_script_actions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1013,7 +1114,7 @@ pub mod clusters {
             http::StatusCode::NOT_FOUND => Err(execute_script_actions::Error::NotFound404 {}),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| execute_script_actions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(execute_script_actions::Error::DefaultResponse {
                     status_code,
@@ -1023,7 +1124,7 @@ pub mod clusters {
         }
     }
     pub mod execute_script_actions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1054,8 +1155,8 @@ pub mod clusters {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.HDInsight/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1076,13 +1177,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1092,7 +1193,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1116,7 +1217,7 @@ pub mod operations {
     }
 }
 pub mod script_actions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn delete(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1153,7 +1254,7 @@ pub mod script_actions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1163,7 +1264,7 @@ pub mod script_actions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1195,7 +1296,7 @@ pub mod script_actions {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<ScriptActionsList, list_by_cluster::Error> {
+    ) -> std::result::Result<models::ScriptActionsList, list_by_cluster::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/scriptActions",
@@ -1225,13 +1326,13 @@ pub mod script_actions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScriptActionsList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ScriptActionsList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_cluster::Error::DefaultResponse {
                     status_code,
@@ -1241,7 +1342,7 @@ pub mod script_actions {
         }
     }
     pub mod list_by_cluster {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1269,7 +1370,7 @@ pub mod script_actions {
         resource_group_name: &str,
         cluster_name: &str,
         script_execution_id: &str,
-    ) -> std::result::Result<RuntimeScriptActionDetail, get_execution_detail::Error> {
+    ) -> std::result::Result<models::RuntimeScriptActionDetail, get_execution_detail::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/scriptExecutionHistory/{}",
@@ -1300,13 +1401,13 @@ pub mod script_actions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RuntimeScriptActionDetail = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RuntimeScriptActionDetail = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_execution_detail::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_execution_detail::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_execution_detail::Error::DefaultResponse {
                     status_code,
@@ -1316,7 +1417,7 @@ pub mod script_actions {
         }
     }
     pub mod get_execution_detail {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1344,7 +1445,7 @@ pub mod script_actions {
         resource_group_name: &str,
         cluster_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<AsyncOperationResult, get_execution_async_operation_status::Error> {
+    ) -> std::result::Result<models::AsyncOperationResult, get_execution_async_operation_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/executeScriptActions/azureasyncoperations/{}",
@@ -1377,13 +1478,13 @@ pub mod script_actions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AsyncOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AsyncOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_execution_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_execution_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_execution_async_operation_status::Error::DefaultResponse {
                     status_code,
@@ -1393,7 +1494,7 @@ pub mod script_actions {
         }
     }
     pub mod get_execution_async_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1417,13 +1518,13 @@ pub mod script_actions {
     }
 }
 pub mod script_execution_history {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_cluster(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<ScriptActionExecutionHistoryList, list_by_cluster::Error> {
+    ) -> std::result::Result<models::ScriptActionExecutionHistoryList, list_by_cluster::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/scriptExecutionHistory",
@@ -1453,13 +1554,13 @@ pub mod script_execution_history {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ScriptActionExecutionHistoryList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ScriptActionExecutionHistoryList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_cluster::Error::DefaultResponse {
                     status_code,
@@ -1469,7 +1570,7 @@ pub mod script_execution_history {
         }
     }
     pub mod list_by_cluster {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1530,7 +1631,7 @@ pub mod script_execution_history {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| promote::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(promote::Error::DefaultResponse {
                     status_code,
@@ -1540,7 +1641,7 @@ pub mod script_execution_history {
         }
     }
     pub mod promote {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1564,13 +1665,13 @@ pub mod script_execution_history {
     }
 }
 pub mod applications {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_cluster(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<ApplicationListResult, list_by_cluster::Error> {
+    ) -> std::result::Result<models::ApplicationListResult, list_by_cluster::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/applications",
@@ -1600,13 +1701,13 @@ pub mod applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ApplicationListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ApplicationListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_cluster::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_cluster::Error::DefaultResponse {
                     status_code,
@@ -1616,7 +1717,7 @@ pub mod applications {
         }
     }
     pub mod list_by_cluster {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1644,7 +1745,7 @@ pub mod applications {
         resource_group_name: &str,
         cluster_name: &str,
         application_name: &str,
-    ) -> std::result::Result<Application, get::Error> {
+    ) -> std::result::Result<models::Application, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/applications/{}",
@@ -1672,13 +1773,13 @@ pub mod applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Application =
+                let rsp_value: models::Application =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1688,7 +1789,7 @@ pub mod applications {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1716,8 +1817,8 @@ pub mod applications {
         resource_group_name: &str,
         cluster_name: &str,
         application_name: &str,
-        parameters: &Application,
-    ) -> std::result::Result<Application, create::Error> {
+        parameters: &models::Application,
+    ) -> std::result::Result<models::Application, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/applications/{}",
@@ -1746,13 +1847,13 @@ pub mod applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Application =
+                let rsp_value: models::Application =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1762,7 +1863,7 @@ pub mod applications {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1821,7 +1922,7 @@ pub mod applications {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1831,7 +1932,7 @@ pub mod applications {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1866,7 +1967,7 @@ pub mod applications {
         cluster_name: &str,
         application_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<AsyncOperationResult, get_azure_async_operation_status::Error> {
+    ) -> std::result::Result<models::AsyncOperationResult, get_azure_async_operation_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/applications/{}/azureasyncoperations/{}",
@@ -1900,13 +2001,13 @@ pub mod applications {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AsyncOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AsyncOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_azure_async_operation_status::Error::DefaultResponse {
                     status_code,
@@ -1916,7 +2017,7 @@ pub mod applications {
         }
     }
     pub mod get_azure_async_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1940,12 +2041,12 @@ pub mod applications {
     }
 }
 pub mod locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_capabilities(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<CapabilitiesResult, get_capabilities::Error> {
+    ) -> std::result::Result<models::CapabilitiesResult, get_capabilities::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HDInsight/locations/{}/capabilities",
@@ -1974,13 +2075,13 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CapabilitiesResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CapabilitiesResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_capabilities::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_capabilities::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_capabilities::Error::DefaultResponse {
                     status_code,
@@ -1990,7 +2091,7 @@ pub mod locations {
         }
     }
     pub mod get_capabilities {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2016,7 +2117,7 @@ pub mod locations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<UsagesListResult, list_usages::Error> {
+    ) -> std::result::Result<models::UsagesListResult, list_usages::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HDInsight/locations/{}/usages",
@@ -2045,13 +2146,13 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsagesListResult =
+                let rsp_value: models::UsagesListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usages::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_usages::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_usages::Error::DefaultResponse {
                     status_code,
@@ -2061,7 +2162,7 @@ pub mod locations {
         }
     }
     pub mod list_usages {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2087,7 +2188,7 @@ pub mod locations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<BillingResponseListResult, list_billing_specs::Error> {
+    ) -> std::result::Result<models::BillingResponseListResult, list_billing_specs::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HDInsight/locations/{}/billingSpecs",
@@ -2116,13 +2217,13 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BillingResponseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BillingResponseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_billing_specs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_billing_specs::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_billing_specs::Error::DefaultResponse {
                     status_code,
@@ -2132,7 +2233,7 @@ pub mod locations {
         }
     }
     pub mod list_billing_specs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2159,7 +2260,7 @@ pub mod locations {
         subscription_id: &str,
         location: &str,
         operation_id: &str,
-    ) -> std::result::Result<AsyncOperationResult, get_azure_async_operation_status::Error> {
+    ) -> std::result::Result<models::AsyncOperationResult, get_azure_async_operation_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HDInsight/locations/{}/azureasyncoperations/{}",
@@ -2191,13 +2292,13 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AsyncOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AsyncOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_azure_async_operation_status::Error::DefaultResponse {
                     status_code,
@@ -2207,7 +2308,7 @@ pub mod locations {
         }
     }
     pub mod get_azure_async_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2233,8 +2334,8 @@ pub mod locations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        parameters: &NameAvailabilityCheckRequestParameters,
-    ) -> std::result::Result<NameAvailabilityCheckResult, check_name_availability::Error> {
+        parameters: &models::NameAvailabilityCheckRequestParameters,
+    ) -> std::result::Result<models::NameAvailabilityCheckResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HDInsight/locations/{}/checkNameAvailability",
@@ -2266,13 +2367,13 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NameAvailabilityCheckResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NameAvailabilityCheckResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -2282,7 +2383,7 @@ pub mod locations {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2308,8 +2409,8 @@ pub mod locations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        parameters: &ClusterCreateRequestValidationParameters,
-    ) -> std::result::Result<ClusterCreateValidationResult, validate_cluster_create_request::Error> {
+        parameters: &models::ClusterCreateRequestValidationParameters,
+    ) -> std::result::Result<models::ClusterCreateValidationResult, validate_cluster_create_request::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.HDInsight/locations/{}/validateCreateRequest",
@@ -2341,13 +2442,13 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterCreateValidationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ClusterCreateValidationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_cluster_create_request::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| validate_cluster_create_request::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(validate_cluster_create_request::Error::DefaultResponse {
                     status_code,
@@ -2357,7 +2458,7 @@ pub mod locations {
         }
     }
     pub mod validate_cluster_create_request {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2381,13 +2482,13 @@ pub mod locations {
     }
 }
 pub mod configurations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<ClusterConfigurations, list::Error> {
+    ) -> std::result::Result<models::ClusterConfigurations, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/configurations",
@@ -2415,13 +2516,13 @@ pub mod configurations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterConfigurations =
+                let rsp_value: models::ClusterConfigurations =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2431,7 +2532,7 @@ pub mod configurations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2459,7 +2560,7 @@ pub mod configurations {
         resource_group_name: &str,
         cluster_name: &str,
         configuration_name: &str,
-    ) -> std::result::Result<ClusterConfiguration, get::Error> {
+    ) -> std::result::Result<models::ClusterConfiguration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/configurations/{}",
@@ -2487,13 +2588,13 @@ pub mod configurations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterConfiguration =
+                let rsp_value: models::ClusterConfiguration =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2503,7 +2604,7 @@ pub mod configurations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2531,7 +2632,7 @@ pub mod configurations {
         resource_group_name: &str,
         cluster_name: &str,
         configuration_name: &str,
-        parameters: &ClusterConfiguration,
+        parameters: &models::ClusterConfiguration,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2564,7 +2665,7 @@ pub mod configurations {
             http::StatusCode::NO_CONTENT => Ok(update::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2574,7 +2675,7 @@ pub mod configurations {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2604,13 +2705,13 @@ pub mod configurations {
     }
 }
 pub mod extensions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_monitoring_status(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<ClusterMonitoringResponse, get_monitoring_status::Error> {
+    ) -> std::result::Result<models::ClusterMonitoringResponse, get_monitoring_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/extensions/clustermonitoring",
@@ -2642,13 +2743,13 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterMonitoringResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ClusterMonitoringResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_monitoring_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_monitoring_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_monitoring_status::Error::DefaultResponse {
                     status_code,
@@ -2658,7 +2759,7 @@ pub mod extensions {
         }
     }
     pub mod get_monitoring_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2685,7 +2786,7 @@ pub mod extensions {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &ClusterMonitoringRequest,
+        parameters: &models::ClusterMonitoringRequest,
     ) -> std::result::Result<enable_monitoring::Response, enable_monitoring::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2719,7 +2820,7 @@ pub mod extensions {
             http::StatusCode::ACCEPTED => Ok(enable_monitoring::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| enable_monitoring::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(enable_monitoring::Error::DefaultResponse {
                     status_code,
@@ -2729,7 +2830,7 @@ pub mod extensions {
         }
     }
     pub mod enable_monitoring {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2794,7 +2895,7 @@ pub mod extensions {
             http::StatusCode::NO_CONTENT => Ok(disable_monitoring::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| disable_monitoring::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable_monitoring::Error::DefaultResponse {
                     status_code,
@@ -2804,7 +2905,7 @@ pub mod extensions {
         }
     }
     pub mod disable_monitoring {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2837,7 +2938,7 @@ pub mod extensions {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<AzureMonitorResponse, get_azure_monitor_status::Error> {
+    ) -> std::result::Result<models::AzureMonitorResponse, get_azure_monitor_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/extensions/azureMonitor",
@@ -2869,13 +2970,13 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AzureMonitorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AzureMonitorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_monitor_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_monitor_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_azure_monitor_status::Error::DefaultResponse {
                     status_code,
@@ -2885,7 +2986,7 @@ pub mod extensions {
         }
     }
     pub mod get_azure_monitor_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2912,7 +3013,7 @@ pub mod extensions {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        parameters: &AzureMonitorRequest,
+        parameters: &models::AzureMonitorRequest,
     ) -> std::result::Result<enable_azure_monitor::Response, enable_azure_monitor::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2946,7 +3047,7 @@ pub mod extensions {
             http::StatusCode::ACCEPTED => Ok(enable_azure_monitor::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| enable_azure_monitor::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(enable_azure_monitor::Error::DefaultResponse {
                     status_code,
@@ -2956,7 +3057,7 @@ pub mod extensions {
         }
     }
     pub mod enable_azure_monitor {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3023,7 +3124,7 @@ pub mod extensions {
             http::StatusCode::NO_CONTENT => Ok(disable_azure_monitor::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| disable_azure_monitor::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(disable_azure_monitor::Error::DefaultResponse {
                     status_code,
@@ -3033,7 +3134,7 @@ pub mod extensions {
         }
     }
     pub mod disable_azure_monitor {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3067,7 +3168,7 @@ pub mod extensions {
         resource_group_name: &str,
         cluster_name: &str,
         extension_name: &str,
-    ) -> std::result::Result<ClusterMonitoringResponse, get::Error> {
+    ) -> std::result::Result<models::ClusterMonitoringResponse, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/extensions/{}",
@@ -3095,13 +3196,13 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterMonitoringResponse =
+                let rsp_value: models::ClusterMonitoringResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3111,7 +3212,7 @@ pub mod extensions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3139,7 +3240,7 @@ pub mod extensions {
         resource_group_name: &str,
         cluster_name: &str,
         extension_name: &str,
-        parameters: &Extension,
+        parameters: &models::Extension,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3171,7 +3272,7 @@ pub mod extensions {
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -3181,7 +3282,7 @@ pub mod extensions {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3245,7 +3346,7 @@ pub mod extensions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3255,7 +3356,7 @@ pub mod extensions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3290,7 +3391,7 @@ pub mod extensions {
         cluster_name: &str,
         extension_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<AsyncOperationResult, get_azure_async_operation_status::Error> {
+    ) -> std::result::Result<models::AsyncOperationResult, get_azure_async_operation_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/extensions/{}/azureAsyncOperations/{}",
@@ -3324,13 +3425,13 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AsyncOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AsyncOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_azure_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_azure_async_operation_status::Error::DefaultResponse {
                     status_code,
@@ -3340,7 +3441,7 @@ pub mod extensions {
         }
     }
     pub mod get_azure_async_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3364,13 +3465,13 @@ pub mod extensions {
     }
 }
 pub mod virtual_machines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_hosts(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-    ) -> std::result::Result<HostInfoListResult, list_hosts::Error> {
+    ) -> std::result::Result<models::HostInfoListResult, list_hosts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/listHosts",
@@ -3401,13 +3502,13 @@ pub mod virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: HostInfoListResult =
+                let rsp_value: models::HostInfoListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_hosts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_hosts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_hosts::Error::DefaultResponse {
                     status_code,
@@ -3417,7 +3518,7 @@ pub mod virtual_machines {
         }
     }
     pub mod list_hosts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3444,7 +3545,7 @@ pub mod virtual_machines {
         subscription_id: &str,
         resource_group_name: &str,
         cluster_name: &str,
-        hosts: &RestartHostsParameters,
+        hosts: &models::RestartHostsParameters,
     ) -> std::result::Result<restart_hosts::Response, restart_hosts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3478,7 +3579,7 @@ pub mod virtual_machines {
             http::StatusCode::ACCEPTED => Ok(restart_hosts::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| restart_hosts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(restart_hosts::Error::DefaultResponse {
                     status_code,
@@ -3488,7 +3589,7 @@ pub mod virtual_machines {
         }
     }
     pub mod restart_hosts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3521,7 +3622,7 @@ pub mod virtual_machines {
         resource_group_name: &str,
         cluster_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<AsyncOperationResult, get_async_operation_status::Error> {
+    ) -> std::result::Result<models::AsyncOperationResult, get_async_operation_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HDInsight/clusters/{}/restartHosts/azureasyncoperations/{}",
@@ -3554,13 +3655,13 @@ pub mod virtual_machines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AsyncOperationResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AsyncOperationResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_async_operation_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_async_operation_status::Error::DefaultResponse {
                     status_code,
@@ -3570,7 +3671,7 @@ pub mod virtual_machines {
         }
     }
     pub mod get_async_operation_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

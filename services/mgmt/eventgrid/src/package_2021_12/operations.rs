@@ -2,15 +2,148 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Domains_Get(#[from] domains::get::Error),
+    #[error(transparent)]
+    Domains_CreateOrUpdate(#[from] domains::create_or_update::Error),
+    #[error(transparent)]
+    Domains_Update(#[from] domains::update::Error),
+    #[error(transparent)]
+    Domains_Delete(#[from] domains::delete::Error),
+    #[error(transparent)]
+    Domains_ListBySubscription(#[from] domains::list_by_subscription::Error),
+    #[error(transparent)]
+    Domains_ListByResourceGroup(#[from] domains::list_by_resource_group::Error),
+    #[error(transparent)]
+    Domains_ListSharedAccessKeys(#[from] domains::list_shared_access_keys::Error),
+    #[error(transparent)]
+    Domains_RegenerateKey(#[from] domains::regenerate_key::Error),
+    #[error(transparent)]
+    DomainTopics_Get(#[from] domain_topics::get::Error),
+    #[error(transparent)]
+    DomainTopics_CreateOrUpdate(#[from] domain_topics::create_or_update::Error),
+    #[error(transparent)]
+    DomainTopics_Delete(#[from] domain_topics::delete::Error),
+    #[error(transparent)]
+    DomainTopics_ListByDomain(#[from] domain_topics::list_by_domain::Error),
+    #[error(transparent)]
+    EventSubscriptions_Get(#[from] event_subscriptions::get::Error),
+    #[error(transparent)]
+    EventSubscriptions_CreateOrUpdate(#[from] event_subscriptions::create_or_update::Error),
+    #[error(transparent)]
+    EventSubscriptions_Update(#[from] event_subscriptions::update::Error),
+    #[error(transparent)]
+    EventSubscriptions_Delete(#[from] event_subscriptions::delete::Error),
+    #[error(transparent)]
+    SystemTopicEventSubscriptions_Get(#[from] system_topic_event_subscriptions::get::Error),
+    #[error(transparent)]
+    SystemTopicEventSubscriptions_CreateOrUpdate(#[from] system_topic_event_subscriptions::create_or_update::Error),
+    #[error(transparent)]
+    SystemTopicEventSubscriptions_Update(#[from] system_topic_event_subscriptions::update::Error),
+    #[error(transparent)]
+    SystemTopicEventSubscriptions_Delete(#[from] system_topic_event_subscriptions::delete::Error),
+    #[error(transparent)]
+    SystemTopicEventSubscriptions_GetFullUrl(#[from] system_topic_event_subscriptions::get_full_url::Error),
+    #[error(transparent)]
+    EventSubscriptions_GetFullUrl(#[from] event_subscriptions::get_full_url::Error),
+    #[error(transparent)]
+    SystemTopicEventSubscriptions_ListBySystemTopic(#[from] system_topic_event_subscriptions::list_by_system_topic::Error),
+    #[error(transparent)]
+    EventSubscriptions_ListGlobalBySubscription(#[from] event_subscriptions::list_global_by_subscription::Error),
+    #[error(transparent)]
+    EventSubscriptions_ListGlobalBySubscriptionForTopicType(#[from] event_subscriptions::list_global_by_subscription_for_topic_type::Error),
+    #[error(transparent)]
+    EventSubscriptions_ListGlobalByResourceGroup(#[from] event_subscriptions::list_global_by_resource_group::Error),
+    #[error(transparent)]
+    EventSubscriptions_ListGlobalByResourceGroupForTopicType(
+        #[from] event_subscriptions::list_global_by_resource_group_for_topic_type::Error,
+    ),
+    #[error(transparent)]
+    EventSubscriptions_ListRegionalBySubscription(#[from] event_subscriptions::list_regional_by_subscription::Error),
+    #[error(transparent)]
+    EventSubscriptions_ListRegionalByResourceGroup(#[from] event_subscriptions::list_regional_by_resource_group::Error),
+    #[error(transparent)]
+    EventSubscriptions_ListRegionalBySubscriptionForTopicType(
+        #[from] event_subscriptions::list_regional_by_subscription_for_topic_type::Error,
+    ),
+    #[error(transparent)]
+    EventSubscriptions_ListRegionalByResourceGroupForTopicType(
+        #[from] event_subscriptions::list_regional_by_resource_group_for_topic_type::Error,
+    ),
+    #[error(transparent)]
+    EventSubscriptions_ListByResource(#[from] event_subscriptions::list_by_resource::Error),
+    #[error(transparent)]
+    EventSubscriptions_ListByDomainTopic(#[from] event_subscriptions::list_by_domain_topic::Error),
+    #[error(transparent)]
+    EventSubscriptions_GetDeliveryAttributes(#[from] event_subscriptions::get_delivery_attributes::Error),
+    #[error(transparent)]
+    SystemTopicEventSubscriptions_GetDeliveryAttributes(#[from] system_topic_event_subscriptions::get_delivery_attributes::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Topics_Get(#[from] topics::get::Error),
+    #[error(transparent)]
+    Topics_CreateOrUpdate(#[from] topics::create_or_update::Error),
+    #[error(transparent)]
+    Topics_Update(#[from] topics::update::Error),
+    #[error(transparent)]
+    Topics_Delete(#[from] topics::delete::Error),
+    #[error(transparent)]
+    Topics_ListBySubscription(#[from] topics::list_by_subscription::Error),
+    #[error(transparent)]
+    Topics_ListByResourceGroup(#[from] topics::list_by_resource_group::Error),
+    #[error(transparent)]
+    Topics_ListSharedAccessKeys(#[from] topics::list_shared_access_keys::Error),
+    #[error(transparent)]
+    Topics_RegenerateKey(#[from] topics::regenerate_key::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Get(#[from] private_endpoint_connections::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Update(#[from] private_endpoint_connections::update::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Delete(#[from] private_endpoint_connections::delete::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_ListByResource(#[from] private_endpoint_connections::list_by_resource::Error),
+    #[error(transparent)]
+    PrivateLinkResources_Get(#[from] private_link_resources::get::Error),
+    #[error(transparent)]
+    PrivateLinkResources_ListByResource(#[from] private_link_resources::list_by_resource::Error),
+    #[error(transparent)]
+    SystemTopics_Get(#[from] system_topics::get::Error),
+    #[error(transparent)]
+    SystemTopics_CreateOrUpdate(#[from] system_topics::create_or_update::Error),
+    #[error(transparent)]
+    SystemTopics_Update(#[from] system_topics::update::Error),
+    #[error(transparent)]
+    SystemTopics_Delete(#[from] system_topics::delete::Error),
+    #[error(transparent)]
+    SystemTopics_ListBySubscription(#[from] system_topics::list_by_subscription::Error),
+    #[error(transparent)]
+    SystemTopics_ListByResourceGroup(#[from] system_topics::list_by_resource_group::Error),
+    #[error(transparent)]
+    Topics_ListEventTypes(#[from] topics::list_event_types::Error),
+    #[error(transparent)]
+    ExtensionTopics_Get(#[from] extension_topics::get::Error),
+    #[error(transparent)]
+    TopicTypes_List(#[from] topic_types::list::Error),
+    #[error(transparent)]
+    TopicTypes_Get(#[from] topic_types::get::Error),
+    #[error(transparent)]
+    TopicTypes_ListEventTypes(#[from] topic_types::list_event_types::Error),
+}
 pub mod domains {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
-    ) -> std::result::Result<Domain, get::Error> {
+    ) -> std::result::Result<models::Domain, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}",
@@ -37,7 +170,7 @@ pub mod domains {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Domain =
+                let rsp_value: models::Domain =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -45,7 +178,7 @@ pub mod domains {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -69,8 +202,8 @@ pub mod domains {
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
-        domain_info: &Domain,
-    ) -> std::result::Result<Domain, create_or_update::Error> {
+        domain_info: &models::Domain,
+    ) -> std::result::Result<models::Domain, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}",
@@ -101,7 +234,7 @@ pub mod domains {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Domain = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Domain = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -109,7 +242,7 @@ pub mod domains {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -133,7 +266,7 @@ pub mod domains {
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
-        domain_update_parameters: &DomainUpdateParameters,
+        domain_update_parameters: &models::DomainUpdateParameters,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -163,7 +296,7 @@ pub mod domains {
             http::StatusCode::OK => Ok(update::Response::Ok200),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Domain =
+                let rsp_value: models::Domain =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -171,11 +304,11 @@ pub mod domains {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
-            Created201(Domain),
+            Created201(models::Domain),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -232,7 +365,7 @@ pub mod domains {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -262,7 +395,7 @@ pub mod domains {
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<DomainsListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::DomainsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/domains",
@@ -296,7 +429,7 @@ pub mod domains {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DomainsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -304,7 +437,7 @@ pub mod domains {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -329,7 +462,7 @@ pub mod domains {
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<DomainsListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DomainsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains",
@@ -366,7 +499,7 @@ pub mod domains {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DomainsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -374,7 +507,7 @@ pub mod domains {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -398,7 +531,7 @@ pub mod domains {
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
-    ) -> std::result::Result<DomainSharedAccessKeys, list_shared_access_keys::Error> {
+    ) -> std::result::Result<models::DomainSharedAccessKeys, list_shared_access_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/listKeys",
@@ -431,7 +564,7 @@ pub mod domains {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainSharedAccessKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DomainSharedAccessKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_shared_access_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -439,7 +572,7 @@ pub mod domains {
         }
     }
     pub mod list_shared_access_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -463,8 +596,8 @@ pub mod domains {
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
-        regenerate_key_request: &DomainRegenerateKeyRequest,
-    ) -> std::result::Result<DomainSharedAccessKeys, regenerate_key::Error> {
+        regenerate_key_request: &models::DomainRegenerateKeyRequest,
+    ) -> std::result::Result<models::DomainSharedAccessKeys, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/regenerateKey",
@@ -495,7 +628,7 @@ pub mod domains {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainSharedAccessKeys =
+                let rsp_value: models::DomainSharedAccessKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -503,7 +636,7 @@ pub mod domains {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -524,14 +657,14 @@ pub mod domains {
     }
 }
 pub mod domain_topics {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         domain_name: &str,
         domain_topic_name: &str,
-    ) -> std::result::Result<DomainTopic, get::Error> {
+    ) -> std::result::Result<models::DomainTopic, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics/{}",
@@ -559,7 +692,7 @@ pub mod domain_topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainTopic =
+                let rsp_value: models::DomainTopic =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -567,7 +700,7 @@ pub mod domain_topics {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -592,7 +725,7 @@ pub mod domain_topics {
         resource_group_name: &str,
         domain_name: &str,
         domain_topic_name: &str,
-    ) -> std::result::Result<DomainTopic, create_or_update::Error> {
+    ) -> std::result::Result<models::DomainTopic, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics/{}",
@@ -623,7 +756,7 @@ pub mod domain_topics {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainTopic = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DomainTopic = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -631,7 +764,7 @@ pub mod domain_topics {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -689,7 +822,7 @@ pub mod domain_topics {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -721,7 +854,7 @@ pub mod domain_topics {
         domain_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<DomainTopicsListResult, list_by_domain::Error> {
+    ) -> std::result::Result<models::DomainTopicsListResult, list_by_domain::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics",
@@ -757,7 +890,7 @@ pub mod domain_topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DomainTopicsListResult =
+                let rsp_value: models::DomainTopicsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_domain::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -765,7 +898,7 @@ pub mod domain_topics {
         }
     }
     pub mod list_by_domain {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -786,12 +919,12 @@ pub mod domain_topics {
     }
 }
 pub mod event_subscriptions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         scope: &str,
         event_subscription_name: &str,
-    ) -> std::result::Result<EventSubscription, get::Error> {
+    ) -> std::result::Result<models::EventSubscription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}",
@@ -817,7 +950,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscription =
+                let rsp_value: models::EventSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -825,7 +958,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -848,8 +981,8 @@ pub mod event_subscriptions {
         operation_config: &crate::OperationConfig,
         scope: &str,
         event_subscription_name: &str,
-        event_subscription_info: &EventSubscription,
-    ) -> std::result::Result<EventSubscription, create_or_update::Error> {
+        event_subscription_info: &models::EventSubscription,
+    ) -> std::result::Result<models::EventSubscription, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}",
@@ -879,7 +1012,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -887,7 +1020,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -910,8 +1043,8 @@ pub mod event_subscriptions {
         operation_config: &crate::OperationConfig,
         scope: &str,
         event_subscription_name: &str,
-        event_subscription_update_parameters: &EventSubscriptionUpdateParameters,
-    ) -> std::result::Result<EventSubscription, update::Error> {
+        event_subscription_update_parameters: &models::EventSubscriptionUpdateParameters,
+    ) -> std::result::Result<models::EventSubscription, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}",
@@ -938,7 +1071,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscription =
+                let rsp_value: models::EventSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -946,7 +1079,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1000,7 +1133,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1029,7 +1162,7 @@ pub mod event_subscriptions {
         operation_config: &crate::OperationConfig,
         scope: &str,
         event_subscription_name: &str,
-    ) -> std::result::Result<EventSubscriptionFullUrl, get_full_url::Error> {
+    ) -> std::result::Result<models::EventSubscriptionFullUrl, get_full_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}/getFullUrl",
@@ -1059,7 +1192,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionFullUrl =
+                let rsp_value: models::EventSubscriptionFullUrl =
                     serde_json::from_slice(rsp_body).map_err(|source| get_full_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1067,7 +1200,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod get_full_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1091,7 +1224,7 @@ pub mod event_subscriptions {
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_subscription::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_global_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/eventSubscriptions",
@@ -1127,7 +1260,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_global_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1135,7 +1268,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_global_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1160,7 +1293,7 @@ pub mod event_subscriptions {
         topic_type_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_subscription_for_topic_type::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_global_by_subscription_for_topic_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/topicTypes/{}/eventSubscriptions",
@@ -1197,7 +1330,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_global_by_subscription_for_topic_type::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1205,7 +1338,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_global_by_subscription_for_topic_type {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1230,7 +1363,7 @@ pub mod event_subscriptions {
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_resource_group::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_global_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/eventSubscriptions",
@@ -1267,7 +1400,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_global_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1275,7 +1408,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_global_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1301,7 +1434,7 @@ pub mod event_subscriptions {
         topic_type_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_global_by_resource_group_for_topic_type::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_global_by_resource_group_for_topic_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topicTypes/{}/eventSubscriptions",
@@ -1339,7 +1472,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_global_by_resource_group_for_topic_type::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1347,7 +1480,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_global_by_resource_group_for_topic_type {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1372,7 +1505,7 @@ pub mod event_subscriptions {
         location: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_subscription::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_regional_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/locations/{}/eventSubscriptions",
@@ -1409,7 +1542,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_regional_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1417,7 +1550,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_regional_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1443,7 +1576,7 @@ pub mod event_subscriptions {
         location: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_resource_group::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_regional_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/locations/{}/eventSubscriptions",
@@ -1481,7 +1614,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_regional_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1489,7 +1622,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_regional_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1515,7 +1648,7 @@ pub mod event_subscriptions {
         topic_type_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_subscription_for_topic_type::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_regional_by_subscription_for_topic_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/locations/{}/topicTypes/{}/eventSubscriptions",
@@ -1553,7 +1686,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_regional_by_subscription_for_topic_type::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1561,7 +1694,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_regional_by_subscription_for_topic_type {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1588,7 +1721,7 @@ pub mod event_subscriptions {
         topic_type_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_regional_by_resource_group_for_topic_type::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_regional_by_resource_group_for_topic_type::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/locations/{}/topicTypes/{}/eventSubscriptions",
@@ -1627,7 +1760,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_regional_by_resource_group_for_topic_type::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1635,7 +1768,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_regional_by_resource_group_for_topic_type {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1663,7 +1796,7 @@ pub mod event_subscriptions {
         resource_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_by_resource::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.EventGrid/eventSubscriptions",
@@ -1701,7 +1834,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1709,7 +1842,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1736,7 +1869,7 @@ pub mod event_subscriptions {
         topic_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_by_domain_topic::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_by_domain_topic::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/domains/{}/topics/{}/providers/Microsoft.EventGrid/eventSubscriptions" , operation_config . base_path () , subscription_id , resource_group_name , domain_name , topic_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_by_domain_topic::Error::ParseUrlError)?;
@@ -1766,7 +1899,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_domain_topic::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1774,7 +1907,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod list_by_domain_topic {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1797,7 +1930,7 @@ pub mod event_subscriptions {
         operation_config: &crate::OperationConfig,
         scope: &str,
         event_subscription_name: &str,
-    ) -> std::result::Result<DeliveryAttributeListResult, get_delivery_attributes::Error> {
+    ) -> std::result::Result<models::DeliveryAttributeListResult, get_delivery_attributes::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/eventSubscriptions/{}/getDeliveryAttributes",
@@ -1829,7 +1962,7 @@ pub mod event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeliveryAttributeListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeliveryAttributeListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_delivery_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1837,7 +1970,7 @@ pub mod event_subscriptions {
         }
     }
     pub mod get_delivery_attributes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1858,14 +1991,14 @@ pub mod event_subscriptions {
     }
 }
 pub mod system_topic_event_subscriptions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         system_topic_name: &str,
         event_subscription_name: &str,
-    ) -> std::result::Result<EventSubscription, get::Error> {
+    ) -> std::result::Result<models::EventSubscription, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/systemTopics/{}/eventSubscriptions/{}",
@@ -1893,7 +2026,7 @@ pub mod system_topic_event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscription =
+                let rsp_value: models::EventSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1901,7 +2034,7 @@ pub mod system_topic_event_subscriptions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1926,8 +2059,8 @@ pub mod system_topic_event_subscriptions {
         resource_group_name: &str,
         system_topic_name: &str,
         event_subscription_name: &str,
-        event_subscription_info: &EventSubscription,
-    ) -> std::result::Result<EventSubscription, create_or_update::Error> {
+        event_subscription_info: &models::EventSubscription,
+    ) -> std::result::Result<models::EventSubscription, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/systemTopics/{}/eventSubscriptions/{}",
@@ -1959,7 +2092,7 @@ pub mod system_topic_event_subscriptions {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscription = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscription = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1967,7 +2100,7 @@ pub mod system_topic_event_subscriptions {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1992,8 +2125,8 @@ pub mod system_topic_event_subscriptions {
         resource_group_name: &str,
         system_topic_name: &str,
         event_subscription_name: &str,
-        event_subscription_update_parameters: &EventSubscriptionUpdateParameters,
-    ) -> std::result::Result<EventSubscription, update::Error> {
+        event_subscription_update_parameters: &models::EventSubscriptionUpdateParameters,
+    ) -> std::result::Result<models::EventSubscription, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/systemTopics/{}/eventSubscriptions/{}",
@@ -2022,7 +2155,7 @@ pub mod system_topic_event_subscriptions {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscription =
+                let rsp_value: models::EventSubscription =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2030,7 +2163,7 @@ pub mod system_topic_event_subscriptions {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2088,7 +2221,7 @@ pub mod system_topic_event_subscriptions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2119,7 +2252,7 @@ pub mod system_topic_event_subscriptions {
         resource_group_name: &str,
         system_topic_name: &str,
         event_subscription_name: &str,
-    ) -> std::result::Result<EventSubscriptionFullUrl, get_full_url::Error> {
+    ) -> std::result::Result<models::EventSubscriptionFullUrl, get_full_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/systemTopics/{}/eventSubscriptions/{}/getFullUrl",
@@ -2151,7 +2284,7 @@ pub mod system_topic_event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionFullUrl =
+                let rsp_value: models::EventSubscriptionFullUrl =
                     serde_json::from_slice(rsp_body).map_err(|source| get_full_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2159,7 +2292,7 @@ pub mod system_topic_event_subscriptions {
         }
     }
     pub mod get_full_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2185,7 +2318,7 @@ pub mod system_topic_event_subscriptions {
         system_topic_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<EventSubscriptionsListResult, list_by_system_topic::Error> {
+    ) -> std::result::Result<models::EventSubscriptionsListResult, list_by_system_topic::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/systemTopics/{}/eventSubscriptions",
@@ -2221,7 +2354,7 @@ pub mod system_topic_event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventSubscriptionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_system_topic::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2229,7 +2362,7 @@ pub mod system_topic_event_subscriptions {
         }
     }
     pub mod list_by_system_topic {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2254,7 +2387,7 @@ pub mod system_topic_event_subscriptions {
         resource_group_name: &str,
         system_topic_name: &str,
         event_subscription_name: &str,
-    ) -> std::result::Result<DeliveryAttributeListResult, get_delivery_attributes::Error> {
+    ) -> std::result::Result<models::DeliveryAttributeListResult, get_delivery_attributes::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/systemTopics/{}/eventSubscriptions/{}/getDeliveryAttributes" , operation_config . base_path () , subscription_id , resource_group_name , system_topic_name , event_subscription_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_delivery_attributes::Error::ParseUrlError)?;
@@ -2281,7 +2414,7 @@ pub mod system_topic_event_subscriptions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeliveryAttributeListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DeliveryAttributeListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_delivery_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2289,7 +2422,7 @@ pub mod system_topic_event_subscriptions {
         }
     }
     pub mod get_delivery_attributes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2310,8 +2443,8 @@ pub mod system_topic_event_subscriptions {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.EventGrid/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2332,7 +2465,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsListResult =
+                let rsp_value: models::OperationsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2340,7 +2473,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2361,13 +2494,13 @@ pub mod operations {
     }
 }
 pub mod topics {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
-    ) -> std::result::Result<Topic, get::Error> {
+    ) -> std::result::Result<models::Topic, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}",
@@ -2394,7 +2527,7 @@ pub mod topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Topic =
+                let rsp_value: models::Topic =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2402,7 +2535,7 @@ pub mod topics {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2426,8 +2559,8 @@ pub mod topics {
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
-        topic_info: &Topic,
-    ) -> std::result::Result<Topic, create_or_update::Error> {
+        topic_info: &models::Topic,
+    ) -> std::result::Result<models::Topic, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}",
@@ -2458,7 +2591,7 @@ pub mod topics {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Topic = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Topic = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2466,7 +2599,7 @@ pub mod topics {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2490,7 +2623,7 @@ pub mod topics {
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
-        topic_update_parameters: &TopicUpdateParameters,
+        topic_update_parameters: &models::TopicUpdateParameters,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -2520,7 +2653,7 @@ pub mod topics {
             http::StatusCode::OK => Ok(update::Response::Ok200),
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Topic =
+                let rsp_value: models::Topic =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -2528,11 +2661,11 @@ pub mod topics {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
-            Created201(Topic),
+            Created201(models::Topic),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2588,7 +2721,7 @@ pub mod topics {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -2617,7 +2750,7 @@ pub mod topics {
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<TopicsListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::TopicsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/topics",
@@ -2651,7 +2784,7 @@ pub mod topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TopicsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TopicsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2659,7 +2792,7 @@ pub mod topics {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2684,7 +2817,7 @@ pub mod topics {
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<TopicsListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::TopicsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics",
@@ -2721,7 +2854,7 @@ pub mod topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TopicsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TopicsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2729,7 +2862,7 @@ pub mod topics {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2753,7 +2886,7 @@ pub mod topics {
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
-    ) -> std::result::Result<TopicSharedAccessKeys, list_shared_access_keys::Error> {
+    ) -> std::result::Result<models::TopicSharedAccessKeys, list_shared_access_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}/listKeys",
@@ -2786,7 +2919,7 @@ pub mod topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TopicSharedAccessKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TopicSharedAccessKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_shared_access_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2794,7 +2927,7 @@ pub mod topics {
         }
     }
     pub mod list_shared_access_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2818,8 +2951,8 @@ pub mod topics {
         subscription_id: &str,
         resource_group_name: &str,
         topic_name: &str,
-        regenerate_key_request: &TopicRegenerateKeyRequest,
-    ) -> std::result::Result<TopicSharedAccessKeys, regenerate_key::Error> {
+        regenerate_key_request: &models::TopicRegenerateKeyRequest,
+    ) -> std::result::Result<models::TopicSharedAccessKeys, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/topics/{}/regenerateKey",
@@ -2850,7 +2983,7 @@ pub mod topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TopicSharedAccessKeys =
+                let rsp_value: models::TopicSharedAccessKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2858,7 +2991,7 @@ pub mod topics {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2884,7 +3017,7 @@ pub mod topics {
         provider_namespace: &str,
         resource_type_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<EventTypesListResult, list_event_types::Error> {
+    ) -> std::result::Result<models::EventTypesListResult, list_event_types::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.EventGrid/eventTypes",
@@ -2916,7 +3049,7 @@ pub mod topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventTypesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventTypesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_event_types::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2924,7 +3057,7 @@ pub mod topics {
         }
     }
     pub mod list_event_types {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2945,7 +3078,7 @@ pub mod topics {
     }
 }
 pub mod private_endpoint_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -2953,7 +3086,7 @@ pub mod private_endpoint_connections {
         parent_type: &str,
         parent_name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/{}/{}/privateEndpointConnections/{}",
@@ -2982,7 +3115,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2990,7 +3123,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3016,7 +3149,7 @@ pub mod private_endpoint_connections {
         parent_type: &str,
         parent_name: &str,
         private_endpoint_connection_name: &str,
-        private_endpoint_connection: &PrivateEndpointConnection,
+        private_endpoint_connection: &models::PrivateEndpointConnection,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3047,13 +3180,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -3061,11 +3194,11 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
-            Created201(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
+            Created201(models::PrivateEndpointConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3125,7 +3258,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -3157,7 +3290,7 @@ pub mod private_endpoint_connections {
         parent_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_resource::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/{}/{}/privateEndpointConnections",
@@ -3194,7 +3327,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3202,7 +3335,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3223,7 +3356,7 @@ pub mod private_endpoint_connections {
     }
 }
 pub mod private_link_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -3231,7 +3364,7 @@ pub mod private_link_resources {
         parent_type: &str,
         parent_name: &str,
         private_link_resource_name: &str,
-    ) -> std::result::Result<PrivateLinkResource, get::Error> {
+    ) -> std::result::Result<models::PrivateLinkResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/{}/{}/privateLinkResources/{}",
@@ -3260,7 +3393,7 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResource =
+                let rsp_value: models::PrivateLinkResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3268,7 +3401,7 @@ pub mod private_link_resources {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3295,7 +3428,7 @@ pub mod private_link_resources {
         parent_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<PrivateLinkResourcesListResult, list_by_resource::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourcesListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/{}/{}/privateLinkResources",
@@ -3332,7 +3465,7 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourcesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateLinkResourcesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3340,7 +3473,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3361,13 +3494,13 @@ pub mod private_link_resources {
     }
 }
 pub mod system_topics {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         system_topic_name: &str,
-    ) -> std::result::Result<SystemTopic, get::Error> {
+    ) -> std::result::Result<models::SystemTopic, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/systemTopics/{}",
@@ -3394,7 +3527,7 @@ pub mod system_topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SystemTopic =
+                let rsp_value: models::SystemTopic =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3402,7 +3535,7 @@ pub mod system_topics {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3426,7 +3559,7 @@ pub mod system_topics {
         subscription_id: &str,
         resource_group_name: &str,
         system_topic_name: &str,
-        system_topic_info: &SystemTopic,
+        system_topic_info: &models::SystemTopic,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3458,13 +3591,13 @@ pub mod system_topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SystemTopic = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SystemTopic = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SystemTopic = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SystemTopic = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -3472,11 +3605,11 @@ pub mod system_topics {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SystemTopic),
-            Created201(SystemTopic),
+            Ok200(models::SystemTopic),
+            Created201(models::SystemTopic),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3501,7 +3634,7 @@ pub mod system_topics {
         subscription_id: &str,
         resource_group_name: &str,
         system_topic_name: &str,
-        system_topic_update_parameters: &SystemTopicUpdateParameters,
+        system_topic_update_parameters: &models::SystemTopicUpdateParameters,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3530,13 +3663,13 @@ pub mod system_topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SystemTopic =
+                let rsp_value: models::SystemTopic =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: SystemTopic =
+                let rsp_value: models::SystemTopic =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -3544,11 +3677,11 @@ pub mod system_topics {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(SystemTopic),
-            Created201(SystemTopic),
+            Ok200(models::SystemTopic),
+            Created201(models::SystemTopic),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3605,7 +3738,7 @@ pub mod system_topics {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3635,7 +3768,7 @@ pub mod system_topics {
         subscription_id: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<SystemTopicsListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::SystemTopicsListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventGrid/systemTopics",
@@ -3669,7 +3802,7 @@ pub mod system_topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SystemTopicsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SystemTopicsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3677,7 +3810,7 @@ pub mod system_topics {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3702,7 +3835,7 @@ pub mod system_topics {
         resource_group_name: &str,
         filter: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<SystemTopicsListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::SystemTopicsListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventGrid/systemTopics",
@@ -3739,7 +3872,7 @@ pub mod system_topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SystemTopicsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SystemTopicsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3747,7 +3880,7 @@ pub mod system_topics {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3768,8 +3901,8 @@ pub mod system_topics {
     }
 }
 pub mod extension_topics {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<ExtensionTopic, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(operation_config: &crate::OperationConfig, scope: &str) -> std::result::Result<models::ExtensionTopic, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.EventGrid/extensionTopics/default",
@@ -3794,7 +3927,7 @@ pub mod extension_topics {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtensionTopic =
+                let rsp_value: models::ExtensionTopic =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3802,7 +3935,7 @@ pub mod extension_topics {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3823,8 +3956,8 @@ pub mod extension_topics {
     }
 }
 pub mod topic_types {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<TopicTypesListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::TopicTypesListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.EventGrid/topicTypes", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -3845,7 +3978,7 @@ pub mod topic_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TopicTypesListResult =
+                let rsp_value: models::TopicTypesListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3853,7 +3986,7 @@ pub mod topic_types {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3872,7 +4005,10 @@ pub mod topic_types {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, topic_type_name: &str) -> std::result::Result<TopicTypeInfo, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        topic_type_name: &str,
+    ) -> std::result::Result<models::TopicTypeInfo, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.EventGrid/topicTypes/{}",
@@ -3897,7 +4033,7 @@ pub mod topic_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TopicTypeInfo =
+                let rsp_value: models::TopicTypeInfo =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3905,7 +4041,7 @@ pub mod topic_types {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3927,7 +4063,7 @@ pub mod topic_types {
     pub async fn list_event_types(
         operation_config: &crate::OperationConfig,
         topic_type_name: &str,
-    ) -> std::result::Result<EventTypesListResult, list_event_types::Error> {
+    ) -> std::result::Result<models::EventTypesListResult, list_event_types::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.EventGrid/topicTypes/{}/eventTypes",
@@ -3955,7 +4091,7 @@ pub mod topic_types {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventTypesListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventTypesListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_event_types::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3963,7 +4099,7 @@ pub mod topic_types {
         }
     }
     pub mod list_event_types {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

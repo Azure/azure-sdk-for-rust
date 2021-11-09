@@ -1,4 +1,4 @@
-use heck::CamelCase;
+use heck::{CamelCase, SnakeCase};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
@@ -15,7 +15,8 @@ pub trait CamelCaseIdent: ToOwned {
 impl CamelCaseIdent for str {
     fn to_camel_case_ident(&self) -> Result<TokenStream, Error> {
         let is_number = starts_with_number(self);
-        let mut txt = replace_first(self, true);
+        let mut txt = replace_first(self, true, true);
+        txt = replace_first(&txt, true, false);
         txt = replace_special_chars(&txt);
         if !is_number {
             // heck::CamelCase::to_camel_case will remove underscores
@@ -29,8 +30,26 @@ impl CamelCaseIdent for str {
     }
 }
 
+pub trait SnakeCaseIdent: ToOwned {
+    fn to_snake_case_ident(&self) -> Result<TokenStream, Error>;
+}
+
+impl SnakeCaseIdent for str {
+    fn to_snake_case_ident(&self) -> Result<TokenStream, Error> {
+        let mut txt = replace_first(self, false, true);
+        txt = replace_special_chars(&txt);
+        txt = txt.to_snake_case();
+        txt = suffix_keyword(&txt);
+        let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
+            source,
+            text: self.to_owned(),
+        })?;
+        Ok(idt.into_token_stream())
+    }
+}
+
 pub fn ident(text: &str) -> Result<TokenStream, Error> {
-    let mut txt = replace_first(text, false);
+    let mut txt = replace_first(text, false, false);
     txt = replace_special_chars(&txt);
     txt = remove_spaces(&txt);
     txt = suffix_keyword(&txt);
@@ -52,6 +71,7 @@ fn replace_special_chars(text: &str) -> String {
     txt = txt.replace("-", "_");
     txt = txt.replace("/", "_");
     txt = txt.replace("*", "_");
+    txt = txt.replace(":", "_");
     txt
 }
 
@@ -68,14 +88,18 @@ fn unicode(c: char, uppercase: bool) -> String {
     format!("{}{}", u, &s[3..s.len() - 1])
 }
 
-fn replace_first(text: &str, uppercase: bool) -> String {
+fn replace_first(text: &str, uppercase: bool, remove: bool) -> String {
     let first = text.chars().next().unwrap_or_default();
     if first.is_numeric() {
         let n = if uppercase { 'N' } else { 'n' };
         format!("{}{}", n, text)
     } else if !first.is_ascii_alphanumeric() {
         if text.len() > 1 {
-            format!("{}{}", unicode(first, uppercase), &text[1..])
+            if remove {
+                text[1..].to_owned()
+            } else {
+                format!("{}{}", unicode(first, uppercase), &text[1..])
+            }
         } else {
             unicode(first, uppercase)
         }
@@ -100,6 +124,7 @@ fn is_keyword(word: &str) -> bool {
         "abstract"
             | "alignof"
             | "as"
+            | "async"
             | "become"
             | "box"
             | "break"
@@ -165,9 +190,9 @@ mod tests {
 
     #[test]
     fn test_replace_first() -> Result<(), Error> {
-        assert_eq!(replace_first(".", false), "u2e");
-        assert_eq!(replace_first("/", false), "u2f");
-        assert_eq!(replace_first("", false), "u0");
+        assert_eq!(replace_first(".", false, false), "u2e");
+        assert_eq!(replace_first("/", false, false), "u2f");
+        assert_eq!(replace_first("", false, false), "u0");
         Ok(())
     }
 
@@ -247,6 +272,36 @@ mod tests {
     #[test]
     fn test_1_0() -> Result<(), Error> {
         assert_eq!("1.0".to_camel_case_ident()?.to_string(), "N1_0");
+        Ok(())
+    }
+
+    #[test]
+    fn test_async() -> Result<(), Error> {
+        assert_eq!("Async".to_snake_case_ident()?.to_string(), "async_");
+        Ok(())
+    }
+
+    #[test]
+    fn test_attr_qualified_name() -> Result<(), Error> {
+        assert_eq!("attr:qualifiedName".to_snake_case_ident()?.to_string(), "attr_qualified_name");
+        Ok(())
+    }
+
+    #[test]
+    fn test_filter() -> Result<(), Error> {
+        assert_eq!("$filter".to_snake_case_ident()?.to_string(), "filter");
+        Ok(())
+    }
+
+    #[test]
+    fn test_odata_type() -> Result<(), Error> {
+        assert_eq!("@odata.type".to_camel_case_ident()?.to_string(), "OdataType");
+        Ok(())
+    }
+
+    #[test]
+    fn test_10minutely() -> Result<(), Error> {
+        assert_eq!("_10minutely".to_camel_case_ident()?.to_string(), "N10minutely");
         Ok(())
     }
 }

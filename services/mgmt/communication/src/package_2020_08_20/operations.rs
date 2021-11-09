@@ -2,10 +2,37 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    CommunicationService_CheckNameAvailability(#[from] communication_service::check_name_availability::Error),
+    #[error(transparent)]
+    CommunicationService_LinkNotificationHub(#[from] communication_service::link_notification_hub::Error),
+    #[error(transparent)]
+    CommunicationService_ListBySubscription(#[from] communication_service::list_by_subscription::Error),
+    #[error(transparent)]
+    CommunicationService_ListByResourceGroup(#[from] communication_service::list_by_resource_group::Error),
+    #[error(transparent)]
+    CommunicationService_Get(#[from] communication_service::get::Error),
+    #[error(transparent)]
+    CommunicationService_CreateOrUpdate(#[from] communication_service::create_or_update::Error),
+    #[error(transparent)]
+    CommunicationService_Update(#[from] communication_service::update::Error),
+    #[error(transparent)]
+    CommunicationService_Delete(#[from] communication_service::delete::Error),
+    #[error(transparent)]
+    CommunicationService_ListKeys(#[from] communication_service::list_keys::Error),
+    #[error(transparent)]
+    CommunicationService_RegenerateKey(#[from] communication_service::regenerate_key::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Communication/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +53,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +69,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,12 +93,12 @@ pub mod operations {
     }
 }
 pub mod communication_service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
-        name_availability_parameters: Option<&NameAvailabilityParameters>,
+        name_availability_parameters: Option<&models::NameAvailabilityParameters>,
         subscription_id: &str,
-    ) -> std::result::Result<NameAvailability, check_name_availability::Error> {
+    ) -> std::result::Result<models::NameAvailability, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Communication/checkNameAvailability",
@@ -106,13 +133,13 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NameAvailability = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NameAvailability = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -122,7 +149,7 @@ pub mod communication_service {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -146,11 +173,11 @@ pub mod communication_service {
     }
     pub async fn link_notification_hub(
         operation_config: &crate::OperationConfig,
-        link_notification_hub_parameters: Option<&LinkNotificationHubParameters>,
+        link_notification_hub_parameters: Option<&models::LinkNotificationHubParameters>,
         subscription_id: &str,
         resource_group_name: &str,
         communication_service_name: &str,
-    ) -> std::result::Result<LinkedNotificationHub, link_notification_hub::Error> {
+    ) -> std::result::Result<models::LinkedNotificationHub, link_notification_hub::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Communication/communicationServices/{}/linkNotificationHub",
@@ -187,13 +214,13 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LinkedNotificationHub = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LinkedNotificationHub = serde_json::from_slice(rsp_body)
                     .map_err(|source| link_notification_hub::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| link_notification_hub::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(link_notification_hub::Error::DefaultResponse {
                     status_code,
@@ -203,7 +230,7 @@ pub mod communication_service {
         }
     }
     pub mod link_notification_hub {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -228,7 +255,7 @@ pub mod communication_service {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<CommunicationServiceResourceList, list_by_subscription::Error> {
+    ) -> std::result::Result<models::CommunicationServiceResourceList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Communication/communicationServices",
@@ -256,13 +283,13 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationServiceResourceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CommunicationServiceResourceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -272,7 +299,7 @@ pub mod communication_service {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -298,7 +325,7 @@ pub mod communication_service {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<CommunicationServiceResourceList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::CommunicationServiceResourceList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Communication/communicationServices",
@@ -329,13 +356,13 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationServiceResourceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CommunicationServiceResourceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -345,7 +372,7 @@ pub mod communication_service {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -372,7 +399,7 @@ pub mod communication_service {
         subscription_id: &str,
         resource_group_name: &str,
         communication_service_name: &str,
-    ) -> std::result::Result<CommunicationServiceResource, get::Error> {
+    ) -> std::result::Result<models::CommunicationServiceResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Communication/communicationServices/{}",
@@ -399,13 +426,13 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationServiceResource =
+                let rsp_value: models::CommunicationServiceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -415,7 +442,7 @@ pub mod communication_service {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -439,7 +466,7 @@ pub mod communication_service {
     }
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
-        parameters: Option<&CommunicationServiceResource>,
+        parameters: Option<&models::CommunicationServiceResource>,
         subscription_id: &str,
         resource_group_name: &str,
         communication_service_name: &str,
@@ -478,19 +505,19 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationServiceResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CommunicationServiceResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationServiceResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CommunicationServiceResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -500,11 +527,11 @@ pub mod communication_service {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CommunicationServiceResource),
-            Created201(CommunicationServiceResource),
+            Ok200(models::CommunicationServiceResource),
+            Created201(models::CommunicationServiceResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -529,11 +556,11 @@ pub mod communication_service {
     }
     pub async fn update(
         operation_config: &crate::OperationConfig,
-        parameters: Option<&CommunicationServiceResource>,
+        parameters: Option<&models::CommunicationServiceResource>,
         subscription_id: &str,
         resource_group_name: &str,
         communication_service_name: &str,
-    ) -> std::result::Result<CommunicationServiceResource, update::Error> {
+    ) -> std::result::Result<models::CommunicationServiceResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Communication/communicationServices/{}",
@@ -565,13 +592,13 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationServiceResource =
+                let rsp_value: models::CommunicationServiceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -581,7 +608,7 @@ pub mod communication_service {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -638,7 +665,7 @@ pub mod communication_service {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -648,7 +675,7 @@ pub mod communication_service {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -681,7 +708,7 @@ pub mod communication_service {
         subscription_id: &str,
         resource_group_name: &str,
         communication_service_name: &str,
-    ) -> std::result::Result<CommunicationServiceKeys, list_keys::Error> {
+    ) -> std::result::Result<models::CommunicationServiceKeys, list_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Communication/communicationServices/{}/listKeys",
@@ -712,13 +739,13 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationServiceKeys =
+                let rsp_value: models::CommunicationServiceKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_keys::Error::DefaultResponse {
                     status_code,
@@ -728,7 +755,7 @@ pub mod communication_service {
         }
     }
     pub mod list_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -752,11 +779,11 @@ pub mod communication_service {
     }
     pub async fn regenerate_key(
         operation_config: &crate::OperationConfig,
-        parameters: &RegenerateKeyParameters,
+        parameters: &models::RegenerateKeyParameters,
         subscription_id: &str,
         resource_group_name: &str,
         communication_service_name: &str,
-    ) -> std::result::Result<CommunicationServiceKeys, regenerate_key::Error> {
+    ) -> std::result::Result<models::CommunicationServiceKeys, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Communication/communicationServices/{}/regenerateKey",
@@ -787,13 +814,13 @@ pub mod communication_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommunicationServiceKeys =
+                let rsp_value: models::CommunicationServiceKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_key::Error::DefaultResponse {
                     status_code,
@@ -803,7 +830,7 @@ pub mod communication_service {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

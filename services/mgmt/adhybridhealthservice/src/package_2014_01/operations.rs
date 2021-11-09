@@ -2,16 +2,175 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    AddsServices_List(#[from] adds_services::list::Error),
+    #[error(transparent)]
+    AddsServices_Add(#[from] adds_services::add::Error),
+    #[error(transparent)]
+    AddsServices_Get(#[from] adds_services::get::Error),
+    #[error(transparent)]
+    AddsServices_Update(#[from] adds_services::update::Error),
+    #[error(transparent)]
+    AddsServices_Delete(#[from] adds_services::delete::Error),
+    #[error(transparent)]
+    Alerts_ListAddsAlerts(#[from] alerts::list_adds_alerts::Error),
+    #[error(transparent)]
+    Configuration_ListAddsConfigurations(#[from] configuration::list_adds_configurations::Error),
+    #[error(transparent)]
+    Dimensions_ListAddsDimensions(#[from] dimensions::list_adds_dimensions::Error),
+    #[error(transparent)]
+    AddsServiceMembers_List(#[from] adds_service_members::list::Error),
+    #[error(transparent)]
+    AdDomainServiceMembers_List(#[from] ad_domain_service_members::list::Error),
+    #[error(transparent)]
+    AddsServicesUserPreference_Get(#[from] adds_services_user_preference::get::Error),
+    #[error(transparent)]
+    AddsServicesUserPreference_Add(#[from] adds_services_user_preference::add::Error),
+    #[error(transparent)]
+    AddsServicesUserPreference_Delete(#[from] adds_services_user_preference::delete::Error),
+    #[error(transparent)]
+    AddsServices_GetForestSummary(#[from] adds_services::get_forest_summary::Error),
+    #[error(transparent)]
+    AddsService_GetMetrics(#[from] adds_service::get_metrics::Error),
+    #[error(transparent)]
+    AddsServices_ListMetricsAverage(#[from] adds_services::list_metrics_average::Error),
+    #[error(transparent)]
+    AddsServices_ListMetricsSum(#[from] adds_services::list_metrics_sum::Error),
+    #[error(transparent)]
+    AddsServices_ListMetricMetadata(#[from] adds_services::list_metric_metadata::Error),
+    #[error(transparent)]
+    AddsServices_GetMetricMetadata(#[from] adds_services::get_metric_metadata::Error),
+    #[error(transparent)]
+    AddsServices_GetMetricMetadataForGroup(#[from] adds_services::get_metric_metadata_for_group::Error),
+    #[error(transparent)]
+    AddsServices_ListReplicationDetails(#[from] adds_services::list_replication_details::Error),
+    #[error(transparent)]
+    AddsServicesReplicationStatus_Get(#[from] adds_services_replication_status::get::Error),
+    #[error(transparent)]
+    AddsServices_ListReplicationSummary(#[from] adds_services::list_replication_summary::Error),
+    #[error(transparent)]
+    AddsServicesServiceMembers_List(#[from] adds_services_service_members::list::Error),
+    #[error(transparent)]
+    AddsServicesServiceMembers_Add(#[from] adds_services_service_members::add::Error),
+    #[error(transparent)]
+    AddsServiceMembers_Get(#[from] adds_service_members::get::Error),
+    #[error(transparent)]
+    AddsServiceMembers_Delete(#[from] adds_service_members::delete::Error),
+    #[error(transparent)]
+    AddsServices_ListServerAlerts(#[from] adds_services::list_server_alerts::Error),
+    #[error(transparent)]
+    AddsServiceMembers_ListCredentials(#[from] adds_service_members::list_credentials::Error),
+    #[error(transparent)]
+    AddsServices_ListPremiumServices(#[from] adds_services::list_premium_services::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Configuration_Get(#[from] configuration::get::Error),
+    #[error(transparent)]
+    Configuration_Add(#[from] configuration::add::Error),
+    #[error(transparent)]
+    Configuration_Update(#[from] configuration::update::Error),
+    #[error(transparent)]
+    Reports_GetDevOps(#[from] reports::get_dev_ops::Error),
+    #[error(transparent)]
+    Services_List(#[from] services::list::Error),
+    #[error(transparent)]
+    Services_Add(#[from] services::add::Error),
+    #[error(transparent)]
+    Services_ListPremium(#[from] services::list_premium::Error),
+    #[error(transparent)]
+    Services_Get(#[from] services::get::Error),
+    #[error(transparent)]
+    Services_Update(#[from] services::update::Error),
+    #[error(transparent)]
+    Services_Delete(#[from] services::delete::Error),
+    #[error(transparent)]
+    Services_ListAlerts(#[from] services::list_alerts::Error),
+    #[error(transparent)]
+    Services_GetFeatureAvailibility(#[from] services::get_feature_availibility::Error),
+    #[error(transparent)]
+    Services_ListExportErrors(#[from] services::list_export_errors::Error),
+    #[error(transparent)]
+    Services_ListExportErrorsV2(#[from] services::list_export_errors_v2::Error),
+    #[error(transparent)]
+    Services_ListExportStatus(#[from] services::list_export_status::Error),
+    #[error(transparent)]
+    Services_AddAlertFeedback(#[from] services::add_alert_feedback::Error),
+    #[error(transparent)]
+    Services_ListAlertFeedback(#[from] services::list_alert_feedback::Error),
+    #[error(transparent)]
+    Service_GetMetrics(#[from] service::get_metrics::Error),
+    #[error(transparent)]
+    Services_ListMetricsAverage(#[from] services::list_metrics_average::Error),
+    #[error(transparent)]
+    Services_ListMetricsSum(#[from] services::list_metrics_sum::Error),
+    #[error(transparent)]
+    Services_ListMetricMetadata(#[from] services::list_metric_metadata::Error),
+    #[error(transparent)]
+    Services_GetMetricMetadata(#[from] services::get_metric_metadata::Error),
+    #[error(transparent)]
+    Services_GetMetricMetadataForGroup(#[from] services::get_metric_metadata_for_group::Error),
+    #[error(transparent)]
+    Services_UpdateMonitoringConfiguration(#[from] services::update_monitoring_configuration::Error),
+    #[error(transparent)]
+    Services_ListMonitoringConfigurations(#[from] services::list_monitoring_configurations::Error),
+    #[error(transparent)]
+    Services_ListUserBadPasswordReport(#[from] services::list_user_bad_password_report::Error),
+    #[error(transparent)]
+    ServiceMembers_List(#[from] service_members::list::Error),
+    #[error(transparent)]
+    ServiceMembers_Add(#[from] service_members::add::Error),
+    #[error(transparent)]
+    ServiceMembers_Get(#[from] service_members::get::Error),
+    #[error(transparent)]
+    ServiceMembers_Delete(#[from] service_members::delete::Error),
+    #[error(transparent)]
+    ServiceMembers_ListAlerts(#[from] service_members::list_alerts::Error),
+    #[error(transparent)]
+    ServiceMembers_ListConnectors(#[from] service_members::list_connectors::Error),
+    #[error(transparent)]
+    ServiceMembers_ListCredentials(#[from] service_members::list_credentials::Error),
+    #[error(transparent)]
+    ServiceMembers_DeleteData(#[from] service_members::delete_data::Error),
+    #[error(transparent)]
+    ServiceMembers_ListDataFreshness(#[from] service_members::list_data_freshness::Error),
+    #[error(transparent)]
+    ServiceMembers_ListExportStatus(#[from] service_members::list_export_status::Error),
+    #[error(transparent)]
+    ServiceMembers_ListGlobalConfiguration(#[from] service_members::list_global_configuration::Error),
+    #[error(transparent)]
+    ServiceMembers_GetMetrics(#[from] service_members::get_metrics::Error),
+    #[error(transparent)]
+    ServiceMembers_GetServiceConfiguration(#[from] service_members::get_service_configuration::Error),
+    #[error(transparent)]
+    Services_GetTenantWhitelisting(#[from] services::get_tenant_whitelisting::Error),
+    #[error(transparent)]
+    Services_ListAllRiskyIpDownloadReport(#[from] services::list_all_risky_ip_download_report::Error),
+    #[error(transparent)]
+    Services_ListCurrentRiskyIpDownloadReport(#[from] services::list_current_risky_ip_download_report::Error),
+    #[error(transparent)]
+    ServiceMembers_GetConnectorMetadata(#[from] service_members::get_connector_metadata::Error),
+    #[error(transparent)]
+    List_IpAddressAggregatesByService(#[from] list::ip_address_aggregates_by_service::Error),
+    #[error(transparent)]
+    List_IpAddressAggregateSettings(#[from] list::ip_address_aggregate_settings::Error),
+    #[error(transparent)]
+    Update_IpAddressAggregateSettings(#[from] update::ip_address_aggregate_settings::Error),
+}
 pub mod adds_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         service_type: Option<&str>,
         skip_count: Option<i64>,
         take_count: Option<i64>,
-    ) -> std::result::Result<Services, list::Error> {
+    ) -> std::result::Result<models::Services, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices",
@@ -47,7 +206,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Services =
+                let rsp_value: models::Services =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -61,7 +220,7 @@ pub mod adds_services {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -82,8 +241,8 @@ pub mod adds_services {
     }
     pub async fn add(
         operation_config: &crate::OperationConfig,
-        service: &ServiceProperties,
-    ) -> std::result::Result<ServiceProperties, add::Error> {
+        service: &models::ServiceProperties,
+    ) -> std::result::Result<models::ServiceProperties, add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices",
@@ -108,7 +267,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceProperties =
+                let rsp_value: models::ServiceProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -122,7 +281,7 @@ pub mod adds_services {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -141,7 +300,10 @@ pub mod adds_services {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, service_name: &str) -> std::result::Result<ServiceProperties, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        service_name: &str,
+    ) -> std::result::Result<models::ServiceProperties, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}",
@@ -166,7 +328,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceProperties =
+                let rsp_value: models::ServiceProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -180,7 +342,7 @@ pub mod adds_services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -202,8 +364,8 @@ pub mod adds_services {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        service: &ServiceProperties,
-    ) -> std::result::Result<ServiceProperties, update::Error> {
+        service: &models::ServiceProperties,
+    ) -> std::result::Result<models::ServiceProperties, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}",
@@ -229,7 +391,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceProperties =
+                let rsp_value: models::ServiceProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -243,7 +405,7 @@ pub mod adds_services {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -303,7 +465,7 @@ pub mod adds_services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -325,7 +487,7 @@ pub mod adds_services {
     pub async fn get_forest_summary(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-    ) -> std::result::Result<ForestSummary, get_forest_summary::Error> {
+    ) -> std::result::Result<models::ForestSummary, get_forest_summary::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/forestsummary",
@@ -353,7 +515,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ForestSummary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ForestSummary = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_forest_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -367,7 +529,7 @@ pub mod adds_services {
         }
     }
     pub mod get_forest_summary {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -391,7 +553,7 @@ pub mod adds_services {
         service_name: &str,
         metric_name: &str,
         group_name: &str,
-    ) -> std::result::Result<Metrics, list_metrics_average::Error> {
+    ) -> std::result::Result<models::Metrics, list_metrics_average::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metrics/{}/groups/{}/average",
@@ -421,7 +583,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Metrics = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Metrics = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metrics_average::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -435,7 +597,7 @@ pub mod adds_services {
         }
     }
     pub mod list_metrics_average {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -459,7 +621,7 @@ pub mod adds_services {
         service_name: &str,
         metric_name: &str,
         group_name: &str,
-    ) -> std::result::Result<Metrics, list_metrics_sum::Error> {
+    ) -> std::result::Result<models::Metrics, list_metrics_sum::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metrics/{}/groups/{}/sum",
@@ -489,7 +651,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Metrics = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Metrics = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metrics_sum::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -503,7 +665,7 @@ pub mod adds_services {
         }
     }
     pub mod list_metrics_sum {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -527,7 +689,7 @@ pub mod adds_services {
         filter: Option<&str>,
         service_name: &str,
         perf_counter: Option<bool>,
-    ) -> std::result::Result<MetricMetadataList, list_metric_metadata::Error> {
+    ) -> std::result::Result<models::MetricMetadataList, list_metric_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metricmetadata",
@@ -561,7 +723,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricMetadataList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricMetadataList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -575,7 +737,7 @@ pub mod adds_services {
         }
     }
     pub mod list_metric_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -598,7 +760,7 @@ pub mod adds_services {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         metric_name: &str,
-    ) -> std::result::Result<MetricMetadata, get_metric_metadata::Error> {
+    ) -> std::result::Result<models::MetricMetadata, get_metric_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metricmetadata/{}",
@@ -627,7 +789,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricMetadata = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricMetadata = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_metric_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -641,7 +803,7 @@ pub mod adds_services {
         }
     }
     pub mod get_metric_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -668,7 +830,7 @@ pub mod adds_services {
         group_key: Option<&str>,
         from_date: Option<&str>,
         to_date: Option<&str>,
-    ) -> std::result::Result<MetricSets, get_metric_metadata_for_group::Error> {
+    ) -> std::result::Result<models::MetricSets, get_metric_metadata_for_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metricmetadata/{}/groups/{}",
@@ -709,7 +871,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricSets = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricSets = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_metric_metadata_for_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -723,7 +885,7 @@ pub mod adds_services {
         }
     }
     pub mod get_metric_metadata_for_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -747,7 +909,7 @@ pub mod adds_services {
         service_name: &str,
         filter: Option<&str>,
         with_details: Option<bool>,
-    ) -> std::result::Result<ReplicationDetailsList, list_replication_details::Error> {
+    ) -> std::result::Result<models::ReplicationDetailsList, list_replication_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/replicationdetails",
@@ -783,7 +945,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReplicationDetailsList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ReplicationDetailsList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_replication_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -797,7 +959,7 @@ pub mod adds_services {
         }
     }
     pub mod list_replication_details {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -825,7 +987,7 @@ pub mod adds_services {
         next_partition_key: &str,
         next_row_key: &str,
         take_count: Option<i64>,
-    ) -> std::result::Result<ReplicationSummaryList, list_replication_summary::Error> {
+    ) -> std::result::Result<models::ReplicationSummaryList, list_replication_summary::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/replicationsummary",
@@ -866,7 +1028,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReplicationSummaryList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ReplicationSummaryList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_replication_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -880,7 +1042,7 @@ pub mod adds_services {
         }
     }
     pub mod list_replication_summary {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -907,7 +1069,7 @@ pub mod adds_services {
         state: Option<&str>,
         from: Option<&str>,
         to: Option<&str>,
-    ) -> std::result::Result<Alerts, list_server_alerts::Error> {
+    ) -> std::result::Result<models::Alerts, list_server_alerts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers/{}/alerts",
@@ -948,7 +1110,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Alerts = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Alerts = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_server_alerts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -962,7 +1124,7 @@ pub mod adds_services {
         }
     }
     pub mod list_server_alerts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -987,7 +1149,7 @@ pub mod adds_services {
         service_type: Option<&str>,
         skip_count: Option<i64>,
         take_count: Option<i64>,
-    ) -> std::result::Result<Services, list_premium_services::Error> {
+    ) -> std::result::Result<models::Services, list_premium_services::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/premiumCheck",
@@ -1028,7 +1190,7 @@ pub mod adds_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Services = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Services = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_premium_services::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1042,7 +1204,7 @@ pub mod adds_services {
         }
     }
     pub mod list_premium_services {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1063,7 +1225,7 @@ pub mod adds_services {
     }
 }
 pub mod alerts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_adds_alerts(
         operation_config: &crate::OperationConfig,
         service_name: &str,
@@ -1071,7 +1233,7 @@ pub mod alerts {
         state: Option<&str>,
         from: Option<&str>,
         to: Option<&str>,
-    ) -> std::result::Result<Alerts, list_adds_alerts::Error> {
+    ) -> std::result::Result<models::Alerts, list_adds_alerts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/alerts",
@@ -1111,7 +1273,7 @@ pub mod alerts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Alerts = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Alerts = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_adds_alerts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1125,7 +1287,7 @@ pub mod alerts {
         }
     }
     pub mod list_adds_alerts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1146,12 +1308,12 @@ pub mod alerts {
     }
 }
 pub mod configuration {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_adds_configurations(
         operation_config: &crate::OperationConfig,
         service_name: &str,
         grouping: Option<&str>,
-    ) -> std::result::Result<AddsConfiguration, list_adds_configurations::Error> {
+    ) -> std::result::Result<models::AddsConfiguration, list_adds_configurations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/configuration",
@@ -1183,7 +1345,7 @@ pub mod configuration {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AddsConfiguration = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AddsConfiguration = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_adds_configurations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1197,7 +1359,7 @@ pub mod configuration {
         }
     }
     pub mod list_adds_configurations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1216,7 +1378,7 @@ pub mod configuration {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<Tenant, get::Error> {
+    pub async fn get(operation_config: &crate::OperationConfig) -> std::result::Result<models::Tenant, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/configuration",
@@ -1240,7 +1402,7 @@ pub mod configuration {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Tenant =
+                let rsp_value: models::Tenant =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1254,7 +1416,7 @@ pub mod configuration {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1273,7 +1435,7 @@ pub mod configuration {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn add(operation_config: &crate::OperationConfig) -> std::result::Result<Tenant, add::Error> {
+    pub async fn add(operation_config: &crate::OperationConfig) -> std::result::Result<models::Tenant, add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/configuration",
@@ -1298,7 +1460,7 @@ pub mod configuration {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Tenant =
+                let rsp_value: models::Tenant =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1312,7 +1474,7 @@ pub mod configuration {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1331,7 +1493,10 @@ pub mod configuration {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn update(operation_config: &crate::OperationConfig, tenant: &Tenant) -> std::result::Result<Tenant, update::Error> {
+    pub async fn update(
+        operation_config: &crate::OperationConfig,
+        tenant: &models::Tenant,
+    ) -> std::result::Result<models::Tenant, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/configuration",
@@ -1356,7 +1521,7 @@ pub mod configuration {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Tenant =
+                let rsp_value: models::Tenant =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1370,7 +1535,7 @@ pub mod configuration {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1391,12 +1556,12 @@ pub mod configuration {
     }
 }
 pub mod dimensions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_adds_dimensions(
         operation_config: &crate::OperationConfig,
         service_name: &str,
         dimension: &str,
-    ) -> std::result::Result<Dimensions, list_adds_dimensions::Error> {
+    ) -> std::result::Result<models::Dimensions, list_adds_dimensions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/dimensions/{}",
@@ -1425,7 +1590,7 @@ pub mod dimensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Dimensions = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Dimensions = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_adds_dimensions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1439,7 +1604,7 @@ pub mod dimensions {
         }
     }
     pub mod list_adds_dimensions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1460,12 +1625,12 @@ pub mod dimensions {
     }
 }
 pub mod adds_service_members {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<AddsServiceMembers, list::Error> {
+    ) -> std::result::Result<models::AddsServiceMembers, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/addsservicemembers",
@@ -1493,7 +1658,7 @@ pub mod adds_service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AddsServiceMembers =
+                let rsp_value: models::AddsServiceMembers =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1507,7 +1672,7 @@ pub mod adds_service_members {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1530,7 +1695,7 @@ pub mod adds_service_members {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         service_member_id: &str,
-    ) -> std::result::Result<ServiceMember, get::Error> {
+    ) -> std::result::Result<models::ServiceMember, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers/{}",
@@ -1556,7 +1721,7 @@ pub mod adds_service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceMember =
+                let rsp_value: models::ServiceMember =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1570,7 +1735,7 @@ pub mod adds_service_members {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1632,7 +1797,7 @@ pub mod adds_service_members {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1656,7 +1821,7 @@ pub mod adds_service_members {
         service_name: &str,
         filter: Option<&str>,
         service_member_id: &str,
-    ) -> std::result::Result<Credentials, list_credentials::Error> {
+    ) -> std::result::Result<models::Credentials, list_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers/{}/credentials",
@@ -1688,7 +1853,7 @@ pub mod adds_service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Credentials = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Credentials = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1702,7 +1867,7 @@ pub mod adds_service_members {
         }
     }
     pub mod list_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1723,7 +1888,7 @@ pub mod adds_service_members {
     }
 }
 pub mod ad_domain_service_members {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
@@ -1733,7 +1898,7 @@ pub mod ad_domain_service_members {
         next_partition_key: &str,
         next_row_key: &str,
         take_count: Option<i64>,
-    ) -> std::result::Result<AddsServiceMembers, list::Error> {
+    ) -> std::result::Result<models::AddsServiceMembers, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/addomainservicemembers",
@@ -1771,7 +1936,7 @@ pub mod ad_domain_service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AddsServiceMembers =
+                let rsp_value: models::AddsServiceMembers =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1785,7 +1950,7 @@ pub mod ad_domain_service_members {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1806,12 +1971,12 @@ pub mod ad_domain_service_members {
     }
 }
 pub mod adds_services_user_preference {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         service_name: &str,
         feature_name: &str,
-    ) -> std::result::Result<UserPreference, get::Error> {
+    ) -> std::result::Result<models::UserPreference, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/features/{}/userpreference",
@@ -1837,7 +2002,7 @@ pub mod adds_services_user_preference {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UserPreference =
+                let rsp_value: models::UserPreference =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1851,7 +2016,7 @@ pub mod adds_services_user_preference {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1874,7 +2039,7 @@ pub mod adds_services_user_preference {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         feature_name: &str,
-        setting: &UserPreference,
+        setting: &models::UserPreference,
     ) -> std::result::Result<(), add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1911,7 +2076,7 @@ pub mod adds_services_user_preference {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1969,7 +2134,7 @@ pub mod adds_services_user_preference {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1990,7 +2155,7 @@ pub mod adds_services_user_preference {
     }
 }
 pub mod adds_service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_metrics(
         operation_config: &crate::OperationConfig,
         service_name: &str,
@@ -1999,7 +2164,7 @@ pub mod adds_service {
         group_key: Option<&str>,
         from_date: Option<&str>,
         to_date: Option<&str>,
-    ) -> std::result::Result<MetricSets, get_metrics::Error> {
+    ) -> std::result::Result<models::MetricSets, get_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metrics/{}/groups/{}",
@@ -2038,7 +2203,7 @@ pub mod adds_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricSets =
+                let rsp_value: models::MetricSets =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2052,7 +2217,7 @@ pub mod adds_service {
         }
     }
     pub mod get_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2073,8 +2238,11 @@ pub mod adds_service {
     }
 }
 pub mod adds_services_replication_status {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(operation_config: &crate::OperationConfig, service_name: &str) -> std::result::Result<ReplicationStatus, get::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        service_name: &str,
+    ) -> std::result::Result<models::ReplicationStatus, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/replicationstatus",
@@ -2099,7 +2267,7 @@ pub mod adds_services_replication_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ReplicationStatus =
+                let rsp_value: models::ReplicationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2113,7 +2281,7 @@ pub mod adds_services_replication_status {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2134,14 +2302,14 @@ pub mod adds_services_replication_status {
     }
 }
 pub mod adds_services_service_members {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
         filter: Option<&str>,
         dimension_type: Option<&str>,
         dimension_signature: Option<&str>,
-    ) -> std::result::Result<ServiceMembers, list::Error> {
+    ) -> std::result::Result<models::ServiceMembers, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers",
@@ -2175,7 +2343,7 @@ pub mod adds_services_service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceMembers =
+                let rsp_value: models::ServiceMembers =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2189,7 +2357,7 @@ pub mod adds_services_service_members {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2211,8 +2379,8 @@ pub mod adds_services_service_members {
     pub async fn add(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        service_member: &ServiceMember,
-    ) -> std::result::Result<ServiceMember, add::Error> {
+        service_member: &models::ServiceMember,
+    ) -> std::result::Result<models::ServiceMember, add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers",
@@ -2238,7 +2406,7 @@ pub mod adds_services_service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceMember =
+                let rsp_value: models::ServiceMember =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2252,7 +2420,7 @@ pub mod adds_services_service_members {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2273,8 +2441,8 @@ pub mod adds_services_service_members {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResponse, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/operations",
@@ -2298,7 +2466,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResponse =
+                let rsp_value: models::OperationListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2312,7 +2480,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2333,8 +2501,8 @@ pub mod operations {
     }
 }
 pub mod reports {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_dev_ops(operation_config: &crate::OperationConfig) -> std::result::Result<Result, get_dev_ops::Error> {
+    use super::{models, API_VERSION};
+    pub async fn get_dev_ops(operation_config: &crate::OperationConfig) -> std::result::Result<models::Result, get_dev_ops::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/reports/DevOps/IsDevOps",
@@ -2361,7 +2529,7 @@ pub mod reports {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Result =
+                let rsp_value: models::Result =
                     serde_json::from_slice(rsp_body).map_err(|source| get_dev_ops::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2375,7 +2543,7 @@ pub mod reports {
         }
     }
     pub mod get_dev_ops {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2396,14 +2564,14 @@ pub mod reports {
     }
 }
 pub mod services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         service_type: Option<&str>,
         skip_count: Option<i64>,
         take_count: Option<i64>,
-    ) -> std::result::Result<Services, list::Error> {
+    ) -> std::result::Result<models::Services, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services",
@@ -2439,7 +2607,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Services =
+                let rsp_value: models::Services =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2453,7 +2621,7 @@ pub mod services {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2474,8 +2642,8 @@ pub mod services {
     }
     pub async fn add(
         operation_config: &crate::OperationConfig,
-        service: &ServiceProperties,
-    ) -> std::result::Result<ServiceProperties, add::Error> {
+        service: &models::ServiceProperties,
+    ) -> std::result::Result<models::ServiceProperties, add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services",
@@ -2500,7 +2668,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceProperties =
+                let rsp_value: models::ServiceProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2514,7 +2682,7 @@ pub mod services {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2539,7 +2707,7 @@ pub mod services {
         service_type: Option<&str>,
         skip_count: Option<i64>,
         take_count: Option<i64>,
-    ) -> std::result::Result<Services, list_premium::Error> {
+    ) -> std::result::Result<models::Services, list_premium::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/premiumCheck",
@@ -2578,7 +2746,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Services =
+                let rsp_value: models::Services =
                     serde_json::from_slice(rsp_body).map_err(|source| list_premium::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2592,7 +2760,7 @@ pub mod services {
         }
     }
     pub mod list_premium {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2611,7 +2779,10 @@ pub mod services {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn get(operation_config: &crate::OperationConfig, service_name: &str) -> std::result::Result<ServiceProperties, get::Error> {
+    pub async fn get(
+        operation_config: &crate::OperationConfig,
+        service_name: &str,
+    ) -> std::result::Result<models::ServiceProperties, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}",
@@ -2636,7 +2807,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceProperties =
+                let rsp_value: models::ServiceProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2650,7 +2821,7 @@ pub mod services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2672,8 +2843,8 @@ pub mod services {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        service: &ServiceProperties,
-    ) -> std::result::Result<ServiceProperties, update::Error> {
+        service: &models::ServiceProperties,
+    ) -> std::result::Result<models::ServiceProperties, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}",
@@ -2699,7 +2870,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceProperties =
+                let rsp_value: models::ServiceProperties =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2713,7 +2884,7 @@ pub mod services {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2773,7 +2944,7 @@ pub mod services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2799,7 +2970,7 @@ pub mod services {
         state: Option<&str>,
         from: Option<&str>,
         to: Option<&str>,
-    ) -> std::result::Result<Alerts, list_alerts::Error> {
+    ) -> std::result::Result<models::Alerts, list_alerts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/alerts",
@@ -2839,7 +3010,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Alerts =
+                let rsp_value: models::Alerts =
                     serde_json::from_slice(rsp_body).map_err(|source| list_alerts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2853,7 +3024,7 @@ pub mod services {
         }
     }
     pub mod list_alerts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2876,7 +3047,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         feature_name: &str,
-    ) -> std::result::Result<Result, get_feature_availibility::Error> {
+    ) -> std::result::Result<models::Result, get_feature_availibility::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/checkServiceFeatureAvailibility/{}",
@@ -2907,7 +3078,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Result = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Result = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_feature_availibility::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2921,7 +3092,7 @@ pub mod services {
         }
     }
     pub mod get_feature_availibility {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2943,7 +3114,7 @@ pub mod services {
     pub async fn list_export_errors(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-    ) -> std::result::Result<ErrorCounts, list_export_errors::Error> {
+    ) -> std::result::Result<models::ErrorCounts, list_export_errors::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/exporterrors/counts",
@@ -2971,7 +3142,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorCounts = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorCounts = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_export_errors::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -2985,7 +3156,7 @@ pub mod services {
         }
     }
     pub mod list_export_errors {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3008,7 +3179,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         error_bucket: &str,
-    ) -> std::result::Result<MergedExportErrors, list_export_errors_v2::Error> {
+    ) -> std::result::Result<models::MergedExportErrors, list_export_errors_v2::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/exporterrors/listV2",
@@ -3039,7 +3210,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MergedExportErrors = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MergedExportErrors = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_export_errors_v2::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3053,7 +3224,7 @@ pub mod services {
         }
     }
     pub mod list_export_errors_v2 {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3075,7 +3246,7 @@ pub mod services {
     pub async fn list_export_status(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-    ) -> std::result::Result<ExportStatuses, list_export_status::Error> {
+    ) -> std::result::Result<models::ExportStatuses, list_export_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/exportstatus",
@@ -3103,7 +3274,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExportStatuses = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExportStatuses = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_export_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3117,7 +3288,7 @@ pub mod services {
         }
     }
     pub mod list_export_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3139,8 +3310,8 @@ pub mod services {
     pub async fn add_alert_feedback(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        alert_feedback: &AlertFeedback,
-    ) -> std::result::Result<AlertFeedback, add_alert_feedback::Error> {
+        alert_feedback: &models::AlertFeedback,
+    ) -> std::result::Result<models::AlertFeedback, add_alert_feedback::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/feedbacktype/alerts/feedback",
@@ -3169,7 +3340,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertFeedback = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AlertFeedback = serde_json::from_slice(rsp_body)
                     .map_err(|source| add_alert_feedback::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3183,7 +3354,7 @@ pub mod services {
         }
     }
     pub mod add_alert_feedback {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3206,7 +3377,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         short_name: &str,
-    ) -> std::result::Result<AlertFeedbacks, list_alert_feedback::Error> {
+    ) -> std::result::Result<models::AlertFeedbacks, list_alert_feedback::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/feedbacktype/alerts/{}/alertfeedback",
@@ -3235,7 +3406,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertFeedbacks = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AlertFeedbacks = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_alert_feedback::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3249,7 +3420,7 @@ pub mod services {
         }
     }
     pub mod list_alert_feedback {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3273,7 +3444,7 @@ pub mod services {
         service_name: &str,
         metric_name: &str,
         group_name: &str,
-    ) -> std::result::Result<Metrics, list_metrics_average::Error> {
+    ) -> std::result::Result<models::Metrics, list_metrics_average::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/metrics/{}/groups/{}/average",
@@ -3303,7 +3474,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Metrics = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Metrics = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metrics_average::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3317,7 +3488,7 @@ pub mod services {
         }
     }
     pub mod list_metrics_average {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3341,7 +3512,7 @@ pub mod services {
         service_name: &str,
         metric_name: &str,
         group_name: &str,
-    ) -> std::result::Result<Metrics, list_metrics_sum::Error> {
+    ) -> std::result::Result<models::Metrics, list_metrics_sum::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/metrics/{}/groups/{}/sum",
@@ -3371,7 +3542,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Metrics = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Metrics = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metrics_sum::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3385,7 +3556,7 @@ pub mod services {
         }
     }
     pub mod list_metrics_sum {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3409,7 +3580,7 @@ pub mod services {
         filter: Option<&str>,
         service_name: &str,
         perf_counter: Option<bool>,
-    ) -> std::result::Result<MetricMetadataList, list_metric_metadata::Error> {
+    ) -> std::result::Result<models::MetricMetadataList, list_metric_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/metricmetadata",
@@ -3443,7 +3614,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricMetadataList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricMetadataList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_metric_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3457,7 +3628,7 @@ pub mod services {
         }
     }
     pub mod list_metric_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3480,7 +3651,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         metric_name: &str,
-    ) -> std::result::Result<MetricMetadata, get_metric_metadata::Error> {
+    ) -> std::result::Result<models::MetricMetadata, get_metric_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/metricmetadata/{}",
@@ -3509,7 +3680,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricMetadata = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricMetadata = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_metric_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3523,7 +3694,7 @@ pub mod services {
         }
     }
     pub mod get_metric_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3550,7 +3721,7 @@ pub mod services {
         group_key: Option<&str>,
         from_date: Option<&str>,
         to_date: Option<&str>,
-    ) -> std::result::Result<MetricSets, get_metric_metadata_for_group::Error> {
+    ) -> std::result::Result<models::MetricSets, get_metric_metadata_for_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/metricmetadata/{}/groups/{}",
@@ -3591,7 +3762,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricSets = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MetricSets = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_metric_metadata_for_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3605,7 +3776,7 @@ pub mod services {
         }
     }
     pub mod get_metric_metadata_for_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3627,7 +3798,7 @@ pub mod services {
     pub async fn update_monitoring_configuration(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        configuration_setting: &Item,
+        configuration_setting: &models::Item,
     ) -> std::result::Result<(), update_monitoring_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -3668,7 +3839,7 @@ pub mod services {
         }
     }
     pub mod update_monitoring_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3690,7 +3861,7 @@ pub mod services {
     pub async fn list_monitoring_configurations(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-    ) -> std::result::Result<Items, list_monitoring_configurations::Error> {
+    ) -> std::result::Result<models::Items, list_monitoring_configurations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/monitoringconfigurations",
@@ -3720,7 +3891,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Items = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Items = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_monitoring_configurations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3734,7 +3905,7 @@ pub mod services {
         }
     }
     pub mod list_monitoring_configurations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3757,7 +3928,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         data_source: Option<&str>,
-    ) -> std::result::Result<ErrorReportUsersEntries, list_user_bad_password_report::Error> {
+    ) -> std::result::Result<models::ErrorReportUsersEntries, list_user_bad_password_report::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/reports/badpassword/details/user",
@@ -3790,7 +3961,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorReportUsersEntries = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorReportUsersEntries = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_user_bad_password_report::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3804,7 +3975,7 @@ pub mod services {
         }
     }
     pub mod list_user_bad_password_report {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3827,7 +3998,7 @@ pub mod services {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         feature_name: &str,
-    ) -> std::result::Result<Result, get_tenant_whitelisting::Error> {
+    ) -> std::result::Result<models::Result, get_tenant_whitelisting::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/TenantWhitelisting/{}",
@@ -3858,7 +4029,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Result = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Result = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_tenant_whitelisting::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3872,7 +4043,7 @@ pub mod services {
         }
     }
     pub mod get_tenant_whitelisting {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3894,7 +4065,7 @@ pub mod services {
     pub async fn list_all_risky_ip_download_report(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-    ) -> std::result::Result<RiskyIpBlobUris, list_all_risky_ip_download_report::Error> {
+    ) -> std::result::Result<models::RiskyIpBlobUris, list_all_risky_ip_download_report::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/reports/riskyIp/blobUris",
@@ -3924,7 +4095,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RiskyIpBlobUris = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RiskyIpBlobUris = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_all_risky_ip_download_report::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -3938,7 +4109,7 @@ pub mod services {
         }
     }
     pub mod list_all_risky_ip_download_report {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3960,7 +4131,7 @@ pub mod services {
     pub async fn list_current_risky_ip_download_report(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-    ) -> std::result::Result<RiskyIpBlobUris, list_current_risky_ip_download_report::Error> {
+    ) -> std::result::Result<models::RiskyIpBlobUris, list_current_risky_ip_download_report::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/reports/riskyIp/generateBlobUri",
@@ -3991,7 +4162,7 @@ pub mod services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RiskyIpBlobUris = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RiskyIpBlobUris = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_current_risky_ip_download_report::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4005,7 +4176,7 @@ pub mod services {
         }
     }
     pub mod list_current_risky_ip_download_report {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4026,7 +4197,7 @@ pub mod services {
     }
 }
 pub mod service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_metrics(
         operation_config: &crate::OperationConfig,
         service_name: &str,
@@ -4035,7 +4206,7 @@ pub mod service {
         group_key: Option<&str>,
         from_date: Option<&str>,
         to_date: Option<&str>,
-    ) -> std::result::Result<MetricSets, get_metrics::Error> {
+    ) -> std::result::Result<models::MetricSets, get_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/metrics/{}/groups/{}",
@@ -4074,7 +4245,7 @@ pub mod service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricSets =
+                let rsp_value: models::MetricSets =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4088,7 +4259,7 @@ pub mod service {
         }
     }
     pub mod get_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4109,14 +4280,14 @@ pub mod service {
     }
 }
 pub mod service_members {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         service_name: &str,
         filter: Option<&str>,
         dimension_type: Option<&str>,
         dimension_signature: Option<&str>,
-    ) -> std::result::Result<ServiceMembers, list::Error> {
+    ) -> std::result::Result<models::ServiceMembers, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers",
@@ -4150,7 +4321,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceMembers =
+                let rsp_value: models::ServiceMembers =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4164,7 +4335,7 @@ pub mod service_members {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4186,8 +4357,8 @@ pub mod service_members {
     pub async fn add(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        service_member: &ServiceMember,
-    ) -> std::result::Result<ServiceMember, add::Error> {
+        service_member: &models::ServiceMember,
+    ) -> std::result::Result<models::ServiceMember, add::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers",
@@ -4213,7 +4384,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceMember =
+                let rsp_value: models::ServiceMember =
                     serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4227,7 +4398,7 @@ pub mod service_members {
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4250,7 +4421,7 @@ pub mod service_members {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         service_member_id: &str,
-    ) -> std::result::Result<ServiceMember, get::Error> {
+    ) -> std::result::Result<models::ServiceMember, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}",
@@ -4276,7 +4447,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceMember =
+                let rsp_value: models::ServiceMember =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4290,7 +4461,7 @@ pub mod service_members {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4352,7 +4523,7 @@ pub mod service_members {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4379,7 +4550,7 @@ pub mod service_members {
         state: Option<&str>,
         from: Option<&str>,
         to: Option<&str>,
-    ) -> std::result::Result<Alerts, list_alerts::Error> {
+    ) -> std::result::Result<models::Alerts, list_alerts::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/alerts",
@@ -4420,7 +4591,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Alerts =
+                let rsp_value: models::Alerts =
                     serde_json::from_slice(rsp_body).map_err(|source| list_alerts::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4434,7 +4605,7 @@ pub mod service_members {
         }
     }
     pub mod list_alerts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4457,7 +4628,7 @@ pub mod service_members {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         service_member_id: &str,
-    ) -> std::result::Result<Connectors, list_connectors::Error> {
+    ) -> std::result::Result<models::Connectors, list_connectors::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/service/{}/servicemembers/{}/connectors",
@@ -4486,7 +4657,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Connectors = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Connectors = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_connectors::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4500,7 +4671,7 @@ pub mod service_members {
         }
     }
     pub mod list_connectors {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4524,7 +4695,7 @@ pub mod service_members {
         service_name: &str,
         filter: Option<&str>,
         service_member_id: &str,
-    ) -> std::result::Result<Credentials, list_credentials::Error> {
+    ) -> std::result::Result<models::Credentials, list_credentials::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/credentials",
@@ -4556,7 +4727,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Credentials = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Credentials = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_credentials::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4570,7 +4741,7 @@ pub mod service_members {
         }
     }
     pub mod list_credentials {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4631,7 +4802,7 @@ pub mod service_members {
         }
     }
     pub mod delete_data {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4654,7 +4825,7 @@ pub mod service_members {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         service_member_id: &str,
-    ) -> std::result::Result<DataFreshnessDetails, list_data_freshness::Error> {
+    ) -> std::result::Result<models::DataFreshnessDetails, list_data_freshness::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/datafreshness",
@@ -4683,7 +4854,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataFreshnessDetails = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataFreshnessDetails = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_data_freshness::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4697,7 +4868,7 @@ pub mod service_members {
         }
     }
     pub mod list_data_freshness {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4720,7 +4891,7 @@ pub mod service_members {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         service_member_id: &str,
-    ) -> std::result::Result<ExportStatuses, list_export_status::Error> {
+    ) -> std::result::Result<models::ExportStatuses, list_export_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/exportstatus",
@@ -4749,7 +4920,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExportStatuses = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExportStatuses = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_export_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4763,7 +4934,7 @@ pub mod service_members {
         }
     }
     pub mod list_export_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4786,7 +4957,7 @@ pub mod service_members {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         service_member_id: &str,
-    ) -> std::result::Result<GlobalConfigurations, list_global_configuration::Error> {
+    ) -> std::result::Result<models::GlobalConfigurations, list_global_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/globalconfiguration",
@@ -4817,7 +4988,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GlobalConfigurations = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GlobalConfigurations = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_global_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4831,7 +5002,7 @@ pub mod service_members {
         }
     }
     pub mod list_global_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4859,7 +5030,7 @@ pub mod service_members {
         group_key: Option<&str>,
         from_date: Option<&str>,
         to_date: Option<&str>,
-    ) -> std::result::Result<MetricSets, get_metrics::Error> {
+    ) -> std::result::Result<models::MetricSets, get_metrics::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/metrics/{}/groups/{}",
@@ -4899,7 +5070,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MetricSets =
+                let rsp_value: models::MetricSets =
                     serde_json::from_slice(rsp_body).map_err(|source| get_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4913,7 +5084,7 @@ pub mod service_members {
         }
     }
     pub mod get_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4936,7 +5107,7 @@ pub mod service_members {
         operation_config: &crate::OperationConfig,
         service_name: &str,
         service_member_id: &str,
-    ) -> std::result::Result<ServiceConfiguration, get_service_configuration::Error> {
+    ) -> std::result::Result<models::ServiceConfiguration, get_service_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/serviceconfiguration",
@@ -4967,7 +5138,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ServiceConfiguration = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ServiceConfiguration = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_service_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -4981,7 +5152,7 @@ pub mod service_members {
         }
     }
     pub mod get_service_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5005,7 +5176,7 @@ pub mod service_members {
         service_name: &str,
         service_member_id: &str,
         metric_name: &str,
-    ) -> std::result::Result<ConnectorMetadata, get_connector_metadata::Error> {
+    ) -> std::result::Result<models::ConnectorMetadata, get_connector_metadata::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/metrics/{}",
@@ -5037,7 +5208,7 @@ pub mod service_members {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectorMetadata = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectorMetadata = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_connector_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5051,7 +5222,7 @@ pub mod service_members {
         }
     }
     pub mod get_connector_metadata {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5072,12 +5243,12 @@ pub mod service_members {
     }
 }
 pub mod list {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn ip_address_aggregates_by_service(
         operation_config: &crate::OperationConfig,
         service_name: &str,
         skiptoken: Option<&str>,
-    ) -> std::result::Result<IpAddressAggregates, ip_address_aggregates_by_service::Error> {
+    ) -> std::result::Result<models::IpAddressAggregates, ip_address_aggregates_by_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/ipAddressAggregates",
@@ -5110,7 +5281,7 @@ pub mod list {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IpAddressAggregates = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IpAddressAggregates = serde_json::from_slice(rsp_body)
                     .map_err(|source| ip_address_aggregates_by_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5124,7 +5295,7 @@ pub mod list {
         }
     }
     pub mod ip_address_aggregates_by_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5146,7 +5317,7 @@ pub mod list {
     pub async fn ip_address_aggregate_settings(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-    ) -> std::result::Result<IpAddressAggregateSetting, ip_address_aggregate_settings::Error> {
+    ) -> std::result::Result<models::IpAddressAggregateSetting, ip_address_aggregate_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/ipAddressAggregateSettings",
@@ -5176,7 +5347,7 @@ pub mod list {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IpAddressAggregateSetting = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IpAddressAggregateSetting = serde_json::from_slice(rsp_body)
                     .map_err(|source| ip_address_aggregate_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5190,7 +5361,7 @@ pub mod list {
         }
     }
     pub mod ip_address_aggregate_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5211,12 +5382,12 @@ pub mod list {
     }
 }
 pub mod update {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn ip_address_aggregate_settings(
         operation_config: &crate::OperationConfig,
         service_name: &str,
-        ip_address_aggregate_setting: &IpAddressAggregateSetting,
-    ) -> std::result::Result<IpAddressAggregateSetting, ip_address_aggregate_settings::Error> {
+        ip_address_aggregate_setting: &models::IpAddressAggregateSetting,
+    ) -> std::result::Result<models::IpAddressAggregateSetting, ip_address_aggregate_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.ADHybridHealthService/services/{}/ipAddressAggregateSettings",
@@ -5247,7 +5418,7 @@ pub mod update {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: IpAddressAggregateSetting = serde_json::from_slice(rsp_body)
+                let rsp_value: models::IpAddressAggregateSetting = serde_json::from_slice(rsp_body)
                     .map_err(|source| ip_address_aggregate_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -5261,7 +5432,7 @@ pub mod update {
         }
     }
     pub mod ip_address_aggregate_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

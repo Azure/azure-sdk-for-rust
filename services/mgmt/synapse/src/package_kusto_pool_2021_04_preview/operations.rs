@@ -2,10 +2,65 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    KustoOperations_List(#[from] kusto_operations::list::Error),
+    #[error(transparent)]
+    KustoPools_ListByWorkspace(#[from] kusto_pools::list_by_workspace::Error),
+    #[error(transparent)]
+    KustoPools_Get(#[from] kusto_pools::get::Error),
+    #[error(transparent)]
+    KustoPools_CreateOrUpdate(#[from] kusto_pools::create_or_update::Error),
+    #[error(transparent)]
+    KustoPools_Update(#[from] kusto_pools::update::Error),
+    #[error(transparent)]
+    KustoPools_Delete(#[from] kusto_pools::delete::Error),
+    #[error(transparent)]
+    Databases_ListByKustoPool(#[from] databases::list_by_kusto_pool::Error),
+    #[error(transparent)]
+    Databases_Get(#[from] databases::get::Error),
+    #[error(transparent)]
+    Databases_CreateOrUpdate(#[from] databases::create_or_update::Error),
+    #[error(transparent)]
+    Databases_Update(#[from] databases::update::Error),
+    #[error(transparent)]
+    Databases_Delete(#[from] databases::delete::Error),
+    #[error(transparent)]
+    DataConnections_ListByDatabase(#[from] data_connections::list_by_database::Error),
+    #[error(transparent)]
+    DataConnections_Get(#[from] data_connections::get::Error),
+    #[error(transparent)]
+    DataConnections_CreateOrUpdate(#[from] data_connections::create_or_update::Error),
+    #[error(transparent)]
+    DataConnections_Update(#[from] data_connections::update::Error),
+    #[error(transparent)]
+    DataConnections_Delete(#[from] data_connections::delete::Error),
+    #[error(transparent)]
+    KustoPoolPrincipalAssignments_List(#[from] kusto_pool_principal_assignments::list::Error),
+    #[error(transparent)]
+    KustoPoolPrincipalAssignments_Get(#[from] kusto_pool_principal_assignments::get::Error),
+    #[error(transparent)]
+    KustoPoolPrincipalAssignments_CreateOrUpdate(#[from] kusto_pool_principal_assignments::create_or_update::Error),
+    #[error(transparent)]
+    KustoPoolPrincipalAssignments_Delete(#[from] kusto_pool_principal_assignments::delete::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_List(#[from] database_principal_assignments::list::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_Get(#[from] database_principal_assignments::get::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_CreateOrUpdate(#[from] database_principal_assignments::create_or_update::Error),
+    #[error(transparent)]
+    DatabasePrincipalAssignments_Delete(#[from] database_principal_assignments::delete::Error),
+    #[error(transparent)]
+    KustoPools_CheckNameAvailability(#[from] kusto_pools::check_name_availability::Error),
+}
 pub mod kusto_operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Synapse/kustooperations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +81,13 @@ pub mod kusto_operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +97,7 @@ pub mod kusto_operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,13 +121,13 @@ pub mod kusto_operations {
     }
 }
 pub mod kusto_pools {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_workspace(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
         workspace_name: &str,
-    ) -> std::result::Result<KustoPoolListResult, list_by_workspace::Error> {
+    ) -> std::result::Result<models::KustoPoolListResult, list_by_workspace::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools",
@@ -102,13 +157,13 @@ pub mod kusto_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KustoPoolListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::KustoPoolListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_workspace::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_workspace::Error::DefaultResponse {
                     status_code,
@@ -118,7 +173,7 @@ pub mod kusto_pools {
         }
     }
     pub mod list_by_workspace {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -146,7 +201,7 @@ pub mod kusto_pools {
         kusto_pool_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<KustoPool, get::Error> {
+    ) -> std::result::Result<models::KustoPool, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}",
@@ -174,13 +229,13 @@ pub mod kusto_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KustoPool =
+                let rsp_value: models::KustoPool =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -190,7 +245,7 @@ pub mod kusto_pools {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -217,7 +272,7 @@ pub mod kusto_pools {
         workspace_name: &str,
         resource_group_name: &str,
         kusto_pool_name: &str,
-        parameters: &KustoPool,
+        parameters: &models::KustoPool,
         if_match: Option<&str>,
         if_none_match: Option<&str>,
         subscription_id: &str,
@@ -259,19 +314,19 @@ pub mod kusto_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KustoPool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::KustoPool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: KustoPool = serde_json::from_slice(rsp_body)
+                let rsp_value: models::KustoPool = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -281,11 +336,11 @@ pub mod kusto_pools {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(KustoPool),
-            Created201(KustoPool),
+            Ok200(models::KustoPool),
+            Created201(models::KustoPool),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -313,7 +368,7 @@ pub mod kusto_pools {
         workspace_name: &str,
         resource_group_name: &str,
         kusto_pool_name: &str,
-        parameters: &KustoPoolUpdate,
+        parameters: &models::KustoPoolUpdate,
         if_match: Option<&str>,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
@@ -348,19 +403,19 @@ pub mod kusto_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KustoPool =
+                let rsp_value: models::KustoPool =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: KustoPool =
+                let rsp_value: models::KustoPool =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -370,11 +425,11 @@ pub mod kusto_pools {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(KustoPool),
-            Created201(KustoPool),
+            Ok200(models::KustoPool),
+            Created201(models::KustoPool),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -434,7 +489,7 @@ pub mod kusto_pools {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -444,7 +499,7 @@ pub mod kusto_pools {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -476,8 +531,8 @@ pub mod kusto_pools {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        kusto_pool_name: &KustoPoolCheckNameRequest,
-    ) -> std::result::Result<CheckNameResult, check_name_availability::Error> {
+        kusto_pool_name: &models::KustoPoolCheckNameRequest,
+    ) -> std::result::Result<models::CheckNameResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Synapse/locations/{}/kustoPoolCheckNameAvailability",
@@ -509,13 +564,13 @@ pub mod kusto_pools {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -525,7 +580,7 @@ pub mod kusto_pools {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -549,14 +604,14 @@ pub mod kusto_pools {
     }
 }
 pub mod databases {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_kusto_pool(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
         kusto_pool_name: &str,
-    ) -> std::result::Result<DatabaseListResult, list_by_kusto_pool::Error> {
+    ) -> std::result::Result<models::DatabaseListResult, list_by_kusto_pool::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases",
@@ -587,13 +642,13 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabaseListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabaseListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_kusto_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_kusto_pool::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_kusto_pool::Error::DefaultResponse {
                     status_code,
@@ -603,7 +658,7 @@ pub mod databases {
         }
     }
     pub mod list_by_kusto_pool {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -632,7 +687,7 @@ pub mod databases {
         workspace_name: &str,
         kusto_pool_name: &str,
         database_name: &str,
-    ) -> std::result::Result<Database, get::Error> {
+    ) -> std::result::Result<models::Database, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}",
@@ -661,13 +716,13 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -677,7 +732,7 @@ pub mod databases {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -706,7 +761,7 @@ pub mod databases {
         workspace_name: &str,
         kusto_pool_name: &str,
         database_name: &str,
-        parameters: &Database,
+        parameters: &models::Database,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -740,19 +795,19 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Database = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Database = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -762,11 +817,11 @@ pub mod databases {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Database),
-            Created201(Database),
+            Ok200(models::Database),
+            Created201(models::Database),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -796,7 +851,7 @@ pub mod databases {
         workspace_name: &str,
         kusto_pool_name: &str,
         database_name: &str,
-        parameters: &Database,
+        parameters: &models::Database,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -827,19 +882,19 @@ pub mod databases {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Database =
+                let rsp_value: models::Database =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -849,11 +904,11 @@ pub mod databases {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Database),
-            Created201(Database),
+            Ok200(models::Database),
+            Created201(models::Database),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -915,7 +970,7 @@ pub mod databases {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -925,7 +980,7 @@ pub mod databases {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -955,7 +1010,7 @@ pub mod databases {
     }
 }
 pub mod data_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_database(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -963,7 +1018,7 @@ pub mod data_connections {
         workspace_name: &str,
         kusto_pool_name: &str,
         database_name: &str,
-    ) -> std::result::Result<DataConnectionListResult, list_by_database::Error> {
+    ) -> std::result::Result<models::DataConnectionListResult, list_by_database::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections",
@@ -995,13 +1050,13 @@ pub mod data_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_database::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_database::Error::DefaultResponse {
                     status_code,
@@ -1011,7 +1066,7 @@ pub mod data_connections {
         }
     }
     pub mod list_by_database {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1041,7 +1096,7 @@ pub mod data_connections {
         kusto_pool_name: &str,
         database_name: &str,
         data_connection_name: &str,
-    ) -> std::result::Result<DataConnection, get::Error> {
+    ) -> std::result::Result<models::DataConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/dataConnections/{}",
@@ -1071,13 +1126,13 @@ pub mod data_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataConnection =
+                let rsp_value: models::DataConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1087,7 +1142,7 @@ pub mod data_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1117,7 +1172,7 @@ pub mod data_connections {
         kusto_pool_name: &str,
         database_name: &str,
         data_connection_name: &str,
-        parameters: &DataConnection,
+        parameters: &models::DataConnection,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1152,19 +1207,19 @@ pub mod data_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataConnection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataConnection = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1174,11 +1229,11 @@ pub mod data_connections {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataConnection),
-            Created201(DataConnection),
+            Ok200(models::DataConnection),
+            Created201(models::DataConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1209,7 +1264,7 @@ pub mod data_connections {
         kusto_pool_name: &str,
         database_name: &str,
         data_connection_name: &str,
-        parameters: &DataConnection,
+        parameters: &models::DataConnection,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1241,19 +1296,19 @@ pub mod data_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataConnection =
+                let rsp_value: models::DataConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataConnection =
+                let rsp_value: models::DataConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1263,11 +1318,11 @@ pub mod data_connections {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataConnection),
-            Created201(DataConnection),
+            Ok200(models::DataConnection),
+            Created201(models::DataConnection),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1331,7 +1386,7 @@ pub mod data_connections {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1341,7 +1396,7 @@ pub mod data_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1371,14 +1426,14 @@ pub mod data_connections {
     }
 }
 pub mod kusto_pool_principal_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         workspace_name: &str,
         kusto_pool_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ClusterPrincipalAssignmentListResult, list::Error> {
+    ) -> std::result::Result<models::ClusterPrincipalAssignmentListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments",
@@ -1406,13 +1461,13 @@ pub mod kusto_pool_principal_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterPrincipalAssignmentListResult =
+                let rsp_value: models::ClusterPrincipalAssignmentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1422,7 +1477,7 @@ pub mod kusto_pool_principal_assignments {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1451,7 +1506,7 @@ pub mod kusto_pool_principal_assignments {
         principal_assignment_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ClusterPrincipalAssignment, get::Error> {
+    ) -> std::result::Result<models::ClusterPrincipalAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/principalAssignments/{}",
@@ -1480,13 +1535,13 @@ pub mod kusto_pool_principal_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterPrincipalAssignment =
+                let rsp_value: models::ClusterPrincipalAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1496,7 +1551,7 @@ pub mod kusto_pool_principal_assignments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1525,7 +1580,7 @@ pub mod kusto_pool_principal_assignments {
         principal_assignment_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-        parameters: &ClusterPrincipalAssignment,
+        parameters: &models::ClusterPrincipalAssignment,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1559,19 +1614,19 @@ pub mod kusto_pool_principal_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterPrincipalAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ClusterPrincipalAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ClusterPrincipalAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ClusterPrincipalAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1581,11 +1636,11 @@ pub mod kusto_pool_principal_assignments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ClusterPrincipalAssignment),
-            Created201(ClusterPrincipalAssignment),
+            Ok200(models::ClusterPrincipalAssignment),
+            Created201(models::ClusterPrincipalAssignment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1647,7 +1702,7 @@ pub mod kusto_pool_principal_assignments {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1657,7 +1712,7 @@ pub mod kusto_pool_principal_assignments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1687,7 +1742,7 @@ pub mod kusto_pool_principal_assignments {
     }
 }
 pub mod database_principal_assignments {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         workspace_name: &str,
@@ -1695,7 +1750,7 @@ pub mod database_principal_assignments {
         database_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DatabasePrincipalAssignmentListResult, list::Error> {
+    ) -> std::result::Result<models::DatabasePrincipalAssignmentListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , kusto_pool_name , database_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1716,13 +1771,13 @@ pub mod database_principal_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabasePrincipalAssignmentListResult =
+                let rsp_value: models::DatabasePrincipalAssignmentListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1732,7 +1787,7 @@ pub mod database_principal_assignments {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1762,7 +1817,7 @@ pub mod database_principal_assignments {
         principal_assignment_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DatabasePrincipalAssignment, get::Error> {
+    ) -> std::result::Result<models::DatabasePrincipalAssignment, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , kusto_pool_name , database_name , principal_assignment_name) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -1783,13 +1838,13 @@ pub mod database_principal_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabasePrincipalAssignment =
+                let rsp_value: models::DatabasePrincipalAssignment =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1799,7 +1854,7 @@ pub mod database_principal_assignments {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1829,7 +1884,7 @@ pub mod database_principal_assignments {
         principal_assignment_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-        parameters: &DatabasePrincipalAssignment,
+        parameters: &models::DatabasePrincipalAssignment,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/kustoPools/{}/databases/{}/principalAssignments/{}" , operation_config . base_path () , subscription_id , resource_group_name , workspace_name , kusto_pool_name , database_name , principal_assignment_name) ;
@@ -1855,19 +1910,19 @@ pub mod database_principal_assignments {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabasePrincipalAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabasePrincipalAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DatabasePrincipalAssignment = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DatabasePrincipalAssignment = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1877,11 +1932,11 @@ pub mod database_principal_assignments {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DatabasePrincipalAssignment),
-            Created201(DatabasePrincipalAssignment),
+            Ok200(models::DatabasePrincipalAssignment),
+            Created201(models::DatabasePrincipalAssignment),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1936,7 +1991,7 @@ pub mod database_principal_assignments {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1946,7 +2001,7 @@ pub mod database_principal_assignments {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

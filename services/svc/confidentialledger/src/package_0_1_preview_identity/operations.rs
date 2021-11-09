@@ -2,13 +2,20 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ConfidentialLedgerIdentityService_GetLedgerIdentity(#[from] confidential_ledger_identity_service::get_ledger_identity::Error),
+}
 pub mod confidential_ledger_identity_service {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_ledger_identity(
         operation_config: &crate::OperationConfig,
         ledger_id: &str,
-    ) -> std::result::Result<LedgerIdentityInformation, get_ledger_identity::Error> {
+    ) -> std::result::Result<models::LedgerIdentityInformation, get_ledger_identity::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/ledgerIdentity/{}", operation_config.base_path(), ledger_id);
         let mut url = url::Url::parse(url_str).map_err(get_ledger_identity::Error::ParseUrlError)?;
@@ -32,13 +39,13 @@ pub mod confidential_ledger_identity_service {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LedgerIdentityInformation = serde_json::from_slice(rsp_body)
+                let rsp_value: models::LedgerIdentityInformation = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ledger_identity::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConfidentialLedgerError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConfidentialLedgerError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_ledger_identity::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_ledger_identity::Error::DefaultResponse {
                     status_code,
@@ -48,7 +55,7 @@ pub mod confidential_ledger_identity_service {
         }
     }
     pub mod get_ledger_identity {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

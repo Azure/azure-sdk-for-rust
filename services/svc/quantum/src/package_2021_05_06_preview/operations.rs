@@ -2,15 +2,36 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Jobs_List(#[from] jobs::list::Error),
+    #[error(transparent)]
+    Jobs_Get(#[from] jobs::get::Error),
+    #[error(transparent)]
+    Jobs_Create(#[from] jobs::create::Error),
+    #[error(transparent)]
+    Jobs_Patch(#[from] jobs::patch::Error),
+    #[error(transparent)]
+    Jobs_Cancel(#[from] jobs::cancel::Error),
+    #[error(transparent)]
+    Providers_GetStatus(#[from] providers::get_status::Error),
+    #[error(transparent)]
+    Storage_SasUri(#[from] storage::sas_uri::Error),
+    #[error(transparent)]
+    Quotas_List(#[from] quotas::list::Error),
+}
 pub mod jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<JobDetailsList, list::Error> {
+    ) -> std::result::Result<models::JobDetailsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs",
@@ -36,7 +57,7 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDetailsList =
+                let rsp_value: models::JobDetailsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -50,7 +71,7 @@ pub mod jobs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -75,7 +96,7 @@ pub mod jobs {
         resource_group_name: &str,
         workspace_name: &str,
         job_id: &str,
-    ) -> std::result::Result<JobDetails, get::Error> {
+    ) -> std::result::Result<models::JobDetails, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/jobs/{}",
@@ -102,13 +123,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDetails =
+                let rsp_value: models::JobDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestError =
+                let rsp_value: models::RestError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -118,7 +139,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -146,7 +167,7 @@ pub mod jobs {
         resource_group_name: &str,
         workspace_name: &str,
         job_id: &str,
-        job: &JobDetails,
+        job: &models::JobDetails,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -175,19 +196,19 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDetails =
+                let rsp_value: models::JobDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDetails =
+                let rsp_value: models::JobDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestError =
+                let rsp_value: models::RestError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -197,11 +218,11 @@ pub mod jobs {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobDetails),
-            Created201(JobDetails),
+            Ok200(models::JobDetails),
+            Created201(models::JobDetails),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -230,7 +251,7 @@ pub mod jobs {
         resource_group_name: &str,
         workspace_name: &str,
         job_id: &str,
-        patch_job: &PatchRequest,
+        patch_job: &models::PatchRequest,
     ) -> std::result::Result<patch::Response, patch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -259,14 +280,14 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: JobDetails =
+                let rsp_value: models::JobDetails =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(patch::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(patch::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestError =
+                let rsp_value: models::RestError =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(patch::Error::DefaultResponse {
                     status_code,
@@ -276,10 +297,10 @@ pub mod jobs {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(JobDetails),
+            Ok200(models::JobDetails),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -337,7 +358,7 @@ pub mod jobs {
             http::StatusCode::NO_CONTENT => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestError =
+                let rsp_value: models::RestError =
                     serde_json::from_slice(rsp_body).map_err(|source| cancel::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(cancel::Error::DefaultResponse {
                     status_code,
@@ -347,7 +368,7 @@ pub mod jobs {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -371,13 +392,13 @@ pub mod jobs {
     }
 }
 pub mod providers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_status(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<ProviderStatusList, get_status::Error> {
+    ) -> std::result::Result<models::ProviderStatusList, get_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/providerStatus",
@@ -406,13 +427,13 @@ pub mod providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProviderStatusList =
+                let rsp_value: models::ProviderStatusList =
                     serde_json::from_slice(rsp_body).map_err(|source| get_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestError =
+                let rsp_value: models::RestError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_status::Error::DefaultResponse {
                     status_code,
@@ -422,7 +443,7 @@ pub mod providers {
         }
     }
     pub mod get_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -446,14 +467,14 @@ pub mod providers {
     }
 }
 pub mod storage {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn sas_uri(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-        blob_details: &BlobDetails,
-    ) -> std::result::Result<SasUriResponse, sas_uri::Error> {
+        blob_details: &models::BlobDetails,
+    ) -> std::result::Result<models::SasUriResponse, sas_uri::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/storage/sasUri",
@@ -483,13 +504,13 @@ pub mod storage {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SasUriResponse =
+                let rsp_value: models::SasUriResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| sas_uri::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestError =
+                let rsp_value: models::RestError =
                     serde_json::from_slice(rsp_body).map_err(|source| sas_uri::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(sas_uri::Error::DefaultResponse {
                     status_code,
@@ -499,7 +520,7 @@ pub mod storage {
         }
     }
     pub mod sas_uri {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -523,13 +544,13 @@ pub mod storage {
     }
 }
 pub mod quotas {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_name: &str,
-    ) -> std::result::Result<QuotaList, list::Error> {
+    ) -> std::result::Result<models::QuotaList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/v1.0/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Quantum/workspaces/{}/quotas",
@@ -555,13 +576,13 @@ pub mod quotas {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: QuotaList =
+                let rsp_value: models::QuotaList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: RestError =
+                let rsp_value: models::RestError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -571,7 +592,7 @@ pub mod quotas {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

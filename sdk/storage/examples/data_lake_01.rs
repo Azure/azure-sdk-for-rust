@@ -28,11 +28,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("token expires on {}\n", bearer_token.expires_on);
 
-    let data_lake_client = storage_account_client
-        .as_storage_client()
-        .as_data_lake_client(account, bearer_token.token.secret().to_owned())?;
+    let storage_client = storage_account_client.as_storage_client();
+    let data_lake_client = DataLakeClient::new(
+        storage_client,
+        account,
+        bearer_token.token.secret().to_owned(),
+        None,
+    );
 
-    let file_system_client = data_lake_client.as_file_system_client(&file_system_name)?;
+    let file_system_client = data_lake_client
+        .clone()
+        .into_file_system_client(file_system_name.to_string());
 
     println!("creating file system '{}'...", &file_system_name);
     let create_fs_response = file_system_client.create().execute().await?;

@@ -6,36 +6,36 @@
 #[cfg(feature = "package-composite-v5")]
 pub mod package_composite_v5;
 #[cfg(all(feature = "package-composite-v5", not(feature = "no-default-version")))]
-pub use package_composite_v5::{models, operations};
+pub use package_composite_v5::{models, operations, operations::Error};
 #[cfg(feature = "package-composite-v4")]
 pub mod package_composite_v4;
 #[cfg(all(feature = "package-composite-v4", not(feature = "no-default-version")))]
-pub use package_composite_v4::{models, operations};
+pub use package_composite_v4::{models, operations, operations::Error};
 #[cfg(feature = "package-composite-v3")]
 pub mod package_composite_v3;
 #[cfg(all(feature = "package-composite-v3", not(feature = "no-default-version")))]
-pub use package_composite_v3::{models, operations};
+pub use package_composite_v3::{models, operations, operations::Error};
 #[cfg(feature = "package-composite-v2")]
 pub mod package_composite_v2;
 #[cfg(all(feature = "package-composite-v2", not(feature = "no-default-version")))]
-pub use package_composite_v2::{models, operations};
+pub use package_composite_v2::{models, operations, operations::Error};
 #[cfg(feature = "package-composite-v1")]
 pub mod package_composite_v1;
 #[cfg(all(feature = "package-composite-v1", not(feature = "no-default-version")))]
-pub use package_composite_v1::{models, operations};
+pub use package_composite_v1::{models, operations, operations::Error};
 #[cfg(feature = "package-2017-03-preview")]
 pub mod package_2017_03_preview;
 #[cfg(all(feature = "package-2017-03-preview", not(feature = "no-default-version")))]
-pub use package_2017_03_preview::{models, operations};
+pub use package_2017_03_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2015-05-preview")]
 pub mod package_2015_05_preview;
 #[cfg(all(feature = "package-2015-05-preview", not(feature = "no-default-version")))]
-pub use package_2015_05_preview::{models, operations};
+pub use package_2015_05_preview::{models, operations, operations::Error};
 #[cfg(feature = "package-2014-04")]
 pub mod package_2014_04;
 use azure_core::setters;
 #[cfg(all(feature = "package-2014-04", not(feature = "no-default-version")))]
-pub use package_2014_04::{models, operations};
+pub use package_2014_04::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

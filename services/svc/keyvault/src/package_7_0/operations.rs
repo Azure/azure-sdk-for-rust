@@ -2,12 +2,173 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    CreateKey(#[from] create_key::Error),
+    #[error(transparent)]
+    ImportKey(#[from] import_key::Error),
+    #[error(transparent)]
+    DeleteKey(#[from] delete_key::Error),
+    #[error(transparent)]
+    GetKey(#[from] get_key::Error),
+    #[error(transparent)]
+    UpdateKey(#[from] update_key::Error),
+    #[error(transparent)]
+    GetKeyVersions(#[from] get_key_versions::Error),
+    #[error(transparent)]
+    GetKeys(#[from] get_keys::Error),
+    #[error(transparent)]
+    BackupKey(#[from] backup_key::Error),
+    #[error(transparent)]
+    RestoreKey(#[from] restore_key::Error),
+    #[error(transparent)]
+    Encrypt(#[from] encrypt::Error),
+    #[error(transparent)]
+    Decrypt(#[from] decrypt::Error),
+    #[error(transparent)]
+    Sign(#[from] sign::Error),
+    #[error(transparent)]
+    Verify(#[from] verify::Error),
+    #[error(transparent)]
+    WrapKey(#[from] wrap_key::Error),
+    #[error(transparent)]
+    UnwrapKey(#[from] unwrap_key::Error),
+    #[error(transparent)]
+    GetDeletedKeys(#[from] get_deleted_keys::Error),
+    #[error(transparent)]
+    GetDeletedKey(#[from] get_deleted_key::Error),
+    #[error(transparent)]
+    PurgeDeletedKey(#[from] purge_deleted_key::Error),
+    #[error(transparent)]
+    RecoverDeletedKey(#[from] recover_deleted_key::Error),
+    #[error(transparent)]
+    SetSecret(#[from] set_secret::Error),
+    #[error(transparent)]
+    DeleteSecret(#[from] delete_secret::Error),
+    #[error(transparent)]
+    GetSecret(#[from] get_secret::Error),
+    #[error(transparent)]
+    UpdateSecret(#[from] update_secret::Error),
+    #[error(transparent)]
+    GetSecrets(#[from] get_secrets::Error),
+    #[error(transparent)]
+    GetSecretVersions(#[from] get_secret_versions::Error),
+    #[error(transparent)]
+    GetDeletedSecrets(#[from] get_deleted_secrets::Error),
+    #[error(transparent)]
+    GetDeletedSecret(#[from] get_deleted_secret::Error),
+    #[error(transparent)]
+    PurgeDeletedSecret(#[from] purge_deleted_secret::Error),
+    #[error(transparent)]
+    RecoverDeletedSecret(#[from] recover_deleted_secret::Error),
+    #[error(transparent)]
+    BackupSecret(#[from] backup_secret::Error),
+    #[error(transparent)]
+    RestoreSecret(#[from] restore_secret::Error),
+    #[error(transparent)]
+    GetCertificates(#[from] get_certificates::Error),
+    #[error(transparent)]
+    DeleteCertificate(#[from] delete_certificate::Error),
+    #[error(transparent)]
+    GetCertificateContacts(#[from] get_certificate_contacts::Error),
+    #[error(transparent)]
+    SetCertificateContacts(#[from] set_certificate_contacts::Error),
+    #[error(transparent)]
+    DeleteCertificateContacts(#[from] delete_certificate_contacts::Error),
+    #[error(transparent)]
+    GetCertificateIssuers(#[from] get_certificate_issuers::Error),
+    #[error(transparent)]
+    GetCertificateIssuer(#[from] get_certificate_issuer::Error),
+    #[error(transparent)]
+    SetCertificateIssuer(#[from] set_certificate_issuer::Error),
+    #[error(transparent)]
+    UpdateCertificateIssuer(#[from] update_certificate_issuer::Error),
+    #[error(transparent)]
+    DeleteCertificateIssuer(#[from] delete_certificate_issuer::Error),
+    #[error(transparent)]
+    CreateCertificate(#[from] create_certificate::Error),
+    #[error(transparent)]
+    ImportCertificate(#[from] import_certificate::Error),
+    #[error(transparent)]
+    GetCertificateVersions(#[from] get_certificate_versions::Error),
+    #[error(transparent)]
+    GetCertificatePolicy(#[from] get_certificate_policy::Error),
+    #[error(transparent)]
+    UpdateCertificatePolicy(#[from] update_certificate_policy::Error),
+    #[error(transparent)]
+    GetCertificate(#[from] get_certificate::Error),
+    #[error(transparent)]
+    UpdateCertificate(#[from] update_certificate::Error),
+    #[error(transparent)]
+    GetCertificateOperation(#[from] get_certificate_operation::Error),
+    #[error(transparent)]
+    UpdateCertificateOperation(#[from] update_certificate_operation::Error),
+    #[error(transparent)]
+    DeleteCertificateOperation(#[from] delete_certificate_operation::Error),
+    #[error(transparent)]
+    MergeCertificate(#[from] merge_certificate::Error),
+    #[error(transparent)]
+    BackupCertificate(#[from] backup_certificate::Error),
+    #[error(transparent)]
+    RestoreCertificate(#[from] restore_certificate::Error),
+    #[error(transparent)]
+    GetDeletedCertificates(#[from] get_deleted_certificates::Error),
+    #[error(transparent)]
+    GetDeletedCertificate(#[from] get_deleted_certificate::Error),
+    #[error(transparent)]
+    PurgeDeletedCertificate(#[from] purge_deleted_certificate::Error),
+    #[error(transparent)]
+    RecoverDeletedCertificate(#[from] recover_deleted_certificate::Error),
+    #[error(transparent)]
+    GetStorageAccounts(#[from] get_storage_accounts::Error),
+    #[error(transparent)]
+    GetDeletedStorageAccounts(#[from] get_deleted_storage_accounts::Error),
+    #[error(transparent)]
+    GetDeletedStorageAccount(#[from] get_deleted_storage_account::Error),
+    #[error(transparent)]
+    PurgeDeletedStorageAccount(#[from] purge_deleted_storage_account::Error),
+    #[error(transparent)]
+    RecoverDeletedStorageAccount(#[from] recover_deleted_storage_account::Error),
+    #[error(transparent)]
+    BackupStorageAccount(#[from] backup_storage_account::Error),
+    #[error(transparent)]
+    RestoreStorageAccount(#[from] restore_storage_account::Error),
+    #[error(transparent)]
+    GetStorageAccount(#[from] get_storage_account::Error),
+    #[error(transparent)]
+    SetStorageAccount(#[from] set_storage_account::Error),
+    #[error(transparent)]
+    UpdateStorageAccount(#[from] update_storage_account::Error),
+    #[error(transparent)]
+    DeleteStorageAccount(#[from] delete_storage_account::Error),
+    #[error(transparent)]
+    RegenerateStorageAccountKey(#[from] regenerate_storage_account_key::Error),
+    #[error(transparent)]
+    GetSasDefinitions(#[from] get_sas_definitions::Error),
+    #[error(transparent)]
+    GetDeletedSasDefinitions(#[from] get_deleted_sas_definitions::Error),
+    #[error(transparent)]
+    GetDeletedSasDefinition(#[from] get_deleted_sas_definition::Error),
+    #[error(transparent)]
+    RecoverDeletedSasDefinition(#[from] recover_deleted_sas_definition::Error),
+    #[error(transparent)]
+    GetSasDefinition(#[from] get_sas_definition::Error),
+    #[error(transparent)]
+    SetSasDefinition(#[from] set_sas_definition::Error),
+    #[error(transparent)]
+    UpdateSasDefinition(#[from] update_sas_definition::Error),
+    #[error(transparent)]
+    DeleteSasDefinition(#[from] delete_sas_definition::Error),
+}
 pub async fn create_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
-    parameters: &KeyCreateParameters,
-) -> std::result::Result<KeyBundle, create_key::Error> {
+    parameters: &models::KeyCreateParameters,
+) -> std::result::Result<models::KeyBundle, create_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/create", operation_config.base_path(), key_name);
     let mut url = url::Url::parse(url_str).map_err(create_key::Error::ParseUrlError)?;
@@ -32,13 +193,13 @@ pub async fn create_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyBundle =
+            let rsp_value: models::KeyBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| create_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| create_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(create_key::Error::DefaultResponse {
                 status_code,
@@ -48,7 +209,7 @@ pub async fn create_key(
     }
 }
 pub mod create_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -73,8 +234,8 @@ pub mod create_key {
 pub async fn import_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
-    parameters: &KeyImportParameters,
-) -> std::result::Result<KeyBundle, import_key::Error> {
+    parameters: &models::KeyImportParameters,
+) -> std::result::Result<models::KeyBundle, import_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}", operation_config.base_path(), key_name);
     let mut url = url::Url::parse(url_str).map_err(import_key::Error::ParseUrlError)?;
@@ -99,13 +260,13 @@ pub async fn import_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyBundle =
+            let rsp_value: models::KeyBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| import_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| import_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(import_key::Error::DefaultResponse {
                 status_code,
@@ -115,7 +276,7 @@ pub async fn import_key(
     }
 }
 pub mod import_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -140,7 +301,7 @@ pub mod import_key {
 pub async fn delete_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
-) -> std::result::Result<DeletedKeyBundle, delete_key::Error> {
+) -> std::result::Result<models::DeletedKeyBundle, delete_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}", operation_config.base_path(), key_name);
     let mut url = url::Url::parse(url_str).map_err(delete_key::Error::ParseUrlError)?;
@@ -164,13 +325,13 @@ pub async fn delete_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedKeyBundle =
+            let rsp_value: models::DeletedKeyBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_key::Error::DefaultResponse {
                 status_code,
@@ -180,7 +341,7 @@ pub async fn delete_key(
     }
 }
 pub mod delete_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -206,7 +367,7 @@ pub async fn get_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     key_version: &str,
-) -> std::result::Result<KeyBundle, get_key::Error> {
+) -> std::result::Result<models::KeyBundle, get_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/{}", operation_config.base_path(), key_name, key_version);
     let mut url = url::Url::parse(url_str).map_err(get_key::Error::ParseUrlError)?;
@@ -230,13 +391,13 @@ pub async fn get_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyBundle =
+            let rsp_value: models::KeyBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| get_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_key::Error::DefaultResponse {
                 status_code,
@@ -246,7 +407,7 @@ pub async fn get_key(
     }
 }
 pub mod get_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -272,8 +433,8 @@ pub async fn update_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     key_version: &str,
-    parameters: &KeyUpdateParameters,
-) -> std::result::Result<KeyBundle, update_key::Error> {
+    parameters: &models::KeyUpdateParameters,
+) -> std::result::Result<models::KeyBundle, update_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/{}", operation_config.base_path(), key_name, key_version);
     let mut url = url::Url::parse(url_str).map_err(update_key::Error::ParseUrlError)?;
@@ -298,13 +459,13 @@ pub async fn update_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyBundle =
+            let rsp_value: models::KeyBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| update_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| update_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_key::Error::DefaultResponse {
                 status_code,
@@ -314,7 +475,7 @@ pub async fn update_key(
     }
 }
 pub mod update_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -340,7 +501,7 @@ pub async fn get_key_versions(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     maxresults: Option<i32>,
-) -> std::result::Result<KeyListResult, get_key_versions::Error> {
+) -> std::result::Result<models::KeyListResult, get_key_versions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/versions", operation_config.base_path(), key_name);
     let mut url = url::Url::parse(url_str).map_err(get_key_versions::Error::ParseUrlError)?;
@@ -367,13 +528,13 @@ pub async fn get_key_versions(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyListResult =
+            let rsp_value: models::KeyListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_key_versions::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_key_versions::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_key_versions::Error::DefaultResponse {
                 status_code,
@@ -383,7 +544,7 @@ pub async fn get_key_versions(
     }
 }
 pub mod get_key_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -408,7 +569,7 @@ pub mod get_key_versions {
 pub async fn get_keys(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
-) -> std::result::Result<KeyListResult, get_keys::Error> {
+) -> std::result::Result<models::KeyListResult, get_keys::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_keys::Error::ParseUrlError)?;
@@ -435,13 +596,13 @@ pub async fn get_keys(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyListResult =
+            let rsp_value: models::KeyListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_keys::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_keys::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_keys::Error::DefaultResponse {
                 status_code,
@@ -451,7 +612,7 @@ pub async fn get_keys(
     }
 }
 pub mod get_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -476,7 +637,7 @@ pub mod get_keys {
 pub async fn backup_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
-) -> std::result::Result<BackupKeyResult, backup_key::Error> {
+) -> std::result::Result<models::BackupKeyResult, backup_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/backup", operation_config.base_path(), key_name);
     let mut url = url::Url::parse(url_str).map_err(backup_key::Error::ParseUrlError)?;
@@ -501,13 +662,13 @@ pub async fn backup_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: BackupKeyResult =
+            let rsp_value: models::BackupKeyResult =
                 serde_json::from_slice(rsp_body).map_err(|source| backup_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| backup_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(backup_key::Error::DefaultResponse {
                 status_code,
@@ -517,7 +678,7 @@ pub async fn backup_key(
     }
 }
 pub mod backup_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -541,8 +702,8 @@ pub mod backup_key {
 }
 pub async fn restore_key(
     operation_config: &crate::OperationConfig,
-    parameters: &KeyRestoreParameters,
-) -> std::result::Result<KeyBundle, restore_key::Error> {
+    parameters: &models::KeyRestoreParameters,
+) -> std::result::Result<models::KeyBundle, restore_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/restore", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(restore_key::Error::ParseUrlError)?;
@@ -567,13 +728,13 @@ pub async fn restore_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyBundle =
+            let rsp_value: models::KeyBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| restore_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| restore_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(restore_key::Error::DefaultResponse {
                 status_code,
@@ -583,7 +744,7 @@ pub async fn restore_key(
     }
 }
 pub mod restore_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -609,8 +770,8 @@ pub async fn encrypt(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     key_version: &str,
-    parameters: &KeyOperationsParameters,
-) -> std::result::Result<KeyOperationResult, encrypt::Error> {
+    parameters: &models::KeyOperationsParameters,
+) -> std::result::Result<models::KeyOperationResult, encrypt::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/{}/encrypt", operation_config.base_path(), key_name, key_version);
     let mut url = url::Url::parse(url_str).map_err(encrypt::Error::ParseUrlError)?;
@@ -635,13 +796,13 @@ pub async fn encrypt(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyOperationResult =
+            let rsp_value: models::KeyOperationResult =
                 serde_json::from_slice(rsp_body).map_err(|source| encrypt::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| encrypt::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(encrypt::Error::DefaultResponse {
                 status_code,
@@ -651,7 +812,7 @@ pub async fn encrypt(
     }
 }
 pub mod encrypt {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -677,8 +838,8 @@ pub async fn decrypt(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     key_version: &str,
-    parameters: &KeyOperationsParameters,
-) -> std::result::Result<KeyOperationResult, decrypt::Error> {
+    parameters: &models::KeyOperationsParameters,
+) -> std::result::Result<models::KeyOperationResult, decrypt::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/{}/decrypt", operation_config.base_path(), key_name, key_version);
     let mut url = url::Url::parse(url_str).map_err(decrypt::Error::ParseUrlError)?;
@@ -703,13 +864,13 @@ pub async fn decrypt(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyOperationResult =
+            let rsp_value: models::KeyOperationResult =
                 serde_json::from_slice(rsp_body).map_err(|source| decrypt::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| decrypt::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(decrypt::Error::DefaultResponse {
                 status_code,
@@ -719,7 +880,7 @@ pub async fn decrypt(
     }
 }
 pub mod decrypt {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -745,8 +906,8 @@ pub async fn sign(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     key_version: &str,
-    parameters: &KeySignParameters,
-) -> std::result::Result<KeyOperationResult, sign::Error> {
+    parameters: &models::KeySignParameters,
+) -> std::result::Result<models::KeyOperationResult, sign::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/{}/sign", operation_config.base_path(), key_name, key_version);
     let mut url = url::Url::parse(url_str).map_err(sign::Error::ParseUrlError)?;
@@ -768,13 +929,13 @@ pub async fn sign(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyOperationResult =
+            let rsp_value: models::KeyOperationResult =
                 serde_json::from_slice(rsp_body).map_err(|source| sign::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| sign::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(sign::Error::DefaultResponse {
                 status_code,
@@ -784,7 +945,7 @@ pub async fn sign(
     }
 }
 pub mod sign {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -810,8 +971,8 @@ pub async fn verify(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     key_version: &str,
-    parameters: &KeyVerifyParameters,
-) -> std::result::Result<KeyVerifyResult, verify::Error> {
+    parameters: &models::KeyVerifyParameters,
+) -> std::result::Result<models::KeyVerifyResult, verify::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/{}/verify", operation_config.base_path(), key_name, key_version);
     let mut url = url::Url::parse(url_str).map_err(verify::Error::ParseUrlError)?;
@@ -833,13 +994,13 @@ pub async fn verify(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVerifyResult =
+            let rsp_value: models::KeyVerifyResult =
                 serde_json::from_slice(rsp_body).map_err(|source| verify::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| verify::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(verify::Error::DefaultResponse {
                 status_code,
@@ -849,7 +1010,7 @@ pub async fn verify(
     }
 }
 pub mod verify {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -875,8 +1036,8 @@ pub async fn wrap_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     key_version: &str,
-    parameters: &KeyOperationsParameters,
-) -> std::result::Result<KeyOperationResult, wrap_key::Error> {
+    parameters: &models::KeyOperationsParameters,
+) -> std::result::Result<models::KeyOperationResult, wrap_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/{}/wrapkey", operation_config.base_path(), key_name, key_version);
     let mut url = url::Url::parse(url_str).map_err(wrap_key::Error::ParseUrlError)?;
@@ -901,13 +1062,13 @@ pub async fn wrap_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyOperationResult =
+            let rsp_value: models::KeyOperationResult =
                 serde_json::from_slice(rsp_body).map_err(|source| wrap_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| wrap_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(wrap_key::Error::DefaultResponse {
                 status_code,
@@ -917,7 +1078,7 @@ pub async fn wrap_key(
     }
 }
 pub mod wrap_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -943,8 +1104,8 @@ pub async fn unwrap_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
     key_version: &str,
-    parameters: &KeyOperationsParameters,
-) -> std::result::Result<KeyOperationResult, unwrap_key::Error> {
+    parameters: &models::KeyOperationsParameters,
+) -> std::result::Result<models::KeyOperationResult, unwrap_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/keys/{}/{}/unwrapkey", operation_config.base_path(), key_name, key_version);
     let mut url = url::Url::parse(url_str).map_err(unwrap_key::Error::ParseUrlError)?;
@@ -969,13 +1130,13 @@ pub async fn unwrap_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyOperationResult =
+            let rsp_value: models::KeyOperationResult =
                 serde_json::from_slice(rsp_body).map_err(|source| unwrap_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| unwrap_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(unwrap_key::Error::DefaultResponse {
                 status_code,
@@ -985,7 +1146,7 @@ pub async fn unwrap_key(
     }
 }
 pub mod unwrap_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1010,7 +1171,7 @@ pub mod unwrap_key {
 pub async fn get_deleted_keys(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
-) -> std::result::Result<DeletedKeyListResult, get_deleted_keys::Error> {
+) -> std::result::Result<models::DeletedKeyListResult, get_deleted_keys::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedkeys", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_keys::Error::ParseUrlError)?;
@@ -1037,13 +1198,13 @@ pub async fn get_deleted_keys(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedKeyListResult =
+            let rsp_value: models::DeletedKeyListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_deleted_keys::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_deleted_keys::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_keys::Error::DefaultResponse {
                 status_code,
@@ -1053,7 +1214,7 @@ pub async fn get_deleted_keys(
     }
 }
 pub mod get_deleted_keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1078,7 +1239,7 @@ pub mod get_deleted_keys {
 pub async fn get_deleted_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
-) -> std::result::Result<DeletedKeyBundle, get_deleted_key::Error> {
+) -> std::result::Result<models::DeletedKeyBundle, get_deleted_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedkeys/{}", operation_config.base_path(), key_name);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_key::Error::ParseUrlError)?;
@@ -1102,13 +1263,13 @@ pub async fn get_deleted_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedKeyBundle =
+            let rsp_value: models::DeletedKeyBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| get_deleted_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_deleted_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_key::Error::DefaultResponse {
                 status_code,
@@ -1118,7 +1279,7 @@ pub async fn get_deleted_key(
     }
 }
 pub mod get_deleted_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1168,7 +1329,7 @@ pub async fn purge_deleted_key(
         http::StatusCode::NO_CONTENT => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| purge_deleted_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(purge_deleted_key::Error::DefaultResponse {
                 status_code,
@@ -1178,7 +1339,7 @@ pub async fn purge_deleted_key(
     }
 }
 pub mod purge_deleted_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1203,7 +1364,7 @@ pub mod purge_deleted_key {
 pub async fn recover_deleted_key(
     operation_config: &crate::OperationConfig,
     key_name: &str,
-) -> std::result::Result<KeyBundle, recover_deleted_key::Error> {
+) -> std::result::Result<models::KeyBundle, recover_deleted_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedkeys/{}/recover", operation_config.base_path(), key_name);
     let mut url = url::Url::parse(url_str).map_err(recover_deleted_key::Error::ParseUrlError)?;
@@ -1228,13 +1389,13 @@ pub async fn recover_deleted_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(recover_deleted_key::Error::DefaultResponse {
                 status_code,
@@ -1244,7 +1405,7 @@ pub async fn recover_deleted_key(
     }
 }
 pub mod recover_deleted_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1269,8 +1430,8 @@ pub mod recover_deleted_key {
 pub async fn set_secret(
     operation_config: &crate::OperationConfig,
     secret_name: &str,
-    parameters: &SecretSetParameters,
-) -> std::result::Result<SecretBundle, set_secret::Error> {
+    parameters: &models::SecretSetParameters,
+) -> std::result::Result<models::SecretBundle, set_secret::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/secrets/{}", operation_config.base_path(), secret_name);
     let mut url = url::Url::parse(url_str).map_err(set_secret::Error::ParseUrlError)?;
@@ -1295,13 +1456,13 @@ pub async fn set_secret(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SecretBundle =
+            let rsp_value: models::SecretBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| set_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| set_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(set_secret::Error::DefaultResponse {
                 status_code,
@@ -1311,7 +1472,7 @@ pub async fn set_secret(
     }
 }
 pub mod set_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1336,7 +1497,7 @@ pub mod set_secret {
 pub async fn delete_secret(
     operation_config: &crate::OperationConfig,
     secret_name: &str,
-) -> std::result::Result<DeletedSecretBundle, delete_secret::Error> {
+) -> std::result::Result<models::DeletedSecretBundle, delete_secret::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/secrets/{}", operation_config.base_path(), secret_name);
     let mut url = url::Url::parse(url_str).map_err(delete_secret::Error::ParseUrlError)?;
@@ -1360,13 +1521,13 @@ pub async fn delete_secret(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedSecretBundle =
+            let rsp_value: models::DeletedSecretBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_secret::Error::DefaultResponse {
                 status_code,
@@ -1376,7 +1537,7 @@ pub async fn delete_secret(
     }
 }
 pub mod delete_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1402,7 +1563,7 @@ pub async fn get_secret(
     operation_config: &crate::OperationConfig,
     secret_name: &str,
     secret_version: &str,
-) -> std::result::Result<SecretBundle, get_secret::Error> {
+) -> std::result::Result<models::SecretBundle, get_secret::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/secrets/{}/{}", operation_config.base_path(), secret_name, secret_version);
     let mut url = url::Url::parse(url_str).map_err(get_secret::Error::ParseUrlError)?;
@@ -1426,13 +1587,13 @@ pub async fn get_secret(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SecretBundle =
+            let rsp_value: models::SecretBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| get_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_secret::Error::DefaultResponse {
                 status_code,
@@ -1442,7 +1603,7 @@ pub async fn get_secret(
     }
 }
 pub mod get_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1468,8 +1629,8 @@ pub async fn update_secret(
     operation_config: &crate::OperationConfig,
     secret_name: &str,
     secret_version: &str,
-    parameters: &SecretUpdateParameters,
-) -> std::result::Result<SecretBundle, update_secret::Error> {
+    parameters: &models::SecretUpdateParameters,
+) -> std::result::Result<models::SecretBundle, update_secret::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/secrets/{}/{}", operation_config.base_path(), secret_name, secret_version);
     let mut url = url::Url::parse(url_str).map_err(update_secret::Error::ParseUrlError)?;
@@ -1494,13 +1655,13 @@ pub async fn update_secret(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SecretBundle =
+            let rsp_value: models::SecretBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| update_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| update_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_secret::Error::DefaultResponse {
                 status_code,
@@ -1510,7 +1671,7 @@ pub async fn update_secret(
     }
 }
 pub mod update_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1535,7 +1696,7 @@ pub mod update_secret {
 pub async fn get_secrets(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
-) -> std::result::Result<SecretListResult, get_secrets::Error> {
+) -> std::result::Result<models::SecretListResult, get_secrets::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/secrets", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_secrets::Error::ParseUrlError)?;
@@ -1562,13 +1723,13 @@ pub async fn get_secrets(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SecretListResult =
+            let rsp_value: models::SecretListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_secrets::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_secrets::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_secrets::Error::DefaultResponse {
                 status_code,
@@ -1578,7 +1739,7 @@ pub async fn get_secrets(
     }
 }
 pub mod get_secrets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1604,7 +1765,7 @@ pub async fn get_secret_versions(
     operation_config: &crate::OperationConfig,
     secret_name: &str,
     maxresults: Option<i32>,
-) -> std::result::Result<SecretListResult, get_secret_versions::Error> {
+) -> std::result::Result<models::SecretListResult, get_secret_versions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/secrets/{}/versions", operation_config.base_path(), secret_name);
     let mut url = url::Url::parse(url_str).map_err(get_secret_versions::Error::ParseUrlError)?;
@@ -1631,13 +1792,13 @@ pub async fn get_secret_versions(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SecretListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::SecretListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_secret_versions::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_secret_versions::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_secret_versions::Error::DefaultResponse {
                 status_code,
@@ -1647,7 +1808,7 @@ pub async fn get_secret_versions(
     }
 }
 pub mod get_secret_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1672,7 +1833,7 @@ pub mod get_secret_versions {
 pub async fn get_deleted_secrets(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
-) -> std::result::Result<DeletedSecretListResult, get_deleted_secrets::Error> {
+) -> std::result::Result<models::DeletedSecretListResult, get_deleted_secrets::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedsecrets", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_secrets::Error::ParseUrlError)?;
@@ -1699,13 +1860,13 @@ pub async fn get_deleted_secrets(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedSecretListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedSecretListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_secrets::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_secrets::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_secrets::Error::DefaultResponse {
                 status_code,
@@ -1715,7 +1876,7 @@ pub async fn get_deleted_secrets(
     }
 }
 pub mod get_deleted_secrets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1740,7 +1901,7 @@ pub mod get_deleted_secrets {
 pub async fn get_deleted_secret(
     operation_config: &crate::OperationConfig,
     secret_name: &str,
-) -> std::result::Result<DeletedSecretBundle, get_deleted_secret::Error> {
+) -> std::result::Result<models::DeletedSecretBundle, get_deleted_secret::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedsecrets/{}", operation_config.base_path(), secret_name);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_secret::Error::ParseUrlError)?;
@@ -1764,13 +1925,13 @@ pub async fn get_deleted_secret(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedSecretBundle =
+            let rsp_value: models::DeletedSecretBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| get_deleted_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_deleted_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_secret::Error::DefaultResponse {
                 status_code,
@@ -1780,7 +1941,7 @@ pub async fn get_deleted_secret(
     }
 }
 pub mod get_deleted_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1830,7 +1991,7 @@ pub async fn purge_deleted_secret(
         http::StatusCode::NO_CONTENT => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| purge_deleted_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(purge_deleted_secret::Error::DefaultResponse {
                 status_code,
@@ -1840,7 +2001,7 @@ pub async fn purge_deleted_secret(
     }
 }
 pub mod purge_deleted_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1865,7 +2026,7 @@ pub mod purge_deleted_secret {
 pub async fn recover_deleted_secret(
     operation_config: &crate::OperationConfig,
     secret_name: &str,
-) -> std::result::Result<SecretBundle, recover_deleted_secret::Error> {
+) -> std::result::Result<models::SecretBundle, recover_deleted_secret::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedsecrets/{}/recover", operation_config.base_path(), secret_name);
     let mut url = url::Url::parse(url_str).map_err(recover_deleted_secret::Error::ParseUrlError)?;
@@ -1892,13 +2053,13 @@ pub async fn recover_deleted_secret(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SecretBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::SecretBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(recover_deleted_secret::Error::DefaultResponse {
                 status_code,
@@ -1908,7 +2069,7 @@ pub async fn recover_deleted_secret(
     }
 }
 pub mod recover_deleted_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1933,7 +2094,7 @@ pub mod recover_deleted_secret {
 pub async fn backup_secret(
     operation_config: &crate::OperationConfig,
     secret_name: &str,
-) -> std::result::Result<BackupSecretResult, backup_secret::Error> {
+) -> std::result::Result<models::BackupSecretResult, backup_secret::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/secrets/{}/backup", operation_config.base_path(), secret_name);
     let mut url = url::Url::parse(url_str).map_err(backup_secret::Error::ParseUrlError)?;
@@ -1958,13 +2119,13 @@ pub async fn backup_secret(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: BackupSecretResult =
+            let rsp_value: models::BackupSecretResult =
                 serde_json::from_slice(rsp_body).map_err(|source| backup_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| backup_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(backup_secret::Error::DefaultResponse {
                 status_code,
@@ -1974,7 +2135,7 @@ pub async fn backup_secret(
     }
 }
 pub mod backup_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1998,8 +2159,8 @@ pub mod backup_secret {
 }
 pub async fn restore_secret(
     operation_config: &crate::OperationConfig,
-    parameters: &SecretRestoreParameters,
-) -> std::result::Result<SecretBundle, restore_secret::Error> {
+    parameters: &models::SecretRestoreParameters,
+) -> std::result::Result<models::SecretBundle, restore_secret::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/secrets/restore", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(restore_secret::Error::ParseUrlError)?;
@@ -2024,13 +2185,13 @@ pub async fn restore_secret(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SecretBundle =
+            let rsp_value: models::SecretBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| restore_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| restore_secret::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(restore_secret::Error::DefaultResponse {
                 status_code,
@@ -2040,7 +2201,7 @@ pub async fn restore_secret(
     }
 }
 pub mod restore_secret {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2066,7 +2227,7 @@ pub async fn get_certificates(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
     include_pending: Option<bool>,
-) -> std::result::Result<CertificateListResult, get_certificates::Error> {
+) -> std::result::Result<models::CertificateListResult, get_certificates::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_certificates::Error::ParseUrlError)?;
@@ -2097,13 +2258,13 @@ pub async fn get_certificates(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateListResult =
+            let rsp_value: models::CertificateListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| get_certificates::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_certificates::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_certificates::Error::DefaultResponse {
                 status_code,
@@ -2113,7 +2274,7 @@ pub async fn get_certificates(
     }
 }
 pub mod get_certificates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2138,7 +2299,7 @@ pub mod get_certificates {
 pub async fn delete_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-) -> std::result::Result<DeletedCertificateBundle, delete_certificate::Error> {
+) -> std::result::Result<models::DeletedCertificateBundle, delete_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(delete_certificate::Error::ParseUrlError)?;
@@ -2162,13 +2323,13 @@ pub async fn delete_certificate(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedCertificateBundle =
+            let rsp_value: models::DeletedCertificateBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_certificate::Error::DefaultResponse {
                 status_code,
@@ -2178,7 +2339,7 @@ pub async fn delete_certificate(
     }
 }
 pub mod delete_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2202,7 +2363,7 @@ pub mod delete_certificate {
 }
 pub async fn get_certificate_contacts(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<Contacts, get_certificate_contacts::Error> {
+) -> std::result::Result<models::Contacts, get_certificate_contacts::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/contacts", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_certificate_contacts::Error::ParseUrlError)?;
@@ -2228,13 +2389,13 @@ pub async fn get_certificate_contacts(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Contacts = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Contacts = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_contacts::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_contacts::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_certificate_contacts::Error::DefaultResponse {
                 status_code,
@@ -2244,7 +2405,7 @@ pub async fn get_certificate_contacts(
     }
 }
 pub mod get_certificate_contacts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2268,8 +2429,8 @@ pub mod get_certificate_contacts {
 }
 pub async fn set_certificate_contacts(
     operation_config: &crate::OperationConfig,
-    contacts: &Contacts,
-) -> std::result::Result<Contacts, set_certificate_contacts::Error> {
+    contacts: &models::Contacts,
+) -> std::result::Result<models::Contacts, set_certificate_contacts::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/contacts", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(set_certificate_contacts::Error::ParseUrlError)?;
@@ -2296,13 +2457,13 @@ pub async fn set_certificate_contacts(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Contacts = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Contacts = serde_json::from_slice(rsp_body)
                 .map_err(|source| set_certificate_contacts::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| set_certificate_contacts::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(set_certificate_contacts::Error::DefaultResponse {
                 status_code,
@@ -2312,7 +2473,7 @@ pub async fn set_certificate_contacts(
     }
 }
 pub mod set_certificate_contacts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2336,7 +2497,7 @@ pub mod set_certificate_contacts {
 }
 pub async fn delete_certificate_contacts(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<Contacts, delete_certificate_contacts::Error> {
+) -> std::result::Result<models::Contacts, delete_certificate_contacts::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/contacts", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(delete_certificate_contacts::Error::ParseUrlError)?;
@@ -2362,13 +2523,13 @@ pub async fn delete_certificate_contacts(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: Contacts = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Contacts = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_certificate_contacts::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_certificate_contacts::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_certificate_contacts::Error::DefaultResponse {
                 status_code,
@@ -2378,7 +2539,7 @@ pub async fn delete_certificate_contacts(
     }
 }
 pub mod delete_certificate_contacts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2403,7 +2564,7 @@ pub mod delete_certificate_contacts {
 pub async fn get_certificate_issuers(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
-) -> std::result::Result<CertificateIssuerListResult, get_certificate_issuers::Error> {
+) -> std::result::Result<models::CertificateIssuerListResult, get_certificate_issuers::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/issuers", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_certificate_issuers::Error::ParseUrlError)?;
@@ -2432,13 +2593,13 @@ pub async fn get_certificate_issuers(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateIssuerListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificateIssuerListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_issuers::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_issuers::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_certificate_issuers::Error::DefaultResponse {
                 status_code,
@@ -2448,7 +2609,7 @@ pub async fn get_certificate_issuers(
     }
 }
 pub mod get_certificate_issuers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2473,7 +2634,7 @@ pub mod get_certificate_issuers {
 pub async fn get_certificate_issuer(
     operation_config: &crate::OperationConfig,
     issuer_name: &str,
-) -> std::result::Result<IssuerBundle, get_certificate_issuer::Error> {
+) -> std::result::Result<models::IssuerBundle, get_certificate_issuer::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/issuers/{}", operation_config.base_path(), issuer_name);
     let mut url = url::Url::parse(url_str).map_err(get_certificate_issuer::Error::ParseUrlError)?;
@@ -2499,13 +2660,13 @@ pub async fn get_certificate_issuer(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: IssuerBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::IssuerBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_issuer::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_issuer::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_certificate_issuer::Error::DefaultResponse {
                 status_code,
@@ -2515,7 +2676,7 @@ pub async fn get_certificate_issuer(
     }
 }
 pub mod get_certificate_issuer {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2540,8 +2701,8 @@ pub mod get_certificate_issuer {
 pub async fn set_certificate_issuer(
     operation_config: &crate::OperationConfig,
     issuer_name: &str,
-    parameter: &CertificateIssuerSetParameters,
-) -> std::result::Result<IssuerBundle, set_certificate_issuer::Error> {
+    parameter: &models::CertificateIssuerSetParameters,
+) -> std::result::Result<models::IssuerBundle, set_certificate_issuer::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/issuers/{}", operation_config.base_path(), issuer_name);
     let mut url = url::Url::parse(url_str).map_err(set_certificate_issuer::Error::ParseUrlError)?;
@@ -2568,13 +2729,13 @@ pub async fn set_certificate_issuer(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: IssuerBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::IssuerBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| set_certificate_issuer::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| set_certificate_issuer::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(set_certificate_issuer::Error::DefaultResponse {
                 status_code,
@@ -2584,7 +2745,7 @@ pub async fn set_certificate_issuer(
     }
 }
 pub mod set_certificate_issuer {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2609,8 +2770,8 @@ pub mod set_certificate_issuer {
 pub async fn update_certificate_issuer(
     operation_config: &crate::OperationConfig,
     issuer_name: &str,
-    parameter: &CertificateIssuerUpdateParameters,
-) -> std::result::Result<IssuerBundle, update_certificate_issuer::Error> {
+    parameter: &models::CertificateIssuerUpdateParameters,
+) -> std::result::Result<models::IssuerBundle, update_certificate_issuer::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/issuers/{}", operation_config.base_path(), issuer_name);
     let mut url = url::Url::parse(url_str).map_err(update_certificate_issuer::Error::ParseUrlError)?;
@@ -2637,13 +2798,13 @@ pub async fn update_certificate_issuer(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: IssuerBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::IssuerBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_certificate_issuer::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_certificate_issuer::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_certificate_issuer::Error::DefaultResponse {
                 status_code,
@@ -2653,7 +2814,7 @@ pub async fn update_certificate_issuer(
     }
 }
 pub mod update_certificate_issuer {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2678,7 +2839,7 @@ pub mod update_certificate_issuer {
 pub async fn delete_certificate_issuer(
     operation_config: &crate::OperationConfig,
     issuer_name: &str,
-) -> std::result::Result<IssuerBundle, delete_certificate_issuer::Error> {
+) -> std::result::Result<models::IssuerBundle, delete_certificate_issuer::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/issuers/{}", operation_config.base_path(), issuer_name);
     let mut url = url::Url::parse(url_str).map_err(delete_certificate_issuer::Error::ParseUrlError)?;
@@ -2704,13 +2865,13 @@ pub async fn delete_certificate_issuer(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: IssuerBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::IssuerBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_certificate_issuer::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_certificate_issuer::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_certificate_issuer::Error::DefaultResponse {
                 status_code,
@@ -2720,7 +2881,7 @@ pub async fn delete_certificate_issuer(
     }
 }
 pub mod delete_certificate_issuer {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2745,8 +2906,8 @@ pub mod delete_certificate_issuer {
 pub async fn create_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-    parameters: &CertificateCreateParameters,
-) -> std::result::Result<CertificateOperation, create_certificate::Error> {
+    parameters: &models::CertificateCreateParameters,
+) -> std::result::Result<models::CertificateOperation, create_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/create", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(create_certificate::Error::ParseUrlError)?;
@@ -2771,13 +2932,13 @@ pub async fn create_certificate(
     match rsp.status() {
         http::StatusCode::ACCEPTED => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateOperation =
+            let rsp_value: models::CertificateOperation =
                 serde_json::from_slice(rsp_body).map_err(|source| create_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| create_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(create_certificate::Error::DefaultResponse {
                 status_code,
@@ -2787,7 +2948,7 @@ pub async fn create_certificate(
     }
 }
 pub mod create_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2812,8 +2973,8 @@ pub mod create_certificate {
 pub async fn import_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-    parameters: &CertificateImportParameters,
-) -> std::result::Result<CertificateBundle, import_certificate::Error> {
+    parameters: &models::CertificateImportParameters,
+) -> std::result::Result<models::CertificateBundle, import_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/import", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(import_certificate::Error::ParseUrlError)?;
@@ -2838,13 +2999,13 @@ pub async fn import_certificate(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateBundle =
+            let rsp_value: models::CertificateBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| import_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| import_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(import_certificate::Error::DefaultResponse {
                 status_code,
@@ -2854,7 +3015,7 @@ pub async fn import_certificate(
     }
 }
 pub mod import_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2880,7 +3041,7 @@ pub async fn get_certificate_versions(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
     maxresults: Option<i32>,
-) -> std::result::Result<CertificateListResult, get_certificate_versions::Error> {
+) -> std::result::Result<models::CertificateListResult, get_certificate_versions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/versions", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(get_certificate_versions::Error::ParseUrlError)?;
@@ -2909,13 +3070,13 @@ pub async fn get_certificate_versions(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificateListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_versions::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_versions::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_certificate_versions::Error::DefaultResponse {
                 status_code,
@@ -2925,7 +3086,7 @@ pub async fn get_certificate_versions(
     }
 }
 pub mod get_certificate_versions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2950,7 +3111,7 @@ pub mod get_certificate_versions {
 pub async fn get_certificate_policy(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-) -> std::result::Result<CertificatePolicy, get_certificate_policy::Error> {
+) -> std::result::Result<models::CertificatePolicy, get_certificate_policy::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/policy", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(get_certificate_policy::Error::ParseUrlError)?;
@@ -2976,13 +3137,13 @@ pub async fn get_certificate_policy(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificatePolicy = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificatePolicy = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_policy::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_policy::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_certificate_policy::Error::DefaultResponse {
                 status_code,
@@ -2992,7 +3153,7 @@ pub async fn get_certificate_policy(
     }
 }
 pub mod get_certificate_policy {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3017,8 +3178,8 @@ pub mod get_certificate_policy {
 pub async fn update_certificate_policy(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-    certificate_policy: &CertificatePolicy,
-) -> std::result::Result<CertificatePolicy, update_certificate_policy::Error> {
+    certificate_policy: &models::CertificatePolicy,
+) -> std::result::Result<models::CertificatePolicy, update_certificate_policy::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/policy", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(update_certificate_policy::Error::ParseUrlError)?;
@@ -3045,13 +3206,13 @@ pub async fn update_certificate_policy(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificatePolicy = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificatePolicy = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_certificate_policy::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_certificate_policy::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_certificate_policy::Error::DefaultResponse {
                 status_code,
@@ -3061,7 +3222,7 @@ pub async fn update_certificate_policy(
     }
 }
 pub mod update_certificate_policy {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3087,7 +3248,7 @@ pub async fn get_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
     certificate_version: &str,
-) -> std::result::Result<CertificateBundle, get_certificate::Error> {
+) -> std::result::Result<models::CertificateBundle, get_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/certificates/{}/{}",
@@ -3116,13 +3277,13 @@ pub async fn get_certificate(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateBundle =
+            let rsp_value: models::CertificateBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| get_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_certificate::Error::DefaultResponse {
                 status_code,
@@ -3132,7 +3293,7 @@ pub async fn get_certificate(
     }
 }
 pub mod get_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3158,8 +3319,8 @@ pub async fn update_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
     certificate_version: &str,
-    parameters: &CertificateUpdateParameters,
-) -> std::result::Result<CertificateBundle, update_certificate::Error> {
+    parameters: &models::CertificateUpdateParameters,
+) -> std::result::Result<models::CertificateBundle, update_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/certificates/{}/{}",
@@ -3189,13 +3350,13 @@ pub async fn update_certificate(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateBundle =
+            let rsp_value: models::CertificateBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| update_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| update_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_certificate::Error::DefaultResponse {
                 status_code,
@@ -3205,7 +3366,7 @@ pub async fn update_certificate(
     }
 }
 pub mod update_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3230,7 +3391,7 @@ pub mod update_certificate {
 pub async fn get_certificate_operation(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-) -> std::result::Result<CertificateOperation, get_certificate_operation::Error> {
+) -> std::result::Result<models::CertificateOperation, get_certificate_operation::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/pending", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(get_certificate_operation::Error::ParseUrlError)?;
@@ -3256,13 +3417,13 @@ pub async fn get_certificate_operation(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateOperation = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificateOperation = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_operation::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_certificate_operation::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_certificate_operation::Error::DefaultResponse {
                 status_code,
@@ -3272,7 +3433,7 @@ pub async fn get_certificate_operation(
     }
 }
 pub mod get_certificate_operation {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3297,8 +3458,8 @@ pub mod get_certificate_operation {
 pub async fn update_certificate_operation(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-    certificate_operation: &CertificateOperationUpdateParameter,
-) -> std::result::Result<CertificateOperation, update_certificate_operation::Error> {
+    certificate_operation: &models::CertificateOperationUpdateParameter,
+) -> std::result::Result<models::CertificateOperation, update_certificate_operation::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/pending", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(update_certificate_operation::Error::ParseUrlError)?;
@@ -3325,13 +3486,13 @@ pub async fn update_certificate_operation(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateOperation = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificateOperation = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_certificate_operation::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_certificate_operation::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_certificate_operation::Error::DefaultResponse {
                 status_code,
@@ -3341,7 +3502,7 @@ pub async fn update_certificate_operation(
     }
 }
 pub mod update_certificate_operation {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3366,7 +3527,7 @@ pub mod update_certificate_operation {
 pub async fn delete_certificate_operation(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-) -> std::result::Result<CertificateOperation, delete_certificate_operation::Error> {
+) -> std::result::Result<models::CertificateOperation, delete_certificate_operation::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/pending", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(delete_certificate_operation::Error::ParseUrlError)?;
@@ -3392,13 +3553,13 @@ pub async fn delete_certificate_operation(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateOperation = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificateOperation = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_certificate_operation::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_certificate_operation::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_certificate_operation::Error::DefaultResponse {
                 status_code,
@@ -3408,7 +3569,7 @@ pub async fn delete_certificate_operation(
     }
 }
 pub mod delete_certificate_operation {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3433,8 +3594,8 @@ pub mod delete_certificate_operation {
 pub async fn merge_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-    parameters: &CertificateMergeParameters,
-) -> std::result::Result<CertificateBundle, merge_certificate::Error> {
+    parameters: &models::CertificateMergeParameters,
+) -> std::result::Result<models::CertificateBundle, merge_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/pending/merge", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(merge_certificate::Error::ParseUrlError)?;
@@ -3459,13 +3620,13 @@ pub async fn merge_certificate(
     match rsp.status() {
         http::StatusCode::CREATED => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateBundle =
+            let rsp_value: models::CertificateBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| merge_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| merge_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(merge_certificate::Error::DefaultResponse {
                 status_code,
@@ -3475,7 +3636,7 @@ pub async fn merge_certificate(
     }
 }
 pub mod merge_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3500,7 +3661,7 @@ pub mod merge_certificate {
 pub async fn backup_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-) -> std::result::Result<BackupCertificateResult, backup_certificate::Error> {
+) -> std::result::Result<models::BackupCertificateResult, backup_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/{}/backup", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(backup_certificate::Error::ParseUrlError)?;
@@ -3525,13 +3686,13 @@ pub async fn backup_certificate(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: BackupCertificateResult =
+            let rsp_value: models::BackupCertificateResult =
                 serde_json::from_slice(rsp_body).map_err(|source| backup_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| backup_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(backup_certificate::Error::DefaultResponse {
                 status_code,
@@ -3541,7 +3702,7 @@ pub async fn backup_certificate(
     }
 }
 pub mod backup_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3565,8 +3726,8 @@ pub mod backup_certificate {
 }
 pub async fn restore_certificate(
     operation_config: &crate::OperationConfig,
-    parameters: &CertificateRestoreParameters,
-) -> std::result::Result<CertificateBundle, restore_certificate::Error> {
+    parameters: &models::CertificateRestoreParameters,
+) -> std::result::Result<models::CertificateBundle, restore_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/certificates/restore", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(restore_certificate::Error::ParseUrlError)?;
@@ -3591,13 +3752,13 @@ pub async fn restore_certificate(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificateBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| restore_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| restore_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(restore_certificate::Error::DefaultResponse {
                 status_code,
@@ -3607,7 +3768,7 @@ pub async fn restore_certificate(
     }
 }
 pub mod restore_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3633,7 +3794,7 @@ pub async fn get_deleted_certificates(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
     include_pending: Option<bool>,
-) -> std::result::Result<DeletedCertificateListResult, get_deleted_certificates::Error> {
+) -> std::result::Result<models::DeletedCertificateListResult, get_deleted_certificates::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedcertificates", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_certificates::Error::ParseUrlError)?;
@@ -3666,13 +3827,13 @@ pub async fn get_deleted_certificates(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedCertificateListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedCertificateListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_certificates::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_certificates::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_certificates::Error::DefaultResponse {
                 status_code,
@@ -3682,7 +3843,7 @@ pub async fn get_deleted_certificates(
     }
 }
 pub mod get_deleted_certificates {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3707,7 +3868,7 @@ pub mod get_deleted_certificates {
 pub async fn get_deleted_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-) -> std::result::Result<DeletedCertificateBundle, get_deleted_certificate::Error> {
+) -> std::result::Result<models::DeletedCertificateBundle, get_deleted_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedcertificates/{}", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_certificate::Error::ParseUrlError)?;
@@ -3733,13 +3894,13 @@ pub async fn get_deleted_certificate(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedCertificateBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedCertificateBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_certificate::Error::DefaultResponse {
                 status_code,
@@ -3749,7 +3910,7 @@ pub async fn get_deleted_certificate(
     }
 }
 pub mod get_deleted_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3801,7 +3962,7 @@ pub async fn purge_deleted_certificate(
         http::StatusCode::NO_CONTENT => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| purge_deleted_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(purge_deleted_certificate::Error::DefaultResponse {
                 status_code,
@@ -3811,7 +3972,7 @@ pub async fn purge_deleted_certificate(
     }
 }
 pub mod purge_deleted_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3836,7 +3997,7 @@ pub mod purge_deleted_certificate {
 pub async fn recover_deleted_certificate(
     operation_config: &crate::OperationConfig,
     certificate_name: &str,
-) -> std::result::Result<CertificateBundle, recover_deleted_certificate::Error> {
+) -> std::result::Result<models::CertificateBundle, recover_deleted_certificate::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedcertificates/{}/recover", operation_config.base_path(), certificate_name);
     let mut url = url::Url::parse(url_str).map_err(recover_deleted_certificate::Error::ParseUrlError)?;
@@ -3863,13 +4024,13 @@ pub async fn recover_deleted_certificate(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CertificateBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CertificateBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(recover_deleted_certificate::Error::DefaultResponse {
                 status_code,
@@ -3879,7 +4040,7 @@ pub async fn recover_deleted_certificate(
     }
 }
 pub mod recover_deleted_certificate {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3904,7 +4065,7 @@ pub mod recover_deleted_certificate {
 pub async fn get_storage_accounts(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
-) -> std::result::Result<StorageListResult, get_storage_accounts::Error> {
+) -> std::result::Result<models::StorageListResult, get_storage_accounts::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_storage_accounts::Error::ParseUrlError)?;
@@ -3931,13 +4092,13 @@ pub async fn get_storage_accounts(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StorageListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::StorageListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_storage_accounts::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_storage_accounts::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_storage_accounts::Error::DefaultResponse {
                 status_code,
@@ -3947,7 +4108,7 @@ pub async fn get_storage_accounts(
     }
 }
 pub mod get_storage_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3972,7 +4133,7 @@ pub mod get_storage_accounts {
 pub async fn get_deleted_storage_accounts(
     operation_config: &crate::OperationConfig,
     maxresults: Option<i32>,
-) -> std::result::Result<DeletedStorageListResult, get_deleted_storage_accounts::Error> {
+) -> std::result::Result<models::DeletedStorageListResult, get_deleted_storage_accounts::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedstorage", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_storage_accounts::Error::ParseUrlError)?;
@@ -4001,13 +4162,13 @@ pub async fn get_deleted_storage_accounts(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedStorageListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedStorageListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_storage_accounts::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_storage_accounts::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_storage_accounts::Error::DefaultResponse {
                 status_code,
@@ -4017,7 +4178,7 @@ pub async fn get_deleted_storage_accounts(
     }
 }
 pub mod get_deleted_storage_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4042,7 +4203,7 @@ pub mod get_deleted_storage_accounts {
 pub async fn get_deleted_storage_account(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
-) -> std::result::Result<DeletedStorageBundle, get_deleted_storage_account::Error> {
+) -> std::result::Result<models::DeletedStorageBundle, get_deleted_storage_account::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedstorage/{}", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_storage_account::Error::ParseUrlError)?;
@@ -4068,13 +4229,13 @@ pub async fn get_deleted_storage_account(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedStorageBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedStorageBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4084,7 +4245,7 @@ pub async fn get_deleted_storage_account(
     }
 }
 pub mod get_deleted_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4136,7 +4297,7 @@ pub async fn purge_deleted_storage_account(
         http::StatusCode::NO_CONTENT => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| purge_deleted_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(purge_deleted_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4146,7 +4307,7 @@ pub async fn purge_deleted_storage_account(
     }
 }
 pub mod purge_deleted_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4171,7 +4332,7 @@ pub mod purge_deleted_storage_account {
 pub async fn recover_deleted_storage_account(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
-) -> std::result::Result<StorageBundle, recover_deleted_storage_account::Error> {
+) -> std::result::Result<models::StorageBundle, recover_deleted_storage_account::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedstorage/{}/recover", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(recover_deleted_storage_account::Error::ParseUrlError)?;
@@ -4198,13 +4359,13 @@ pub async fn recover_deleted_storage_account(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StorageBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::StorageBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(recover_deleted_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4214,7 +4375,7 @@ pub async fn recover_deleted_storage_account(
     }
 }
 pub mod recover_deleted_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4239,7 +4400,7 @@ pub mod recover_deleted_storage_account {
 pub async fn backup_storage_account(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
-) -> std::result::Result<BackupStorageResult, backup_storage_account::Error> {
+) -> std::result::Result<models::BackupStorageResult, backup_storage_account::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage/{}/backup", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(backup_storage_account::Error::ParseUrlError)?;
@@ -4266,13 +4427,13 @@ pub async fn backup_storage_account(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: BackupStorageResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::BackupStorageResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| backup_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| backup_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(backup_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4282,7 +4443,7 @@ pub async fn backup_storage_account(
     }
 }
 pub mod backup_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4306,8 +4467,8 @@ pub mod backup_storage_account {
 }
 pub async fn restore_storage_account(
     operation_config: &crate::OperationConfig,
-    parameters: &StorageRestoreParameters,
-) -> std::result::Result<StorageBundle, restore_storage_account::Error> {
+    parameters: &models::StorageRestoreParameters,
+) -> std::result::Result<models::StorageBundle, restore_storage_account::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage/restore", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(restore_storage_account::Error::ParseUrlError)?;
@@ -4334,13 +4495,13 @@ pub async fn restore_storage_account(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StorageBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::StorageBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| restore_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| restore_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(restore_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4350,7 +4511,7 @@ pub async fn restore_storage_account(
     }
 }
 pub mod restore_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4375,7 +4536,7 @@ pub mod restore_storage_account {
 pub async fn get_storage_account(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
-) -> std::result::Result<StorageBundle, get_storage_account::Error> {
+) -> std::result::Result<models::StorageBundle, get_storage_account::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage/{}", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(get_storage_account::Error::ParseUrlError)?;
@@ -4399,13 +4560,13 @@ pub async fn get_storage_account(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StorageBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::StorageBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4415,7 +4576,7 @@ pub async fn get_storage_account(
     }
 }
 pub mod get_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4440,8 +4601,8 @@ pub mod get_storage_account {
 pub async fn set_storage_account(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
-    parameters: &StorageAccountCreateParameters,
-) -> std::result::Result<StorageBundle, set_storage_account::Error> {
+    parameters: &models::StorageAccountCreateParameters,
+) -> std::result::Result<models::StorageBundle, set_storage_account::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage/{}", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(set_storage_account::Error::ParseUrlError)?;
@@ -4466,13 +4627,13 @@ pub async fn set_storage_account(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StorageBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::StorageBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| set_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| set_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(set_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4482,7 +4643,7 @@ pub async fn set_storage_account(
     }
 }
 pub mod set_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4507,8 +4668,8 @@ pub mod set_storage_account {
 pub async fn update_storage_account(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
-    parameters: &StorageAccountUpdateParameters,
-) -> std::result::Result<StorageBundle, update_storage_account::Error> {
+    parameters: &models::StorageAccountUpdateParameters,
+) -> std::result::Result<models::StorageBundle, update_storage_account::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage/{}", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(update_storage_account::Error::ParseUrlError)?;
@@ -4535,13 +4696,13 @@ pub async fn update_storage_account(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StorageBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::StorageBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4551,7 +4712,7 @@ pub async fn update_storage_account(
     }
 }
 pub mod update_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4576,7 +4737,7 @@ pub mod update_storage_account {
 pub async fn delete_storage_account(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
-) -> std::result::Result<DeletedStorageBundle, delete_storage_account::Error> {
+) -> std::result::Result<models::DeletedStorageBundle, delete_storage_account::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage/{}", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(delete_storage_account::Error::ParseUrlError)?;
@@ -4602,13 +4763,13 @@ pub async fn delete_storage_account(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedStorageBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedStorageBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_storage_account::Error::DefaultResponse {
                 status_code,
@@ -4618,7 +4779,7 @@ pub async fn delete_storage_account(
     }
 }
 pub mod delete_storage_account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4643,8 +4804,8 @@ pub mod delete_storage_account {
 pub async fn regenerate_storage_account_key(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
-    parameters: &StorageAccountRegenerteKeyParameters,
-) -> std::result::Result<StorageBundle, regenerate_storage_account_key::Error> {
+    parameters: &models::StorageAccountRegenerteKeyParameters,
+) -> std::result::Result<models::StorageBundle, regenerate_storage_account_key::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage/{}/regeneratekey", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(regenerate_storage_account_key::Error::ParseUrlError)?;
@@ -4671,13 +4832,13 @@ pub async fn regenerate_storage_account_key(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: StorageBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::StorageBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| regenerate_storage_account_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| regenerate_storage_account_key::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(regenerate_storage_account_key::Error::DefaultResponse {
                 status_code,
@@ -4687,7 +4848,7 @@ pub async fn regenerate_storage_account_key(
     }
 }
 pub mod regenerate_storage_account_key {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4713,7 +4874,7 @@ pub async fn get_sas_definitions(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
     maxresults: Option<i32>,
-) -> std::result::Result<SasDefinitionListResult, get_sas_definitions::Error> {
+) -> std::result::Result<models::SasDefinitionListResult, get_sas_definitions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/storage/{}/sas", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(get_sas_definitions::Error::ParseUrlError)?;
@@ -4740,13 +4901,13 @@ pub async fn get_sas_definitions(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SasDefinitionListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::SasDefinitionListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_sas_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_sas_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_sas_definitions::Error::DefaultResponse {
                 status_code,
@@ -4756,7 +4917,7 @@ pub async fn get_sas_definitions(
     }
 }
 pub mod get_sas_definitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4782,7 +4943,7 @@ pub async fn get_deleted_sas_definitions(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
     maxresults: Option<i32>,
-) -> std::result::Result<DeletedSasDefinitionListResult, get_deleted_sas_definitions::Error> {
+) -> std::result::Result<models::DeletedSasDefinitionListResult, get_deleted_sas_definitions::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/deletedstorage/{}/sas", operation_config.base_path(), storage_account_name);
     let mut url = url::Url::parse(url_str).map_err(get_deleted_sas_definitions::Error::ParseUrlError)?;
@@ -4811,13 +4972,13 @@ pub async fn get_deleted_sas_definitions(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedSasDefinitionListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedSasDefinitionListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_sas_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_sas_definitions::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_sas_definitions::Error::DefaultResponse {
                 status_code,
@@ -4827,7 +4988,7 @@ pub async fn get_deleted_sas_definitions(
     }
 }
 pub mod get_deleted_sas_definitions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4853,7 +5014,7 @@ pub async fn get_deleted_sas_definition(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
     sas_definition_name: &str,
-) -> std::result::Result<DeletedSasDefinitionBundle, get_deleted_sas_definition::Error> {
+) -> std::result::Result<models::DeletedSasDefinitionBundle, get_deleted_sas_definition::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/deletedstorage/{}/sas/{}",
@@ -4884,13 +5045,13 @@ pub async fn get_deleted_sas_definition(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedSasDefinitionBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedSasDefinitionBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_deleted_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_deleted_sas_definition::Error::DefaultResponse {
                 status_code,
@@ -4900,7 +5061,7 @@ pub async fn get_deleted_sas_definition(
     }
 }
 pub mod get_deleted_sas_definition {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4926,7 +5087,7 @@ pub async fn recover_deleted_sas_definition(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
     sas_definition_name: &str,
-) -> std::result::Result<SasDefinitionBundle, recover_deleted_sas_definition::Error> {
+) -> std::result::Result<models::SasDefinitionBundle, recover_deleted_sas_definition::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/deletedstorage/{}/sas/{}/recover",
@@ -4958,13 +5119,13 @@ pub async fn recover_deleted_sas_definition(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SasDefinitionBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::SasDefinitionBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| recover_deleted_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(recover_deleted_sas_definition::Error::DefaultResponse {
                 status_code,
@@ -4974,7 +5135,7 @@ pub async fn recover_deleted_sas_definition(
     }
 }
 pub mod recover_deleted_sas_definition {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5000,7 +5161,7 @@ pub async fn get_sas_definition(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
     sas_definition_name: &str,
-) -> std::result::Result<SasDefinitionBundle, get_sas_definition::Error> {
+) -> std::result::Result<models::SasDefinitionBundle, get_sas_definition::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/storage/{}/sas/{}",
@@ -5029,13 +5190,13 @@ pub async fn get_sas_definition(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SasDefinitionBundle =
+            let rsp_value: models::SasDefinitionBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| get_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| get_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_sas_definition::Error::DefaultResponse {
                 status_code,
@@ -5045,7 +5206,7 @@ pub async fn get_sas_definition(
     }
 }
 pub mod get_sas_definition {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5071,8 +5232,8 @@ pub async fn set_sas_definition(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
     sas_definition_name: &str,
-    parameters: &SasDefinitionCreateParameters,
-) -> std::result::Result<SasDefinitionBundle, set_sas_definition::Error> {
+    parameters: &models::SasDefinitionCreateParameters,
+) -> std::result::Result<models::SasDefinitionBundle, set_sas_definition::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/storage/{}/sas/{}",
@@ -5102,13 +5263,13 @@ pub async fn set_sas_definition(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SasDefinitionBundle =
+            let rsp_value: models::SasDefinitionBundle =
                 serde_json::from_slice(rsp_body).map_err(|source| set_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError =
+            let rsp_value: models::KeyVaultError =
                 serde_json::from_slice(rsp_body).map_err(|source| set_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(set_sas_definition::Error::DefaultResponse {
                 status_code,
@@ -5118,7 +5279,7 @@ pub async fn set_sas_definition(
     }
 }
 pub mod set_sas_definition {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5144,8 +5305,8 @@ pub async fn update_sas_definition(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
     sas_definition_name: &str,
-    parameters: &SasDefinitionUpdateParameters,
-) -> std::result::Result<SasDefinitionBundle, update_sas_definition::Error> {
+    parameters: &models::SasDefinitionUpdateParameters,
+) -> std::result::Result<models::SasDefinitionBundle, update_sas_definition::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/storage/{}/sas/{}",
@@ -5177,13 +5338,13 @@ pub async fn update_sas_definition(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: SasDefinitionBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::SasDefinitionBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| update_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(update_sas_definition::Error::DefaultResponse {
                 status_code,
@@ -5193,7 +5354,7 @@ pub async fn update_sas_definition(
     }
 }
 pub mod update_sas_definition {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5219,7 +5380,7 @@ pub async fn delete_sas_definition(
     operation_config: &crate::OperationConfig,
     storage_account_name: &str,
     sas_definition_name: &str,
-) -> std::result::Result<DeletedSasDefinitionBundle, delete_sas_definition::Error> {
+) -> std::result::Result<models::DeletedSasDefinitionBundle, delete_sas_definition::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/storage/{}/sas/{}",
@@ -5250,13 +5411,13 @@ pub async fn delete_sas_definition(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: DeletedSasDefinitionBundle = serde_json::from_slice(rsp_body)
+            let rsp_value: models::DeletedSasDefinitionBundle = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: KeyVaultError = serde_json::from_slice(rsp_body)
+            let rsp_value: models::KeyVaultError = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_sas_definition::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_sas_definition::Error::DefaultResponse {
                 status_code,
@@ -5266,7 +5427,7 @@ pub async fn delete_sas_definition(
     }
 }
 pub mod delete_sas_definition {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

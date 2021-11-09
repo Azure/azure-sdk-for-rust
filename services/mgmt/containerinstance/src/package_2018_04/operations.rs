@@ -2,13 +2,38 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ContainerGroups_List(#[from] container_groups::list::Error),
+    #[error(transparent)]
+    ContainerGroups_ListByResourceGroup(#[from] container_groups::list_by_resource_group::Error),
+    #[error(transparent)]
+    ContainerGroups_Get(#[from] container_groups::get::Error),
+    #[error(transparent)]
+    ContainerGroups_CreateOrUpdate(#[from] container_groups::create_or_update::Error),
+    #[error(transparent)]
+    ContainerGroups_Update(#[from] container_groups::update::Error),
+    #[error(transparent)]
+    ContainerGroups_Delete(#[from] container_groups::delete::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    ContainerGroupUsage_List(#[from] container_group_usage::list::Error),
+    #[error(transparent)]
+    ContainerLogs_List(#[from] container_logs::list::Error),
+    #[error(transparent)]
+    StartContainer_LaunchExec(#[from] start_container::launch_exec::Error),
+}
 pub mod container_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<ContainerGroupListResult, list::Error> {
+    ) -> std::result::Result<models::ContainerGroupListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerInstance/containerGroups",
@@ -33,7 +58,7 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroupListResult =
+                let rsp_value: models::ContainerGroupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -47,7 +72,7 @@ pub mod container_groups {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -70,7 +95,7 @@ pub mod container_groups {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ContainerGroupListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ContainerGroupListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups",
@@ -101,7 +126,7 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroupListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerGroupListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -115,7 +140,7 @@ pub mod container_groups {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -139,7 +164,7 @@ pub mod container_groups {
         subscription_id: &str,
         resource_group_name: &str,
         container_group_name: &str,
-    ) -> std::result::Result<ContainerGroup, get::Error> {
+    ) -> std::result::Result<models::ContainerGroup, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}",
@@ -166,7 +191,7 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup =
+                let rsp_value: models::ContainerGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -180,7 +205,7 @@ pub mod container_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -204,7 +229,7 @@ pub mod container_groups {
         subscription_id: &str,
         resource_group_name: &str,
         container_group_name: &str,
-        container_group: &ContainerGroup,
+        container_group: &models::ContainerGroup,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -236,13 +261,13 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerGroup = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -256,11 +281,11 @@ pub mod container_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ContainerGroup),
-            Created201(ContainerGroup),
+            Ok200(models::ContainerGroup),
+            Created201(models::ContainerGroup),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -285,8 +310,8 @@ pub mod container_groups {
         subscription_id: &str,
         resource_group_name: &str,
         container_group_name: &str,
-        resource: &Resource,
-    ) -> std::result::Result<ContainerGroup, update::Error> {
+        resource: &models::Resource,
+    ) -> std::result::Result<models::ContainerGroup, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}",
@@ -314,7 +339,7 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup =
+                let rsp_value: models::ContainerGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -328,7 +353,7 @@ pub mod container_groups {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -379,7 +404,7 @@ pub mod container_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerGroup =
+                let rsp_value: models::ContainerGroup =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -394,10 +419,10 @@ pub mod container_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ContainerGroup),
+            Ok200(models::ContainerGroup),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -420,8 +445,8 @@ pub mod container_groups {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.ContainerInstance/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -442,7 +467,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -456,7 +481,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -477,12 +502,12 @@ pub mod operations {
     }
 }
 pub mod container_group_usage {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-    ) -> std::result::Result<UsageListResult, list::Error> {
+    ) -> std::result::Result<models::UsageListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.ContainerInstance/locations/{}/usages",
@@ -508,7 +533,7 @@ pub mod container_group_usage {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UsageListResult =
+                let rsp_value: models::UsageListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -522,7 +547,7 @@ pub mod container_group_usage {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -543,7 +568,7 @@ pub mod container_group_usage {
     }
 }
 pub mod container_logs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -551,7 +576,7 @@ pub mod container_logs {
         container_group_name: &str,
         container_name: &str,
         tail: Option<i64>,
-    ) -> std::result::Result<Logs, list::Error> {
+    ) -> std::result::Result<models::Logs, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}/containers/{}/logs",
@@ -582,7 +607,7 @@ pub mod container_logs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Logs =
+                let rsp_value: models::Logs =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -596,7 +621,7 @@ pub mod container_logs {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -617,15 +642,15 @@ pub mod container_logs {
     }
 }
 pub mod start_container {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn launch_exec(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         container_group_name: &str,
         container_name: &str,
-        container_exec_request: &ContainerExecRequest,
-    ) -> std::result::Result<ContainerExecResponse, launch_exec::Error> {
+        container_exec_request: &models::ContainerExecRequest,
+    ) -> std::result::Result<models::ContainerExecResponse, launch_exec::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerInstance/containerGroups/{}/containers/{}/exec",
@@ -657,7 +682,7 @@ pub mod start_container {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerExecResponse =
+                let rsp_value: models::ContainerExecResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| launch_exec::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -671,7 +696,7 @@ pub mod start_container {
         }
     }
     pub mod launch_exec {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

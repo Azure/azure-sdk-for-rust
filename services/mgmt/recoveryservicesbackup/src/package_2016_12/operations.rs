@@ -2,9 +2,64 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    BackupEngines_List(#[from] backup_engines::list::Error),
+    #[error(transparent)]
+    BackupEngines_Get(#[from] backup_engines::get::Error),
+    #[error(transparent)]
+    ProtectionContainerRefreshOperationResults_Get(#[from] protection_container_refresh_operation_results::get::Error),
+    #[error(transparent)]
+    ProtectableContainers_List(#[from] protectable_containers::list::Error),
+    #[error(transparent)]
+    ProtectionContainers_Get(#[from] protection_containers::get::Error),
+    #[error(transparent)]
+    ProtectionContainers_Register(#[from] protection_containers::register::Error),
+    #[error(transparent)]
+    ProtectionContainers_Unregister(#[from] protection_containers::unregister::Error),
+    #[error(transparent)]
+    ProtectionContainers_Inquire(#[from] protection_containers::inquire::Error),
+    #[error(transparent)]
+    BackupWorkloadItems_List(#[from] backup_workload_items::list::Error),
+    #[error(transparent)]
+    ProtectionContainerOperationResults_Get(#[from] protection_container_operation_results::get::Error),
+    #[error(transparent)]
+    Backups_Trigger(#[from] backups::trigger::Error),
+    #[error(transparent)]
+    ProtectedItemOperationStatuses_Get(#[from] protected_item_operation_statuses::get::Error),
+    #[error(transparent)]
+    ItemLevelRecoveryConnections_Provision(#[from] item_level_recovery_connections::provision::Error),
+    #[error(transparent)]
+    ItemLevelRecoveryConnections_Revoke(#[from] item_level_recovery_connections::revoke::Error),
+    #[error(transparent)]
+    ProtectionContainers_Refresh(#[from] protection_containers::refresh::Error),
+    #[error(transparent)]
+    BackupOperationResults_Get(#[from] backup_operation_results::get::Error),
+    #[error(transparent)]
+    BackupOperationStatuses_Get(#[from] backup_operation_statuses::get::Error),
+    #[error(transparent)]
+    ProtectionPolicies_Delete(#[from] protection_policies::delete::Error),
+    #[error(transparent)]
+    ProtectionPolicyOperationStatuses_Get(#[from] protection_policy_operation_statuses::get::Error),
+    #[error(transparent)]
+    BackupProtectableItems_List(#[from] backup_protectable_items::list::Error),
+    #[error(transparent)]
+    BackupProtectionContainers_List(#[from] backup_protection_containers::list::Error),
+    #[error(transparent)]
+    SecurityPiNs_Get(#[from] security_pi_ns::get::Error),
+    #[error(transparent)]
+    BackupResourceStorageConfigs_Get(#[from] backup_resource_storage_configs::get::Error),
+    #[error(transparent)]
+    BackupResourceStorageConfigs_Update(#[from] backup_resource_storage_configs::update::Error),
+    #[error(transparent)]
+    BackupResourceStorageConfigs_Patch(#[from] backup_resource_storage_configs::patch::Error),
+}
 pub mod backup_engines {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -12,7 +67,7 @@ pub mod backup_engines {
         subscription_id: &str,
         filter: Option<&str>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<BackupEngineBaseResourceList, list::Error> {
+    ) -> std::result::Result<models::BackupEngineBaseResourceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupEngines",
@@ -45,7 +100,7 @@ pub mod backup_engines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupEngineBaseResourceList =
+                let rsp_value: models::BackupEngineBaseResourceList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -59,7 +114,7 @@ pub mod backup_engines {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -86,7 +141,7 @@ pub mod backup_engines {
         backup_engine_name: &str,
         filter: Option<&str>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<BackupEngineBaseResource, get::Error> {
+    ) -> std::result::Result<models::BackupEngineBaseResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupEngines/{}",
@@ -120,7 +175,7 @@ pub mod backup_engines {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupEngineBaseResource =
+                let rsp_value: models::BackupEngineBaseResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -134,7 +189,7 @@ pub mod backup_engines {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -155,7 +210,7 @@ pub mod backup_engines {
     }
 }
 pub mod protection_container_refresh_operation_results {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -202,7 +257,7 @@ pub mod protection_container_refresh_operation_results {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -228,7 +283,7 @@ pub mod protection_container_refresh_operation_results {
     }
 }
 pub mod protectable_containers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -236,7 +291,7 @@ pub mod protectable_containers {
         subscription_id: &str,
         fabric_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<ProtectableContainerResourceList, list::Error> {
+    ) -> std::result::Result<models::ProtectableContainerResourceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/protectableContainers",
@@ -267,7 +322,7 @@ pub mod protectable_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProtectableContainerResourceList =
+                let rsp_value: models::ProtectableContainerResourceList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -281,7 +336,7 @@ pub mod protectable_containers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -302,7 +357,7 @@ pub mod protectable_containers {
     }
 }
 pub mod protection_containers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -310,7 +365,7 @@ pub mod protection_containers {
         subscription_id: &str,
         fabric_name: &str,
         container_name: &str,
-    ) -> std::result::Result<ProtectionContainerResource, get::Error> {
+    ) -> std::result::Result<models::ProtectionContainerResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/protectionContainers/{}",
@@ -339,7 +394,7 @@ pub mod protection_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProtectionContainerResource =
+                let rsp_value: models::ProtectionContainerResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -353,7 +408,7 @@ pub mod protection_containers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -379,7 +434,7 @@ pub mod protection_containers {
         subscription_id: &str,
         fabric_name: &str,
         container_name: &str,
-        parameters: &ProtectionContainerResource,
+        parameters: &models::ProtectionContainerResource,
     ) -> std::result::Result<register::Response, register::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -413,7 +468,7 @@ pub mod protection_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProtectionContainerResource =
+                let rsp_value: models::ProtectionContainerResource =
                     serde_json::from_slice(rsp_body).map_err(|source| register::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(register::Response::Ok200(rsp_value))
             }
@@ -428,10 +483,10 @@ pub mod protection_containers {
         }
     }
     pub mod register {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ProtectionContainerResource),
+            Ok200(models::ProtectionContainerResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -501,7 +556,7 @@ pub mod protection_containers {
         }
     }
     pub mod unregister {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -570,7 +625,7 @@ pub mod protection_containers {
         }
     }
     pub mod inquire {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -640,7 +695,7 @@ pub mod protection_containers {
         }
     }
     pub mod refresh {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -661,7 +716,7 @@ pub mod protection_containers {
     }
 }
 pub mod backup_workload_items {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -671,7 +726,7 @@ pub mod backup_workload_items {
         container_name: &str,
         filter: Option<&str>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<WorkloadItemResourceList, list::Error> {
+    ) -> std::result::Result<models::WorkloadItemResourceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/protectionContainers/{}/items" , operation_config . base_path () , subscription_id , resource_group_name , vault_name , fabric_name , container_name) ;
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -698,7 +753,7 @@ pub mod backup_workload_items {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadItemResourceList =
+                let rsp_value: models::WorkloadItemResourceList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -712,7 +767,7 @@ pub mod backup_workload_items {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -733,7 +788,7 @@ pub mod backup_workload_items {
     }
 }
 pub mod protection_container_operation_results {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -763,7 +818,7 @@ pub mod protection_container_operation_results {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProtectionContainerResource =
+                let rsp_value: models::ProtectionContainerResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Ok200(rsp_value))
             }
@@ -779,10 +834,10 @@ pub mod protection_container_operation_results {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ProtectionContainerResource),
+            Ok200(models::ProtectionContainerResource),
             Accepted202,
             NoContent204,
         }
@@ -806,7 +861,7 @@ pub mod protection_container_operation_results {
     }
 }
 pub mod backups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn trigger(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -815,7 +870,7 @@ pub mod backups {
         fabric_name: &str,
         container_name: &str,
         protected_item_name: &str,
-        parameters: &BackupRequestResource,
+        parameters: &models::BackupRequestResource,
     ) -> std::result::Result<(), trigger::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/protectionContainers/{}/protectedItems/{}/backup" , operation_config . base_path () , subscription_id , resource_group_name , vault_name , fabric_name , container_name , protected_item_name) ;
@@ -850,7 +905,7 @@ pub mod backups {
         }
     }
     pub mod trigger {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -871,7 +926,7 @@ pub mod backups {
     }
 }
 pub mod protected_item_operation_statuses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -881,7 +936,7 @@ pub mod protected_item_operation_statuses {
         container_name: &str,
         protected_item_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<OperationStatus, get::Error> {
+    ) -> std::result::Result<models::OperationStatus, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/protectionContainers/{}/protectedItems/{}/operationsStatus/{}" , operation_config . base_path () , subscription_id , resource_group_name , vault_name , fabric_name , container_name , protected_item_name , operation_id) ;
         let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
@@ -902,7 +957,7 @@ pub mod protected_item_operation_statuses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -916,7 +971,7 @@ pub mod protected_item_operation_statuses {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -937,7 +992,7 @@ pub mod protected_item_operation_statuses {
     }
 }
 pub mod item_level_recovery_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn provision(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -947,7 +1002,7 @@ pub mod item_level_recovery_connections {
         container_name: &str,
         protected_item_name: &str,
         recovery_point_id: &str,
-        parameters: &IlrRequestResource,
+        parameters: &models::IlrRequestResource,
     ) -> std::result::Result<(), provision::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/protectionContainers/{}/protectedItems/{}/recoveryPoints/{}/provisionInstantItemRecovery" , operation_config . base_path () , subscription_id , resource_group_name , vault_name , fabric_name , container_name , protected_item_name , recovery_point_id) ;
@@ -982,7 +1037,7 @@ pub mod item_level_recovery_connections {
         }
     }
     pub mod provision {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1041,7 +1096,7 @@ pub mod item_level_recovery_connections {
         }
     }
     pub mod revoke {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1062,7 +1117,7 @@ pub mod item_level_recovery_connections {
     }
 }
 pub mod backup_operation_results {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -1108,7 +1163,7 @@ pub mod backup_operation_results {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1135,14 +1190,14 @@ pub mod backup_operation_results {
     }
 }
 pub mod backup_operation_statuses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
         operation_id: &str,
-    ) -> std::result::Result<OperationStatus, get::Error> {
+    ) -> std::result::Result<models::OperationStatus, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupOperations/{}",
@@ -1170,7 +1225,7 @@ pub mod backup_operation_statuses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1184,7 +1239,7 @@ pub mod backup_operation_statuses {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1205,7 +1260,7 @@ pub mod backup_operation_statuses {
     }
 }
 pub mod protection_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn delete(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -1250,7 +1305,7 @@ pub mod protection_policies {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1276,7 +1331,7 @@ pub mod protection_policies {
     }
 }
 pub mod protection_policy_operation_statuses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -1284,7 +1339,7 @@ pub mod protection_policy_operation_statuses {
         subscription_id: &str,
         policy_name: &str,
         operation_id: &str,
-    ) -> std::result::Result<OperationStatus, get::Error> {
+    ) -> std::result::Result<models::OperationStatus, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupPolicies/{}/operations/{}",
@@ -1313,7 +1368,7 @@ pub mod protection_policy_operation_statuses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationStatus =
+                let rsp_value: models::OperationStatus =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1327,7 +1382,7 @@ pub mod protection_policy_operation_statuses {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1348,7 +1403,7 @@ pub mod protection_policy_operation_statuses {
     }
 }
 pub mod backup_protectable_items {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
@@ -1356,7 +1411,7 @@ pub mod backup_protectable_items {
         subscription_id: &str,
         filter: Option<&str>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<WorkloadProtectableItemResourceList, list::Error> {
+    ) -> std::result::Result<models::WorkloadProtectableItemResourceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupProtectableItems",
@@ -1389,7 +1444,7 @@ pub mod backup_protectable_items {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkloadProtectableItemResourceList =
+                let rsp_value: models::WorkloadProtectableItemResourceList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1403,7 +1458,7 @@ pub mod backup_protectable_items {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1424,14 +1479,14 @@ pub mod backup_protectable_items {
     }
 }
 pub mod backup_protection_containers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<ProtectionContainerResourceList, list::Error> {
+    ) -> std::result::Result<models::ProtectionContainerResourceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupProtectionContainers",
@@ -1461,7 +1516,7 @@ pub mod backup_protection_containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ProtectionContainerResourceList =
+                let rsp_value: models::ProtectionContainerResourceList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1475,7 +1530,7 @@ pub mod backup_protection_containers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1496,13 +1551,13 @@ pub mod backup_protection_containers {
     }
 }
 pub mod security_pi_ns {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<TokenInformation, get::Error> {
+    ) -> std::result::Result<models::TokenInformation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupSecurityPIN",
@@ -1530,7 +1585,7 @@ pub mod security_pi_ns {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TokenInformation =
+                let rsp_value: models::TokenInformation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1544,7 +1599,7 @@ pub mod security_pi_ns {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1565,13 +1620,13 @@ pub mod security_pi_ns {
     }
 }
 pub mod backup_resource_storage_configs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         vault_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<BackupResourceConfigResource, get::Error> {
+    ) -> std::result::Result<models::BackupResourceConfigResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupstorageconfig/vaultstorageconfig",
@@ -1598,7 +1653,7 @@ pub mod backup_resource_storage_configs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupResourceConfigResource =
+                let rsp_value: models::BackupResourceConfigResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1612,7 +1667,7 @@ pub mod backup_resource_storage_configs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1636,8 +1691,8 @@ pub mod backup_resource_storage_configs {
         vault_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-        parameters: &BackupResourceConfigResource,
-    ) -> std::result::Result<BackupResourceConfigResource, update::Error> {
+        parameters: &models::BackupResourceConfigResource,
+    ) -> std::result::Result<models::BackupResourceConfigResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupstorageconfig/vaultstorageconfig",
@@ -1665,7 +1720,7 @@ pub mod backup_resource_storage_configs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BackupResourceConfigResource =
+                let rsp_value: models::BackupResourceConfigResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1679,7 +1734,7 @@ pub mod backup_resource_storage_configs {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1703,7 +1758,7 @@ pub mod backup_resource_storage_configs {
         vault_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-        parameters: &BackupResourceConfigResource,
+        parameters: &models::BackupResourceConfigResource,
     ) -> std::result::Result<(), patch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1741,7 +1796,7 @@ pub mod backup_resource_storage_configs {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

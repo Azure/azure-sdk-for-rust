@@ -2,16 +2,53 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    NetworkInterfaces_ListVirtualMachineScaleSetVmNetworkInterfaces(
+        #[from] network_interfaces::list_virtual_machine_scale_set_vm_network_interfaces::Error,
+    ),
+    #[error(transparent)]
+    NetworkInterfaces_ListVirtualMachineScaleSetNetworkInterfaces(
+        #[from] network_interfaces::list_virtual_machine_scale_set_network_interfaces::Error,
+    ),
+    #[error(transparent)]
+    NetworkInterfaces_GetVirtualMachineScaleSetNetworkInterface(
+        #[from] network_interfaces::get_virtual_machine_scale_set_network_interface::Error,
+    ),
+    #[error(transparent)]
+    NetworkInterfaces_ListVirtualMachineScaleSetIpConfigurations(
+        #[from] network_interfaces::list_virtual_machine_scale_set_ip_configurations::Error,
+    ),
+    #[error(transparent)]
+    NetworkInterfaces_GetVirtualMachineScaleSetIpConfiguration(
+        #[from] network_interfaces::get_virtual_machine_scale_set_ip_configuration::Error,
+    ),
+    #[error(transparent)]
+    PublicIpAddresses_ListVirtualMachineScaleSetPublicIpAddresses(
+        #[from] public_ip_addresses::list_virtual_machine_scale_set_public_ip_addresses::Error,
+    ),
+    #[error(transparent)]
+    PublicIpAddresses_ListVirtualMachineScaleSetVmPublicIpAddresses(
+        #[from] public_ip_addresses::list_virtual_machine_scale_set_vm_public_ip_addresses::Error,
+    ),
+    #[error(transparent)]
+    PublicIpAddresses_GetVirtualMachineScaleSetPublicIpAddress(
+        #[from] public_ip_addresses::get_virtual_machine_scale_set_public_ip_address::Error,
+    ),
+}
 pub mod network_interfaces {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_virtual_machine_scale_set_vm_network_interfaces(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         virtual_machine_scale_set_name: &str,
         virtualmachine_index: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NetworkInterfaceListResult, list_virtual_machine_scale_set_vm_network_interfaces::Error> {
+    ) -> std::result::Result<models::NetworkInterfaceListResult, list_virtual_machine_scale_set_vm_network_interfaces::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index) ;
         let mut url = url::Url::parse(url_str).map_err(list_virtual_machine_scale_set_vm_network_interfaces::Error::ParseUrlError)?;
@@ -37,7 +74,7 @@ pub mod network_interfaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkInterfaceListResult = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::NetworkInterfaceListResult = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_virtual_machine_scale_set_vm_network_interfaces::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
@@ -52,7 +89,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_vm_network_interfaces {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -76,7 +113,7 @@ pub mod network_interfaces {
         resource_group_name: &str,
         virtual_machine_scale_set_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NetworkInterfaceListResult, list_virtual_machine_scale_set_network_interfaces::Error> {
+    ) -> std::result::Result<models::NetworkInterfaceListResult, list_virtual_machine_scale_set_network_interfaces::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/networkInterfaces",
@@ -108,7 +145,7 @@ pub mod network_interfaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkInterfaceListResult = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::NetworkInterfaceListResult = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_virtual_machine_scale_set_network_interfaces::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
@@ -123,7 +160,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_network_interfaces {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -150,7 +187,7 @@ pub mod network_interfaces {
         network_interface_name: &str,
         subscription_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<NetworkInterface, get_virtual_machine_scale_set_network_interface::Error> {
+    ) -> std::result::Result<models::NetworkInterface, get_virtual_machine_scale_set_network_interface::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_virtual_machine_scale_set_network_interface::Error::ParseUrlError)?;
@@ -179,7 +216,7 @@ pub mod network_interfaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkInterface = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NetworkInterface = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_virtual_machine_scale_set_network_interface::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -193,7 +230,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_virtual_machine_scale_set_network_interface {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -220,7 +257,8 @@ pub mod network_interfaces {
         network_interface_name: &str,
         subscription_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<NetworkInterfaceIpConfigurationListResult, list_virtual_machine_scale_set_ip_configurations::Error> {
+    ) -> std::result::Result<models::NetworkInterfaceIpConfigurationListResult, list_virtual_machine_scale_set_ip_configurations::Error>
+    {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_virtual_machine_scale_set_ip_configurations::Error::ParseUrlError)?;
@@ -249,7 +287,7 @@ pub mod network_interfaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkInterfaceIpConfigurationListResult = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::NetworkInterfaceIpConfigurationListResult = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_virtual_machine_scale_set_ip_configurations::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
@@ -264,7 +302,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_virtual_machine_scale_set_ip_configurations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -292,7 +330,7 @@ pub mod network_interfaces {
         ip_configuration_name: &str,
         subscription_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<NetworkInterfaceIpConfiguration, get_virtual_machine_scale_set_ip_configuration::Error> {
+    ) -> std::result::Result<models::NetworkInterfaceIpConfiguration, get_virtual_machine_scale_set_ip_configuration::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name , ip_configuration_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_virtual_machine_scale_set_ip_configuration::Error::ParseUrlError)?;
@@ -321,7 +359,7 @@ pub mod network_interfaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkInterfaceIpConfiguration = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NetworkInterfaceIpConfiguration = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_virtual_machine_scale_set_ip_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -335,7 +373,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_virtual_machine_scale_set_ip_configuration {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -356,13 +394,13 @@ pub mod network_interfaces {
     }
 }
 pub mod public_ip_addresses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_virtual_machine_scale_set_public_ip_addresses(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         virtual_machine_scale_set_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PublicIpAddressListResult, list_virtual_machine_scale_set_public_ip_addresses::Error> {
+    ) -> std::result::Result<models::PublicIpAddressListResult, list_virtual_machine_scale_set_public_ip_addresses::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/publicipaddresses",
@@ -394,7 +432,7 @@ pub mod public_ip_addresses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicIpAddressListResult = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::PublicIpAddressListResult = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_virtual_machine_scale_set_public_ip_addresses::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
@@ -409,7 +447,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_virtual_machine_scale_set_public_ip_addresses {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -436,7 +474,7 @@ pub mod public_ip_addresses {
         network_interface_name: &str,
         ip_configuration_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PublicIpAddressListResult, list_virtual_machine_scale_set_vm_public_ip_addresses::Error> {
+    ) -> std::result::Result<models::PublicIpAddressListResult, list_virtual_machine_scale_set_vm_public_ip_addresses::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name , ip_configuration_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_virtual_machine_scale_set_vm_public_ip_addresses::Error::ParseUrlError)?;
@@ -462,7 +500,7 @@ pub mod public_ip_addresses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicIpAddressListResult = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::PublicIpAddressListResult = serde_json::from_slice(rsp_body).map_err(|source| {
                     list_virtual_machine_scale_set_vm_public_ip_addresses::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
@@ -477,7 +515,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_virtual_machine_scale_set_vm_public_ip_addresses {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -506,7 +544,7 @@ pub mod public_ip_addresses {
         public_ip_address_name: &str,
         subscription_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<PublicIpAddress, get_virtual_machine_scale_set_public_ip_address::Error> {
+    ) -> std::result::Result<models::PublicIpAddress, get_virtual_machine_scale_set_public_ip_address::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name , ip_configuration_name , public_ip_address_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_virtual_machine_scale_set_public_ip_address::Error::ParseUrlError)?;
@@ -535,7 +573,7 @@ pub mod public_ip_addresses {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PublicIpAddress = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PublicIpAddress = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_virtual_machine_scale_set_public_ip_address::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -549,7 +587,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod get_virtual_machine_scale_set_public_ip_address {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

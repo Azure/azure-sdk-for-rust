@@ -2,14 +2,37 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    B2cTenants_CheckNameAvailability(#[from] b2c_tenants::check_name_availability::Error),
+    #[error(transparent)]
+    B2cTenants_ListByResourceGroup(#[from] b2c_tenants::list_by_resource_group::Error),
+    #[error(transparent)]
+    B2cTenants_ListBySubscription(#[from] b2c_tenants::list_by_subscription::Error),
+    #[error(transparent)]
+    B2cTenants_Get(#[from] b2c_tenants::get::Error),
+    #[error(transparent)]
+    B2cTenants_Create(#[from] b2c_tenants::create::Error),
+    #[error(transparent)]
+    B2cTenants_Update(#[from] b2c_tenants::update::Error),
+    #[error(transparent)]
+    B2cTenants_Delete(#[from] b2c_tenants::delete::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Operations_GetAsyncStatus(#[from] operations::get_async_status::Error),
+}
 pub mod b2c_tenants {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        check_name_availability_request_body: Option<&CheckNameAvailabilityRequestBody>,
-    ) -> std::result::Result<NameAvailabilityResponse, check_name_availability::Error> {
+        check_name_availability_request_body: Option<&models::CheckNameAvailabilityRequestBody>,
+    ) -> std::result::Result<models::NameAvailabilityResponse, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.AzureActiveDirectory/checkNameAvailability",
@@ -44,13 +67,13 @@ pub mod b2c_tenants {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NameAvailabilityResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NameAvailabilityResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -60,7 +83,7 @@ pub mod b2c_tenants {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -86,7 +109,7 @@ pub mod b2c_tenants {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<B2cTenantResourceList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::B2cTenantResourceList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureActiveDirectory/b2cDirectories",
@@ -117,13 +140,13 @@ pub mod b2c_tenants {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: B2cTenantResourceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::B2cTenantResourceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -133,7 +156,7 @@ pub mod b2c_tenants {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -158,7 +181,7 @@ pub mod b2c_tenants {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<B2cTenantResourceList, list_by_subscription::Error> {
+    ) -> std::result::Result<models::B2cTenantResourceList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.AzureActiveDirectory/b2cDirectories",
@@ -186,13 +209,13 @@ pub mod b2c_tenants {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: B2cTenantResourceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::B2cTenantResourceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -202,7 +225,7 @@ pub mod b2c_tenants {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -229,7 +252,7 @@ pub mod b2c_tenants {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-    ) -> std::result::Result<B2cTenantResource, get::Error> {
+    ) -> std::result::Result<models::B2cTenantResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureActiveDirectory/b2cDirectories/{}",
@@ -256,13 +279,13 @@ pub mod b2c_tenants {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: B2cTenantResource =
+                let rsp_value: models::B2cTenantResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -272,7 +295,7 @@ pub mod b2c_tenants {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -299,7 +322,7 @@ pub mod b2c_tenants {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        create_tenant_request_body: Option<&CreateTenantRequestBody>,
+        create_tenant_request_body: Option<&models::CreateTenantRequestBody>,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -332,20 +355,20 @@ pub mod b2c_tenants {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: B2cTenantResource =
+                let rsp_value: models::B2cTenantResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: B2cTenantResource =
+                let rsp_value: models::B2cTenantResource =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -355,11 +378,11 @@ pub mod b2c_tenants {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(B2cTenantResource),
-            Created201(B2cTenantResource),
+            Ok200(models::B2cTenantResource),
+            Created201(models::B2cTenantResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -388,8 +411,8 @@ pub mod b2c_tenants {
         subscription_id: &str,
         resource_group_name: &str,
         resource_name: &str,
-        update_tenant_request_body: Option<&B2cTenantUpdateRequest>,
-    ) -> std::result::Result<B2cTenantResource, update::Error> {
+        update_tenant_request_body: Option<&models::B2cTenantUpdateRequest>,
+    ) -> std::result::Result<models::B2cTenantResource, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureActiveDirectory/b2cDirectories/{}",
@@ -421,13 +444,13 @@ pub mod b2c_tenants {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: B2cTenantResource =
+                let rsp_value: models::B2cTenantResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -437,7 +460,7 @@ pub mod b2c_tenants {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -494,7 +517,7 @@ pub mod b2c_tenants {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -504,7 +527,7 @@ pub mod b2c_tenants {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -534,8 +557,8 @@ pub mod b2c_tenants {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.AzureActiveDirectory/operations",
@@ -559,13 +582,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -575,7 +598,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -601,7 +624,7 @@ pub mod operations {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         operation_id: &str,
-    ) -> std::result::Result<AsyncOperationStatus, get_async_status::Error> {
+    ) -> std::result::Result<models::AsyncOperationStatus, get_async_status::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.AzureActiveDirectory/operations/{}",
@@ -630,13 +653,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AsyncOperationStatus = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AsyncOperationStatus = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_async_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_async_status::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_async_status::Error::DefaultResponse {
                     status_code,
@@ -646,7 +669,7 @@ pub mod operations {
         }
     }
     pub mod get_async_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

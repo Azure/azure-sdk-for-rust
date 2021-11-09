@@ -2,15 +2,44 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    WorkspaceCollections_GetByName(#[from] workspace_collections::get_by_name::Error),
+    #[error(transparent)]
+    WorkspaceCollections_Create(#[from] workspace_collections::create::Error),
+    #[error(transparent)]
+    WorkspaceCollections_Update(#[from] workspace_collections::update::Error),
+    #[error(transparent)]
+    WorkspaceCollections_Delete(#[from] workspace_collections::delete::Error),
+    #[error(transparent)]
+    WorkspaceCollections_CheckNameAvailability(#[from] workspace_collections::check_name_availability::Error),
+    #[error(transparent)]
+    WorkspaceCollections_ListByResourceGroup(#[from] workspace_collections::list_by_resource_group::Error),
+    #[error(transparent)]
+    WorkspaceCollections_ListBySubscription(#[from] workspace_collections::list_by_subscription::Error),
+    #[error(transparent)]
+    WorkspaceCollections_GetAccessKeys(#[from] workspace_collections::get_access_keys::Error),
+    #[error(transparent)]
+    WorkspaceCollections_RegenerateKey(#[from] workspace_collections::regenerate_key::Error),
+    #[error(transparent)]
+    GetAvailableOperations(#[from] get_available_operations::Error),
+    #[error(transparent)]
+    Workspaces_List(#[from] workspaces::list::Error),
+    #[error(transparent)]
+    WorkspaceCollections_Migrate(#[from] workspace_collections::migrate::Error),
+}
 pub mod workspace_collections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_by_name(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_collection_name: &str,
-    ) -> std::result::Result<WorkspaceCollection, get_by_name::Error> {
+    ) -> std::result::Result<models::WorkspaceCollection, get_by_name::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBI/workspaceCollections/{}",
@@ -40,13 +69,13 @@ pub mod workspace_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceCollection =
+                let rsp_value: models::WorkspaceCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| get_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_by_name::Error::DefaultResponse {
                     status_code,
@@ -56,7 +85,7 @@ pub mod workspace_collections {
         }
     }
     pub mod get_by_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -83,8 +112,8 @@ pub mod workspace_collections {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_collection_name: &str,
-        body: &CreateWorkspaceCollectionRequest,
-    ) -> std::result::Result<WorkspaceCollection, create::Error> {
+        body: &models::CreateWorkspaceCollectionRequest,
+    ) -> std::result::Result<models::WorkspaceCollection, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBI/workspaceCollections/{}",
@@ -112,13 +141,13 @@ pub mod workspace_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceCollection =
+                let rsp_value: models::WorkspaceCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -128,7 +157,7 @@ pub mod workspace_collections {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -155,8 +184,8 @@ pub mod workspace_collections {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_collection_name: &str,
-        body: &UpdateWorkspaceCollectionRequest,
-    ) -> std::result::Result<WorkspaceCollection, update::Error> {
+        body: &models::UpdateWorkspaceCollectionRequest,
+    ) -> std::result::Result<models::WorkspaceCollection, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBI/workspaceCollections/{}",
@@ -184,13 +213,13 @@ pub mod workspace_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceCollection =
+                let rsp_value: models::WorkspaceCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -200,7 +229,7 @@ pub mod workspace_collections {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -255,7 +284,7 @@ pub mod workspace_collections {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -265,7 +294,7 @@ pub mod workspace_collections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -291,8 +320,8 @@ pub mod workspace_collections {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location: &str,
-        body: &CheckNameRequest,
-    ) -> std::result::Result<CheckNameResponse, check_name_availability::Error> {
+        body: &models::CheckNameRequest,
+    ) -> std::result::Result<models::CheckNameResponse, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PowerBI/locations/{}/checkNameAvailability",
@@ -324,13 +353,13 @@ pub mod workspace_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -340,7 +369,7 @@ pub mod workspace_collections {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -366,7 +395,7 @@ pub mod workspace_collections {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<WorkspaceCollectionList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::WorkspaceCollectionList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBI/workspaceCollections",
@@ -397,13 +426,13 @@ pub mod workspace_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceCollectionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkspaceCollectionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -413,7 +442,7 @@ pub mod workspace_collections {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -438,7 +467,7 @@ pub mod workspace_collections {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<WorkspaceCollectionList, list_by_subscription::Error> {
+    ) -> std::result::Result<models::WorkspaceCollectionList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PowerBI/workspaceCollections",
@@ -466,13 +495,13 @@ pub mod workspace_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceCollectionList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkspaceCollectionList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -482,7 +511,7 @@ pub mod workspace_collections {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -509,7 +538,7 @@ pub mod workspace_collections {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_collection_name: &str,
-    ) -> std::result::Result<WorkspaceCollectionAccessKeys, get_access_keys::Error> {
+    ) -> std::result::Result<models::WorkspaceCollectionAccessKeys, get_access_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBI/workspaceCollections/{}/listKeys",
@@ -540,13 +569,13 @@ pub mod workspace_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceCollectionAccessKeys = serde_json::from_slice(rsp_body)
+                let rsp_value: models::WorkspaceCollectionAccessKeys = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_access_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_access_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_access_keys::Error::DefaultResponse {
                     status_code,
@@ -556,7 +585,7 @@ pub mod workspace_collections {
         }
     }
     pub mod get_access_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -583,8 +612,8 @@ pub mod workspace_collections {
         subscription_id: &str,
         resource_group_name: &str,
         workspace_collection_name: &str,
-        body: &WorkspaceCollectionAccessKey,
-    ) -> std::result::Result<WorkspaceCollectionAccessKeys, regenerate_key::Error> {
+        body: &models::WorkspaceCollectionAccessKey,
+    ) -> std::result::Result<models::WorkspaceCollectionAccessKeys, regenerate_key::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBI/workspaceCollections/{}/regenerateKey",
@@ -615,13 +644,13 @@ pub mod workspace_collections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceCollectionAccessKeys =
+                let rsp_value: models::WorkspaceCollectionAccessKeys =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| regenerate_key::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(regenerate_key::Error::DefaultResponse {
                     status_code,
@@ -631,7 +660,7 @@ pub mod workspace_collections {
         }
     }
     pub mod regenerate_key {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -657,7 +686,7 @@ pub mod workspace_collections {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-        body: &MigrateWorkspaceCollectionRequest,
+        body: &models::MigrateWorkspaceCollectionRequest,
     ) -> std::result::Result<(), migrate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -689,7 +718,7 @@ pub mod workspace_collections {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| migrate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(migrate::Error::DefaultResponse {
                     status_code,
@@ -699,7 +728,7 @@ pub mod workspace_collections {
         }
     }
     pub mod migrate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -724,7 +753,7 @@ pub mod workspace_collections {
 }
 pub async fn get_available_operations(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<OperationList, get_available_operations::Error> {
+) -> std::result::Result<models::OperationList, get_available_operations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.PowerBI/operations", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(get_available_operations::Error::ParseUrlError)?;
@@ -750,13 +779,13 @@ pub async fn get_available_operations(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OperationList = serde_json::from_slice(rsp_body)
+            let rsp_value: models::OperationList = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_available_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
+            let rsp_value: models::Error = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_available_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_available_operations::Error::DefaultResponse {
                 status_code,
@@ -766,7 +795,7 @@ pub async fn get_available_operations(
     }
 }
 pub mod get_available_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -789,13 +818,13 @@ pub mod get_available_operations {
     }
 }
 pub mod workspaces {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         workspace_collection_name: &str,
-    ) -> std::result::Result<WorkspaceList, list::Error> {
+    ) -> std::result::Result<models::WorkspaceList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBI/workspaceCollections/{}/workspaces",
@@ -822,13 +851,13 @@ pub mod workspaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: WorkspaceList =
+                let rsp_value: models::WorkspaceList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: Error =
+                let rsp_value: models::Error =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -838,7 +867,7 @@ pub mod workspaces {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

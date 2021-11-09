@@ -2,16 +2,43 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Account_GetFirewallRule(#[from] account::get_firewall_rule::Error),
+    #[error(transparent)]
+    Account_DeleteFirewallRule(#[from] account::delete_firewall_rule::Error),
+    #[error(transparent)]
+    Account_ListFirewallRules(#[from] account::list_firewall_rules::Error),
+    #[error(transparent)]
+    Account_CreateOrUpdateFirewallRule(#[from] account::create_or_update_firewall_rule::Error),
+    #[error(transparent)]
+    Account_Create(#[from] account::create::Error),
+    #[error(transparent)]
+    Account_Update(#[from] account::update::Error),
+    #[error(transparent)]
+    Account_Get(#[from] account::get::Error),
+    #[error(transparent)]
+    Account_Delete(#[from] account::delete::Error),
+    #[error(transparent)]
+    Account_EnableKeyVault(#[from] account::enable_key_vault::Error),
+    #[error(transparent)]
+    Account_ListByResourceGroup(#[from] account::list_by_resource_group::Error),
+    #[error(transparent)]
+    Account_List(#[from] account::list::Error),
+}
 pub mod account {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_firewall_rule(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         account_name: &str,
         firewall_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FirewallRule, get_firewall_rule::Error> {
+    ) -> std::result::Result<models::FirewallRule, get_firewall_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeStore/accounts/{}/firewallRules/{}",
@@ -42,7 +69,7 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FirewallRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_firewall_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -56,7 +83,7 @@ pub mod account {
         }
     }
     pub mod get_firewall_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -122,7 +149,7 @@ pub mod account {
         }
     }
     pub mod delete_firewall_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -151,7 +178,7 @@ pub mod account {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DataLakeStoreFirewallRuleListResult, list_firewall_rules::Error> {
+    ) -> std::result::Result<models::DataLakeStoreFirewallRuleListResult, list_firewall_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeStore/accounts/{}/firewallRules",
@@ -181,7 +208,7 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreFirewallRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataLakeStoreFirewallRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_firewall_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -195,7 +222,7 @@ pub mod account {
         }
     }
     pub mod list_firewall_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -219,9 +246,9 @@ pub mod account {
         resource_group_name: &str,
         account_name: &str,
         name: &str,
-        parameters: &FirewallRule,
+        parameters: &models::FirewallRule,
         subscription_id: &str,
-    ) -> std::result::Result<FirewallRule, create_or_update_firewall_rule::Error> {
+    ) -> std::result::Result<models::FirewallRule, create_or_update_firewall_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeStore/accounts/{}/firewallRules/{}",
@@ -255,7 +282,7 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FirewallRule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FirewallRule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_firewall_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -269,7 +296,7 @@ pub mod account {
         }
     }
     pub mod create_or_update_firewall_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -292,7 +319,7 @@ pub mod account {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &DataLakeStoreAccount,
+        parameters: &models::DataLakeStoreAccount,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -322,13 +349,13 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccount =
+                let rsp_value: models::DataLakeStoreAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccount =
+                let rsp_value: models::DataLakeStoreAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
@@ -342,11 +369,11 @@ pub mod account {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(DataLakeStoreAccount),
-            Ok200(DataLakeStoreAccount),
+            Created201(models::DataLakeStoreAccount),
+            Ok200(models::DataLakeStoreAccount),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -370,7 +397,7 @@ pub mod account {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &DataLakeStoreAccount,
+        parameters: &models::DataLakeStoreAccount,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -400,13 +427,13 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccount =
+                let rsp_value: models::DataLakeStoreAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccount =
+                let rsp_value: models::DataLakeStoreAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -420,11 +447,11 @@ pub mod account {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DataLakeStoreAccount),
-            Created201(DataLakeStoreAccount),
+            Ok200(models::DataLakeStoreAccount),
+            Created201(models::DataLakeStoreAccount),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -449,7 +476,7 @@ pub mod account {
         resource_group_name: &str,
         account_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DataLakeStoreAccount, get::Error> {
+    ) -> std::result::Result<models::DataLakeStoreAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeStore/accounts/{}",
@@ -476,7 +503,7 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccount =
+                let rsp_value: models::DataLakeStoreAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -490,7 +517,7 @@ pub mod account {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -553,7 +580,7 @@ pub mod account {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -625,7 +652,7 @@ pub mod account {
         }
     }
     pub mod enable_key_vault {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -657,7 +684,7 @@ pub mod account {
         search: Option<&str>,
         format: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<DataLakeStoreAccountListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DataLakeStoreAccountListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataLakeStore/accounts",
@@ -715,7 +742,7 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccountListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataLakeStoreAccountListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -729,7 +756,7 @@ pub mod account {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -760,7 +787,7 @@ pub mod account {
         search: Option<&str>,
         format: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<DataLakeStoreAccountListResult, list::Error> {
+    ) -> std::result::Result<models::DataLakeStoreAccountListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataLakeStore/accounts",
@@ -812,7 +839,7 @@ pub mod account {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataLakeStoreAccountListResult =
+                let rsp_value: models::DataLakeStoreAccountListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -826,7 +853,7 @@ pub mod account {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

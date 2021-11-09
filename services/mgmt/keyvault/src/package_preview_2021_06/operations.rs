@@ -2,16 +2,103 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Keys_Get(#[from] keys::get::Error),
+    #[error(transparent)]
+    Keys_CreateIfNotExist(#[from] keys::create_if_not_exist::Error),
+    #[error(transparent)]
+    Keys_List(#[from] keys::list::Error),
+    #[error(transparent)]
+    Keys_GetVersion(#[from] keys::get_version::Error),
+    #[error(transparent)]
+    Keys_ListVersions(#[from] keys::list_versions::Error),
+    #[error(transparent)]
+    Vaults_Get(#[from] vaults::get::Error),
+    #[error(transparent)]
+    Vaults_CreateOrUpdate(#[from] vaults::create_or_update::Error),
+    #[error(transparent)]
+    Vaults_Update(#[from] vaults::update::Error),
+    #[error(transparent)]
+    Vaults_Delete(#[from] vaults::delete::Error),
+    #[error(transparent)]
+    Vaults_UpdateAccessPolicy(#[from] vaults::update_access_policy::Error),
+    #[error(transparent)]
+    Vaults_ListByResourceGroup(#[from] vaults::list_by_resource_group::Error),
+    #[error(transparent)]
+    Vaults_ListBySubscription(#[from] vaults::list_by_subscription::Error),
+    #[error(transparent)]
+    Vaults_ListDeleted(#[from] vaults::list_deleted::Error),
+    #[error(transparent)]
+    Vaults_GetDeleted(#[from] vaults::get_deleted::Error),
+    #[error(transparent)]
+    Vaults_PurgeDeleted(#[from] vaults::purge_deleted::Error),
+    #[error(transparent)]
+    Vaults_List(#[from] vaults::list::Error),
+    #[error(transparent)]
+    Vaults_CheckNameAvailability(#[from] vaults::check_name_availability::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Get(#[from] private_endpoint_connections::get::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Put(#[from] private_endpoint_connections::put::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_Delete(#[from] private_endpoint_connections::delete::Error),
+    #[error(transparent)]
+    PrivateEndpointConnections_ListByResource(#[from] private_endpoint_connections::list_by_resource::Error),
+    #[error(transparent)]
+    PrivateLinkResources_ListByVault(#[from] private_link_resources::list_by_vault::Error),
+    #[error(transparent)]
+    ManagedHsms_Get(#[from] managed_hsms::get::Error),
+    #[error(transparent)]
+    ManagedHsms_CreateOrUpdate(#[from] managed_hsms::create_or_update::Error),
+    #[error(transparent)]
+    ManagedHsms_Update(#[from] managed_hsms::update::Error),
+    #[error(transparent)]
+    ManagedHsms_Delete(#[from] managed_hsms::delete::Error),
+    #[error(transparent)]
+    ManagedHsms_ListByResourceGroup(#[from] managed_hsms::list_by_resource_group::Error),
+    #[error(transparent)]
+    ManagedHsms_ListBySubscription(#[from] managed_hsms::list_by_subscription::Error),
+    #[error(transparent)]
+    MhsmPrivateEndpointConnections_ListByResource(#[from] mhsm_private_endpoint_connections::list_by_resource::Error),
+    #[error(transparent)]
+    ManagedHsms_ListDeleted(#[from] managed_hsms::list_deleted::Error),
+    #[error(transparent)]
+    ManagedHsms_GetDeleted(#[from] managed_hsms::get_deleted::Error),
+    #[error(transparent)]
+    ManagedHsms_PurgeDeleted(#[from] managed_hsms::purge_deleted::Error),
+    #[error(transparent)]
+    MhsmPrivateEndpointConnections_Get(#[from] mhsm_private_endpoint_connections::get::Error),
+    #[error(transparent)]
+    MhsmPrivateEndpointConnections_Put(#[from] mhsm_private_endpoint_connections::put::Error),
+    #[error(transparent)]
+    MhsmPrivateEndpointConnections_Delete(#[from] mhsm_private_endpoint_connections::delete::Error),
+    #[error(transparent)]
+    MhsmPrivateLinkResources_ListByMhsmResource(#[from] mhsm_private_link_resources::list_by_mhsm_resource::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Secrets_Get(#[from] secrets::get::Error),
+    #[error(transparent)]
+    Secrets_CreateOrUpdate(#[from] secrets::create_or_update::Error),
+    #[error(transparent)]
+    Secrets_Update(#[from] secrets::update::Error),
+    #[error(transparent)]
+    Secrets_List(#[from] secrets::list::Error),
+}
 pub mod keys {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
         key_name: &str,
-    ) -> std::result::Result<Key, get::Error> {
+    ) -> std::result::Result<models::Key, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/keys/{}",
@@ -39,13 +126,13 @@ pub mod keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Key =
+                let rsp_value: models::Key =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -55,7 +142,7 @@ pub mod keys {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -83,8 +170,8 @@ pub mod keys {
         resource_group_name: &str,
         vault_name: &str,
         key_name: &str,
-        parameters: &KeyCreateParameters,
-    ) -> std::result::Result<Key, create_if_not_exist::Error> {
+        parameters: &models::KeyCreateParameters,
+    ) -> std::result::Result<models::Key, create_if_not_exist::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/keys/{}",
@@ -116,13 +203,13 @@ pub mod keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Key = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Key = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_if_not_exist::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_if_not_exist::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_if_not_exist::Error::DefaultResponse {
                     status_code,
@@ -132,7 +219,7 @@ pub mod keys {
         }
     }
     pub mod create_if_not_exist {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -159,7 +246,7 @@ pub mod keys {
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
-    ) -> std::result::Result<KeyListResult, list::Error> {
+    ) -> std::result::Result<models::KeyListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/keys",
@@ -186,13 +273,13 @@ pub mod keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KeyListResult =
+                let rsp_value: models::KeyListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -202,7 +289,7 @@ pub mod keys {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -231,7 +318,7 @@ pub mod keys {
         vault_name: &str,
         key_name: &str,
         key_version: &str,
-    ) -> std::result::Result<Key, get_version::Error> {
+    ) -> std::result::Result<models::Key, get_version::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/keys/{}/versions/{}",
@@ -263,13 +350,13 @@ pub mod keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Key =
+                let rsp_value: models::Key =
                     serde_json::from_slice(rsp_body).map_err(|source| get_version::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_version::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_version::Error::DefaultResponse {
                     status_code,
@@ -279,7 +366,7 @@ pub mod keys {
         }
     }
     pub mod get_version {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -307,7 +394,7 @@ pub mod keys {
         resource_group_name: &str,
         vault_name: &str,
         key_name: &str,
-    ) -> std::result::Result<KeyListResult, list_versions::Error> {
+    ) -> std::result::Result<models::KeyListResult, list_versions::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/keys/{}/versions",
@@ -338,13 +425,13 @@ pub mod keys {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: KeyListResult =
+                let rsp_value: models::KeyListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_versions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_versions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_versions::Error::DefaultResponse {
                     status_code,
@@ -354,7 +441,7 @@ pub mod keys {
         }
     }
     pub mod list_versions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -378,13 +465,13 @@ pub mod keys {
     }
 }
 pub mod vaults {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vault_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Vault, get::Error> {
+    ) -> std::result::Result<models::Vault, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}",
@@ -411,13 +498,13 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vault =
+                let rsp_value: models::Vault =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -427,7 +514,7 @@ pub mod vaults {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -453,7 +540,7 @@ pub mod vaults {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vault_name: &str,
-        parameters: &VaultCreateOrUpdateParameters,
+        parameters: &models::VaultCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -486,19 +573,19 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vault = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Vault = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vault = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Vault = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -508,11 +595,11 @@ pub mod vaults {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Vault),
-            Ok200(Vault),
+            Created201(models::Vault),
+            Ok200(models::Vault),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -539,7 +626,7 @@ pub mod vaults {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vault_name: &str,
-        parameters: &VaultPatchParameters,
+        parameters: &models::VaultPatchParameters,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -569,19 +656,19 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vault =
+                let rsp_value: models::Vault =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vault =
+                let rsp_value: models::Vault =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -591,11 +678,11 @@ pub mod vaults {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Vault),
-            Ok200(Vault),
+            Created201(models::Vault),
+            Ok200(models::Vault),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -652,7 +739,7 @@ pub mod vaults {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -662,7 +749,7 @@ pub mod vaults {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -694,7 +781,7 @@ pub mod vaults {
         resource_group_name: &str,
         vault_name: &str,
         operation_kind: &str,
-        parameters: &VaultAccessPolicyParameters,
+        parameters: &models::VaultAccessPolicyParameters,
         subscription_id: &str,
     ) -> std::result::Result<update_access_policy::Response, update_access_policy::Error> {
         let http_client = operation_config.http_client();
@@ -728,19 +815,19 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: VaultAccessPolicyParameters = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VaultAccessPolicyParameters = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_access_policy::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VaultAccessPolicyParameters = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VaultAccessPolicyParameters = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_access_policy::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_access_policy::Error::DefaultResponse {
                     status_code,
@@ -750,11 +837,11 @@ pub mod vaults {
         }
     }
     pub mod update_access_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(VaultAccessPolicyParameters),
-            Ok200(VaultAccessPolicyParameters),
+            Created201(models::VaultAccessPolicyParameters),
+            Ok200(models::VaultAccessPolicyParameters),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -782,7 +869,7 @@ pub mod vaults {
         resource_group_name: &str,
         top: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<VaultListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::VaultListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults",
@@ -816,13 +903,13 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VaultListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VaultListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -832,7 +919,7 @@ pub mod vaults {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -858,7 +945,7 @@ pub mod vaults {
         operation_config: &crate::OperationConfig,
         top: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<VaultListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::VaultListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.KeyVault/vaults",
@@ -889,13 +976,13 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VaultListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VaultListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -905,7 +992,7 @@ pub mod vaults {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -930,7 +1017,7 @@ pub mod vaults {
     pub async fn list_deleted(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DeletedVaultListResult, list_deleted::Error> {
+    ) -> std::result::Result<models::DeletedVaultListResult, list_deleted::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.KeyVault/deletedVaults",
@@ -958,13 +1045,13 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeletedVaultListResult =
+                let rsp_value: models::DeletedVaultListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_deleted::Error::DefaultResponse {
                     status_code,
@@ -974,7 +1061,7 @@ pub mod vaults {
         }
     }
     pub mod list_deleted {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1001,7 +1088,7 @@ pub mod vaults {
         vault_name: &str,
         location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DeletedVault, get_deleted::Error> {
+    ) -> std::result::Result<models::DeletedVault, get_deleted::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.KeyVault/locations/{}/deletedVaults/{}",
@@ -1031,13 +1118,13 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeletedVault =
+                let rsp_value: models::DeletedVault =
                     serde_json::from_slice(rsp_body).map_err(|source| get_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_deleted::Error::DefaultResponse {
                     status_code,
@@ -1047,7 +1134,7 @@ pub mod vaults {
         }
     }
     pub mod get_deleted {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1107,7 +1194,7 @@ pub mod vaults {
             http::StatusCode::ACCEPTED => Ok(purge_deleted::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| purge_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(purge_deleted::Error::DefaultResponse {
                     status_code,
@@ -1117,7 +1204,7 @@ pub mod vaults {
         }
     }
     pub mod purge_deleted {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1149,7 +1236,7 @@ pub mod vaults {
         filter: &str,
         top: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<ResourceListResult, list::Error> {
+    ) -> std::result::Result<models::ResourceListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/subscriptions/{}/resources", operation_config.base_path(), subscription_id);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1174,13 +1261,13 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ResourceListResult =
+                let rsp_value: models::ResourceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1190,7 +1277,7 @@ pub mod vaults {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1214,9 +1301,9 @@ pub mod vaults {
     }
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
-        vault_name: &VaultCheckNameAvailabilityParameters,
+        vault_name: &models::VaultCheckNameAvailabilityParameters,
         subscription_id: &str,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.KeyVault/checkNameAvailability",
@@ -1247,13 +1334,13 @@ pub mod vaults {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -1263,7 +1350,7 @@ pub mod vaults {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1287,7 +1374,7 @@ pub mod vaults {
     }
 }
 pub mod private_endpoint_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -1322,14 +1409,14 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Ok200(rsp_value))
             }
             http::StatusCode::NO_CONTENT => Ok(get::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1339,10 +1426,10 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
             NoContent204,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1372,8 +1459,8 @@ pub mod private_endpoint_connections {
         resource_group_name: &str,
         vault_name: &str,
         private_endpoint_connection_name: &str,
-        properties: &PrivateEndpointConnection,
-    ) -> std::result::Result<PrivateEndpointConnection, put::Error> {
+        properties: &models::PrivateEndpointConnection,
+    ) -> std::result::Result<models::PrivateEndpointConnection, put::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/privateEndpointConnections/{}",
@@ -1402,13 +1489,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(put::Error::DefaultResponse {
                     status_code,
@@ -1418,7 +1505,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod put {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1474,7 +1561,7 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnection =
+                let rsp_value: models::PrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -1482,7 +1569,7 @@ pub mod private_endpoint_connections {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1492,10 +1579,10 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PrivateEndpointConnection),
+            Ok200(models::PrivateEndpointConnection),
             Accepted202,
             NoContent204,
         }
@@ -1525,7 +1612,7 @@ pub mod private_endpoint_connections {
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
-    ) -> std::result::Result<PrivateEndpointConnectionListResult, list_by_resource::Error> {
+    ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/privateEndpointConnections",
@@ -1555,13 +1642,13 @@ pub mod private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PrivateEndpointConnectionListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource::Error::DefaultResponse {
                     status_code,
@@ -1571,7 +1658,7 @@ pub mod private_endpoint_connections {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1595,13 +1682,13 @@ pub mod private_endpoint_connections {
     }
 }
 pub mod private_link_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_vault(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vault_name: &str,
-    ) -> std::result::Result<PrivateLinkResourceListResult, list_by_vault::Error> {
+    ) -> std::result::Result<models::PrivateLinkResourceListResult, list_by_vault::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/privateLinkResources",
@@ -1631,13 +1718,13 @@ pub mod private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PrivateLinkResourceListResult =
+                let rsp_value: models::PrivateLinkResourceListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_vault::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_vault::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_vault::Error::DefaultResponse {
                     status_code,
@@ -1647,7 +1734,7 @@ pub mod private_link_resources {
         }
     }
     pub mod list_by_vault {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1671,7 +1758,7 @@ pub mod private_link_resources {
     }
 }
 pub mod managed_hsms {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1704,7 +1791,7 @@ pub mod managed_hsms {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsm =
+                let rsp_value: models::ManagedHsm =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Ok200(rsp_value))
             }
@@ -1712,7 +1799,7 @@ pub mod managed_hsms {
             http::StatusCode::NO_CONTENT => Ok(get::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError =
+                let rsp_value: models::ManagedHsmError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1722,10 +1809,10 @@ pub mod managed_hsms {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagedHsm),
+            Ok200(models::ManagedHsm),
             Accepted202,
             NoContent204,
         }
@@ -1754,7 +1841,7 @@ pub mod managed_hsms {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &ManagedHsm,
+        parameters: &models::ManagedHsm,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1787,19 +1874,19 @@ pub mod managed_hsms {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsm = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedHsm = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Accepted202(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsm = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedHsm = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedHsmError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1809,11 +1896,11 @@ pub mod managed_hsms {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Accepted202(ManagedHsm),
-            Ok200(ManagedHsm),
+            Accepted202(models::ManagedHsm),
+            Ok200(models::ManagedHsm),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1840,7 +1927,7 @@ pub mod managed_hsms {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         name: &str,
-        parameters: &ManagedHsm,
+        parameters: &models::ManagedHsm,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -1870,19 +1957,19 @@ pub mod managed_hsms {
         match rsp.status() {
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsm =
+                let rsp_value: models::ManagedHsm =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsm =
+                let rsp_value: models::ManagedHsm =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError =
+                let rsp_value: models::ManagedHsmError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1892,11 +1979,11 @@ pub mod managed_hsms {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Accepted202(ManagedHsm),
-            Ok200(ManagedHsm),
+            Accepted202(models::ManagedHsm),
+            Ok200(models::ManagedHsm),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1954,7 +2041,7 @@ pub mod managed_hsms {
             http::StatusCode::OK => Ok(delete::Response::Ok200),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError =
+                let rsp_value: models::ManagedHsmError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1964,7 +2051,7 @@ pub mod managed_hsms {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1997,7 +2084,7 @@ pub mod managed_hsms {
         resource_group_name: &str,
         top: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedHsmListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::ManagedHsmListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/managedHSMs",
@@ -2031,13 +2118,13 @@ pub mod managed_hsms {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedHsmListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedHsmError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -2047,7 +2134,7 @@ pub mod managed_hsms {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2073,7 +2160,7 @@ pub mod managed_hsms {
         operation_config: &crate::OperationConfig,
         top: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagedHsmListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::ManagedHsmListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.KeyVault/managedHSMs",
@@ -2104,13 +2191,13 @@ pub mod managed_hsms {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedHsmListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedHsmError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -2120,7 +2207,7 @@ pub mod managed_hsms {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2145,7 +2232,7 @@ pub mod managed_hsms {
     pub async fn list_deleted(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DeletedManagedHsmListResult, list_deleted::Error> {
+    ) -> std::result::Result<models::DeletedManagedHsmListResult, list_deleted::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.KeyVault/deletedManagedHSMs",
@@ -2173,13 +2260,13 @@ pub mod managed_hsms {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeletedManagedHsmListResult =
+                let rsp_value: models::DeletedManagedHsmListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError =
+                let rsp_value: models::ManagedHsmError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_deleted::Error::DefaultResponse {
                     status_code,
@@ -2189,7 +2276,7 @@ pub mod managed_hsms {
         }
     }
     pub mod list_deleted {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2216,7 +2303,7 @@ pub mod managed_hsms {
         name: &str,
         location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DeletedManagedHsm, get_deleted::Error> {
+    ) -> std::result::Result<models::DeletedManagedHsm, get_deleted::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.KeyVault/locations/{}/deletedManagedHSMs/{}",
@@ -2246,13 +2333,13 @@ pub mod managed_hsms {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DeletedManagedHsm =
+                let rsp_value: models::DeletedManagedHsm =
                     serde_json::from_slice(rsp_body).map_err(|source| get_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError =
+                let rsp_value: models::ManagedHsmError =
                     serde_json::from_slice(rsp_body).map_err(|source| get_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_deleted::Error::DefaultResponse {
                     status_code,
@@ -2262,7 +2349,7 @@ pub mod managed_hsms {
         }
     }
     pub mod get_deleted {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2321,7 +2408,7 @@ pub mod managed_hsms {
             http::StatusCode::ACCEPTED => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError =
+                let rsp_value: models::ManagedHsmError =
                     serde_json::from_slice(rsp_body).map_err(|source| purge_deleted::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(purge_deleted::Error::DefaultResponse {
                     status_code,
@@ -2331,7 +2418,7 @@ pub mod managed_hsms {
         }
     }
     pub mod purge_deleted {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2355,13 +2442,13 @@ pub mod managed_hsms {
     }
 }
 pub mod mhsm_private_endpoint_connections {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
-    ) -> std::result::Result<MhsmPrivateEndpointConnectionsListResult, list_by_resource::Error> {
+    ) -> std::result::Result<models::MhsmPrivateEndpointConnectionsListResult, list_by_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/managedHSMs/{}/privateEndpointConnections",
@@ -2391,13 +2478,13 @@ pub mod mhsm_private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MhsmPrivateEndpointConnectionsListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MhsmPrivateEndpointConnectionsListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagedHsmError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource::Error::DefaultResponse {
                     status_code,
@@ -2407,7 +2494,7 @@ pub mod mhsm_private_endpoint_connections {
         }
     }
     pub mod list_by_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2435,7 +2522,7 @@ pub mod mhsm_private_endpoint_connections {
         resource_group_name: &str,
         name: &str,
         private_endpoint_connection_name: &str,
-    ) -> std::result::Result<MhsmPrivateEndpointConnection, get::Error> {
+    ) -> std::result::Result<models::MhsmPrivateEndpointConnection, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/managedHSMs/{}/privateEndpointConnections/{}",
@@ -2463,13 +2550,13 @@ pub mod mhsm_private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MhsmPrivateEndpointConnection =
+                let rsp_value: models::MhsmPrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagedHsmError =
+                let rsp_value: models::ManagedHsmError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2479,7 +2566,7 @@ pub mod mhsm_private_endpoint_connections {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2507,8 +2594,8 @@ pub mod mhsm_private_endpoint_connections {
         resource_group_name: &str,
         name: &str,
         private_endpoint_connection_name: &str,
-        properties: &MhsmPrivateEndpointConnection,
-    ) -> std::result::Result<MhsmPrivateEndpointConnection, put::Error> {
+        properties: &models::MhsmPrivateEndpointConnection,
+    ) -> std::result::Result<models::MhsmPrivateEndpointConnection, put::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/managedHSMs/{}/privateEndpointConnections/{}",
@@ -2537,13 +2624,13 @@ pub mod mhsm_private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MhsmPrivateEndpointConnection =
+                let rsp_value: models::MhsmPrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| put::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(put::Error::DefaultResponse {
                     status_code,
@@ -2553,7 +2640,7 @@ pub mod mhsm_private_endpoint_connections {
         }
     }
     pub mod put {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2609,7 +2696,7 @@ pub mod mhsm_private_endpoint_connections {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MhsmPrivateEndpointConnection =
+                let rsp_value: models::MhsmPrivateEndpointConnection =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(delete::Response::Ok200(rsp_value))
             }
@@ -2617,7 +2704,7 @@ pub mod mhsm_private_endpoint_connections {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2627,10 +2714,10 @@ pub mod mhsm_private_endpoint_connections {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(MhsmPrivateEndpointConnection),
+            Ok200(models::MhsmPrivateEndpointConnection),
             Accepted202,
             NoContent204,
         }
@@ -2657,13 +2744,13 @@ pub mod mhsm_private_endpoint_connections {
     }
 }
 pub mod mhsm_private_link_resources {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_mhsm_resource(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         name: &str,
-    ) -> std::result::Result<MhsmPrivateLinkResourceListResult, list_by_mhsm_resource::Error> {
+    ) -> std::result::Result<models::MhsmPrivateLinkResourceListResult, list_by_mhsm_resource::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/managedHSMs/{}/privateLinkResources",
@@ -2695,13 +2782,13 @@ pub mod mhsm_private_link_resources {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MhsmPrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MhsmPrivateLinkResourceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_mhsm_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_mhsm_resource::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_mhsm_resource::Error::DefaultResponse {
                     status_code,
@@ -2711,7 +2798,7 @@ pub mod mhsm_private_link_resources {
         }
     }
     pub mod list_by_mhsm_resource {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2735,8 +2822,8 @@ pub mod mhsm_private_link_resources {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.KeyVault/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -2757,13 +2844,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2773,7 +2860,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2797,14 +2884,14 @@ pub mod operations {
     }
 }
 pub mod secrets {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         vault_name: &str,
         secret_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Secret, get::Error> {
+    ) -> std::result::Result<models::Secret, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/secrets/{}",
@@ -2832,13 +2919,13 @@ pub mod secrets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Secret =
+                let rsp_value: models::Secret =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2848,7 +2935,7 @@ pub mod secrets {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2875,7 +2962,7 @@ pub mod secrets {
         resource_group_name: &str,
         vault_name: &str,
         secret_name: &str,
-        parameters: &SecretCreateOrUpdateParameters,
+        parameters: &models::SecretCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2909,19 +2996,19 @@ pub mod secrets {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Secret = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Secret = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Secret = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Secret = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2931,11 +3018,11 @@ pub mod secrets {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Secret),
-            Ok200(Secret),
+            Created201(models::Secret),
+            Ok200(models::Secret),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2963,7 +3050,7 @@ pub mod secrets {
         resource_group_name: &str,
         vault_name: &str,
         secret_name: &str,
-        parameters: &SecretPatchParameters,
+        parameters: &models::SecretPatchParameters,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -2994,19 +3081,19 @@ pub mod secrets {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Secret =
+                let rsp_value: models::Secret =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Secret =
+                let rsp_value: models::Secret =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -3016,11 +3103,11 @@ pub mod secrets {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(Secret),
-            Ok200(Secret),
+            Created201(models::Secret),
+            Ok200(models::Secret),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -3049,7 +3136,7 @@ pub mod secrets {
         vault_name: &str,
         top: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<SecretListResult, list::Error> {
+    ) -> std::result::Result<models::SecretListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.KeyVault/vaults/{}/secrets",
@@ -3079,13 +3166,13 @@ pub mod secrets {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SecretListResult =
+                let rsp_value: models::SecretListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -3095,7 +3182,7 @@ pub mod secrets {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

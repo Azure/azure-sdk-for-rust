@@ -2,12 +2,49 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    GetUserSettingsWithLocation(#[from] get_user_settings_with_location::Error),
+    #[error(transparent)]
+    PutUserSettingsWithLocation(#[from] put_user_settings_with_location::Error),
+    #[error(transparent)]
+    PatchUserSettingsWithLocation(#[from] patch_user_settings_with_location::Error),
+    #[error(transparent)]
+    DeleteUserSettingsWithLocation(#[from] delete_user_settings_with_location::Error),
+    #[error(transparent)]
+    GetConsoleWithLocation(#[from] get_console_with_location::Error),
+    #[error(transparent)]
+    PutConsoleWithLocation(#[from] put_console_with_location::Error),
+    #[error(transparent)]
+    DeleteConsoleWithLocation(#[from] delete_console_with_location::Error),
+    #[error(transparent)]
+    KeepAliveWithLocation(#[from] keep_alive_with_location::Error),
+    #[error(transparent)]
+    GetUserSettings(#[from] get_user_settings::Error),
+    #[error(transparent)]
+    PutUserSettings(#[from] put_user_settings::Error),
+    #[error(transparent)]
+    PatchUserSettings(#[from] patch_user_settings::Error),
+    #[error(transparent)]
+    DeleteUserSettings(#[from] delete_user_settings::Error),
+    #[error(transparent)]
+    GetConsole(#[from] get_console::Error),
+    #[error(transparent)]
+    PutConsole(#[from] put_console::Error),
+    #[error(transparent)]
+    DeleteConsole(#[from] delete_console::Error),
+    #[error(transparent)]
+    KeepAlive(#[from] keep_alive::Error),
+}
 pub async fn get_user_settings_with_location(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     location: &str,
-) -> std::result::Result<UserSettingsResponse, get_user_settings_with_location::Error> {
+) -> std::result::Result<models::UserSettingsResponse, get_user_settings_with_location::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
@@ -38,13 +75,13 @@ pub async fn get_user_settings_with_location(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_user_settings_with_location::Error::DefaultResponse {
                 status_code,
@@ -54,7 +91,7 @@ pub async fn get_user_settings_with_location(
     }
 }
 pub mod get_user_settings_with_location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -80,8 +117,8 @@ pub async fn put_user_settings_with_location(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     location: &str,
-    parameters: &CloudShellUserSettings,
-) -> std::result::Result<UserSettingsResponse, put_user_settings_with_location::Error> {
+    parameters: &models::CloudShellUserSettings,
+) -> std::result::Result<models::UserSettingsResponse, put_user_settings_with_location::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
@@ -113,13 +150,13 @@ pub async fn put_user_settings_with_location(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| put_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| put_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_user_settings_with_location::Error::DefaultResponse {
                 status_code,
@@ -129,7 +166,7 @@ pub async fn put_user_settings_with_location(
     }
 }
 pub mod put_user_settings_with_location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -155,8 +192,8 @@ pub async fn patch_user_settings_with_location(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
     location: &str,
-    parameters: &CloudShellPatchUserSettings,
-) -> std::result::Result<UserSettingsResponse, patch_user_settings_with_location::Error> {
+    parameters: &models::CloudShellPatchUserSettings,
+) -> std::result::Result<models::UserSettingsResponse, patch_user_settings_with_location::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
@@ -188,13 +225,13 @@ pub async fn patch_user_settings_with_location(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| patch_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| patch_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(patch_user_settings_with_location::Error::DefaultResponse {
                 status_code,
@@ -204,7 +241,7 @@ pub async fn patch_user_settings_with_location(
     }
 }
 pub mod patch_user_settings_with_location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -263,7 +300,7 @@ pub async fn delete_user_settings_with_location(
         http::StatusCode::NO_CONTENT => Ok(delete_user_settings_with_location::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_user_settings_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_user_settings_with_location::Error::DefaultResponse {
                 status_code,
@@ -273,7 +310,7 @@ pub async fn delete_user_settings_with_location(
     }
 }
 pub mod delete_user_settings_with_location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -304,7 +341,7 @@ pub async fn get_console_with_location(
     operation_config: &crate::OperationConfig,
     console_name: &str,
     location: &str,
-) -> std::result::Result<CloudShellConsole, get_console_with_location::Error> {
+) -> std::result::Result<models::CloudShellConsole, get_console_with_location::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
@@ -335,13 +372,13 @@ pub async fn get_console_with_location(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CloudShellConsole = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| get_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_console_with_location::Error::DefaultResponse {
                 status_code,
@@ -351,7 +388,7 @@ pub async fn get_console_with_location(
     }
 }
 pub mod get_console_with_location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -408,19 +445,19 @@ pub async fn put_console_with_location(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CloudShellConsole = serde_json::from_slice(rsp_body)
                 .map_err(|source| put_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(put_console_with_location::Response::Ok200(rsp_value))
         }
         http::StatusCode::CREATED => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole = serde_json::from_slice(rsp_body)
+            let rsp_value: models::CloudShellConsole = serde_json::from_slice(rsp_body)
                 .map_err(|source| put_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(put_console_with_location::Response::Created201(rsp_value))
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| put_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_console_with_location::Error::DefaultResponse {
                 status_code,
@@ -430,11 +467,11 @@ pub async fn put_console_with_location(
     }
 }
 pub mod put_console_with_location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
-        Ok200(CloudShellConsole),
-        Created201(CloudShellConsole),
+        Ok200(models::CloudShellConsole),
+        Created201(models::CloudShellConsole),
     }
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
@@ -494,7 +531,7 @@ pub async fn delete_console_with_location(
         http::StatusCode::NO_CONTENT => Ok(delete_console_with_location::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_console_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_console_with_location::Error::DefaultResponse {
                 status_code,
@@ -504,7 +541,7 @@ pub async fn delete_console_with_location(
     }
 }
 pub mod delete_console_with_location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -567,7 +604,7 @@ pub async fn keep_alive_with_location(
         http::StatusCode::OK => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| keep_alive_with_location::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(keep_alive_with_location::Error::DefaultResponse {
                 status_code,
@@ -577,7 +614,7 @@ pub async fn keep_alive_with_location(
     }
 }
 pub mod keep_alive_with_location {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -602,7 +639,7 @@ pub mod keep_alive_with_location {
 pub async fn get_user_settings(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
-) -> std::result::Result<UserSettingsResponse, get_user_settings::Error> {
+) -> std::result::Result<models::UserSettingsResponse, get_user_settings::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
@@ -630,13 +667,13 @@ pub async fn get_user_settings(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse =
+            let rsp_value: models::UserSettingsResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| get_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| get_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_user_settings::Error::DefaultResponse {
                 status_code,
@@ -646,7 +683,7 @@ pub async fn get_user_settings(
     }
 }
 pub mod get_user_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -671,8 +708,8 @@ pub mod get_user_settings {
 pub async fn put_user_settings(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
-    parameters: &CloudShellUserSettings,
-) -> std::result::Result<UserSettingsResponse, put_user_settings::Error> {
+    parameters: &models::CloudShellUserSettings,
+) -> std::result::Result<models::UserSettingsResponse, put_user_settings::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
@@ -701,13 +738,13 @@ pub async fn put_user_settings(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse =
+            let rsp_value: models::UserSettingsResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| put_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| put_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_user_settings::Error::DefaultResponse {
                 status_code,
@@ -717,7 +754,7 @@ pub async fn put_user_settings(
     }
 }
 pub mod put_user_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -742,8 +779,8 @@ pub mod put_user_settings {
 pub async fn patch_user_settings(
     operation_config: &crate::OperationConfig,
     user_settings_name: &str,
-    parameters: &CloudShellPatchUserSettings,
-) -> std::result::Result<UserSettingsResponse, patch_user_settings::Error> {
+    parameters: &models::CloudShellPatchUserSettings,
+) -> std::result::Result<models::UserSettingsResponse, patch_user_settings::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Portal/userSettings/{}",
@@ -772,13 +809,13 @@ pub async fn patch_user_settings(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: UserSettingsResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::UserSettingsResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| patch_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| patch_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(patch_user_settings::Error::DefaultResponse {
                 status_code,
@@ -788,7 +825,7 @@ pub async fn patch_user_settings(
     }
 }
 pub mod patch_user_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -843,7 +880,7 @@ pub async fn delete_user_settings(
         http::StatusCode::NO_CONTENT => Ok(delete_user_settings::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| delete_user_settings::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_user_settings::Error::DefaultResponse {
                 status_code,
@@ -853,7 +890,7 @@ pub async fn delete_user_settings(
     }
 }
 pub mod delete_user_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -883,7 +920,7 @@ pub mod delete_user_settings {
 pub async fn get_console(
     operation_config: &crate::OperationConfig,
     console_name: &str,
-) -> std::result::Result<CloudShellConsole, get_console::Error> {
+) -> std::result::Result<models::CloudShellConsole, get_console::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Portal/consoles/{}",
@@ -911,13 +948,13 @@ pub async fn get_console(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole =
+            let rsp_value: models::CloudShellConsole =
                 serde_json::from_slice(rsp_body).map_err(|source| get_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| get_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(get_console::Error::DefaultResponse {
                 status_code,
@@ -927,7 +964,7 @@ pub async fn get_console(
     }
 }
 pub mod get_console {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -952,7 +989,7 @@ pub mod get_console {
 pub async fn put_console(
     operation_config: &crate::OperationConfig,
     console_name: &str,
-    parameters: &ConsoleDefinition,
+    parameters: &models::ConsoleDefinition,
 ) -> std::result::Result<put_console::Response, put_console::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -982,19 +1019,19 @@ pub async fn put_console(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole =
+            let rsp_value: models::CloudShellConsole =
                 serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(put_console::Response::Ok200(rsp_value))
         }
         http::StatusCode::CREATED => {
             let rsp_body = rsp.body();
-            let rsp_value: CloudShellConsole =
+            let rsp_value: models::CloudShellConsole =
                 serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(put_console::Response::Created201(rsp_value))
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| put_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(put_console::Error::DefaultResponse {
                 status_code,
@@ -1004,11 +1041,11 @@ pub async fn put_console(
     }
 }
 pub mod put_console {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
-        Ok200(CloudShellConsole),
-        Created201(CloudShellConsole),
+        Ok200(models::CloudShellConsole),
+        Created201(models::CloudShellConsole),
     }
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
@@ -1064,7 +1101,7 @@ pub async fn delete_console(
         http::StatusCode::NO_CONTENT => Ok(delete_console::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| delete_console::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(delete_console::Error::DefaultResponse {
                 status_code,
@@ -1074,7 +1111,7 @@ pub async fn delete_console(
     }
 }
 pub mod delete_console {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -1130,7 +1167,7 @@ pub async fn keep_alive(operation_config: &crate::OperationConfig, console_name:
         http::StatusCode::OK => Ok(()),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| keep_alive::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(keep_alive::Error::DefaultResponse {
                 status_code,
@@ -1140,7 +1177,7 @@ pub async fn keep_alive(operation_config: &crate::OperationConfig, console_name:
     }
 }
 pub mod keep_alive {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

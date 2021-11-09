@@ -2,15 +2,36 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Instances_GetDetails(#[from] instances::get_details::Error),
+    #[error(transparent)]
+    Instances_Create(#[from] instances::create::Error),
+    #[error(transparent)]
+    Instances_Update(#[from] instances::update::Error),
+    #[error(transparent)]
+    Instances_Delete(#[from] instances::delete::Error),
+    #[error(transparent)]
+    ListOperations(#[from] list_operations::Error),
+    #[error(transparent)]
+    Instances_ListByResourceGroup(#[from] instances::list_by_resource_group::Error),
+    #[error(transparent)]
+    Instances_List(#[from] instances::list::Error),
+    #[error(transparent)]
+    Instances_CheckNameAvailability(#[from] instances::check_name_availability::Error),
+}
 pub mod instances {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_details(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         instance_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DfpInstance, get_details::Error> {
+    ) -> std::result::Result<models::DfpInstance, get_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Dynamics365FraudProtection/instances/{}",
@@ -40,13 +61,13 @@ pub mod instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DfpInstance =
+                let rsp_value: models::DfpInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| get_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_details::Error::DefaultResponse {
                     status_code,
@@ -56,7 +77,7 @@ pub mod instances {
         }
     }
     pub mod get_details {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -82,7 +103,7 @@ pub mod instances {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         instance_name: &str,
-        instance_parameters: &DfpInstance,
+        instance_parameters: &models::DfpInstance,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -112,25 +133,25 @@ pub mod instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DfpInstance =
+                let rsp_value: models::DfpInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DfpInstance =
+                let rsp_value: models::DfpInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DfpInstance =
+                let rsp_value: models::DfpInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -140,12 +161,12 @@ pub mod instances {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DfpInstance),
-            Created201(DfpInstance),
-            Accepted202(DfpInstance),
+            Ok200(models::DfpInstance),
+            Created201(models::DfpInstance),
+            Accepted202(models::DfpInstance),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -172,7 +193,7 @@ pub mod instances {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         instance_name: &str,
-        instance_update_parameters: &DfpInstanceUpdateParameters,
+        instance_update_parameters: &models::DfpInstanceUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -202,19 +223,19 @@ pub mod instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DfpInstance =
+                let rsp_value: models::DfpInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DfpInstance =
+                let rsp_value: models::DfpInstance =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -224,11 +245,11 @@ pub mod instances {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DfpInstance),
-            Accepted202(DfpInstance),
+            Ok200(models::DfpInstance),
+            Accepted202(models::DfpInstance),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -286,7 +307,7 @@ pub mod instances {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -296,7 +317,7 @@ pub mod instances {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -328,7 +349,7 @@ pub mod instances {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DfpInstances, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DfpInstances, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Dynamics365FraudProtection/instances",
@@ -359,13 +380,13 @@ pub mod instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DfpInstances = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DfpInstances = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -375,7 +396,7 @@ pub mod instances {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -397,7 +418,10 @@ pub mod instances {
             GetTokenError(azure_core::Error),
         }
     }
-    pub async fn list(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<DfpInstances, list::Error> {
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<models::DfpInstances, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Dynamics365FraudProtection/instances",
@@ -422,13 +446,13 @@ pub mod instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DfpInstances =
+                let rsp_value: models::DfpInstances =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -438,7 +462,7 @@ pub mod instances {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -463,9 +487,9 @@ pub mod instances {
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         location: &str,
-        instance_parameters: &CheckInstanceNameAvailabilityParameters,
+        instance_parameters: &models::CheckInstanceNameAvailabilityParameters,
         subscription_id: &str,
-    ) -> std::result::Result<CheckInstanceNameAvailabilityResult, check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckInstanceNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Dynamics365FraudProtection/locations/{}/checkNameAvailability",
@@ -497,13 +521,13 @@ pub mod instances {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckInstanceNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckInstanceNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -513,7 +537,7 @@ pub mod instances {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -538,7 +562,7 @@ pub mod instances {
 }
 pub async fn list_operations(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<OperationListResult, list_operations::Error> {
+) -> std::result::Result<models::OperationListResult, list_operations::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/providers/Microsoft.Dynamics365FraudProtection/operations",
@@ -565,13 +589,13 @@ pub async fn list_operations(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OperationListResult =
+            let rsp_value: models::OperationListResult =
                 serde_json::from_slice(rsp_body).map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_operations::Error::DefaultResponse {
                 status_code,
@@ -581,7 +605,7 @@ pub async fn list_operations(
     }
 }
 pub mod list_operations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

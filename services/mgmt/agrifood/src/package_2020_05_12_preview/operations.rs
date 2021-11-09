@@ -2,16 +2,51 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Extensions_Get(#[from] extensions::get::Error),
+    #[error(transparent)]
+    Extensions_Create(#[from] extensions::create::Error),
+    #[error(transparent)]
+    Extensions_Update(#[from] extensions::update::Error),
+    #[error(transparent)]
+    Extensions_Delete(#[from] extensions::delete::Error),
+    #[error(transparent)]
+    Extensions_ListByFarmBeats(#[from] extensions::list_by_farm_beats::Error),
+    #[error(transparent)]
+    FarmBeatsExtensions_List(#[from] farm_beats_extensions::list::Error),
+    #[error(transparent)]
+    FarmBeatsExtensions_Get(#[from] farm_beats_extensions::get::Error),
+    #[error(transparent)]
+    FarmBeatsModels_Get(#[from] farm_beats_models::get::Error),
+    #[error(transparent)]
+    FarmBeatsModels_CreateOrUpdate(#[from] farm_beats_models::create_or_update::Error),
+    #[error(transparent)]
+    FarmBeatsModels_Update(#[from] farm_beats_models::update::Error),
+    #[error(transparent)]
+    FarmBeatsModels_Delete(#[from] farm_beats_models::delete::Error),
+    #[error(transparent)]
+    FarmBeatsModels_ListBySubscription(#[from] farm_beats_models::list_by_subscription::Error),
+    #[error(transparent)]
+    FarmBeatsModels_ListByResourceGroup(#[from] farm_beats_models::list_by_resource_group::Error),
+    #[error(transparent)]
+    Locations_CheckNameAvailability(#[from] locations::check_name_availability::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+}
 pub mod extensions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         extension_id: &str,
         farm_beats_resource_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Extension, get::Error> {
+    ) -> std::result::Result<models::Extension, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
@@ -39,13 +74,13 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Extension =
+                let rsp_value: models::Extension =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -55,7 +90,7 @@ pub mod extensions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -83,7 +118,7 @@ pub mod extensions {
         farm_beats_resource_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Extension, create::Error> {
+    ) -> std::result::Result<models::Extension, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
@@ -111,13 +146,13 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Extension =
+                let rsp_value: models::Extension =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -127,7 +162,7 @@ pub mod extensions {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -155,7 +190,7 @@ pub mod extensions {
         farm_beats_resource_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Extension, update::Error> {
+    ) -> std::result::Result<models::Extension, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
@@ -183,13 +218,13 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Extension =
+                let rsp_value: models::Extension =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -199,7 +234,7 @@ pub mod extensions {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -257,7 +292,7 @@ pub mod extensions {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -267,7 +302,7 @@ pub mod extensions {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -303,7 +338,7 @@ pub mod extensions {
         extension_categories: &[&str],
         max_page_size: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<ExtensionListResponse, list_by_farm_beats::Error> {
+    ) -> std::result::Result<models::ExtensionListResponse, list_by_farm_beats::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions",
@@ -346,13 +381,13 @@ pub mod extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ExtensionListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ExtensionListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_farm_beats::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_farm_beats::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_farm_beats::Error::DefaultResponse {
                     status_code,
@@ -362,7 +397,7 @@ pub mod extensions {
         }
     }
     pub mod list_by_farm_beats {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -386,7 +421,7 @@ pub mod extensions {
     }
 }
 pub mod farm_beats_extensions {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         farm_beats_extension_ids: &[&str],
@@ -394,7 +429,7 @@ pub mod farm_beats_extensions {
         extension_categories: &[&str],
         publisher_ids: &[&str],
         max_page_size: Option<i32>,
-    ) -> std::result::Result<FarmBeatsExtensionListResponse, list::Error> {
+    ) -> std::result::Result<models::FarmBeatsExtensionListResponse, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.AgFoodPlatform/farmBeatsExtensionDefinitions",
@@ -436,13 +471,13 @@ pub mod farm_beats_extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FarmBeatsExtensionListResponse =
+                let rsp_value: models::FarmBeatsExtensionListResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -452,7 +487,7 @@ pub mod farm_beats_extensions {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -477,7 +512,7 @@ pub mod farm_beats_extensions {
     pub async fn get(
         operation_config: &crate::OperationConfig,
         farm_beats_extension_id: &str,
-    ) -> std::result::Result<FarmBeatsExtension, get::Error> {
+    ) -> std::result::Result<models::FarmBeatsExtension, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.AgFoodPlatform/farmBeatsExtensionDefinitions/{}",
@@ -502,13 +537,13 @@ pub mod farm_beats_extensions {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FarmBeatsExtension =
+                let rsp_value: models::FarmBeatsExtension =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -518,7 +553,7 @@ pub mod farm_beats_extensions {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -542,13 +577,13 @@ pub mod farm_beats_extensions {
     }
 }
 pub mod farm_beats_models {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
         farm_beats_resource_name: &str,
-    ) -> std::result::Result<FarmBeats, get::Error> {
+    ) -> std::result::Result<models::FarmBeats, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
@@ -575,13 +610,13 @@ pub mod farm_beats_models {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FarmBeats =
+                let rsp_value: models::FarmBeats =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -591,7 +626,7 @@ pub mod farm_beats_models {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -618,7 +653,7 @@ pub mod farm_beats_models {
         farm_beats_resource_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-        body: &FarmBeats,
+        body: &models::FarmBeats,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -650,19 +685,19 @@ pub mod farm_beats_models {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FarmBeats = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FarmBeats = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: FarmBeats = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FarmBeats = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -672,11 +707,11 @@ pub mod farm_beats_models {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(FarmBeats),
-            Created201(FarmBeats),
+            Ok200(models::FarmBeats),
+            Created201(models::FarmBeats),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -704,8 +739,8 @@ pub mod farm_beats_models {
         farm_beats_resource_name: &str,
         resource_group_name: &str,
         subscription_id: &str,
-        body: &FarmBeatsUpdateRequestModel,
-    ) -> std::result::Result<FarmBeats, update::Error> {
+        body: &models::FarmBeatsUpdateRequestModel,
+    ) -> std::result::Result<models::FarmBeats, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
@@ -733,13 +768,13 @@ pub mod farm_beats_models {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FarmBeats =
+                let rsp_value: models::FarmBeats =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -749,7 +784,7 @@ pub mod farm_beats_models {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -805,7 +840,7 @@ pub mod farm_beats_models {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -815,7 +850,7 @@ pub mod farm_beats_models {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -847,7 +882,7 @@ pub mod farm_beats_models {
         max_page_size: Option<i32>,
         skip_token: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<FarmBeatsListResponse, list_by_subscription::Error> {
+    ) -> std::result::Result<models::FarmBeatsListResponse, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.AgFoodPlatform/farmBeats",
@@ -882,13 +917,13 @@ pub mod farm_beats_models {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FarmBeatsListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FarmBeatsListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -898,7 +933,7 @@ pub mod farm_beats_models {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -926,7 +961,7 @@ pub mod farm_beats_models {
         skip_token: Option<&str>,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<FarmBeatsListResponse, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::FarmBeatsListResponse, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats",
@@ -964,13 +999,13 @@ pub mod farm_beats_models {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: FarmBeatsListResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::FarmBeatsListResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -980,7 +1015,7 @@ pub mod farm_beats_models {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1004,12 +1039,12 @@ pub mod farm_beats_models {
     }
 }
 pub mod locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        body: &CheckNameAvailabilityRequest,
-    ) -> std::result::Result<CheckNameAvailabilityResponse, check_name_availability::Error> {
+        body: &models::CheckNameAvailabilityRequest,
+    ) -> std::result::Result<models::CheckNameAvailabilityResponse, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.AgFoodPlatform/checkNameAvailability",
@@ -1040,13 +1075,13 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -1056,7 +1091,7 @@ pub mod locations {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1080,8 +1115,8 @@ pub mod locations {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.AgFoodPlatform/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -1102,13 +1137,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1118,7 +1153,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

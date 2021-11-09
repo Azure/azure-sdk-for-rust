@@ -2,9 +2,52 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Builds_List(#[from] builds::list::Error),
+    #[error(transparent)]
+    Builds_Get(#[from] builds::get::Error),
+    #[error(transparent)]
+    Builds_Update(#[from] builds::update::Error),
+    #[error(transparent)]
+    Builds_GetLogLink(#[from] builds::get_log_link::Error),
+    #[error(transparent)]
+    Builds_Cancel(#[from] builds::cancel::Error),
+    #[error(transparent)]
+    BuildSteps_List(#[from] build_steps::list::Error),
+    #[error(transparent)]
+    BuildSteps_Get(#[from] build_steps::get::Error),
+    #[error(transparent)]
+    BuildSteps_Create(#[from] build_steps::create::Error),
+    #[error(transparent)]
+    BuildSteps_Update(#[from] build_steps::update::Error),
+    #[error(transparent)]
+    BuildSteps_Delete(#[from] build_steps::delete::Error),
+    #[error(transparent)]
+    BuildSteps_ListBuildArguments(#[from] build_steps::list_build_arguments::Error),
+    #[error(transparent)]
+    BuildTasks_List(#[from] build_tasks::list::Error),
+    #[error(transparent)]
+    BuildTasks_Get(#[from] build_tasks::get::Error),
+    #[error(transparent)]
+    BuildTasks_Create(#[from] build_tasks::create::Error),
+    #[error(transparent)]
+    BuildTasks_Update(#[from] build_tasks::update::Error),
+    #[error(transparent)]
+    BuildTasks_Delete(#[from] build_tasks::delete::Error),
+    #[error(transparent)]
+    BuildTasks_ListSourceRepositoryProperties(#[from] build_tasks::list_source_repository_properties::Error),
+    #[error(transparent)]
+    Registries_QueueBuild(#[from] registries::queue_build::Error),
+    #[error(transparent)]
+    Registries_GetBuildSourceUploadUrl(#[from] registries::get_build_source_upload_url::Error),
+}
 pub mod builds {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -13,7 +56,7 @@ pub mod builds {
         filter: Option<&str>,
         top: Option<i32>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<BuildListResult, list::Error> {
+    ) -> std::result::Result<models::BuildListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/builds",
@@ -49,7 +92,7 @@ pub mod builds {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildListResult =
+                let rsp_value: models::BuildListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -57,7 +100,7 @@ pub mod builds {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -82,7 +125,7 @@ pub mod builds {
         resource_group_name: &str,
         registry_name: &str,
         build_id: &str,
-    ) -> std::result::Result<Build, get::Error> {
+    ) -> std::result::Result<models::Build, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/builds/{}",
@@ -110,7 +153,7 @@ pub mod builds {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Build =
+                let rsp_value: models::Build =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -118,7 +161,7 @@ pub mod builds {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -143,7 +186,7 @@ pub mod builds {
         resource_group_name: &str,
         registry_name: &str,
         build_id: &str,
-        build_update_parameters: &BuildUpdateParameters,
+        build_update_parameters: &models::BuildUpdateParameters,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -173,13 +216,13 @@ pub mod builds {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Build =
+                let rsp_value: models::Build =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Build =
+                let rsp_value: models::Build =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -187,11 +230,11 @@ pub mod builds {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Build),
-            Created201(Build),
+            Ok200(models::Build),
+            Created201(models::Build),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -217,7 +260,7 @@ pub mod builds {
         resource_group_name: &str,
         registry_name: &str,
         build_id: &str,
-    ) -> std::result::Result<BuildGetLogResult, get_log_link::Error> {
+    ) -> std::result::Result<models::BuildGetLogResult, get_log_link::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/builds/{}/getLogLink",
@@ -249,7 +292,7 @@ pub mod builds {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildGetLogResult =
+                let rsp_value: models::BuildGetLogResult =
                     serde_json::from_slice(rsp_body).map_err(|source| get_log_link::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -257,7 +300,7 @@ pub mod builds {
         }
     }
     pub mod get_log_link {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -315,7 +358,7 @@ pub mod builds {
         }
     }
     pub mod cancel {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -341,14 +384,14 @@ pub mod builds {
     }
 }
 pub mod build_steps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
         build_task_name: &str,
-    ) -> std::result::Result<BuildStepList, list::Error> {
+    ) -> std::result::Result<models::BuildStepList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/buildTasks/{}/steps",
@@ -376,7 +419,7 @@ pub mod build_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildStepList =
+                let rsp_value: models::BuildStepList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -384,7 +427,7 @@ pub mod build_steps {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -410,7 +453,7 @@ pub mod build_steps {
         registry_name: &str,
         build_task_name: &str,
         step_name: &str,
-    ) -> std::result::Result<BuildStep, get::Error> {
+    ) -> std::result::Result<models::BuildStep, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/buildTasks/{}/steps/{}",
@@ -439,7 +482,7 @@ pub mod build_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildStep =
+                let rsp_value: models::BuildStep =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -447,7 +490,7 @@ pub mod build_steps {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -473,7 +516,7 @@ pub mod build_steps {
         registry_name: &str,
         build_task_name: &str,
         step_name: &str,
-        build_step_create_parameters: &BuildStep,
+        build_step_create_parameters: &models::BuildStep,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -504,13 +547,13 @@ pub mod build_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildStep =
+                let rsp_value: models::BuildStep =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildStep =
+                let rsp_value: models::BuildStep =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
@@ -518,11 +561,11 @@ pub mod build_steps {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BuildStep),
-            Created201(BuildStep),
+            Ok200(models::BuildStep),
+            Created201(models::BuildStep),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -549,7 +592,7 @@ pub mod build_steps {
         registry_name: &str,
         build_task_name: &str,
         step_name: &str,
-        build_step_update_parameters: &BuildStepUpdateParameters,
+        build_step_update_parameters: &models::BuildStepUpdateParameters,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -580,13 +623,13 @@ pub mod build_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildStep =
+                let rsp_value: models::BuildStep =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildStep =
+                let rsp_value: models::BuildStep =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -594,11 +637,11 @@ pub mod build_steps {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BuildStep),
-            Created201(BuildStep),
+            Ok200(models::BuildStep),
+            Created201(models::BuildStep),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -658,7 +701,7 @@ pub mod build_steps {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -689,7 +732,7 @@ pub mod build_steps {
         registry_name: &str,
         build_task_name: &str,
         step_name: &str,
-    ) -> std::result::Result<BuildArgumentList, list_build_arguments::Error> {
+    ) -> std::result::Result<models::BuildArgumentList, list_build_arguments::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/buildTasks/{}/steps/{}/listBuildArguments" , operation_config . base_path () , subscription_id , resource_group_name , registry_name , build_task_name , step_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_build_arguments::Error::ParseUrlError)?;
@@ -714,7 +757,7 @@ pub mod build_steps {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildArgumentList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BuildArgumentList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_build_arguments::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -722,7 +765,7 @@ pub mod build_steps {
         }
     }
     pub mod list_build_arguments {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -743,7 +786,7 @@ pub mod build_steps {
     }
 }
 pub mod build_tasks {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -751,7 +794,7 @@ pub mod build_tasks {
         registry_name: &str,
         filter: Option<&str>,
         skip_token: Option<&str>,
-    ) -> std::result::Result<BuildTaskListResult, list::Error> {
+    ) -> std::result::Result<models::BuildTaskListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/buildTasks",
@@ -784,7 +827,7 @@ pub mod build_tasks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildTaskListResult =
+                let rsp_value: models::BuildTaskListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -792,7 +835,7 @@ pub mod build_tasks {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -817,7 +860,7 @@ pub mod build_tasks {
         resource_group_name: &str,
         registry_name: &str,
         build_task_name: &str,
-    ) -> std::result::Result<BuildTask, get::Error> {
+    ) -> std::result::Result<models::BuildTask, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/buildTasks/{}",
@@ -845,7 +888,7 @@ pub mod build_tasks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildTask =
+                let rsp_value: models::BuildTask =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -853,7 +896,7 @@ pub mod build_tasks {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -878,7 +921,7 @@ pub mod build_tasks {
         resource_group_name: &str,
         registry_name: &str,
         build_task_name: &str,
-        build_task_create_parameters: &BuildTask,
+        build_task_create_parameters: &models::BuildTask,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -908,13 +951,13 @@ pub mod build_tasks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildTask =
+                let rsp_value: models::BuildTask =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildTask =
+                let rsp_value: models::BuildTask =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
@@ -922,11 +965,11 @@ pub mod build_tasks {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BuildTask),
-            Created201(BuildTask),
+            Ok200(models::BuildTask),
+            Created201(models::BuildTask),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -952,7 +995,7 @@ pub mod build_tasks {
         resource_group_name: &str,
         registry_name: &str,
         build_task_name: &str,
-        build_task_update_parameters: &BuildTaskUpdateParameters,
+        build_task_update_parameters: &models::BuildTaskUpdateParameters,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -982,13 +1025,13 @@ pub mod build_tasks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildTask =
+                let rsp_value: models::BuildTask =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: BuildTask =
+                let rsp_value: models::BuildTask =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -996,11 +1039,11 @@ pub mod build_tasks {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BuildTask),
-            Created201(BuildTask),
+            Ok200(models::BuildTask),
+            Created201(models::BuildTask),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1059,7 +1102,7 @@ pub mod build_tasks {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1090,7 +1133,7 @@ pub mod build_tasks {
         resource_group_name: &str,
         registry_name: &str,
         build_task_name: &str,
-    ) -> std::result::Result<SourceRepositoryProperties, list_source_repository_properties::Error> {
+    ) -> std::result::Result<models::SourceRepositoryProperties, list_source_repository_properties::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/buildTasks/{}/listSourceRepositoryProperties" , operation_config . base_path () , subscription_id , resource_group_name , registry_name , build_task_name) ;
         let mut url = url::Url::parse(url_str).map_err(list_source_repository_properties::Error::ParseUrlError)?;
@@ -1117,7 +1160,7 @@ pub mod build_tasks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SourceRepositoryProperties = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SourceRepositoryProperties = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_source_repository_properties::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1125,7 +1168,7 @@ pub mod build_tasks {
         }
     }
     pub mod list_source_repository_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1146,13 +1189,13 @@ pub mod build_tasks {
     }
 }
 pub mod registries {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn queue_build(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-        build_request: &QueueBuildRequest,
+        build_request: &models::QueueBuildRequest,
     ) -> std::result::Result<queue_build::Response, queue_build::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1184,7 +1227,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Build =
+                let rsp_value: models::Build =
                     serde_json::from_slice(rsp_body).map_err(|source| queue_build::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(queue_build::Response::Ok200(rsp_value))
             }
@@ -1193,10 +1236,10 @@ pub mod registries {
         }
     }
     pub mod queue_build {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Build),
+            Ok200(models::Build),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1222,7 +1265,7 @@ pub mod registries {
         subscription_id: &str,
         resource_group_name: &str,
         registry_name: &str,
-    ) -> std::result::Result<SourceUploadDefinition, get_build_source_upload_url::Error> {
+    ) -> std::result::Result<models::SourceUploadDefinition, get_build_source_upload_url::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ContainerRegistry/registries/{}/getBuildSourceUploadUrl",
@@ -1255,7 +1298,7 @@ pub mod registries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SourceUploadDefinition = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SourceUploadDefinition = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_build_source_upload_url::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1263,7 +1306,7 @@ pub mod registries {
         }
     }
     pub mod get_build_source_upload_url {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

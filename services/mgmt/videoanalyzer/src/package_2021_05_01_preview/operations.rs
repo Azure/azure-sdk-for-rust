@@ -2,10 +2,65 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    VideoAnalyzers_List(#[from] video_analyzers::list::Error),
+    #[error(transparent)]
+    VideoAnalyzers_Get(#[from] video_analyzers::get::Error),
+    #[error(transparent)]
+    VideoAnalyzers_CreateOrUpdate(#[from] video_analyzers::create_or_update::Error),
+    #[error(transparent)]
+    VideoAnalyzers_Update(#[from] video_analyzers::update::Error),
+    #[error(transparent)]
+    VideoAnalyzers_Delete(#[from] video_analyzers::delete::Error),
+    #[error(transparent)]
+    VideoAnalyzers_SyncStorageKeys(#[from] video_analyzers::sync_storage_keys::Error),
+    #[error(transparent)]
+    Locations_CheckNameAvailability(#[from] locations::check_name_availability::Error),
+    #[error(transparent)]
+    VideoAnalyzers_ListBySubscription(#[from] video_analyzers::list_by_subscription::Error),
+    #[error(transparent)]
+    EdgeModules_List(#[from] edge_modules::list::Error),
+    #[error(transparent)]
+    EdgeModules_Get(#[from] edge_modules::get::Error),
+    #[error(transparent)]
+    EdgeModules_CreateOrUpdate(#[from] edge_modules::create_or_update::Error),
+    #[error(transparent)]
+    EdgeModules_Delete(#[from] edge_modules::delete::Error),
+    #[error(transparent)]
+    EdgeModules_ListProvisioningToken(#[from] edge_modules::list_provisioning_token::Error),
+    #[error(transparent)]
+    Videos_List(#[from] videos::list::Error),
+    #[error(transparent)]
+    Videos_Get(#[from] videos::get::Error),
+    #[error(transparent)]
+    Videos_CreateOrUpdate(#[from] videos::create_or_update::Error),
+    #[error(transparent)]
+    Videos_Update(#[from] videos::update::Error),
+    #[error(transparent)]
+    Videos_Delete(#[from] videos::delete::Error),
+    #[error(transparent)]
+    Videos_ListStreamingToken(#[from] videos::list_streaming_token::Error),
+    #[error(transparent)]
+    AccessPolicies_List(#[from] access_policies::list::Error),
+    #[error(transparent)]
+    AccessPolicies_Get(#[from] access_policies::get::Error),
+    #[error(transparent)]
+    AccessPolicies_CreateOrUpdate(#[from] access_policies::create_or_update::Error),
+    #[error(transparent)]
+    AccessPolicies_Update(#[from] access_policies::update::Error),
+    #[error(transparent)]
+    AccessPolicies_Delete(#[from] access_policies::delete::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationCollection, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Media/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +81,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationCollection =
+                let rsp_value: models::OperationCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +97,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,12 +121,12 @@ pub mod operations {
     }
 }
 pub mod video_analyzers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<VideoAnalyzerCollection, list::Error> {
+    ) -> std::result::Result<models::VideoAnalyzerCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers",
@@ -97,13 +152,13 @@ pub mod video_analyzers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoAnalyzerCollection =
+                let rsp_value: models::VideoAnalyzerCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -113,7 +168,7 @@ pub mod video_analyzers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -140,7 +195,7 @@ pub mod video_analyzers {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-    ) -> std::result::Result<VideoAnalyzer, get::Error> {
+    ) -> std::result::Result<models::VideoAnalyzer, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
@@ -167,13 +222,13 @@ pub mod video_analyzers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoAnalyzer =
+                let rsp_value: models::VideoAnalyzer =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -183,7 +238,7 @@ pub mod video_analyzers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -210,7 +265,7 @@ pub mod video_analyzers {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &VideoAnalyzer,
+        parameters: &models::VideoAnalyzer,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -242,19 +297,19 @@ pub mod video_analyzers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoAnalyzer = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VideoAnalyzer = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoAnalyzer = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VideoAnalyzer = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -264,11 +319,11 @@ pub mod video_analyzers {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VideoAnalyzer),
-            Created201(VideoAnalyzer),
+            Ok200(models::VideoAnalyzer),
+            Created201(models::VideoAnalyzer),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -296,8 +351,8 @@ pub mod video_analyzers {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &VideoAnalyzerUpdate,
-    ) -> std::result::Result<VideoAnalyzer, update::Error> {
+        parameters: &models::VideoAnalyzerUpdate,
+    ) -> std::result::Result<models::VideoAnalyzer, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
@@ -325,13 +380,13 @@ pub mod video_analyzers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoAnalyzer =
+                let rsp_value: models::VideoAnalyzer =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -341,7 +396,7 @@ pub mod video_analyzers {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -397,7 +452,7 @@ pub mod video_analyzers {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -407,7 +462,7 @@ pub mod video_analyzers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -439,7 +494,7 @@ pub mod video_analyzers {
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
-        parameters: &SyncStorageKeysInput,
+        parameters: &models::SyncStorageKeysInput,
     ) -> std::result::Result<(), sync_storage_keys::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -472,7 +527,7 @@ pub mod video_analyzers {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| sync_storage_keys::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(sync_storage_keys::Error::DefaultResponse {
                     status_code,
@@ -482,7 +537,7 @@ pub mod video_analyzers {
         }
     }
     pub mod sync_storage_keys {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -507,7 +562,7 @@ pub mod video_analyzers {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<VideoAnalyzerCollection, list_by_subscription::Error> {
+    ) -> std::result::Result<models::VideoAnalyzerCollection, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Media/videoAnalyzers",
@@ -535,13 +590,13 @@ pub mod video_analyzers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoAnalyzerCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VideoAnalyzerCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -551,7 +606,7 @@ pub mod video_analyzers {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -575,13 +630,13 @@ pub mod video_analyzers {
     }
 }
 pub mod locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         location_name: &str,
-        parameters: &CheckNameAvailabilityRequest,
-    ) -> std::result::Result<CheckNameAvailabilityResponse, check_name_availability::Error> {
+        parameters: &models::CheckNameAvailabilityRequest,
+    ) -> std::result::Result<models::CheckNameAvailabilityResponse, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Media/locations/{}/checkNameAvailability",
@@ -613,13 +668,13 @@ pub mod locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -629,7 +684,7 @@ pub mod locations {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -653,7 +708,7 @@ pub mod locations {
     }
 }
 pub mod edge_modules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
@@ -662,7 +717,7 @@ pub mod edge_modules {
         filter: Option<&str>,
         top: Option<i32>,
         orderby: Option<&str>,
-    ) -> std::result::Result<EdgeModuleEntityCollection, list::Error> {
+    ) -> std::result::Result<models::EdgeModuleEntityCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules",
@@ -698,13 +753,13 @@ pub mod edge_modules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EdgeModuleEntityCollection =
+                let rsp_value: models::EdgeModuleEntityCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -714,7 +769,7 @@ pub mod edge_modules {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -742,7 +797,7 @@ pub mod edge_modules {
         resource_group_name: &str,
         account_name: &str,
         edge_module_name: &str,
-    ) -> std::result::Result<EdgeModuleEntity, get::Error> {
+    ) -> std::result::Result<models::EdgeModuleEntity, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}",
@@ -770,13 +825,13 @@ pub mod edge_modules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EdgeModuleEntity =
+                let rsp_value: models::EdgeModuleEntity =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -786,7 +841,7 @@ pub mod edge_modules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -814,7 +869,7 @@ pub mod edge_modules {
         resource_group_name: &str,
         account_name: &str,
         edge_module_name: &str,
-        parameters: &EdgeModuleEntity,
+        parameters: &models::EdgeModuleEntity,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -847,19 +902,19 @@ pub mod edge_modules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EdgeModuleEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EdgeModuleEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: EdgeModuleEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EdgeModuleEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -869,11 +924,11 @@ pub mod edge_modules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(EdgeModuleEntity),
-            Created201(EdgeModuleEntity),
+            Ok200(models::EdgeModuleEntity),
+            Created201(models::EdgeModuleEntity),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -932,7 +987,7 @@ pub mod edge_modules {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -942,7 +997,7 @@ pub mod edge_modules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -975,8 +1030,8 @@ pub mod edge_modules {
         resource_group_name: &str,
         account_name: &str,
         edge_module_name: &str,
-        parameters: &ListProvisioningTokenInput,
-    ) -> std::result::Result<EdgeModuleProvisioningToken, list_provisioning_token::Error> {
+        parameters: &models::ListProvisioningTokenInput,
+    ) -> std::result::Result<models::EdgeModuleProvisioningToken, list_provisioning_token::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}/listProvisioningToken",
@@ -1010,13 +1065,13 @@ pub mod edge_modules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EdgeModuleProvisioningToken = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EdgeModuleProvisioningToken = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_provisioning_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_provisioning_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_provisioning_token::Error::DefaultResponse {
                     status_code,
@@ -1026,7 +1081,7 @@ pub mod edge_modules {
         }
     }
     pub mod list_provisioning_token {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1050,14 +1105,14 @@ pub mod edge_modules {
     }
 }
 pub mod videos {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<VideoEntityCollection, list::Error> {
+    ) -> std::result::Result<models::VideoEntityCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos",
@@ -1087,13 +1142,13 @@ pub mod videos {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoEntityCollection =
+                let rsp_value: models::VideoEntityCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1103,7 +1158,7 @@ pub mod videos {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1131,7 +1186,7 @@ pub mod videos {
         resource_group_name: &str,
         account_name: &str,
         video_name: &str,
-    ) -> std::result::Result<VideoEntity, get::Error> {
+    ) -> std::result::Result<models::VideoEntity, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
@@ -1159,13 +1214,13 @@ pub mod videos {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoEntity =
+                let rsp_value: models::VideoEntity =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1175,7 +1230,7 @@ pub mod videos {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1203,7 +1258,7 @@ pub mod videos {
         resource_group_name: &str,
         account_name: &str,
         video_name: &str,
-        parameters: &VideoEntity,
+        parameters: &models::VideoEntity,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1236,19 +1291,19 @@ pub mod videos {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VideoEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VideoEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1258,11 +1313,11 @@ pub mod videos {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(VideoEntity),
-            Created201(VideoEntity),
+            Ok200(models::VideoEntity),
+            Created201(models::VideoEntity),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1291,8 +1346,8 @@ pub mod videos {
         resource_group_name: &str,
         account_name: &str,
         video_name: &str,
-        parameters: &VideoEntity,
-    ) -> std::result::Result<VideoEntity, update::Error> {
+        parameters: &models::VideoEntity,
+    ) -> std::result::Result<models::VideoEntity, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
@@ -1321,13 +1376,13 @@ pub mod videos {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoEntity =
+                let rsp_value: models::VideoEntity =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1337,7 +1392,7 @@ pub mod videos {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1395,7 +1450,7 @@ pub mod videos {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1405,7 +1460,7 @@ pub mod videos {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1438,7 +1493,7 @@ pub mod videos {
         resource_group_name: &str,
         account_name: &str,
         video_name: &str,
-    ) -> std::result::Result<VideoStreamingToken, list_streaming_token::Error> {
+    ) -> std::result::Result<models::VideoStreamingToken, list_streaming_token::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}/listStreamingToken",
@@ -1470,13 +1525,13 @@ pub mod videos {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: VideoStreamingToken = serde_json::from_slice(rsp_body)
+                let rsp_value: models::VideoStreamingToken = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_streaming_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_streaming_token::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_streaming_token::Error::DefaultResponse {
                     status_code,
@@ -1486,7 +1541,7 @@ pub mod videos {
         }
     }
     pub mod list_streaming_token {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1510,14 +1565,14 @@ pub mod videos {
     }
 }
 pub mod access_policies {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         account_name: &str,
         top: Option<i32>,
-    ) -> std::result::Result<AccessPolicyEntityCollection, list::Error> {
+    ) -> std::result::Result<models::AccessPolicyEntityCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies",
@@ -1547,13 +1602,13 @@ pub mod access_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccessPolicyEntityCollection =
+                let rsp_value: models::AccessPolicyEntityCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -1563,7 +1618,7 @@ pub mod access_policies {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1591,7 +1646,7 @@ pub mod access_policies {
         resource_group_name: &str,
         account_name: &str,
         access_policy_name: &str,
-    ) -> std::result::Result<AccessPolicyEntity, get::Error> {
+    ) -> std::result::Result<models::AccessPolicyEntity, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
@@ -1619,13 +1674,13 @@ pub mod access_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccessPolicyEntity =
+                let rsp_value: models::AccessPolicyEntity =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1635,7 +1690,7 @@ pub mod access_policies {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1663,7 +1718,7 @@ pub mod access_policies {
         resource_group_name: &str,
         account_name: &str,
         access_policy_name: &str,
-        parameters: &AccessPolicyEntity,
+        parameters: &models::AccessPolicyEntity,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -1696,19 +1751,19 @@ pub mod access_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccessPolicyEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccessPolicyEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccessPolicyEntity = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AccessPolicyEntity = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1718,11 +1773,11 @@ pub mod access_policies {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AccessPolicyEntity),
-            Created201(AccessPolicyEntity),
+            Ok200(models::AccessPolicyEntity),
+            Created201(models::AccessPolicyEntity),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1751,8 +1806,8 @@ pub mod access_policies {
         resource_group_name: &str,
         account_name: &str,
         access_policy_name: &str,
-        parameters: &AccessPolicyEntity,
-    ) -> std::result::Result<AccessPolicyEntity, update::Error> {
+        parameters: &models::AccessPolicyEntity,
+    ) -> std::result::Result<models::AccessPolicyEntity, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
@@ -1781,13 +1836,13 @@ pub mod access_policies {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AccessPolicyEntity =
+                let rsp_value: models::AccessPolicyEntity =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1797,7 +1852,7 @@ pub mod access_policies {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1855,7 +1910,7 @@ pub mod access_policies {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1865,7 +1920,7 @@ pub mod access_policies {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

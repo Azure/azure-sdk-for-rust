@@ -2,10 +2,71 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Namespaces_CheckNameAvailability(#[from] namespaces::check_name_availability::Error),
+    #[error(transparent)]
+    Namespaces_CheckNameSpaceAvailability(#[from] namespaces::check_name_space_availability::Error),
+    #[error(transparent)]
+    Namespaces_ListBySubscription(#[from] namespaces::list_by_subscription::Error),
+    #[error(transparent)]
+    Namespaces_ListByResourceGroup(#[from] namespaces::list_by_resource_group::Error),
+    #[error(transparent)]
+    Namespaces_Get(#[from] namespaces::get::Error),
+    #[error(transparent)]
+    Namespaces_CreateOrUpdate(#[from] namespaces::create_or_update::Error),
+    #[error(transparent)]
+    Namespaces_Update(#[from] namespaces::update::Error),
+    #[error(transparent)]
+    Namespaces_Delete(#[from] namespaces::delete::Error),
+    #[error(transparent)]
+    Namespaces_ListAuthorizationRules(#[from] namespaces::list_authorization_rules::Error),
+    #[error(transparent)]
+    Namespaces_ListPostAuthorizationRules(#[from] namespaces::list_post_authorization_rules::Error),
+    #[error(transparent)]
+    Namespaces_GetAuthorizationRule(#[from] namespaces::get_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_PostAuthorizationRule(#[from] namespaces::post_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_CreateOrUpdateAuthorizationRule(#[from] namespaces::create_or_update_authorization_rule::Error),
+    #[error(transparent)]
+    Namespaces_DeleteAuthorizationRule(#[from] namespaces::delete_authorization_rule::Error),
+    #[error(transparent)]
+    EventHubs_ListAll(#[from] event_hubs::list_all::Error),
+    #[error(transparent)]
+    EventHubs_Get(#[from] event_hubs::get::Error),
+    #[error(transparent)]
+    EventHubs_CreateOrUpdate(#[from] event_hubs::create_or_update::Error),
+    #[error(transparent)]
+    EventHubs_Delete(#[from] event_hubs::delete::Error),
+    #[error(transparent)]
+    EventHubs_ListAuthorizationRules(#[from] event_hubs::list_authorization_rules::Error),
+    #[error(transparent)]
+    EventHubs_GetAuthorizationRule(#[from] event_hubs::get_authorization_rule::Error),
+    #[error(transparent)]
+    EventHubs_PostAuthorizationRule(#[from] event_hubs::post_authorization_rule::Error),
+    #[error(transparent)]
+    EventHubs_CreateOrUpdateAuthorizationRule(#[from] event_hubs::create_or_update_authorization_rule::Error),
+    #[error(transparent)]
+    EventHubs_DeleteAuthorizationRule(#[from] event_hubs::delete_authorization_rule::Error),
+    #[error(transparent)]
+    ConsumerGroups_Get(#[from] consumer_groups::get::Error),
+    #[error(transparent)]
+    ConsumerGroups_CreateOrUpdate(#[from] consumer_groups::create_or_update::Error),
+    #[error(transparent)]
+    ConsumerGroups_Delete(#[from] consumer_groups::delete::Error),
+    #[error(transparent)]
+    ConsumerGroups_ListAll(#[from] consumer_groups::list_all::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.EventHub/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +87,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +101,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,12 +122,12 @@ pub mod operations {
     }
 }
 pub mod namespaces {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        parameters: &CheckNameAvailabilityParameter,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_availability::Error> {
+        parameters: &models::CheckNameAvailabilityParameter,
+    ) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventHub/CheckNameAvailability",
@@ -97,7 +158,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -111,7 +172,7 @@ pub mod namespaces {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -133,8 +194,8 @@ pub mod namespaces {
     pub async fn check_name_space_availability(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-        parameters: &CheckNameAvailabilityParameter,
-    ) -> std::result::Result<CheckNameAvailabilityResult, check_name_space_availability::Error> {
+        parameters: &models::CheckNameAvailabilityParameter,
+    ) -> std::result::Result<models::CheckNameAvailabilityResult, check_name_space_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventHub/CheckNamespaceAvailability",
@@ -165,7 +226,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_space_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -179,7 +240,7 @@ pub mod namespaces {
         }
     }
     pub mod check_name_space_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -201,7 +262,7 @@ pub mod namespaces {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<NamespaceListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::NamespaceListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.EventHub/namespaces",
@@ -229,7 +290,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NamespaceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -243,7 +304,7 @@ pub mod namespaces {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -266,7 +327,7 @@ pub mod namespaces {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<NamespaceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::NamespaceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces",
@@ -297,7 +358,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NamespaceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -311,7 +372,7 @@ pub mod namespaces {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -362,13 +423,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource =
+                let rsp_value: models::NamespaceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource =
+                let rsp_value: models::NamespaceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(get::Response::Created201(rsp_value))
             }
@@ -382,11 +443,11 @@ pub mod namespaces {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(NamespaceResource),
-            Created201(NamespaceResource),
+            Ok200(models::NamespaceResource),
+            Created201(models::NamespaceResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -410,7 +471,7 @@ pub mod namespaces {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
-        parameters: &NamespaceCreateOrUpdateParameters,
+        parameters: &models::NamespaceCreateOrUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -443,13 +504,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NamespaceResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NamespaceResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
@@ -464,11 +525,11 @@ pub mod namespaces {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(NamespaceResource),
-            Ok200(NamespaceResource),
+            Created201(models::NamespaceResource),
+            Ok200(models::NamespaceResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -493,7 +554,7 @@ pub mod namespaces {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
-        parameters: &NamespaceUpdateParameter,
+        parameters: &models::NamespaceUpdateParameter,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -523,13 +584,13 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource =
+                let rsp_value: models::NamespaceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NamespaceResource =
+                let rsp_value: models::NamespaceResource =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
@@ -544,11 +605,11 @@ pub mod namespaces {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(NamespaceResource),
-            Ok200(NamespaceResource),
+            Created201(models::NamespaceResource),
+            Ok200(models::NamespaceResource),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -612,7 +673,7 @@ pub mod namespaces {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -642,7 +703,7 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/AuthorizationRules",
@@ -674,7 +735,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -688,7 +749,7 @@ pub mod namespaces {
         }
     }
     pub mod list_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -712,7 +773,7 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleListResult, list_post_authorization_rules::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleListResult, list_post_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/AuthorizationRules",
@@ -745,7 +806,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_post_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -759,7 +820,7 @@ pub mod namespaces {
         }
     }
     pub mod list_post_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -784,7 +845,7 @@ pub mod namespaces {
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/AuthorizationRules/{}",
@@ -817,7 +878,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -831,7 +892,7 @@ pub mod namespaces {
         }
     }
     pub mod get_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -856,7 +917,7 @@ pub mod namespaces {
         namespace_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRulePostResource, post_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRulePostResource, post_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/AuthorizationRules/{}",
@@ -890,7 +951,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRulePostResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRulePostResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -904,7 +965,7 @@ pub mod namespaces {
         }
     }
     pub mod post_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -928,9 +989,9 @@ pub mod namespaces {
         resource_group_name: &str,
         namespace_name: &str,
         authorization_rule_name: &str,
-        parameters: &SharedAccessAuthorizationRuleCreateOrUpdateParameters,
+        parameters: &models::SharedAccessAuthorizationRuleCreateOrUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/AuthorizationRules/{}",
@@ -964,7 +1025,7 @@ pub mod namespaces {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -978,7 +1039,7 @@ pub mod namespaces {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1046,7 +1107,7 @@ pub mod namespaces {
         }
     }
     pub mod delete_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1072,13 +1133,13 @@ pub mod namespaces {
     }
 }
 pub mod event_hubs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_all(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         namespace_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<EventHubListResult, list_all::Error> {
+    ) -> std::result::Result<models::EventHubListResult, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs",
@@ -1108,7 +1169,7 @@ pub mod event_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubListResult =
+                let rsp_value: models::EventHubListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1122,7 +1183,7 @@ pub mod event_hubs {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1147,7 +1208,7 @@ pub mod event_hubs {
         namespace_name: &str,
         event_hub_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<EventHubResource, get::Error> {
+    ) -> std::result::Result<models::EventHubResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}",
@@ -1175,7 +1236,7 @@ pub mod event_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubResource =
+                let rsp_value: models::EventHubResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1189,7 +1250,7 @@ pub mod event_hubs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1213,9 +1274,9 @@ pub mod event_hubs {
         resource_group_name: &str,
         namespace_name: &str,
         event_hub_name: &str,
-        parameters: &EventHubCreateOrUpdateParameters,
+        parameters: &models::EventHubCreateOrUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<EventHubResource, create_or_update::Error> {
+    ) -> std::result::Result<models::EventHubResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}",
@@ -1247,7 +1308,7 @@ pub mod event_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: EventHubResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::EventHubResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1261,7 +1322,7 @@ pub mod event_hubs {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1324,7 +1385,7 @@ pub mod event_hubs {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1354,7 +1415,7 @@ pub mod event_hubs {
         namespace_name: &str,
         event_hub_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleListResult, list_authorization_rules::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules",
@@ -1387,7 +1448,7 @@ pub mod event_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_authorization_rules::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1401,7 +1462,7 @@ pub mod event_hubs {
         }
     }
     pub mod list_authorization_rules {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1427,7 +1488,7 @@ pub mod event_hubs {
         event_hub_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleResource, get_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
@@ -1461,7 +1522,7 @@ pub mod event_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1475,7 +1536,7 @@ pub mod event_hubs {
         }
     }
     pub mod get_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1501,7 +1562,7 @@ pub mod event_hubs {
         event_hub_name: &str,
         authorization_rule_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRulePostResource, post_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRulePostResource, post_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
@@ -1536,7 +1597,7 @@ pub mod event_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRulePostResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRulePostResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| post_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1550,7 +1611,7 @@ pub mod event_hubs {
         }
     }
     pub mod post_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1575,9 +1636,9 @@ pub mod event_hubs {
         namespace_name: &str,
         event_hub_name: &str,
         authorization_rule_name: &str,
-        parameters: &SharedAccessAuthorizationRuleCreateOrUpdateParameters,
+        parameters: &models::SharedAccessAuthorizationRuleCreateOrUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
+    ) -> std::result::Result<models::SharedAccessAuthorizationRuleResource, create_or_update_authorization_rule::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/authorizationRules/{}",
@@ -1612,7 +1673,7 @@ pub mod event_hubs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SharedAccessAuthorizationRuleResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_authorization_rule::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1626,7 +1687,7 @@ pub mod event_hubs {
         }
     }
     pub mod create_or_update_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1696,7 +1757,7 @@ pub mod event_hubs {
         }
     }
     pub mod delete_authorization_rule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1722,7 +1783,7 @@ pub mod event_hubs {
     }
 }
 pub mod consumer_groups {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1730,7 +1791,7 @@ pub mod consumer_groups {
         event_hub_name: &str,
         consumer_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConsumerGroupResource, get::Error> {
+    ) -> std::result::Result<models::ConsumerGroupResource, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups/{}",
@@ -1759,7 +1820,7 @@ pub mod consumer_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsumerGroupResource =
+                let rsp_value: models::ConsumerGroupResource =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1773,7 +1834,7 @@ pub mod consumer_groups {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1798,9 +1859,9 @@ pub mod consumer_groups {
         namespace_name: &str,
         event_hub_name: &str,
         consumer_group_name: &str,
-        parameters: &ConsumerGroupCreateOrUpdateParameters,
+        parameters: &models::ConsumerGroupCreateOrUpdateParameters,
         subscription_id: &str,
-    ) -> std::result::Result<ConsumerGroupResource, create_or_update::Error> {
+    ) -> std::result::Result<models::ConsumerGroupResource, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups/{}",
@@ -1833,7 +1894,7 @@ pub mod consumer_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsumerGroupResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConsumerGroupResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1847,7 +1908,7 @@ pub mod consumer_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1912,7 +1973,7 @@ pub mod consumer_groups {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1942,7 +2003,7 @@ pub mod consumer_groups {
         namespace_name: &str,
         event_hub_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConsumerGroupListResult, list_all::Error> {
+    ) -> std::result::Result<models::ConsumerGroupListResult, list_all::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EventHub/namespaces/{}/eventhubs/{}/consumergroups",
@@ -1973,7 +2034,7 @@ pub mod consumer_groups {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConsumerGroupListResult =
+                let rsp_value: models::ConsumerGroupListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_all::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1987,7 +2048,7 @@ pub mod consumer_groups {
         }
     }
     pub mod list_all {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

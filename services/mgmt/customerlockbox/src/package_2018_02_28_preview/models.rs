@@ -81,10 +81,12 @@ pub struct LockboxRequestResponseProperties {
     pub support_request: Option<String>,
     #[serde(rename = "supportCaseUrl", default, skip_serializing_if = "Option::is_none")]
     pub support_case_url: Option<String>,
-    #[serde(rename = "workItemSource", default, skip_serializing_if = "Option::is_none")]
-    pub work_item_source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workitemsource: Option<String>,
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
+    #[serde(rename = "accessLevel", default, skip_serializing_if = "Option::is_none")]
+    pub access_level: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LockboxRequestStatus {

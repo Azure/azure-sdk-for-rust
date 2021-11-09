@@ -133,7 +133,7 @@ pub struct MetricsSegmentInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EventType {
     #[serde(rename = "$all")]
-    U24all,
+    All,
     #[serde(rename = "traces")]
     Traces,
     #[serde(rename = "customEvents")]

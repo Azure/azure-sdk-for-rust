@@ -2,10 +2,39 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Skus_List(#[from] skus::list::Error),
+    #[error(transparent)]
+    CommitmentAssociations_Get(#[from] commitment_associations::get::Error),
+    #[error(transparent)]
+    CommitmentAssociations_List(#[from] commitment_associations::list::Error),
+    #[error(transparent)]
+    CommitmentAssociations_Move(#[from] commitment_associations::move_::Error),
+    #[error(transparent)]
+    CommitmentPlans_Get(#[from] commitment_plans::get::Error),
+    #[error(transparent)]
+    CommitmentPlans_CreateOrUpdate(#[from] commitment_plans::create_or_update::Error),
+    #[error(transparent)]
+    CommitmentPlans_Patch(#[from] commitment_plans::patch::Error),
+    #[error(transparent)]
+    CommitmentPlans_Remove(#[from] commitment_plans::remove::Error),
+    #[error(transparent)]
+    CommitmentPlans_List(#[from] commitment_plans::list::Error),
+    #[error(transparent)]
+    CommitmentPlans_ListInResourceGroup(#[from] commitment_plans::list_in_resource_group::Error),
+    #[error(transparent)]
+    UsageHistory_List(#[from] usage_history::list::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationEntityListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationEntityListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.MachineLearning/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,7 +55,7 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationEntityListResult =
+                let rsp_value: models::OperationEntityListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -40,7 +69,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -61,8 +90,11 @@ pub mod operations {
     }
 }
 pub mod skus {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig, subscription_id: &str) -> std::result::Result<SkuListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(
+        operation_config: &crate::OperationConfig,
+        subscription_id: &str,
+    ) -> std::result::Result<models::SkuListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MachineLearning/skus",
@@ -87,7 +119,7 @@ pub mod skus {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SkuListResult =
+                let rsp_value: models::SkuListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -101,7 +133,7 @@ pub mod skus {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -122,14 +154,14 @@ pub mod skus {
     }
 }
 pub mod commitment_associations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         commitment_plan_name: &str,
         commitment_association_name: &str,
-    ) -> std::result::Result<CommitmentAssociation, get::Error> {
+    ) -> std::result::Result<models::CommitmentAssociation, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations/{}",
@@ -157,7 +189,7 @@ pub mod commitment_associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentAssociation =
+                let rsp_value: models::CommitmentAssociation =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -171,7 +203,7 @@ pub mod commitment_associations {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -196,7 +228,7 @@ pub mod commitment_associations {
         resource_group_name: &str,
         commitment_plan_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<CommitmentAssociationListResult, list::Error> {
+    ) -> std::result::Result<models::CommitmentAssociationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations",
@@ -226,7 +258,7 @@ pub mod commitment_associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentAssociationListResult =
+                let rsp_value: models::CommitmentAssociationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -240,7 +272,7 @@ pub mod commitment_associations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -265,8 +297,8 @@ pub mod commitment_associations {
         resource_group_name: &str,
         commitment_plan_name: &str,
         commitment_association_name: &str,
-        move_payload: &MoveCommitmentAssociationRequest,
-    ) -> std::result::Result<CommitmentAssociation, move_::Error> {
+        move_payload: &models::MoveCommitmentAssociationRequest,
+    ) -> std::result::Result<models::CommitmentAssociation, move_::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations/{}/move",
@@ -295,7 +327,7 @@ pub mod commitment_associations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentAssociation =
+                let rsp_value: models::CommitmentAssociation =
                     serde_json::from_slice(rsp_body).map_err(|source| move_::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -309,7 +341,7 @@ pub mod commitment_associations {
         }
     }
     pub mod move_ {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -330,13 +362,13 @@ pub mod commitment_associations {
     }
 }
 pub mod commitment_plans {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         commitment_plan_name: &str,
-    ) -> std::result::Result<CommitmentPlan, get::Error> {
+    ) -> std::result::Result<models::CommitmentPlan, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}",
@@ -363,7 +395,7 @@ pub mod commitment_plans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentPlan =
+                let rsp_value: models::CommitmentPlan =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -377,7 +409,7 @@ pub mod commitment_plans {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -401,7 +433,7 @@ pub mod commitment_plans {
         subscription_id: &str,
         resource_group_name: &str,
         commitment_plan_name: &str,
-        create_or_update_payload: &CommitmentPlan,
+        create_or_update_payload: &models::CommitmentPlan,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
@@ -433,13 +465,13 @@ pub mod commitment_plans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentPlan = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CommitmentPlan = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentPlan = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CommitmentPlan = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -453,11 +485,11 @@ pub mod commitment_plans {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(CommitmentPlan),
-            Created201(CommitmentPlan),
+            Ok200(models::CommitmentPlan),
+            Created201(models::CommitmentPlan),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -482,8 +514,8 @@ pub mod commitment_plans {
         subscription_id: &str,
         resource_group_name: &str,
         commitment_plan_name: &str,
-        patch_payload: &CommitmentPlanPatchPayload,
-    ) -> std::result::Result<CommitmentPlan, patch::Error> {
+        patch_payload: &models::CommitmentPlanPatchPayload,
+    ) -> std::result::Result<models::CommitmentPlan, patch::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}",
@@ -511,7 +543,7 @@ pub mod commitment_plans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentPlan =
+                let rsp_value: models::CommitmentPlan =
                     serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -525,7 +557,7 @@ pub mod commitment_plans {
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -585,7 +617,7 @@ pub mod commitment_plans {
         }
     }
     pub mod remove {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -608,7 +640,7 @@ pub mod commitment_plans {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<CommitmentPlanListResult, list::Error> {
+    ) -> std::result::Result<models::CommitmentPlanListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.MachineLearning/commitmentPlans",
@@ -636,7 +668,7 @@ pub mod commitment_plans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentPlanListResult =
+                let rsp_value: models::CommitmentPlanListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -650,7 +682,7 @@ pub mod commitment_plans {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -674,7 +706,7 @@ pub mod commitment_plans {
         subscription_id: &str,
         resource_group_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<CommitmentPlanListResult, list_in_resource_group::Error> {
+    ) -> std::result::Result<models::CommitmentPlanListResult, list_in_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans",
@@ -708,7 +740,7 @@ pub mod commitment_plans {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CommitmentPlanListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CommitmentPlanListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_in_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -722,7 +754,7 @@ pub mod commitment_plans {
         }
     }
     pub mod list_in_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -743,14 +775,14 @@ pub mod commitment_plans {
     }
 }
 pub mod usage_history {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         commitment_plan_name: &str,
         skip_token: Option<&str>,
-    ) -> std::result::Result<PlanUsageHistoryListResult, list::Error> {
+    ) -> std::result::Result<models::PlanUsageHistoryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/usageHistory",
@@ -780,7 +812,7 @@ pub mod usage_history {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PlanUsageHistoryListResult =
+                let rsp_value: models::PlanUsageHistoryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -794,7 +826,7 @@ pub mod usage_history {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

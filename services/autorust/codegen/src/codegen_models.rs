@@ -1,13 +1,12 @@
 use crate::{
     codegen::{
         create_generated_by_header, enum_values_as_strings, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref,
-        is_array, is_basic_type, is_local_enum, is_local_struct, is_vec, require, AsReference, Error,
+        is_array, is_basic_type, is_local_enum, is_local_struct, is_vec, require, Error,
     },
-    identifier::{ident, CamelCaseIdent},
+    identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec, CodeGen, PropertyName, ResolvedSchema,
 };
 use autorust_openapi::Reference;
-use heck::{CamelCase, SnakeCase};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -51,8 +50,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     }
 
     // any referenced schemas from other files
-    for (doc_file, doc) in cg.spec.input_docs() {
-        for reference in openapi::get_api_schema_references(doc) {
+    for (doc_file, api) in cg.spec.input_docs() {
+        for reference in openapi::get_api_schema_references(doc_file, api) {
             add_schema_refs(cg, &mut all_schemas, doc_file, reference)?;
         }
     }
@@ -85,8 +84,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
 }
 
 fn create_basic_type_alias(property_name: &str, property: &ResolvedSchema) -> Result<(TokenStream, TokenStream), Error> {
-    let id = ident(&property_name.to_camel_case()).map_err(Error::StructName)?;
-    let value = get_type_name_for_schema(&property.schema.common, AsReference::False)?;
+    let id = property_name.to_camel_case_ident().map_err(Error::StructName)?;
+    let value = get_type_name_for_schema(&property.schema.common)?.to_token_stream(false, false)?;
     Ok((id, value))
 }
 
@@ -117,7 +116,7 @@ fn create_enum(
     lowercase_workaround: bool,
 ) -> Result<(TokenStream, TokenStream), Error> {
     let enum_values = enum_values_as_strings(&property.schema.common.enum_);
-    let id = ident(&property_name.to_camel_case()).map_err(|source| Error::EnumName {
+    let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
         property: property_name.to_owned(),
     })?;
@@ -141,7 +140,7 @@ fn create_enum(
         };
         values.extend(value);
     }
-    let nm = ident(&property_name.to_camel_case()).map_err(|source| Error::EnumName {
+    let nm = property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
         property: property_name.to_owned(),
     })?;
@@ -157,8 +156,8 @@ fn create_enum(
 
 fn create_vec_alias(alias_name: &str, schema: &ResolvedSchema) -> Result<TokenStream, Error> {
     let items = get_schema_array_items(&schema.schema.common)?;
-    let typ = ident(&alias_name.to_camel_case()).map_err(Error::VecAliasName)?;
-    let items_typ = get_type_name_for_schema_ref(items, AsReference::False)?;
+    let typ = &alias_name.to_camel_case_ident().map_err(Error::VecAliasName)?;
+    let items_typ = get_type_name_for_schema_ref(items)?.to_token_stream(false, false)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
@@ -167,13 +166,13 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
     let mut streams = Vec::new();
     let mut local_types = Vec::new();
     let mut props = TokenStream::new();
-    let ns = ident(&struct_name.to_snake_case()).map_err(Error::StructName)?;
-    let nm = ident(&struct_name.to_camel_case()).map_err(Error::StructName)?;
+    let ns = struct_name.to_snake_case_ident().map_err(Error::StructName)?;
+    let nm = struct_name.to_camel_case_ident().map_err(Error::StructName)?;
     let required: HashSet<&str> = schema.schema.required.iter().map(String::as_str).collect();
 
     for schema in &schema.schema.all_of {
-        let type_name = get_type_name_for_schema_ref(schema, AsReference::False)?;
-        let field_name = ident(&type_name.to_string().to_snake_case()).map_err(Error::StructFieldName)?;
+        let type_name = get_type_name_for_schema_ref(schema)?.to_token_stream(false, false)?;
+        let field_name = type_name.to_string().to_snake_case_ident().map_err(Error::StructFieldName)?;
         props.extend(quote! {
             #[serde(flatten)]
             pub #field_name: #type_name,
@@ -182,7 +181,7 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
 
     let properties = cg.spec.resolve_schema_map(doc_file, &schema.schema.properties)?;
     for (property_name, property) in &properties {
-        let nm = ident(&property_name.to_snake_case()).map_err(Error::StructName)?;
+        let nm = property_name.to_snake_case_ident().map_err(Error::StructName)?;
         let prop_nm = &PropertyName {
             file_path: PathBuf::from(doc_file),
             schema_name: struct_name.to_owned(),
@@ -271,7 +270,7 @@ fn create_struct_field_type(
 ) -> Result<(TokenStream, Vec<TokenStream>), Error> {
     match &property.ref_key {
         Some(ref_key) => {
-            let tp = ident(&ref_key.name.to_camel_case()).map_err(Error::PropertyName)?;
+            let tp = ref_key.name.to_camel_case_ident().map_err(Error::PropertyName)?;
             Ok((tp, Vec::new()))
         }
         None => {
@@ -279,13 +278,16 @@ fn create_struct_field_type(
                 let (tp_name, tp) = create_enum(namespace, property_name, property, lowercase_workaround)?;
                 Ok((tp_name, vec![tp]))
             } else if is_local_struct(property) {
-                let id = ident(&property_name.to_camel_case()).map_err(Error::PropertyName)?;
+                let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
                 let tp_name = quote! {#namespace::#id};
                 let tps = create_struct(cg, doc_file, property_name, property)?;
                 // println!("creating local struct {:?} {}", tp_name, tps.len());
                 Ok((tp_name, tps))
             } else {
-                Ok((get_type_name_for_schema(&property.schema.common, AsReference::False)?, Vec::new()))
+                Ok((
+                    get_type_name_for_schema(&property.schema.common)?.to_token_stream(false, false)?,
+                    Vec::new(),
+                ))
             }
         }
     }

@@ -2,15 +2,42 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ManagementLocks_GetAtResourceGroupLevel(#[from] management_locks::get_at_resource_group_level::Error),
+    #[error(transparent)]
+    ManagementLocks_CreateOrUpdateAtResourceGroupLevel(#[from] management_locks::create_or_update_at_resource_group_level::Error),
+    #[error(transparent)]
+    ManagementLocks_DeleteAtResourceGroupLevel(#[from] management_locks::delete_at_resource_group_level::Error),
+    #[error(transparent)]
+    ManagementLocks_CreateOrUpdateAtResourceLevel(#[from] management_locks::create_or_update_at_resource_level::Error),
+    #[error(transparent)]
+    ManagementLocks_DeleteAtResourceLevel(#[from] management_locks::delete_at_resource_level::Error),
+    #[error(transparent)]
+    ManagementLocks_Get(#[from] management_locks::get::Error),
+    #[error(transparent)]
+    ManagementLocks_CreateOrUpdateAtSubscriptionLevel(#[from] management_locks::create_or_update_at_subscription_level::Error),
+    #[error(transparent)]
+    ManagementLocks_DeleteAtSubscriptionLevel(#[from] management_locks::delete_at_subscription_level::Error),
+    #[error(transparent)]
+    ManagementLocks_ListAtResourceGroupLevel(#[from] management_locks::list_at_resource_group_level::Error),
+    #[error(transparent)]
+    ManagementLocks_ListAtResourceLevel(#[from] management_locks::list_at_resource_level::Error),
+    #[error(transparent)]
+    ManagementLocks_ListAtSubscriptionLevel(#[from] management_locks::list_at_subscription_level::Error),
+}
 pub mod management_locks {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_at_resource_group_level(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         lock_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagementLockObject, get_at_resource_group_level::Error> {
+    ) -> std::result::Result<models::ManagementLockObject, get_at_resource_group_level::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks/{}",
@@ -42,7 +69,7 @@ pub mod management_locks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockObject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockObject = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -56,7 +83,7 @@ pub mod management_locks {
         }
     }
     pub mod get_at_resource_group_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -79,7 +106,7 @@ pub mod management_locks {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         lock_name: &str,
-        parameters: &ManagementLockObject,
+        parameters: &models::ManagementLockObject,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update_at_resource_group_level::Response, create_or_update_at_resource_group_level::Error> {
         let http_client = operation_config.http_client();
@@ -114,13 +141,13 @@ pub mod management_locks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockObject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockObject = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_resource_group_level::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockObject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockObject = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_resource_group_level::Response::Created201(rsp_value))
             }
@@ -134,11 +161,11 @@ pub mod management_locks {
         }
     }
     pub mod create_or_update_at_resource_group_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagementLockObject),
-            Created201(ManagementLockObject),
+            Ok200(models::ManagementLockObject),
+            Created201(models::ManagementLockObject),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -205,7 +232,7 @@ pub mod management_locks {
         }
     }
     pub mod delete_at_resource_group_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -237,7 +264,7 @@ pub mod management_locks {
         resource_type: &str,
         resource_name: &str,
         lock_name: &str,
-        parameters: &ManagementLockObject,
+        parameters: &models::ManagementLockObject,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update_at_resource_level::Response, create_or_update_at_resource_level::Error> {
         let http_client = operation_config.http_client();
@@ -276,13 +303,13 @@ pub mod management_locks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockObject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockObject = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_resource_level::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockObject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockObject = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_resource_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_resource_level::Response::Created201(rsp_value))
             }
@@ -296,11 +323,11 @@ pub mod management_locks {
         }
     }
     pub mod create_or_update_at_resource_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ManagementLockObject),
-            Created201(ManagementLockObject),
+            Ok200(models::ManagementLockObject),
+            Created201(models::ManagementLockObject),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -375,7 +402,7 @@ pub mod management_locks {
         }
     }
     pub mod delete_at_resource_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -403,7 +430,7 @@ pub mod management_locks {
         operation_config: &crate::OperationConfig,
         lock_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ManagementLockObject, get::Error> {
+    ) -> std::result::Result<models::ManagementLockObject, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/locks/{}",
@@ -429,7 +456,7 @@ pub mod management_locks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockObject =
+                let rsp_value: models::ManagementLockObject =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -443,7 +470,7 @@ pub mod management_locks {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -465,7 +492,7 @@ pub mod management_locks {
     pub async fn create_or_update_at_subscription_level(
         operation_config: &crate::OperationConfig,
         lock_name: &str,
-        parameters: &ManagementLockObject,
+        parameters: &models::ManagementLockObject,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update_at_subscription_level::Response, create_or_update_at_subscription_level::Error> {
         let http_client = operation_config.http_client();
@@ -499,13 +526,13 @@ pub mod management_locks {
         match rsp.status() {
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockObject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockObject = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_subscription_level::Response::Created201(rsp_value))
             }
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockObject = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockObject = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_at_subscription_level::Response::Ok200(rsp_value))
             }
@@ -519,11 +546,11 @@ pub mod management_locks {
         }
     }
     pub mod create_or_update_at_subscription_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Created201(ManagementLockObject),
-            Ok200(ManagementLockObject),
+            Created201(models::ManagementLockObject),
+            Ok200(models::ManagementLockObject),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -588,7 +615,7 @@ pub mod management_locks {
         }
     }
     pub mod delete_at_subscription_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -617,7 +644,7 @@ pub mod management_locks {
         resource_group_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagementLockListResult, list_at_resource_group_level::Error> {
+    ) -> std::result::Result<models::ManagementLockListResult, list_at_resource_group_level::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks",
@@ -651,7 +678,7 @@ pub mod management_locks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_at_resource_group_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -665,7 +692,7 @@ pub mod management_locks {
         }
     }
     pub mod list_at_resource_group_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -693,7 +720,7 @@ pub mod management_locks {
         resource_name: &str,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagementLockListResult, list_at_resource_level::Error> {
+    ) -> std::result::Result<models::ManagementLockListResult, list_at_resource_level::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks",
@@ -731,7 +758,7 @@ pub mod management_locks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_at_resource_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -745,7 +772,7 @@ pub mod management_locks {
         }
     }
     pub mod list_at_resource_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -768,7 +795,7 @@ pub mod management_locks {
         operation_config: &crate::OperationConfig,
         filter: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<ManagementLockListResult, list_at_subscription_level::Error> {
+    ) -> std::result::Result<models::ManagementLockListResult, list_at_subscription_level::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Authorization/locks",
@@ -801,7 +828,7 @@ pub mod management_locks {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ManagementLockListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ManagementLockListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_at_subscription_level::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -815,7 +842,7 @@ pub mod management_locks {
         }
     }
     pub mod list_at_subscription_level {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

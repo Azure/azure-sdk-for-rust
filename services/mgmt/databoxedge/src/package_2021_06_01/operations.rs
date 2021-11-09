@@ -2,10 +2,169 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    AvailableSkus_List(#[from] available_skus::list::Error),
+    #[error(transparent)]
+    Devices_ListBySubscription(#[from] devices::list_by_subscription::Error),
+    #[error(transparent)]
+    Devices_ListByResourceGroup(#[from] devices::list_by_resource_group::Error),
+    #[error(transparent)]
+    Devices_Get(#[from] devices::get::Error),
+    #[error(transparent)]
+    Devices_CreateOrUpdate(#[from] devices::create_or_update::Error),
+    #[error(transparent)]
+    Devices_Update(#[from] devices::update::Error),
+    #[error(transparent)]
+    Devices_Delete(#[from] devices::delete::Error),
+    #[error(transparent)]
+    Alerts_ListByDataBoxEdgeDevice(#[from] alerts::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    Alerts_Get(#[from] alerts::get::Error),
+    #[error(transparent)]
+    BandwidthSchedules_ListByDataBoxEdgeDevice(#[from] bandwidth_schedules::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    BandwidthSchedules_Get(#[from] bandwidth_schedules::get::Error),
+    #[error(transparent)]
+    BandwidthSchedules_CreateOrUpdate(#[from] bandwidth_schedules::create_or_update::Error),
+    #[error(transparent)]
+    BandwidthSchedules_Delete(#[from] bandwidth_schedules::delete::Error),
+    #[error(transparent)]
+    DiagnosticSettings_GetDiagnosticProactiveLogCollectionSettings(
+        #[from] diagnostic_settings::get_diagnostic_proactive_log_collection_settings::Error,
+    ),
+    #[error(transparent)]
+    DiagnosticSettings_UpdateDiagnosticProactiveLogCollectionSettings(
+        #[from] diagnostic_settings::update_diagnostic_proactive_log_collection_settings::Error,
+    ),
+    #[error(transparent)]
+    DiagnosticSettings_GetDiagnosticRemoteSupportSettings(#[from] diagnostic_settings::get_diagnostic_remote_support_settings::Error),
+    #[error(transparent)]
+    DiagnosticSettings_UpdateDiagnosticRemoteSupportSettings(#[from] diagnostic_settings::update_diagnostic_remote_support_settings::Error),
+    #[error(transparent)]
+    Devices_DownloadUpdates(#[from] devices::download_updates::Error),
+    #[error(transparent)]
+    Devices_GenerateCertificate(#[from] devices::generate_certificate::Error),
+    #[error(transparent)]
+    Devices_GetExtendedInformation(#[from] devices::get_extended_information::Error),
+    #[error(transparent)]
+    Devices_InstallUpdates(#[from] devices::install_updates::Error),
+    #[error(transparent)]
+    Jobs_Get(#[from] jobs::get::Error),
+    #[error(transparent)]
+    Devices_GetNetworkSettings(#[from] devices::get_network_settings::Error),
+    #[error(transparent)]
+    Nodes_ListByDataBoxEdgeDevice(#[from] nodes::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    OperationsStatus_Get(#[from] operations_status::get::Error),
+    #[error(transparent)]
+    Orders_ListByDataBoxEdgeDevice(#[from] orders::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    Orders_Get(#[from] orders::get::Error),
+    #[error(transparent)]
+    Orders_CreateOrUpdate(#[from] orders::create_or_update::Error),
+    #[error(transparent)]
+    Orders_Delete(#[from] orders::delete::Error),
+    #[error(transparent)]
+    Orders_ListDcAccessCode(#[from] orders::list_dc_access_code::Error),
+    #[error(transparent)]
+    Roles_ListByDataBoxEdgeDevice(#[from] roles::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    Roles_Get(#[from] roles::get::Error),
+    #[error(transparent)]
+    Roles_CreateOrUpdate(#[from] roles::create_or_update::Error),
+    #[error(transparent)]
+    Roles_Delete(#[from] roles::delete::Error),
+    #[error(transparent)]
+    Addons_ListByRole(#[from] addons::list_by_role::Error),
+    #[error(transparent)]
+    Addons_Get(#[from] addons::get::Error),
+    #[error(transparent)]
+    Addons_CreateOrUpdate(#[from] addons::create_or_update::Error),
+    #[error(transparent)]
+    Addons_Delete(#[from] addons::delete::Error),
+    #[error(transparent)]
+    MonitoringConfig_List(#[from] monitoring_config::list::Error),
+    #[error(transparent)]
+    MonitoringConfig_Get(#[from] monitoring_config::get::Error),
+    #[error(transparent)]
+    MonitoringConfig_CreateOrUpdate(#[from] monitoring_config::create_or_update::Error),
+    #[error(transparent)]
+    MonitoringConfig_Delete(#[from] monitoring_config::delete::Error),
+    #[error(transparent)]
+    Devices_ScanForUpdates(#[from] devices::scan_for_updates::Error),
+    #[error(transparent)]
+    Devices_CreateOrUpdateSecuritySettings(#[from] devices::create_or_update_security_settings::Error),
+    #[error(transparent)]
+    Shares_ListByDataBoxEdgeDevice(#[from] shares::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    Shares_Get(#[from] shares::get::Error),
+    #[error(transparent)]
+    Shares_CreateOrUpdate(#[from] shares::create_or_update::Error),
+    #[error(transparent)]
+    Shares_Delete(#[from] shares::delete::Error),
+    #[error(transparent)]
+    Shares_Refresh(#[from] shares::refresh::Error),
+    #[error(transparent)]
+    StorageAccountCredentials_ListByDataBoxEdgeDevice(#[from] storage_account_credentials::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    StorageAccountCredentials_Get(#[from] storage_account_credentials::get::Error),
+    #[error(transparent)]
+    StorageAccountCredentials_CreateOrUpdate(#[from] storage_account_credentials::create_or_update::Error),
+    #[error(transparent)]
+    StorageAccountCredentials_Delete(#[from] storage_account_credentials::delete::Error),
+    #[error(transparent)]
+    StorageAccounts_ListByDataBoxEdgeDevice(#[from] storage_accounts::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    StorageAccounts_Get(#[from] storage_accounts::get::Error),
+    #[error(transparent)]
+    StorageAccounts_CreateOrUpdate(#[from] storage_accounts::create_or_update::Error),
+    #[error(transparent)]
+    StorageAccounts_Delete(#[from] storage_accounts::delete::Error),
+    #[error(transparent)]
+    Containers_ListByStorageAccount(#[from] containers::list_by_storage_account::Error),
+    #[error(transparent)]
+    Containers_Get(#[from] containers::get::Error),
+    #[error(transparent)]
+    Containers_CreateOrUpdate(#[from] containers::create_or_update::Error),
+    #[error(transparent)]
+    Containers_Delete(#[from] containers::delete::Error),
+    #[error(transparent)]
+    Containers_Refresh(#[from] containers::refresh::Error),
+    #[error(transparent)]
+    Triggers_ListByDataBoxEdgeDevice(#[from] triggers::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    Triggers_Get(#[from] triggers::get::Error),
+    #[error(transparent)]
+    Triggers_CreateOrUpdate(#[from] triggers::create_or_update::Error),
+    #[error(transparent)]
+    Triggers_Delete(#[from] triggers::delete::Error),
+    #[error(transparent)]
+    SupportPackages_TriggerSupportPackage(#[from] support_packages::trigger_support_package::Error),
+    #[error(transparent)]
+    Devices_UpdateExtendedInformation(#[from] devices::update_extended_information::Error),
+    #[error(transparent)]
+    Devices_GetUpdateSummary(#[from] devices::get_update_summary::Error),
+    #[error(transparent)]
+    Devices_UploadCertificate(#[from] devices::upload_certificate::Error),
+    #[error(transparent)]
+    Users_ListByDataBoxEdgeDevice(#[from] users::list_by_data_box_edge_device::Error),
+    #[error(transparent)]
+    Users_Get(#[from] users::get::Error),
+    #[error(transparent)]
+    Users_CreateOrUpdate(#[from] users::create_or_update::Error),
+    #[error(transparent)]
+    Users_Delete(#[from] users::delete::Error),
+}
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationsList, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationsList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.DataBoxEdge/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -26,13 +185,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationsList =
+                let rsp_value: models::OperationsList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -42,7 +201,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -66,11 +225,11 @@ pub mod operations {
     }
 }
 pub mod available_skus {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DataBoxEdgeSkuList, list::Error> {
+    ) -> std::result::Result<models::DataBoxEdgeSkuList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataBoxEdge/availableSkus",
@@ -95,13 +254,13 @@ pub mod available_skus {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataBoxEdgeSkuList =
+                let rsp_value: models::DataBoxEdgeSkuList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -111,7 +270,7 @@ pub mod available_skus {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -135,12 +294,12 @@ pub mod available_skus {
     }
 }
 pub mod devices {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<DataBoxEdgeDeviceList, list_by_subscription::Error> {
+    ) -> std::result::Result<models::DataBoxEdgeDeviceList, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices",
@@ -171,13 +330,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataBoxEdgeDeviceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataBoxEdgeDeviceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -187,7 +346,7 @@ pub mod devices {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -214,7 +373,7 @@ pub mod devices {
         subscription_id: &str,
         resource_group_name: &str,
         expand: Option<&str>,
-    ) -> std::result::Result<DataBoxEdgeDeviceList, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DataBoxEdgeDeviceList, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices",
@@ -248,13 +407,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataBoxEdgeDeviceList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataBoxEdgeDeviceList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -264,7 +423,7 @@ pub mod devices {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -291,7 +450,7 @@ pub mod devices {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DataBoxEdgeDevice, get::Error> {
+    ) -> std::result::Result<models::DataBoxEdgeDevice, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}",
@@ -318,13 +477,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataBoxEdgeDevice =
+                let rsp_value: models::DataBoxEdgeDevice =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -334,7 +493,7 @@ pub mod devices {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -359,10 +518,10 @@ pub mod devices {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        data_box_edge_device: &DataBoxEdgeDevice,
+        data_box_edge_device: &models::DataBoxEdgeDevice,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DataBoxEdgeDevice, create_or_update::Error> {
+    ) -> std::result::Result<models::DataBoxEdgeDevice, create_or_update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}",
@@ -393,13 +552,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataBoxEdgeDevice = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataBoxEdgeDevice = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -409,7 +568,7 @@ pub mod devices {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -434,10 +593,10 @@ pub mod devices {
     pub async fn update(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        parameters: &DataBoxEdgeDevicePatch,
+        parameters: &models::DataBoxEdgeDevicePatch,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DataBoxEdgeDevice, update::Error> {
+    ) -> std::result::Result<models::DataBoxEdgeDevice, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}",
@@ -465,13 +624,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataBoxEdgeDevice =
+                let rsp_value: models::DataBoxEdgeDevice =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -481,7 +640,7 @@ pub mod devices {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -538,7 +697,7 @@ pub mod devices {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -548,7 +707,7 @@ pub mod devices {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -614,7 +773,7 @@ pub mod devices {
             http::StatusCode::ACCEPTED => Ok(download_updates::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| download_updates::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(download_updates::Error::DefaultResponse {
                     status_code,
@@ -624,7 +783,7 @@ pub mod devices {
         }
     }
     pub mod download_updates {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -656,7 +815,7 @@ pub mod devices {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<GenerateCertResponse, generate_certificate::Error> {
+    ) -> std::result::Result<models::GenerateCertResponse, generate_certificate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/generateCertificate",
@@ -687,13 +846,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: GenerateCertResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::GenerateCertResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| generate_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| generate_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(generate_certificate::Error::DefaultResponse {
                     status_code,
@@ -703,7 +862,7 @@ pub mod devices {
         }
     }
     pub mod generate_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -730,7 +889,7 @@ pub mod devices {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DataBoxEdgeDeviceExtendedInfo, get_extended_information::Error> {
+    ) -> std::result::Result<models::DataBoxEdgeDeviceExtendedInfo, get_extended_information::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/getExtendedInformation",
@@ -763,13 +922,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataBoxEdgeDeviceExtendedInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataBoxEdgeDeviceExtendedInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_extended_information::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_extended_information::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_extended_information::Error::DefaultResponse {
                     status_code,
@@ -779,7 +938,7 @@ pub mod devices {
         }
     }
     pub mod get_extended_information {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -839,7 +998,7 @@ pub mod devices {
             http::StatusCode::ACCEPTED => Ok(install_updates::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| install_updates::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(install_updates::Error::DefaultResponse {
                     status_code,
@@ -849,7 +1008,7 @@ pub mod devices {
         }
     }
     pub mod install_updates {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -881,7 +1040,7 @@ pub mod devices {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<NetworkSettings, get_network_settings::Error> {
+    ) -> std::result::Result<models::NetworkSettings, get_network_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/networkSettings/default",
@@ -911,13 +1070,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NetworkSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NetworkSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_network_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_network_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_network_settings::Error::DefaultResponse {
                     status_code,
@@ -927,7 +1086,7 @@ pub mod devices {
         }
     }
     pub mod get_network_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -987,7 +1146,7 @@ pub mod devices {
             http::StatusCode::ACCEPTED => Ok(scan_for_updates::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| scan_for_updates::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(scan_for_updates::Error::DefaultResponse {
                     status_code,
@@ -997,7 +1156,7 @@ pub mod devices {
         }
     }
     pub mod scan_for_updates {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1027,7 +1186,7 @@ pub mod devices {
     pub async fn create_or_update_security_settings(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        security_settings: &SecuritySettings,
+        security_settings: &models::SecuritySettings,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update_security_settings::Response, create_or_update_security_settings::Error> {
@@ -1065,7 +1224,7 @@ pub mod devices {
             http::StatusCode::NO_CONTENT => Ok(create_or_update_security_settings::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_security_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update_security_settings::Error::DefaultResponse {
                     status_code,
@@ -1075,7 +1234,7 @@ pub mod devices {
         }
     }
     pub mod create_or_update_security_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1105,10 +1264,10 @@ pub mod devices {
     pub async fn update_extended_information(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        parameters: &DataBoxEdgeDeviceExtendedInfoPatch,
+        parameters: &models::DataBoxEdgeDeviceExtendedInfoPatch,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DataBoxEdgeDeviceExtendedInfo, update_extended_information::Error> {
+    ) -> std::result::Result<models::DataBoxEdgeDeviceExtendedInfo, update_extended_information::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/updateExtendedInformation",
@@ -1141,13 +1300,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DataBoxEdgeDeviceExtendedInfo = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DataBoxEdgeDeviceExtendedInfo = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_extended_information::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_extended_information::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_extended_information::Error::DefaultResponse {
                     status_code,
@@ -1157,7 +1316,7 @@ pub mod devices {
         }
     }
     pub mod update_extended_information {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1184,7 +1343,7 @@ pub mod devices {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<UpdateSummary, get_update_summary::Error> {
+    ) -> std::result::Result<models::UpdateSummary, get_update_summary::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/updateSummary/default",
@@ -1214,13 +1373,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UpdateSummary = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UpdateSummary = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_update_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_update_summary::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_update_summary::Error::DefaultResponse {
                     status_code,
@@ -1230,7 +1389,7 @@ pub mod devices {
         }
     }
     pub mod get_update_summary {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1255,10 +1414,10 @@ pub mod devices {
     pub async fn upload_certificate(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        parameters: &UploadCertificateRequest,
+        parameters: &models::UploadCertificateRequest,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<UploadCertificateResponse, upload_certificate::Error> {
+    ) -> std::result::Result<models::UploadCertificateResponse, upload_certificate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/uploadCertificate",
@@ -1289,13 +1448,13 @@ pub mod devices {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UploadCertificateResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UploadCertificateResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| upload_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| upload_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(upload_certificate::Error::DefaultResponse {
                     status_code,
@@ -1305,7 +1464,7 @@ pub mod devices {
         }
     }
     pub mod upload_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1329,13 +1488,13 @@ pub mod devices {
     }
 }
 pub mod alerts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<AlertList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::AlertList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/alerts",
@@ -1367,13 +1526,13 @@ pub mod alerts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AlertList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AlertList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -1383,7 +1542,7 @@ pub mod alerts {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1411,7 +1570,7 @@ pub mod alerts {
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Alert, get::Error> {
+    ) -> std::result::Result<models::Alert, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/alerts/{}",
@@ -1439,13 +1598,13 @@ pub mod alerts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Alert =
+                let rsp_value: models::Alert =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1455,7 +1614,7 @@ pub mod alerts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1479,13 +1638,13 @@ pub mod alerts {
     }
 }
 pub mod bandwidth_schedules {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<BandwidthSchedulesList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::BandwidthSchedulesList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/bandwidthSchedules",
@@ -1517,13 +1676,13 @@ pub mod bandwidth_schedules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BandwidthSchedulesList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BandwidthSchedulesList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -1533,7 +1692,7 @@ pub mod bandwidth_schedules {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1561,7 +1720,7 @@ pub mod bandwidth_schedules {
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<BandwidthSchedule, get::Error> {
+    ) -> std::result::Result<models::BandwidthSchedule, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/bandwidthSchedules/{}",
@@ -1589,13 +1748,13 @@ pub mod bandwidth_schedules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BandwidthSchedule =
+                let rsp_value: models::BandwidthSchedule =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1605,7 +1764,7 @@ pub mod bandwidth_schedules {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1631,7 +1790,7 @@ pub mod bandwidth_schedules {
         operation_config: &crate::OperationConfig,
         device_name: &str,
         name: &str,
-        parameters: &BandwidthSchedule,
+        parameters: &models::BandwidthSchedule,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -1666,14 +1825,14 @@ pub mod bandwidth_schedules {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: BandwidthSchedule = serde_json::from_slice(rsp_body)
+                let rsp_value: models::BandwidthSchedule = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1683,10 +1842,10 @@ pub mod bandwidth_schedules {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(BandwidthSchedule),
+            Ok200(models::BandwidthSchedule),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1747,7 +1906,7 @@ pub mod bandwidth_schedules {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1757,7 +1916,7 @@ pub mod bandwidth_schedules {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1787,13 +1946,14 @@ pub mod bandwidth_schedules {
     }
 }
 pub mod diagnostic_settings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_diagnostic_proactive_log_collection_settings(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DiagnosticProactiveLogCollectionSettings, get_diagnostic_proactive_log_collection_settings::Error> {
+    ) -> std::result::Result<models::DiagnosticProactiveLogCollectionSettings, get_diagnostic_proactive_log_collection_settings::Error>
+    {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/diagnosticProactiveLogCollectionSettings/default" , operation_config . base_path () , subscription_id , resource_group_name , device_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_diagnostic_proactive_log_collection_settings::Error::ParseUrlError)?;
@@ -1819,14 +1979,14 @@ pub mod diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiagnosticProactiveLogCollectionSettings = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::DiagnosticProactiveLogCollectionSettings = serde_json::from_slice(rsp_body).map_err(|source| {
                     get_diagnostic_proactive_log_collection_settings::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body).map_err(|source| {
                     get_diagnostic_proactive_log_collection_settings::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Err(get_diagnostic_proactive_log_collection_settings::Error::DefaultResponse {
@@ -1837,7 +1997,7 @@ pub mod diagnostic_settings {
         }
     }
     pub mod get_diagnostic_proactive_log_collection_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1862,7 +2022,7 @@ pub mod diagnostic_settings {
     pub async fn update_diagnostic_proactive_log_collection_settings(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        proactive_log_collection_settings: &DiagnosticProactiveLogCollectionSettings,
+        proactive_log_collection_settings: &models::DiagnosticProactiveLogCollectionSettings,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<
@@ -1896,7 +2056,7 @@ pub mod diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiagnosticProactiveLogCollectionSettings = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::DiagnosticProactiveLogCollectionSettings = serde_json::from_slice(rsp_body).map_err(|source| {
                     update_diagnostic_proactive_log_collection_settings::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Ok(update_diagnostic_proactive_log_collection_settings::Response::Ok200(rsp_value))
@@ -1904,7 +2064,7 @@ pub mod diagnostic_settings {
             http::StatusCode::ACCEPTED => Ok(update_diagnostic_proactive_log_collection_settings::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body).map_err(|source| {
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body).map_err(|source| {
                     update_diagnostic_proactive_log_collection_settings::Error::DeserializeError(source, rsp_body.clone())
                 })?;
                 Err(update_diagnostic_proactive_log_collection_settings::Error::DefaultResponse {
@@ -1915,10 +2075,10 @@ pub mod diagnostic_settings {
         }
     }
     pub mod update_diagnostic_proactive_log_collection_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DiagnosticProactiveLogCollectionSettings),
+            Ok200(models::DiagnosticProactiveLogCollectionSettings),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1947,7 +2107,7 @@ pub mod diagnostic_settings {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DiagnosticRemoteSupportSettings, get_diagnostic_remote_support_settings::Error> {
+    ) -> std::result::Result<models::DiagnosticRemoteSupportSettings, get_diagnostic_remote_support_settings::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/diagnosticRemoteSupportSettings/default" , operation_config . base_path () , subscription_id , resource_group_name , device_name) ;
         let mut url = url::Url::parse(url_str).map_err(get_diagnostic_remote_support_settings::Error::ParseUrlError)?;
@@ -1973,13 +2133,13 @@ pub mod diagnostic_settings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiagnosticRemoteSupportSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiagnosticRemoteSupportSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_diagnostic_remote_support_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_diagnostic_remote_support_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_diagnostic_remote_support_settings::Error::DefaultResponse {
                     status_code,
@@ -1989,7 +2149,7 @@ pub mod diagnostic_settings {
         }
     }
     pub mod get_diagnostic_remote_support_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2014,7 +2174,7 @@ pub mod diagnostic_settings {
     pub async fn update_diagnostic_remote_support_settings(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        diagnostic_remote_support_settings: &DiagnosticRemoteSupportSettings,
+        diagnostic_remote_support_settings: &models::DiagnosticRemoteSupportSettings,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<update_diagnostic_remote_support_settings::Response, update_diagnostic_remote_support_settings::Error> {
@@ -2046,13 +2206,13 @@ pub mod diagnostic_settings {
             http::StatusCode::ACCEPTED => Ok(update_diagnostic_remote_support_settings::Response::Accepted202),
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DiagnosticRemoteSupportSettings = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DiagnosticRemoteSupportSettings = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_diagnostic_remote_support_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_diagnostic_remote_support_settings::Response::Ok200(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_diagnostic_remote_support_settings::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update_diagnostic_remote_support_settings::Error::DefaultResponse {
                     status_code,
@@ -2062,11 +2222,11 @@ pub mod diagnostic_settings {
         }
     }
     pub mod update_diagnostic_remote_support_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
-            Ok200(DiagnosticRemoteSupportSettings),
+            Ok200(models::DiagnosticRemoteSupportSettings),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2091,14 +2251,14 @@ pub mod diagnostic_settings {
     }
 }
 pub mod jobs {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Job, get::Error> {
+    ) -> std::result::Result<models::Job, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/jobs/{}",
@@ -2126,13 +2286,13 @@ pub mod jobs {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job =
+                let rsp_value: models::Job =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2142,7 +2302,7 @@ pub mod jobs {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2166,13 +2326,13 @@ pub mod jobs {
     }
 }
 pub mod nodes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<NodeList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::NodeList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/nodes",
@@ -2204,13 +2364,13 @@ pub mod nodes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: NodeList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::NodeList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -2220,7 +2380,7 @@ pub mod nodes {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2244,14 +2404,14 @@ pub mod nodes {
     }
 }
 pub mod operations_status {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Job, get::Error> {
+    ) -> std::result::Result<models::Job, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/operationsStatus/{}",
@@ -2279,13 +2439,13 @@ pub mod operations_status {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Job =
+                let rsp_value: models::Job =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2295,7 +2455,7 @@ pub mod operations_status {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2319,13 +2479,13 @@ pub mod operations_status {
     }
 }
 pub mod orders {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<OrderList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::OrderList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/orders",
@@ -2357,13 +2517,13 @@ pub mod orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OrderList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::OrderList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -2373,7 +2533,7 @@ pub mod orders {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2400,7 +2560,7 @@ pub mod orders {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Order, get::Error> {
+    ) -> std::result::Result<models::Order, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/orders/default",
@@ -2427,13 +2587,13 @@ pub mod orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Order =
+                let rsp_value: models::Order =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2443,7 +2603,7 @@ pub mod orders {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2468,7 +2628,7 @@ pub mod orders {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        order: &Order,
+        order: &models::Order,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -2502,14 +2662,14 @@ pub mod orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Order = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Order = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2519,10 +2679,10 @@ pub mod orders {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Order),
+            Ok200(models::Order),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2581,7 +2741,7 @@ pub mod orders {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2591,7 +2751,7 @@ pub mod orders {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2624,7 +2784,7 @@ pub mod orders {
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<DcAccessCode, list_dc_access_code::Error> {
+    ) -> std::result::Result<models::DcAccessCode, list_dc_access_code::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/orders/default/listDCAccessCode",
@@ -2655,13 +2815,13 @@ pub mod orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DcAccessCode = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DcAccessCode = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_dc_access_code::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_dc_access_code::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_dc_access_code::Error::DefaultResponse {
                     status_code,
@@ -2671,7 +2831,7 @@ pub mod orders {
         }
     }
     pub mod list_dc_access_code {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2695,13 +2855,13 @@ pub mod orders {
     }
 }
 pub mod roles {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<RoleList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::RoleList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/roles",
@@ -2733,13 +2893,13 @@ pub mod roles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: RoleList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::RoleList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -2749,7 +2909,7 @@ pub mod roles {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2777,7 +2937,7 @@ pub mod roles {
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Role, get::Error> {
+    ) -> std::result::Result<models::Role, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/roles/{}",
@@ -2805,13 +2965,13 @@ pub mod roles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Role =
+                let rsp_value: models::Role =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2821,7 +2981,7 @@ pub mod roles {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2847,7 +3007,7 @@ pub mod roles {
         operation_config: &crate::OperationConfig,
         device_name: &str,
         name: &str,
-        role: &Role,
+        role: &models::Role,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -2882,14 +3042,14 @@ pub mod roles {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Role = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Role = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2899,10 +3059,10 @@ pub mod roles {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Role),
+            Ok200(models::Role),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -2963,7 +3123,7 @@ pub mod roles {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2973,7 +3133,7 @@ pub mod roles {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3003,14 +3163,14 @@ pub mod roles {
     }
 }
 pub mod addons {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_role(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         role_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<AddonList, list_by_role::Error> {
+    ) -> std::result::Result<models::AddonList, list_by_role::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/roles/{}/addons",
@@ -3041,13 +3201,13 @@ pub mod addons {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AddonList =
+                let rsp_value: models::AddonList =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_role::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list_by_role::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_role::Error::DefaultResponse {
                     status_code,
@@ -3057,7 +3217,7 @@ pub mod addons {
         }
     }
     pub mod list_by_role {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3086,7 +3246,7 @@ pub mod addons {
         addon_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Addon, get::Error> {
+    ) -> std::result::Result<models::Addon, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/roles/{}/addons/{}",
@@ -3115,13 +3275,13 @@ pub mod addons {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Addon =
+                let rsp_value: models::Addon =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3131,7 +3291,7 @@ pub mod addons {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3158,7 +3318,7 @@ pub mod addons {
         device_name: &str,
         role_name: &str,
         addon_name: &str,
-        addon: &Addon,
+        addon: &models::Addon,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -3194,14 +3354,14 @@ pub mod addons {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Addon = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Addon = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -3211,10 +3371,10 @@ pub mod addons {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Addon),
+            Ok200(models::Addon),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -3277,7 +3437,7 @@ pub mod addons {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3287,7 +3447,7 @@ pub mod addons {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3317,14 +3477,14 @@ pub mod addons {
     }
 }
 pub mod monitoring_config {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         role_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<MonitoringMetricConfigurationList, list::Error> {
+    ) -> std::result::Result<models::MonitoringMetricConfigurationList, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/roles/{}/monitoringConfig",
@@ -3352,13 +3512,13 @@ pub mod monitoring_config {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitoringMetricConfigurationList =
+                let rsp_value: models::MonitoringMetricConfigurationList =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -3368,7 +3528,7 @@ pub mod monitoring_config {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3396,7 +3556,7 @@ pub mod monitoring_config {
         role_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<MonitoringMetricConfiguration, get::Error> {
+    ) -> std::result::Result<models::MonitoringMetricConfiguration, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/roles/{}/monitoringConfig/default",
@@ -3424,13 +3584,13 @@ pub mod monitoring_config {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitoringMetricConfiguration =
+                let rsp_value: models::MonitoringMetricConfiguration =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3440,7 +3600,7 @@ pub mod monitoring_config {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3466,7 +3626,7 @@ pub mod monitoring_config {
         operation_config: &crate::OperationConfig,
         device_name: &str,
         role_name: &str,
-        monitoring_metric_configuration: &MonitoringMetricConfiguration,
+        monitoring_metric_configuration: &models::MonitoringMetricConfiguration,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -3501,14 +3661,14 @@ pub mod monitoring_config {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: MonitoringMetricConfiguration = serde_json::from_slice(rsp_body)
+                let rsp_value: models::MonitoringMetricConfiguration = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -3518,10 +3678,10 @@ pub mod monitoring_config {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(MonitoringMetricConfiguration),
+            Ok200(models::MonitoringMetricConfiguration),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -3582,7 +3742,7 @@ pub mod monitoring_config {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3592,7 +3752,7 @@ pub mod monitoring_config {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3622,13 +3782,13 @@ pub mod monitoring_config {
     }
 }
 pub mod shares {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ShareList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::ShareList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/shares",
@@ -3660,13 +3820,13 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ShareList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ShareList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -3676,7 +3836,7 @@ pub mod shares {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3704,7 +3864,7 @@ pub mod shares {
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Share, get::Error> {
+    ) -> std::result::Result<models::Share, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/shares/{}",
@@ -3732,13 +3892,13 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Share =
+                let rsp_value: models::Share =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -3748,7 +3908,7 @@ pub mod shares {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3774,7 +3934,7 @@ pub mod shares {
         operation_config: &crate::OperationConfig,
         device_name: &str,
         name: &str,
-        share: &Share,
+        share: &models::Share,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -3809,14 +3969,14 @@ pub mod shares {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Share = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Share = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -3826,10 +3986,10 @@ pub mod shares {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Share),
+            Ok200(models::Share),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -3890,7 +4050,7 @@ pub mod shares {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3900,7 +4060,7 @@ pub mod shares {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3968,7 +4128,7 @@ pub mod shares {
             http::StatusCode::ACCEPTED => Ok(refresh::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| refresh::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(refresh::Error::DefaultResponse {
                     status_code,
@@ -3978,7 +4138,7 @@ pub mod shares {
         }
     }
     pub mod refresh {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4007,13 +4167,13 @@ pub mod shares {
     }
 }
 pub mod storage_account_credentials {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<StorageAccountCredentialList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::StorageAccountCredentialList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/storageAccountCredentials",
@@ -4045,13 +4205,13 @@ pub mod storage_account_credentials {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountCredentialList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageAccountCredentialList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -4061,7 +4221,7 @@ pub mod storage_account_credentials {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4089,7 +4249,7 @@ pub mod storage_account_credentials {
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<StorageAccountCredential, get::Error> {
+    ) -> std::result::Result<models::StorageAccountCredential, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/storageAccountCredentials/{}",
@@ -4117,13 +4277,13 @@ pub mod storage_account_credentials {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountCredential =
+                let rsp_value: models::StorageAccountCredential =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4133,7 +4293,7 @@ pub mod storage_account_credentials {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4159,7 +4319,7 @@ pub mod storage_account_credentials {
         operation_config: &crate::OperationConfig,
         device_name: &str,
         name: &str,
-        storage_account_credential: &StorageAccountCredential,
+        storage_account_credential: &models::StorageAccountCredential,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -4194,14 +4354,14 @@ pub mod storage_account_credentials {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountCredential = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageAccountCredential = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -4211,10 +4371,10 @@ pub mod storage_account_credentials {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(StorageAccountCredential),
+            Ok200(models::StorageAccountCredential),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -4275,7 +4435,7 @@ pub mod storage_account_credentials {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4285,7 +4445,7 @@ pub mod storage_account_credentials {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4315,13 +4475,13 @@ pub mod storage_account_credentials {
     }
 }
 pub mod storage_accounts {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<StorageAccountList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::StorageAccountList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/storageAccounts",
@@ -4353,13 +4513,13 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccountList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageAccountList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -4369,7 +4529,7 @@ pub mod storage_accounts {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4397,7 +4557,7 @@ pub mod storage_accounts {
         storage_account_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<StorageAccount, get::Error> {
+    ) -> std::result::Result<models::StorageAccount, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/storageAccounts/{}",
@@ -4425,13 +4585,13 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccount =
+                let rsp_value: models::StorageAccount =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4441,7 +4601,7 @@ pub mod storage_accounts {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4467,7 +4627,7 @@ pub mod storage_accounts {
         operation_config: &crate::OperationConfig,
         device_name: &str,
         storage_account_name: &str,
-        storage_account: &StorageAccount,
+        storage_account: &models::StorageAccount,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -4502,14 +4662,14 @@ pub mod storage_accounts {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: StorageAccount = serde_json::from_slice(rsp_body)
+                let rsp_value: models::StorageAccount = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -4519,10 +4679,10 @@ pub mod storage_accounts {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(StorageAccount),
+            Ok200(models::StorageAccount),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -4582,7 +4742,7 @@ pub mod storage_accounts {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4592,7 +4752,7 @@ pub mod storage_accounts {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -4621,14 +4781,14 @@ pub mod storage_accounts {
     }
 }
 pub mod containers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_storage_account(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         storage_account_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<ContainerList, list_by_storage_account::Error> {
+    ) -> std::result::Result<models::ContainerList, list_by_storage_account::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/storageAccounts/{}/containers",
@@ -4661,13 +4821,13 @@ pub mod containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ContainerList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ContainerList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_storage_account::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_storage_account::Error::DefaultResponse {
                     status_code,
@@ -4677,7 +4837,7 @@ pub mod containers {
         }
     }
     pub mod list_by_storage_account {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4706,7 +4866,7 @@ pub mod containers {
         container_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Container, get::Error> {
+    ) -> std::result::Result<models::Container, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/storageAccounts/{}/containers/{}",
@@ -4735,13 +4895,13 @@ pub mod containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Container =
+                let rsp_value: models::Container =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -4751,7 +4911,7 @@ pub mod containers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4778,7 +4938,7 @@ pub mod containers {
         device_name: &str,
         storage_account_name: &str,
         container_name: &str,
-        container: &Container,
+        container: &models::Container,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -4814,14 +4974,14 @@ pub mod containers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Container = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Container = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -4831,10 +4991,10 @@ pub mod containers {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Container),
+            Ok200(models::Container),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -4896,7 +5056,7 @@ pub mod containers {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -4906,7 +5066,7 @@ pub mod containers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -4967,7 +5127,7 @@ pub mod containers {
             http::StatusCode::ACCEPTED => Ok(refresh::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| refresh::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(refresh::Error::DefaultResponse {
                     status_code,
@@ -4977,7 +5137,7 @@ pub mod containers {
         }
     }
     pub mod refresh {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -5006,14 +5166,14 @@ pub mod containers {
     }
 }
 pub mod triggers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<TriggerList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::TriggerList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/triggers",
@@ -5048,13 +5208,13 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: TriggerList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::TriggerList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -5064,7 +5224,7 @@ pub mod triggers {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5092,7 +5252,7 @@ pub mod triggers {
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<Trigger, get::Error> {
+    ) -> std::result::Result<models::Trigger, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/triggers/{}",
@@ -5120,13 +5280,13 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Trigger =
+                let rsp_value: models::Trigger =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -5136,7 +5296,7 @@ pub mod triggers {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5162,7 +5322,7 @@ pub mod triggers {
         operation_config: &crate::OperationConfig,
         device_name: &str,
         name: &str,
-        trigger: &Trigger,
+        trigger: &models::Trigger,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -5197,14 +5357,14 @@ pub mod triggers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Trigger = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Trigger = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -5214,10 +5374,10 @@ pub mod triggers {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Trigger),
+            Ok200(models::Trigger),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -5278,7 +5438,7 @@ pub mod triggers {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -5288,7 +5448,7 @@ pub mod triggers {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -5318,11 +5478,11 @@ pub mod triggers {
     }
 }
 pub mod support_packages {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn trigger_support_package(
         operation_config: &crate::OperationConfig,
         device_name: &str,
-        trigger_support_package_request: &TriggerSupportPackageRequest,
+        trigger_support_package_request: &models::TriggerSupportPackageRequest,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<trigger_support_package::Response, trigger_support_package::Error> {
@@ -5360,7 +5520,7 @@ pub mod support_packages {
             http::StatusCode::ACCEPTED => Ok(trigger_support_package::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| trigger_support_package::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(trigger_support_package::Error::DefaultResponse {
                     status_code,
@@ -5370,7 +5530,7 @@ pub mod support_packages {
         }
     }
     pub mod trigger_support_package {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -5399,14 +5559,14 @@ pub mod support_packages {
     }
 }
 pub mod users {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_data_box_edge_device(
         operation_config: &crate::OperationConfig,
         device_name: &str,
         subscription_id: &str,
         resource_group_name: &str,
         filter: Option<&str>,
-    ) -> std::result::Result<UserList, list_by_data_box_edge_device::Error> {
+    ) -> std::result::Result<models::UserList, list_by_data_box_edge_device::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/users",
@@ -5441,13 +5601,13 @@ pub mod users {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: UserList = serde_json::from_slice(rsp_body)
+                let rsp_value: models::UserList = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_data_box_edge_device::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_data_box_edge_device::Error::DefaultResponse {
                     status_code,
@@ -5457,7 +5617,7 @@ pub mod users {
         }
     }
     pub mod list_by_data_box_edge_device {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5485,7 +5645,7 @@ pub mod users {
         name: &str,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<User, get::Error> {
+    ) -> std::result::Result<models::User, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataBoxEdge/dataBoxEdgeDevices/{}/users/{}",
@@ -5513,13 +5673,13 @@ pub mod users {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: User =
+                let rsp_value: models::User =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -5529,7 +5689,7 @@ pub mod users {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5555,7 +5715,7 @@ pub mod users {
         operation_config: &crate::OperationConfig,
         device_name: &str,
         name: &str,
-        user: &User,
+        user: &models::User,
         subscription_id: &str,
         resource_group_name: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
@@ -5590,14 +5750,14 @@ pub mod users {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: User = serde_json::from_slice(rsp_body)
+                let rsp_value: models::User = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CloudError = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -5607,10 +5767,10 @@ pub mod users {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(User),
+            Ok200(models::User),
             Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
@@ -5671,7 +5831,7 @@ pub mod users {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: CloudError =
+                let rsp_value: models::CloudError =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -5681,7 +5841,7 @@ pub mod users {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,

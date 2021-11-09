@@ -2,10 +2,23 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    ListOperationsPartner(#[from] list_operations_partner::Error),
+    #[error(transparent)]
+    ManageInventoryMetadata(#[from] manage_inventory_metadata::Error),
+    #[error(transparent)]
+    ManageLink(#[from] manage_link::Error),
+    #[error(transparent)]
+    SearchInventories(#[from] search_inventories::Error),
+}
 pub async fn list_operations_partner(
     operation_config: &crate::OperationConfig,
-) -> std::result::Result<OperationListResult, list_operations_partner::Error> {
+) -> std::result::Result<models::OperationListResult, list_operations_partner::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!("{}/providers/Microsoft.EdgeOrderPartner/operations", operation_config.base_path(),);
     let mut url = url::Url::parse(url_str).map_err(list_operations_partner::Error::ParseUrlError)?;
@@ -31,13 +44,13 @@ pub async fn list_operations_partner(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: OperationListResult = serde_json::from_slice(rsp_body)
+            let rsp_value: models::OperationListResult = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_operations_partner::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| list_operations_partner::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(list_operations_partner::Error::DefaultResponse {
                 status_code,
@@ -47,7 +60,7 @@ pub async fn list_operations_partner(
     }
 }
 pub mod list_operations_partner {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -75,7 +88,7 @@ pub async fn manage_inventory_metadata(
     subscription_id: &str,
     location: &str,
     serial_number: &str,
-    manage_inventory_metadata_request: &ManageInventoryMetadataRequest,
+    manage_inventory_metadata_request: &models::ManageInventoryMetadataRequest,
 ) -> std::result::Result<manage_inventory_metadata::Response, manage_inventory_metadata::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -113,7 +126,7 @@ pub async fn manage_inventory_metadata(
         http::StatusCode::NO_CONTENT => Ok(manage_inventory_metadata::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| manage_inventory_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(manage_inventory_metadata::Error::DefaultResponse {
                 status_code,
@@ -123,7 +136,7 @@ pub async fn manage_inventory_metadata(
     }
 }
 pub mod manage_inventory_metadata {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -157,7 +170,7 @@ pub async fn manage_link(
     subscription_id: &str,
     location: &str,
     serial_number: &str,
-    manage_link_request: &ManageLinkRequest,
+    manage_link_request: &models::ManageLinkRequest,
 ) -> std::result::Result<manage_link::Response, manage_link::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
@@ -192,7 +205,7 @@ pub async fn manage_link(
         http::StatusCode::NO_CONTENT => Ok(manage_link::Response::NoContent204),
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| manage_link::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(manage_link::Error::DefaultResponse {
                 status_code,
@@ -202,7 +215,7 @@ pub async fn manage_link(
     }
 }
 pub mod manage_link {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -232,8 +245,8 @@ pub mod manage_link {
 pub async fn search_inventories(
     operation_config: &crate::OperationConfig,
     subscription_id: &str,
-    search_inventories_request: &SearchInventoriesRequest,
-) -> std::result::Result<PartnerInventoryList, search_inventories::Error> {
+    search_inventories_request: &models::SearchInventoriesRequest,
+) -> std::result::Result<models::PartnerInventoryList, search_inventories::Error> {
     let http_client = operation_config.http_client();
     let url_str = &format!(
         "{}/subscriptions/{}/providers/Microsoft.EdgeOrderPartner/searchInventories",
@@ -262,13 +275,13 @@ pub async fn search_inventories(
     match rsp.status() {
         http::StatusCode::OK => {
             let rsp_body = rsp.body();
-            let rsp_value: PartnerInventoryList =
+            let rsp_value: models::PartnerInventoryList =
                 serde_json::from_slice(rsp_body).map_err(|source| search_inventories::Error::DeserializeError(source, rsp_body.clone()))?;
             Ok(rsp_value)
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse =
+            let rsp_value: models::ErrorResponse =
                 serde_json::from_slice(rsp_body).map_err(|source| search_inventories::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(search_inventories::Error::DefaultResponse {
                 status_code,
@@ -278,7 +291,7 @@ pub async fn search_inventories(
     }
 }
 pub mod search_inventories {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]

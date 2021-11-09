@@ -2,14 +2,105 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    CdnPeeringPrefixes_List(#[from] cdn_peering_prefixes::list::Error),
+    #[error(transparent)]
+    CheckServiceProviderAvailability(#[from] check_service_provider_availability::Error),
+    #[error(transparent)]
+    LegacyPeerings_List(#[from] legacy_peerings::list::Error),
+    #[error(transparent)]
+    LookingGlass_Invoke(#[from] looking_glass::invoke::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    PeerAsns_Get(#[from] peer_asns::get::Error),
+    #[error(transparent)]
+    PeerAsns_CreateOrUpdate(#[from] peer_asns::create_or_update::Error),
+    #[error(transparent)]
+    PeerAsns_Delete(#[from] peer_asns::delete::Error),
+    #[error(transparent)]
+    PeerAsns_ListBySubscription(#[from] peer_asns::list_by_subscription::Error),
+    #[error(transparent)]
+    PeeringLocations_List(#[from] peering_locations::list::Error),
+    #[error(transparent)]
+    RegisteredAsns_Get(#[from] registered_asns::get::Error),
+    #[error(transparent)]
+    RegisteredAsns_CreateOrUpdate(#[from] registered_asns::create_or_update::Error),
+    #[error(transparent)]
+    RegisteredAsns_Delete(#[from] registered_asns::delete::Error),
+    #[error(transparent)]
+    RegisteredAsns_ListByPeering(#[from] registered_asns::list_by_peering::Error),
+    #[error(transparent)]
+    RegisteredPrefixes_Get(#[from] registered_prefixes::get::Error),
+    #[error(transparent)]
+    RegisteredPrefixes_CreateOrUpdate(#[from] registered_prefixes::create_or_update::Error),
+    #[error(transparent)]
+    RegisteredPrefixes_Delete(#[from] registered_prefixes::delete::Error),
+    #[error(transparent)]
+    RegisteredPrefixes_ListByPeering(#[from] registered_prefixes::list_by_peering::Error),
+    #[error(transparent)]
+    Peerings_Get(#[from] peerings::get::Error),
+    #[error(transparent)]
+    Peerings_CreateOrUpdate(#[from] peerings::create_or_update::Error),
+    #[error(transparent)]
+    Peerings_Update(#[from] peerings::update::Error),
+    #[error(transparent)]
+    Peerings_Delete(#[from] peerings::delete::Error),
+    #[error(transparent)]
+    Peerings_ListByResourceGroup(#[from] peerings::list_by_resource_group::Error),
+    #[error(transparent)]
+    Peerings_ListBySubscription(#[from] peerings::list_by_subscription::Error),
+    #[error(transparent)]
+    ReceivedRoutes_ListByPeering(#[from] received_routes::list_by_peering::Error),
+    #[error(transparent)]
+    ConnectionMonitorTests_Get(#[from] connection_monitor_tests::get::Error),
+    #[error(transparent)]
+    ConnectionMonitorTests_CreateOrUpdate(#[from] connection_monitor_tests::create_or_update::Error),
+    #[error(transparent)]
+    ConnectionMonitorTests_Delete(#[from] connection_monitor_tests::delete::Error),
+    #[error(transparent)]
+    ConnectionMonitorTests_ListByPeeringService(#[from] connection_monitor_tests::list_by_peering_service::Error),
+    #[error(transparent)]
+    PeeringServiceCountries_List(#[from] peering_service_countries::list::Error),
+    #[error(transparent)]
+    PeeringServiceLocations_List(#[from] peering_service_locations::list::Error),
+    #[error(transparent)]
+    Prefixes_Get(#[from] prefixes::get::Error),
+    #[error(transparent)]
+    Prefixes_CreateOrUpdate(#[from] prefixes::create_or_update::Error),
+    #[error(transparent)]
+    Prefixes_Delete(#[from] prefixes::delete::Error),
+    #[error(transparent)]
+    Prefixes_ListByPeeringService(#[from] prefixes::list_by_peering_service::Error),
+    #[error(transparent)]
+    PeeringServiceProviders_List(#[from] peering_service_providers::list::Error),
+    #[error(transparent)]
+    PeeringServices_Get(#[from] peering_services::get::Error),
+    #[error(transparent)]
+    PeeringServices_CreateOrUpdate(#[from] peering_services::create_or_update::Error),
+    #[error(transparent)]
+    PeeringServices_Update(#[from] peering_services::update::Error),
+    #[error(transparent)]
+    PeeringServices_Delete(#[from] peering_services::delete::Error),
+    #[error(transparent)]
+    PeeringServices_ListByResourceGroup(#[from] peering_services::list_by_resource_group::Error),
+    #[error(transparent)]
+    PeeringServices_ListBySubscription(#[from] peering_services::list_by_subscription::Error),
+    #[error(transparent)]
+    PeeringServices_InitializeConnectionMonitor(#[from] peering_services::initialize_connection_monitor::Error),
+}
 pub mod cdn_peering_prefixes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         peering_location: &str,
         subscription_id: &str,
-    ) -> std::result::Result<CdnPeeringPrefixListResult, list::Error> {
+    ) -> std::result::Result<models::CdnPeeringPrefixListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/cdnPeeringPrefixes",
@@ -35,13 +126,13 @@ pub mod cdn_peering_prefixes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CdnPeeringPrefixListResult =
+                let rsp_value: models::CdnPeeringPrefixListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -51,7 +142,7 @@ pub mod cdn_peering_prefixes {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -76,7 +167,7 @@ pub mod cdn_peering_prefixes {
 }
 pub async fn check_service_provider_availability(
     operation_config: &crate::OperationConfig,
-    check_service_provider_availability_input: &CheckServiceProviderAvailabilityInput,
+    check_service_provider_availability_input: &models::CheckServiceProviderAvailabilityInput,
     subscription_id: &str,
 ) -> std::result::Result<String, check_service_provider_availability::Error> {
     let http_client = operation_config.http_client();
@@ -116,7 +207,7 @@ pub async fn check_service_provider_availability(
         }
         status_code => {
             let rsp_body = rsp.body();
-            let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                 .map_err(|source| check_service_provider_availability::Error::DeserializeError(source, rsp_body.clone()))?;
             Err(check_service_provider_availability::Error::DefaultResponse {
                 status_code,
@@ -126,7 +217,7 @@ pub async fn check_service_provider_availability(
     }
 }
 pub mod check_service_provider_availability {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -149,14 +240,14 @@ pub mod check_service_provider_availability {
     }
 }
 pub mod legacy_peerings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         peering_location: &str,
         kind: &str,
         asn: Option<i32>,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringListResult, list::Error> {
+    ) -> std::result::Result<models::PeeringListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/legacyPeerings",
@@ -186,13 +277,13 @@ pub mod legacy_peerings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringListResult =
+                let rsp_value: models::PeeringListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -202,7 +293,7 @@ pub mod legacy_peerings {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -226,7 +317,7 @@ pub mod legacy_peerings {
     }
 }
 pub mod looking_glass {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn invoke(
         operation_config: &crate::OperationConfig,
         command: &str,
@@ -234,7 +325,7 @@ pub mod looking_glass {
         source_location: &str,
         destination_ip: &str,
         subscription_id: &str,
-    ) -> std::result::Result<LookingGlassOutput, invoke::Error> {
+    ) -> std::result::Result<models::LookingGlassOutput, invoke::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/lookingGlass",
@@ -264,13 +355,13 @@ pub mod looking_glass {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: LookingGlassOutput =
+                let rsp_value: models::LookingGlassOutput =
                     serde_json::from_slice(rsp_body).map_err(|source| invoke::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| invoke::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(invoke::Error::DefaultResponse {
                     status_code,
@@ -280,7 +371,7 @@ pub mod looking_glass {
         }
     }
     pub mod invoke {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -304,8 +395,8 @@ pub mod looking_glass {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.Peering/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -326,13 +417,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -342,7 +433,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -366,12 +457,12 @@ pub mod operations {
     }
 }
 pub mod peer_asns {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         peer_asn_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PeerAsn, get::Error> {
+    ) -> std::result::Result<models::PeerAsn, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns/{}",
@@ -397,13 +488,13 @@ pub mod peer_asns {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeerAsn =
+                let rsp_value: models::PeerAsn =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -413,7 +504,7 @@ pub mod peer_asns {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -438,7 +529,7 @@ pub mod peer_asns {
     pub async fn create_or_update(
         operation_config: &crate::OperationConfig,
         peer_asn_name: &str,
-        peer_asn: &PeerAsn,
+        peer_asn: &models::PeerAsn,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -470,19 +561,19 @@ pub mod peer_asns {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeerAsn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeerAsn = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeerAsn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeerAsn = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -492,11 +583,11 @@ pub mod peer_asns {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PeerAsn),
-            Created201(PeerAsn),
+            Ok200(models::PeerAsn),
+            Created201(models::PeerAsn),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -551,7 +642,7 @@ pub mod peer_asns {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -561,7 +652,7 @@ pub mod peer_asns {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -591,7 +682,7 @@ pub mod peer_asns {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PeerAsnListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::PeerAsnListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns",
@@ -619,13 +710,13 @@ pub mod peer_asns {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeerAsnListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeerAsnListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -635,7 +726,7 @@ pub mod peer_asns {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -659,13 +750,13 @@ pub mod peer_asns {
     }
 }
 pub mod peering_locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         kind: &str,
         direct_peering_type: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringLocationListResult, list::Error> {
+    ) -> std::result::Result<models::PeeringLocationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/peeringLocations",
@@ -694,13 +785,13 @@ pub mod peering_locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringLocationListResult =
+                let rsp_value: models::PeeringLocationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -710,7 +801,7 @@ pub mod peering_locations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -734,14 +825,14 @@ pub mod peering_locations {
     }
 }
 pub mod registered_asns {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_name: &str,
         registered_asn_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringRegisteredAsn, get::Error> {
+    ) -> std::result::Result<models::PeeringRegisteredAsn, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns/{}",
@@ -769,13 +860,13 @@ pub mod registered_asns {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringRegisteredAsn =
+                let rsp_value: models::PeeringRegisteredAsn =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -785,7 +876,7 @@ pub mod registered_asns {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -812,7 +903,7 @@ pub mod registered_asns {
         resource_group_name: &str,
         peering_name: &str,
         registered_asn_name: &str,
-        registered_asn: &PeeringRegisteredAsn,
+        registered_asn: &models::PeeringRegisteredAsn,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -846,19 +937,19 @@ pub mod registered_asns {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringRegisteredAsn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringRegisteredAsn = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringRegisteredAsn = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringRegisteredAsn = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -868,11 +959,11 @@ pub mod registered_asns {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PeeringRegisteredAsn),
-            Created201(PeeringRegisteredAsn),
+            Ok200(models::PeeringRegisteredAsn),
+            Created201(models::PeeringRegisteredAsn),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -931,7 +1022,7 @@ pub mod registered_asns {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -941,7 +1032,7 @@ pub mod registered_asns {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -973,7 +1064,7 @@ pub mod registered_asns {
         resource_group_name: &str,
         peering_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringRegisteredAsnListResult, list_by_peering::Error> {
+    ) -> std::result::Result<models::PeeringRegisteredAsnListResult, list_by_peering::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns",
@@ -1003,13 +1094,13 @@ pub mod registered_asns {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringRegisteredAsnListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringRegisteredAsnListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_peering::Error::DefaultResponse {
                     status_code,
@@ -1019,7 +1110,7 @@ pub mod registered_asns {
         }
     }
     pub mod list_by_peering {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1043,14 +1134,14 @@ pub mod registered_asns {
     }
 }
 pub mod registered_prefixes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_name: &str,
         registered_prefix_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringRegisteredPrefix, get::Error> {
+    ) -> std::result::Result<models::PeeringRegisteredPrefix, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes/{}",
@@ -1078,13 +1169,13 @@ pub mod registered_prefixes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringRegisteredPrefix =
+                let rsp_value: models::PeeringRegisteredPrefix =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1094,7 +1185,7 @@ pub mod registered_prefixes {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1121,7 +1212,7 @@ pub mod registered_prefixes {
         resource_group_name: &str,
         peering_name: &str,
         registered_prefix_name: &str,
-        registered_prefix: &PeeringRegisteredPrefix,
+        registered_prefix: &models::PeeringRegisteredPrefix,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1155,19 +1246,19 @@ pub mod registered_prefixes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringRegisteredPrefix = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringRegisteredPrefix = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringRegisteredPrefix = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringRegisteredPrefix = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1177,11 +1268,11 @@ pub mod registered_prefixes {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PeeringRegisteredPrefix),
-            Created201(PeeringRegisteredPrefix),
+            Ok200(models::PeeringRegisteredPrefix),
+            Created201(models::PeeringRegisteredPrefix),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1240,7 +1331,7 @@ pub mod registered_prefixes {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1250,7 +1341,7 @@ pub mod registered_prefixes {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1282,7 +1373,7 @@ pub mod registered_prefixes {
         resource_group_name: &str,
         peering_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringRegisteredPrefixListResult, list_by_peering::Error> {
+    ) -> std::result::Result<models::PeeringRegisteredPrefixListResult, list_by_peering::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes",
@@ -1312,13 +1403,13 @@ pub mod registered_prefixes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringRegisteredPrefixListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringRegisteredPrefixListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_peering::Error::DefaultResponse {
                     status_code,
@@ -1328,7 +1419,7 @@ pub mod registered_prefixes {
         }
     }
     pub mod list_by_peering {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1352,13 +1443,13 @@ pub mod registered_prefixes {
     }
 }
 pub mod peerings {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Peering, get::Error> {
+    ) -> std::result::Result<models::Peering, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
@@ -1385,13 +1476,13 @@ pub mod peerings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Peering =
+                let rsp_value: models::Peering =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1401,7 +1492,7 @@ pub mod peerings {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1427,7 +1518,7 @@ pub mod peerings {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_name: &str,
-        peering: &Peering,
+        peering: &models::Peering,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -1460,19 +1551,19 @@ pub mod peerings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Peering = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Peering = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: Peering = serde_json::from_slice(rsp_body)
+                let rsp_value: models::Peering = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -1482,11 +1573,11 @@ pub mod peerings {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(Peering),
-            Created201(Peering),
+            Ok200(models::Peering),
+            Created201(models::Peering),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1513,9 +1604,9 @@ pub mod peerings {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_name: &str,
-        tags: &ResourceTags,
+        tags: &models::ResourceTags,
         subscription_id: &str,
-    ) -> std::result::Result<Peering, update::Error> {
+    ) -> std::result::Result<models::Peering, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
@@ -1543,13 +1634,13 @@ pub mod peerings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Peering =
+                let rsp_value: models::Peering =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1559,7 +1650,7 @@ pub mod peerings {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1615,7 +1706,7 @@ pub mod peerings {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1625,7 +1716,7 @@ pub mod peerings {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1656,7 +1747,7 @@ pub mod peerings {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PeeringListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings",
@@ -1687,13 +1778,13 @@ pub mod peerings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1703,7 +1794,7 @@ pub mod peerings {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1728,7 +1819,7 @@ pub mod peerings {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::PeeringListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/peerings",
@@ -1756,13 +1847,13 @@ pub mod peerings {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -1772,7 +1863,7 @@ pub mod peerings {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1796,7 +1887,7 @@ pub mod peerings {
     }
 }
 pub mod received_routes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_by_peering(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -1807,7 +1898,7 @@ pub mod received_routes {
         rpki_validation_state: Option<&str>,
         skip_token: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringReceivedRouteListResult, list_by_peering::Error> {
+    ) -> std::result::Result<models::PeeringReceivedRouteListResult, list_by_peering::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/receivedRoutes",
@@ -1853,13 +1944,13 @@ pub mod received_routes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringReceivedRouteListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringReceivedRouteListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_peering::Error::DefaultResponse {
                     status_code,
@@ -1869,7 +1960,7 @@ pub mod received_routes {
         }
     }
     pub mod list_by_peering {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1893,14 +1984,14 @@ pub mod received_routes {
     }
 }
 pub mod connection_monitor_tests {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_service_name: &str,
         connection_monitor_test_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionMonitorTest, get::Error> {
+    ) -> std::result::Result<models::ConnectionMonitorTest, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/connectionMonitorTests/{}",
@@ -1928,13 +2019,13 @@ pub mod connection_monitor_tests {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionMonitorTest =
+                let rsp_value: models::ConnectionMonitorTest =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -1944,7 +2035,7 @@ pub mod connection_monitor_tests {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1971,7 +2062,7 @@ pub mod connection_monitor_tests {
         resource_group_name: &str,
         peering_service_name: &str,
         connection_monitor_test_name: &str,
-        connection_monitor_test: &ConnectionMonitorTest,
+        connection_monitor_test: &models::ConnectionMonitorTest,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2005,19 +2096,19 @@ pub mod connection_monitor_tests {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionMonitorTest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionMonitorTest = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionMonitorTest = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionMonitorTest = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2027,11 +2118,11 @@ pub mod connection_monitor_tests {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(ConnectionMonitorTest),
-            Created201(ConnectionMonitorTest),
+            Ok200(models::ConnectionMonitorTest),
+            Created201(models::ConnectionMonitorTest),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2090,7 +2181,7 @@ pub mod connection_monitor_tests {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2100,7 +2191,7 @@ pub mod connection_monitor_tests {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2132,7 +2223,7 @@ pub mod connection_monitor_tests {
         resource_group_name: &str,
         peering_service_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<ConnectionMonitorTestListResult, list_by_peering_service::Error> {
+    ) -> std::result::Result<models::ConnectionMonitorTestListResult, list_by_peering_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/connectionMonitorTests",
@@ -2164,13 +2255,13 @@ pub mod connection_monitor_tests {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: ConnectionMonitorTestListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ConnectionMonitorTestListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_peering_service::Error::DefaultResponse {
                     status_code,
@@ -2180,7 +2271,7 @@ pub mod connection_monitor_tests {
         }
     }
     pub mod list_by_peering_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2204,11 +2295,11 @@ pub mod connection_monitor_tests {
     }
 }
 pub mod peering_service_countries {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringServiceCountryListResult, list::Error> {
+    ) -> std::result::Result<models::PeeringServiceCountryListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceCountries",
@@ -2233,13 +2324,13 @@ pub mod peering_service_countries {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServiceCountryListResult =
+                let rsp_value: models::PeeringServiceCountryListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2249,7 +2340,7 @@ pub mod peering_service_countries {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2273,12 +2364,12 @@ pub mod peering_service_countries {
     }
 }
 pub mod peering_service_locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         country: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringServiceLocationListResult, list::Error> {
+    ) -> std::result::Result<models::PeeringServiceLocationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceLocations",
@@ -2306,13 +2397,13 @@ pub mod peering_service_locations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServiceLocationListResult =
+                let rsp_value: models::PeeringServiceLocationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2322,7 +2413,7 @@ pub mod peering_service_locations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2346,7 +2437,7 @@ pub mod peering_service_locations {
     }
 }
 pub mod prefixes {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
@@ -2354,7 +2445,7 @@ pub mod prefixes {
         prefix_name: &str,
         expand: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringServicePrefix, get::Error> {
+    ) -> std::result::Result<models::PeeringServicePrefix, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes/{}",
@@ -2385,13 +2476,13 @@ pub mod prefixes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServicePrefix =
+                let rsp_value: models::PeeringServicePrefix =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2401,7 +2492,7 @@ pub mod prefixes {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2428,7 +2519,7 @@ pub mod prefixes {
         resource_group_name: &str,
         peering_service_name: &str,
         prefix_name: &str,
-        peering_service_prefix: &PeeringServicePrefix,
+        peering_service_prefix: &models::PeeringServicePrefix,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2462,19 +2553,19 @@ pub mod prefixes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServicePrefix = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringServicePrefix = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServicePrefix = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringServicePrefix = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2484,11 +2575,11 @@ pub mod prefixes {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PeeringServicePrefix),
-            Created201(PeeringServicePrefix),
+            Ok200(models::PeeringServicePrefix),
+            Created201(models::PeeringServicePrefix),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2547,7 +2638,7 @@ pub mod prefixes {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -2557,7 +2648,7 @@ pub mod prefixes {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2590,7 +2681,7 @@ pub mod prefixes {
         peering_service_name: &str,
         expand: Option<&str>,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringServicePrefixListResult, list_by_peering_service::Error> {
+    ) -> std::result::Result<models::PeeringServicePrefixListResult, list_by_peering_service::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes",
@@ -2625,13 +2716,13 @@ pub mod prefixes {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServicePrefixListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringServicePrefixListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_peering_service::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_peering_service::Error::DefaultResponse {
                     status_code,
@@ -2641,7 +2732,7 @@ pub mod prefixes {
         }
     }
     pub mod list_by_peering_service {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2665,11 +2756,11 @@ pub mod prefixes {
     }
 }
 pub mod peering_service_providers {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringServiceProviderListResult, list::Error> {
+    ) -> std::result::Result<models::PeeringServiceProviderListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceProviders",
@@ -2694,13 +2785,13 @@ pub mod peering_service_providers {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServiceProviderListResult =
+                let rsp_value: models::PeeringServiceProviderListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -2710,7 +2801,7 @@ pub mod peering_service_providers {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2734,13 +2825,13 @@ pub mod peering_service_providers {
     }
 }
 pub mod peering_services {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_service_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringService, get::Error> {
+    ) -> std::result::Result<models::PeeringService, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
@@ -2767,13 +2858,13 @@ pub mod peering_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringService =
+                let rsp_value: models::PeeringService =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -2783,7 +2874,7 @@ pub mod peering_services {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2809,7 +2900,7 @@ pub mod peering_services {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_service_name: &str,
-        peering_service: &PeeringService,
+        peering_service: &models::PeeringService,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -2842,19 +2933,19 @@ pub mod peering_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringService = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringService = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create_or_update::Error::DefaultResponse {
                     status_code,
@@ -2864,11 +2955,11 @@ pub mod peering_services {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(PeeringService),
-            Created201(PeeringService),
+            Ok200(models::PeeringService),
+            Created201(models::PeeringService),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -2895,9 +2986,9 @@ pub mod peering_services {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         peering_service_name: &str,
-        tags: &ResourceTags,
+        tags: &models::ResourceTags,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringService, update::Error> {
+    ) -> std::result::Result<models::PeeringService, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
@@ -2925,13 +3016,13 @@ pub mod peering_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringService =
+                let rsp_value: models::PeeringService =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -2941,7 +3032,7 @@ pub mod peering_services {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2997,7 +3088,7 @@ pub mod peering_services {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -3007,7 +3098,7 @@ pub mod peering_services {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -3038,7 +3129,7 @@ pub mod peering_services {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringServiceListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::PeeringServiceListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices",
@@ -3069,13 +3160,13 @@ pub mod peering_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServiceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringServiceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -3085,7 +3176,7 @@ pub mod peering_services {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3110,7 +3201,7 @@ pub mod peering_services {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<PeeringServiceListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::PeeringServiceListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServices",
@@ -3138,13 +3229,13 @@ pub mod peering_services {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: PeeringServiceListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::PeeringServiceListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -3154,7 +3245,7 @@ pub mod peering_services {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3211,7 +3302,7 @@ pub mod peering_services {
             http::StatusCode::OK => Ok(()),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| initialize_connection_monitor::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(initialize_connection_monitor::Error::DefaultResponse {
                     status_code,
@@ -3221,7 +3312,7 @@ pub mod peering_services {
         }
     }
     pub mod initialize_connection_monitor {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -2,13 +2,62 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    AppServiceCertificateOrders_List(#[from] app_service_certificate_orders::list::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_ValidatePurchaseInformation(#[from] app_service_certificate_orders::validate_purchase_information::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_ListByResourceGroup(#[from] app_service_certificate_orders::list_by_resource_group::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_Get(#[from] app_service_certificate_orders::get::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_CreateOrUpdate(#[from] app_service_certificate_orders::create_or_update::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_Update(#[from] app_service_certificate_orders::update::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_Delete(#[from] app_service_certificate_orders::delete::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_ListCertificates(#[from] app_service_certificate_orders::list_certificates::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_GetCertificate(#[from] app_service_certificate_orders::get_certificate::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_CreateOrUpdateCertificate(#[from] app_service_certificate_orders::create_or_update_certificate::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_UpdateCertificate(#[from] app_service_certificate_orders::update_certificate::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_DeleteCertificate(#[from] app_service_certificate_orders::delete_certificate::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_Reissue(#[from] app_service_certificate_orders::reissue::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_Renew(#[from] app_service_certificate_orders::renew::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_ResendEmail(#[from] app_service_certificate_orders::resend_email::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_ResendRequestEmails(#[from] app_service_certificate_orders::resend_request_emails::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_RetrieveSiteSeal(#[from] app_service_certificate_orders::retrieve_site_seal::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_VerifyDomainOwnership(#[from] app_service_certificate_orders::verify_domain_ownership::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_RetrieveCertificateActions(#[from] app_service_certificate_orders::retrieve_certificate_actions::Error),
+    #[error(transparent)]
+    AppServiceCertificateOrders_RetrieveCertificateEmailHistory(
+        #[from] app_service_certificate_orders::retrieve_certificate_email_history::Error,
+    ),
+    #[error(transparent)]
+    CertificateRegistrationProvider_ListOperations(#[from] certificate_registration_provider::list_operations::Error),
+}
 pub mod app_service_certificate_orders {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AppServiceCertificateOrderCollection, list::Error> {
+    ) -> std::result::Result<models::AppServiceCertificateOrderCollection, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.CertificateRegistration/certificateOrders",
@@ -33,7 +82,7 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateOrderCollection =
+                let rsp_value: models::AppServiceCertificateOrderCollection =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -47,7 +96,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -68,7 +117,7 @@ pub mod app_service_certificate_orders {
     }
     pub async fn validate_purchase_information(
         operation_config: &crate::OperationConfig,
-        app_service_certificate_order: &AppServiceCertificateOrder,
+        app_service_certificate_order: &models::AppServiceCertificateOrder,
         subscription_id: &str,
     ) -> std::result::Result<(), validate_purchase_information::Error> {
         let http_client = operation_config.http_client();
@@ -110,7 +159,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod validate_purchase_information {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -133,7 +182,7 @@ pub mod app_service_certificate_orders {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AppServiceCertificateOrderCollection, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AppServiceCertificateOrderCollection, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders",
@@ -164,7 +213,7 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateOrderCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateOrderCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -178,7 +227,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -202,7 +251,7 @@ pub mod app_service_certificate_orders {
         resource_group_name: &str,
         certificate_order_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AppServiceCertificateOrder, get::Error> {
+    ) -> std::result::Result<models::AppServiceCertificateOrder, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}",
@@ -229,7 +278,7 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateOrder =
+                let rsp_value: models::AppServiceCertificateOrder =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -243,7 +292,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -266,7 +315,7 @@ pub mod app_service_certificate_orders {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         certificate_order_name: &str,
-        certificate_distinguished_name: &AppServiceCertificateOrder,
+        certificate_distinguished_name: &models::AppServiceCertificateOrder,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
         let http_client = operation_config.http_client();
@@ -299,13 +348,13 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateOrder = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateOrder = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateOrder = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateOrder = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update::Response::Created201(rsp_value))
             }
@@ -319,11 +368,11 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod create_or_update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AppServiceCertificateOrder),
-            Created201(AppServiceCertificateOrder),
+            Ok200(models::AppServiceCertificateOrder),
+            Created201(models::AppServiceCertificateOrder),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -347,7 +396,7 @@ pub mod app_service_certificate_orders {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         certificate_order_name: &str,
-        certificate_distinguished_name: &AppServiceCertificateOrderPatchResource,
+        certificate_distinguished_name: &models::AppServiceCertificateOrderPatchResource,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -377,13 +426,13 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateOrder =
+                let rsp_value: models::AppServiceCertificateOrder =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateOrder =
+                let rsp_value: models::AppServiceCertificateOrder =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Created201(rsp_value))
             }
@@ -397,11 +446,11 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AppServiceCertificateOrder),
-            Created201(AppServiceCertificateOrder),
+            Ok200(models::AppServiceCertificateOrder),
+            Created201(models::AppServiceCertificateOrder),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -463,7 +512,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -492,7 +541,7 @@ pub mod app_service_certificate_orders {
         resource_group_name: &str,
         certificate_order_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AppServiceCertificateCollection, list_certificates::Error> {
+    ) -> std::result::Result<models::AppServiceCertificateCollection, list_certificates::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates",
@@ -522,7 +571,7 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_certificates::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -536,7 +585,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod list_certificates {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -561,7 +610,7 @@ pub mod app_service_certificate_orders {
         certificate_order_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<AppServiceCertificateResource, get_certificate::Error> {
+    ) -> std::result::Result<models::AppServiceCertificateResource, get_certificate::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}",
@@ -592,7 +641,7 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| get_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -606,7 +655,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod get_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -630,7 +679,7 @@ pub mod app_service_certificate_orders {
         resource_group_name: &str,
         certificate_order_name: &str,
         name: &str,
-        key_vault_certificate: &AppServiceCertificateResource,
+        key_vault_certificate: &models::AppServiceCertificateResource,
         subscription_id: &str,
     ) -> std::result::Result<create_or_update_certificate::Response, create_or_update_certificate::Error> {
         let http_client = operation_config.http_client();
@@ -666,13 +715,13 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_certificate::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| create_or_update_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create_or_update_certificate::Response::Created201(rsp_value))
             }
@@ -686,11 +735,11 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod create_or_update_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AppServiceCertificateResource),
-            Created201(AppServiceCertificateResource),
+            Ok200(models::AppServiceCertificateResource),
+            Created201(models::AppServiceCertificateResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -715,7 +764,7 @@ pub mod app_service_certificate_orders {
         resource_group_name: &str,
         certificate_order_name: &str,
         name: &str,
-        key_vault_certificate: &AppServiceCertificatePatchResource,
+        key_vault_certificate: &models::AppServiceCertificatePatchResource,
         subscription_id: &str,
     ) -> std::result::Result<update_certificate::Response, update_certificate::Error> {
         let http_client = operation_config.http_client();
@@ -749,13 +798,13 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_certificate::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: AppServiceCertificateResource = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AppServiceCertificateResource = serde_json::from_slice(rsp_body)
                     .map_err(|source| update_certificate::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update_certificate::Response::Created201(rsp_value))
             }
@@ -769,11 +818,11 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod update_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(AppServiceCertificateResource),
-            Created201(AppServiceCertificateResource),
+            Ok200(models::AppServiceCertificateResource),
+            Created201(models::AppServiceCertificateResource),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -840,7 +889,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod delete_certificate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -868,7 +917,7 @@ pub mod app_service_certificate_orders {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         certificate_order_name: &str,
-        reissue_certificate_order_request: &ReissueCertificateOrderRequest,
+        reissue_certificate_order_request: &models::ReissueCertificateOrderRequest,
         subscription_id: &str,
     ) -> std::result::Result<(), reissue::Error> {
         let http_client = operation_config.http_client();
@@ -910,7 +959,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod reissue {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -933,7 +982,7 @@ pub mod app_service_certificate_orders {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         certificate_order_name: &str,
-        renew_certificate_order_request: &RenewCertificateOrderRequest,
+        renew_certificate_order_request: &models::RenewCertificateOrderRequest,
         subscription_id: &str,
     ) -> std::result::Result<(), renew::Error> {
         let http_client = operation_config.http_client();
@@ -972,7 +1021,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod renew {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1036,7 +1085,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod resend_email {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1059,7 +1108,7 @@ pub mod app_service_certificate_orders {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         certificate_order_name: &str,
-        name_identifier: &NameIdentifier,
+        name_identifier: &models::NameIdentifier,
         subscription_id: &str,
     ) -> std::result::Result<(), resend_request_emails::Error> {
         let http_client = operation_config.http_client();
@@ -1103,7 +1152,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod resend_request_emails {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1126,9 +1175,9 @@ pub mod app_service_certificate_orders {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         certificate_order_name: &str,
-        site_seal_request: &SiteSealRequest,
+        site_seal_request: &models::SiteSealRequest,
         subscription_id: &str,
-    ) -> std::result::Result<SiteSeal, retrieve_site_seal::Error> {
+    ) -> std::result::Result<models::SiteSeal, retrieve_site_seal::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveSiteSeal",
@@ -1159,7 +1208,7 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SiteSeal = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SiteSeal = serde_json::from_slice(rsp_body)
                     .map_err(|source| retrieve_site_seal::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1173,7 +1222,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod retrieve_site_seal {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1239,7 +1288,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod verify_domain_ownership {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1263,7 +1312,7 @@ pub mod app_service_certificate_orders {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Vec<CertificateOrderAction>, retrieve_certificate_actions::Error> {
+    ) -> std::result::Result<Vec<models::CertificateOrderAction>, retrieve_certificate_actions::Error> {
         let http_client = operation_config.http_client();
         let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveCertificateActions" , operation_config . base_path () , subscription_id , resource_group_name , name) ;
         let mut url = url::Url::parse(url_str).map_err(retrieve_certificate_actions::Error::ParseUrlError)?;
@@ -1290,7 +1339,7 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<CertificateOrderAction> = serde_json::from_slice(rsp_body)
+                let rsp_value: Vec<models::CertificateOrderAction> = serde_json::from_slice(rsp_body)
                     .map_err(|source| retrieve_certificate_actions::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1304,7 +1353,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod retrieve_certificate_actions {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1328,7 +1377,7 @@ pub mod app_service_certificate_orders {
         resource_group_name: &str,
         name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<Vec<CertificateEmail>, retrieve_certificate_email_history::Error> {
+    ) -> std::result::Result<Vec<models::CertificateEmail>, retrieve_certificate_email_history::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveEmailHistory",
@@ -1361,7 +1410,7 @@ pub mod app_service_certificate_orders {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: Vec<CertificateEmail> = serde_json::from_slice(rsp_body)
+                let rsp_value: Vec<models::CertificateEmail> = serde_json::from_slice(rsp_body)
                     .map_err(|source| retrieve_certificate_email_history::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1375,7 +1424,7 @@ pub mod app_service_certificate_orders {
         }
     }
     pub mod retrieve_certificate_email_history {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1396,10 +1445,10 @@ pub mod app_service_certificate_orders {
     }
 }
 pub mod certificate_registration_provider {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn list_operations(
         operation_config: &crate::OperationConfig,
-    ) -> std::result::Result<CsmOperationCollection, list_operations::Error> {
+    ) -> std::result::Result<models::CsmOperationCollection, list_operations::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/providers/Microsoft.CertificateRegistration/operations",
@@ -1426,7 +1475,7 @@ pub mod certificate_registration_provider {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CsmOperationCollection = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CsmOperationCollection = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_operations::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
@@ -1440,7 +1489,7 @@ pub mod certificate_registration_provider {
         }
     }
     pub mod list_operations {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]

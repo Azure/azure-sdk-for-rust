@@ -2,15 +2,56 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Capacities_GetDetails(#[from] capacities::get_details::Error),
+    #[error(transparent)]
+    Capacities_Create(#[from] capacities::create::Error),
+    #[error(transparent)]
+    Capacities_Update(#[from] capacities::update::Error),
+    #[error(transparent)]
+    Capacities_Delete(#[from] capacities::delete::Error),
+    #[error(transparent)]
+    Capacities_Suspend(#[from] capacities::suspend::Error),
+    #[error(transparent)]
+    Capacities_Resume(#[from] capacities::resume::Error),
+    #[error(transparent)]
+    Capacities_ListByResourceGroup(#[from] capacities::list_by_resource_group::Error),
+    #[error(transparent)]
+    Capacities_List(#[from] capacities::list::Error),
+    #[error(transparent)]
+    Capacities_ListSkus(#[from] capacities::list_skus::Error),
+    #[error(transparent)]
+    Capacities_ListSkusForCapacity(#[from] capacities::list_skus_for_capacity::Error),
+    #[error(transparent)]
+    Operations_List(#[from] operations::list::Error),
+    #[error(transparent)]
+    Capacities_CheckNameAvailability(#[from] capacities::check_name_availability::Error),
+    #[error(transparent)]
+    AutoScaleVCores_Get(#[from] auto_scale_v_cores::get::Error),
+    #[error(transparent)]
+    AutoScaleVCores_Create(#[from] auto_scale_v_cores::create::Error),
+    #[error(transparent)]
+    AutoScaleVCores_Update(#[from] auto_scale_v_cores::update::Error),
+    #[error(transparent)]
+    AutoScaleVCores_Delete(#[from] auto_scale_v_cores::delete::Error),
+    #[error(transparent)]
+    AutoScaleVCores_ListByResourceGroup(#[from] auto_scale_v_cores::list_by_resource_group::Error),
+    #[error(transparent)]
+    AutoScaleVCores_ListBySubscription(#[from] auto_scale_v_cores::list_by_subscription::Error),
+}
 pub mod capacities {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get_details(
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         dedicated_capacity_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DedicatedCapacity, get_details::Error> {
+    ) -> std::result::Result<models::DedicatedCapacity, get_details::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBIDedicated/capacities/{}",
@@ -40,13 +81,13 @@ pub mod capacities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCapacity =
+                let rsp_value: models::DedicatedCapacity =
                     serde_json::from_slice(rsp_body).map_err(|source| get_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get_details::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get_details::Error::DefaultResponse {
                     status_code,
@@ -56,7 +97,7 @@ pub mod capacities {
         }
     }
     pub mod get_details {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -82,7 +123,7 @@ pub mod capacities {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         dedicated_capacity_name: &str,
-        capacity_parameters: &DedicatedCapacity,
+        capacity_parameters: &models::DedicatedCapacity,
         subscription_id: &str,
     ) -> std::result::Result<create::Response, create::Error> {
         let http_client = operation_config.http_client();
@@ -112,19 +153,19 @@ pub mod capacities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCapacity =
+                let rsp_value: models::DedicatedCapacity =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Ok200(rsp_value))
             }
             http::StatusCode::CREATED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCapacity =
+                let rsp_value: models::DedicatedCapacity =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(create::Response::Created201(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -134,11 +175,11 @@ pub mod capacities {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DedicatedCapacity),
-            Created201(DedicatedCapacity),
+            Ok200(models::DedicatedCapacity),
+            Created201(models::DedicatedCapacity),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -165,7 +206,7 @@ pub mod capacities {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         dedicated_capacity_name: &str,
-        capacity_update_parameters: &DedicatedCapacityUpdateParameters,
+        capacity_update_parameters: &models::DedicatedCapacityUpdateParameters,
         subscription_id: &str,
     ) -> std::result::Result<update::Response, update::Error> {
         let http_client = operation_config.http_client();
@@ -195,19 +236,19 @@ pub mod capacities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCapacity =
+                let rsp_value: models::DedicatedCapacity =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Ok200(rsp_value))
             }
             http::StatusCode::ACCEPTED => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCapacity =
+                let rsp_value: models::DedicatedCapacity =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(update::Response::Accepted202(rsp_value))
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -217,11 +258,11 @@ pub mod capacities {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
-            Ok200(DedicatedCapacity),
-            Accepted202(DedicatedCapacity),
+            Ok200(models::DedicatedCapacity),
+            Accepted202(models::DedicatedCapacity),
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -279,7 +320,7 @@ pub mod capacities {
             http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -289,7 +330,7 @@ pub mod capacities {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -355,7 +396,7 @@ pub mod capacities {
             http::StatusCode::ACCEPTED => Ok(suspend::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| suspend::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(suspend::Error::DefaultResponse {
                     status_code,
@@ -365,7 +406,7 @@ pub mod capacities {
         }
     }
     pub mod suspend {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -427,7 +468,7 @@ pub mod capacities {
             http::StatusCode::ACCEPTED => Ok(resume::Response::Accepted202),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| resume::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(resume::Error::DefaultResponse {
                     status_code,
@@ -437,7 +478,7 @@ pub mod capacities {
         }
     }
     pub mod resume {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -468,7 +509,7 @@ pub mod capacities {
         operation_config: &crate::OperationConfig,
         resource_group_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<DedicatedCapacities, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::DedicatedCapacities, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBIDedicated/capacities",
@@ -499,13 +540,13 @@ pub mod capacities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCapacities = serde_json::from_slice(rsp_body)
+                let rsp_value: models::DedicatedCapacities = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -515,7 +556,7 @@ pub mod capacities {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -540,7 +581,7 @@ pub mod capacities {
     pub async fn list(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<DedicatedCapacities, list::Error> {
+    ) -> std::result::Result<models::DedicatedCapacities, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PowerBIDedicated/capacities",
@@ -565,13 +606,13 @@ pub mod capacities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: DedicatedCapacities =
+                let rsp_value: models::DedicatedCapacities =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -581,7 +622,7 @@ pub mod capacities {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -606,7 +647,7 @@ pub mod capacities {
     pub async fn list_skus(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<SkuEnumerationForNewResourceResult, list_skus::Error> {
+    ) -> std::result::Result<models::SkuEnumerationForNewResourceResult, list_skus::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PowerBIDedicated/skus",
@@ -634,13 +675,13 @@ pub mod capacities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SkuEnumerationForNewResourceResult =
+                let rsp_value: models::SkuEnumerationForNewResourceResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list_skus::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_skus::Error::DefaultResponse {
                     status_code,
@@ -650,7 +691,7 @@ pub mod capacities {
         }
     }
     pub mod list_skus {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -677,7 +718,7 @@ pub mod capacities {
         resource_group_name: &str,
         dedicated_capacity_name: &str,
         subscription_id: &str,
-    ) -> std::result::Result<SkuEnumerationForExistingResourceResult, list_skus_for_capacity::Error> {
+    ) -> std::result::Result<models::SkuEnumerationForExistingResourceResult, list_skus_for_capacity::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBIDedicated/capacities/{}/skus",
@@ -709,13 +750,13 @@ pub mod capacities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: SkuEnumerationForExistingResourceResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::SkuEnumerationForExistingResourceResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_skus_for_capacity::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_skus_for_capacity::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_skus_for_capacity::Error::DefaultResponse {
                     status_code,
@@ -725,7 +766,7 @@ pub mod capacities {
         }
     }
     pub mod list_skus_for_capacity {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -750,9 +791,9 @@ pub mod capacities {
     pub async fn check_name_availability(
         operation_config: &crate::OperationConfig,
         location: &str,
-        capacity_parameters: &CheckCapacityNameAvailabilityParameters,
+        capacity_parameters: &models::CheckCapacityNameAvailabilityParameters,
         subscription_id: &str,
-    ) -> std::result::Result<CheckCapacityNameAvailabilityResult, check_name_availability::Error> {
+    ) -> std::result::Result<models::CheckCapacityNameAvailabilityResult, check_name_availability::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PowerBIDedicated/locations/{}/checkNameAvailability",
@@ -784,13 +825,13 @@ pub mod capacities {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: CheckCapacityNameAvailabilityResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::CheckCapacityNameAvailabilityResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| check_name_availability::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(check_name_availability::Error::DefaultResponse {
                     status_code,
@@ -800,7 +841,7 @@ pub mod capacities {
         }
     }
     pub mod check_name_availability {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -824,8 +865,8 @@ pub mod capacities {
     }
 }
 pub mod operations {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<OperationListResult, list::Error> {
+    use super::{models, API_VERSION};
+    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!("{}/providers/Microsoft.PowerBIDedicated/operations", operation_config.base_path(),);
         let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
@@ -846,13 +887,13 @@ pub mod operations {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: OperationListResult =
+                let rsp_value: models::OperationListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list::Error::DefaultResponse {
                     status_code,
@@ -862,7 +903,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -886,13 +927,13 @@ pub mod operations {
     }
 }
 pub mod auto_scale_v_cores {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     pub async fn get(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
         vcore_name: &str,
-    ) -> std::result::Result<AutoScaleVCore, get::Error> {
+    ) -> std::result::Result<models::AutoScaleVCore, get::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBIDedicated/autoScaleVCores/{}",
@@ -919,13 +960,13 @@ pub mod auto_scale_v_cores {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AutoScaleVCore =
+                let rsp_value: models::AutoScaleVCore =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(get::Error::DefaultResponse {
                     status_code,
@@ -935,7 +976,7 @@ pub mod auto_scale_v_cores {
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -962,8 +1003,8 @@ pub mod auto_scale_v_cores {
         subscription_id: &str,
         resource_group_name: &str,
         vcore_name: &str,
-        v_core_parameters: &AutoScaleVCore,
-    ) -> std::result::Result<AutoScaleVCore, create::Error> {
+        v_core_parameters: &models::AutoScaleVCore,
+    ) -> std::result::Result<models::AutoScaleVCore, create::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBIDedicated/autoScaleVCores/{}",
@@ -991,13 +1032,13 @@ pub mod auto_scale_v_cores {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AutoScaleVCore =
+                let rsp_value: models::AutoScaleVCore =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(create::Error::DefaultResponse {
                     status_code,
@@ -1007,7 +1048,7 @@ pub mod auto_scale_v_cores {
         }
     }
     pub mod create {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1034,8 +1075,8 @@ pub mod auto_scale_v_cores {
         subscription_id: &str,
         resource_group_name: &str,
         vcore_name: &str,
-        v_core_update_parameters: &AutoScaleVCoreUpdateParameters,
-    ) -> std::result::Result<AutoScaleVCore, update::Error> {
+        v_core_update_parameters: &models::AutoScaleVCoreUpdateParameters,
+    ) -> std::result::Result<models::AutoScaleVCore, update::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBIDedicated/autoScaleVCores/{}",
@@ -1063,13 +1104,13 @@ pub mod auto_scale_v_cores {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AutoScaleVCore =
+                let rsp_value: models::AutoScaleVCore =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(update::Error::DefaultResponse {
                     status_code,
@@ -1079,7 +1120,7 @@ pub mod auto_scale_v_cores {
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1135,7 +1176,7 @@ pub mod auto_scale_v_cores {
             http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse =
+                let rsp_value: models::ErrorResponse =
                     serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(delete::Error::DefaultResponse {
                     status_code,
@@ -1145,7 +1186,7 @@ pub mod auto_scale_v_cores {
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1176,7 +1217,7 @@ pub mod auto_scale_v_cores {
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
         resource_group_name: &str,
-    ) -> std::result::Result<AutoScaleVCoreListResult, list_by_resource_group::Error> {
+    ) -> std::result::Result<models::AutoScaleVCoreListResult, list_by_resource_group::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PowerBIDedicated/autoScaleVCores",
@@ -1207,13 +1248,13 @@ pub mod auto_scale_v_cores {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AutoScaleVCoreListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AutoScaleVCoreListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_resource_group::Error::DefaultResponse {
                     status_code,
@@ -1223,7 +1264,7 @@ pub mod auto_scale_v_cores {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1248,7 +1289,7 @@ pub mod auto_scale_v_cores {
     pub async fn list_by_subscription(
         operation_config: &crate::OperationConfig,
         subscription_id: &str,
-    ) -> std::result::Result<AutoScaleVCoreListResult, list_by_subscription::Error> {
+    ) -> std::result::Result<models::AutoScaleVCoreListResult, list_by_subscription::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/subscriptions/{}/providers/Microsoft.PowerBIDedicated/autoScaleVCores",
@@ -1276,13 +1317,13 @@ pub mod auto_scale_v_cores {
         match rsp.status() {
             http::StatusCode::OK => {
                 let rsp_body = rsp.body();
-                let rsp_value: AutoScaleVCoreListResult = serde_json::from_slice(rsp_body)
+                let rsp_value: models::AutoScaleVCoreListResult = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Ok(rsp_value)
             }
             status_code => {
                 let rsp_body = rsp.body();
-                let rsp_value: ErrorResponse = serde_json::from_slice(rsp_body)
+                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
                     .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
                 Err(list_by_subscription::Error::DefaultResponse {
                     status_code,
@@ -1292,7 +1333,7 @@ pub mod auto_scale_v_cores {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

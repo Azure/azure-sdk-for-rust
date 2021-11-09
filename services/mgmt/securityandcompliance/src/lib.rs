@@ -6,12 +6,12 @@
 #[cfg(feature = "package-2021-01-11")]
 pub mod package_2021_01_11;
 #[cfg(all(feature = "package-2021-01-11", not(feature = "no-default-version")))]
-pub use package_2021_01_11::{models, operations};
+pub use package_2021_01_11::{models, operations, operations::Error};
 #[cfg(feature = "package-2021-03-08")]
 pub mod package_2021_03_08;
 use azure_core::setters;
 #[cfg(all(feature = "package-2021-03-08", not(feature = "no-default-version")))]
-pub use package_2021_03_08::{models, operations};
+pub use package_2021_03_08::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,
