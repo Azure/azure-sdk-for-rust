@@ -149,5 +149,14 @@ required-features=["queue"]
 name="put_message"
 required-features=["queue"]
 [[example]]
-name="data_lake_00"
+name="data_lake_00_file_system"
+required-features=["data_lake"]
+[[example]]
+name="data_lake_01_file_create"
+required-features=["data_lake"]
+[[example]]
+name="data_lake_02_file_upload"
+required-features=["data_lake"]
+[[example]]
+name="data_lake_03_file_rename"
 required-features=["data_lake"]

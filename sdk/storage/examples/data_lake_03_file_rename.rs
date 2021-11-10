@@ -44,75 +44,55 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_fs_response = file_system_client.create().execute().await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
-    let file_path = "some/path/example-file.txt";
+    let file_path1 = "some/path/example-file1.txt";
+    let file_path2 = "some/path/example-file2.txt";
 
-    println!("creating file '{}'...", file_path);
-    let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+    println!("creating file '{}'...", file_path1);
+    let create_file_response1 = file_system_client
+        .create_file(Context::default(), file_path1, FileCreateOptions::default())
         .await?;
-    println!("create file response == {:?}\n", create_file_response);
+    println!("create file response == {:?}\n", create_file_response1);
 
-    println!("creating file '{}' (overwrite)...", file_path);
-    let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+    println!("creating file '{}'...", file_path2);
+    let create_file_response2 = file_system_client
+        .create_file(Context::default(), file_path2, FileCreateOptions::default())
         .await?;
-    println!("create file response == {:?}\n", create_file_response);
+    println!("create file response == {:?}\n", create_file_response2);
 
-    println!("creating file '{}' if not exists...", file_path);
-    let create_file_if_not_exists_result = file_system_client
-        .create_file_if_not_exists(Context::default(), file_path)
-        .await;
+    // =============================================================================================
+
     println!(
-        "create file result (should fail) == {:?}\n",
-        create_file_if_not_exists_result
+        "renaming file '{}' to '{}' if not exists...",
+        file_path1, file_path2
     );
-
-    println!("appending to file '{}'...", file_path);
-    let bytes = bytes::Bytes::from("some data");
-    let file_length = bytes.len() as i64;
-    let append_to_file_response = file_system_client
-        .append_to_file(
+    let rename_file_result = file_system_client
+        .rename_file_if_not_exists(
             Context::default(),
-            file_path,
-            bytes,
-            0,
-            FileAppendOptions::default(),
+            file_path1,
+            file_path2,
         )
-        .await?;
-    println!("append to file response == {:?}\n", append_to_file_response);
+        .await;
+    println!("rename file result (should fail) == {:?}\n", rename_file_result);
 
-    println!("flushing file '{}'...", file_path);
-    let flush_file_response = file_system_client
-        .flush_file(
-            Context::default(),
-            file_path,
-            file_length,
-            true,
-            FileFlushOptions::default(),
-        )
-        .await?;
-    println!("flush file response == {:?}\n", flush_file_response);
-
-    let destination_file_path = "some/path/example-file-renamed.txt";
     println!(
         "renaming file '{}' to '{}'...",
-        file_path, destination_file_path
+        file_path1, file_path2
     );
     let rename_file_response = file_system_client
         .rename_file(
             Context::default(),
-            file_path,
-            destination_file_path,
+            file_path1,
+            file_path2,
             FileRenameOptions::default(),
         )
         .await?;
     println!("rename file response == {:?}\n", rename_file_response);
 
-    println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().execute().await?;
-    println!("delete file system response == {:?}\n", delete_fs_response);
+    // =============================================================================================
 
-    println!("data lake example 01 done.");
+    // println!("deleting file system...");
+    // let delete_fs_response = file_system_client.delete().execute().await?;
+    // println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())
 }

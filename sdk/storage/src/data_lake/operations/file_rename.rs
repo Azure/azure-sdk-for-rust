@@ -29,7 +29,7 @@ impl<'a> FileRenameOptions<'a> {
         req: &mut HttpRequest,
         rename_source: &str,
     ) -> Result<(), crate::Error> {
-        // azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
+        azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
         azure_core::headers::add_mandatory_header2(&ContentLength::new(0), req)?; // Length is required for renaming files
         req.headers_mut().append(
             "x-ms-rename-source",

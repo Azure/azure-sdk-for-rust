@@ -109,6 +109,28 @@ impl FileSystemClient {
         Ok(FileRenameResponse::try_from(response).await?)
     }
 
+    pub async fn rename_file_if_not_exists(
+        &self,
+        ctx: Context,
+        source_file_path: &str,
+        destination_file_path: &str,
+    ) -> Result<FileRenameResponse, crate::Error> {
+        let options = FileRenameOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
+
+        let mut request = self.prepare_file_rename_request(destination_file_path);
+        let contents = DataLakeContext {};
+        let mut pipeline_context = PipelineContext::new(ctx, contents);
+
+        let rename_source = format!("/{}/{}", &self.name, source_file_path);
+        options.decorate_request(&mut request, rename_source.as_str())?;
+        let response = self
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+
+        Ok(FileRenameResponse::try_from(response).await?)
+    }
+
     pub async fn append_to_file(
         &self,
         ctx: Context,
