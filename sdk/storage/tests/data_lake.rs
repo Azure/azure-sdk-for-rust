@@ -13,31 +13,12 @@ use std::num::NonZeroU32;
 
 #[tokio::test]
 async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
-        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
-        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
+    let data_lake_client = create_data_lake_client().await.unwrap();
 
-    let file_system_name = format!("azurerustsdk-datalake-e2etest-fs-{}", Utc::now().timestamp());
-
-    let http_client = new_http_client();
-
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-
-    let resource_id = "https://storage.azure.com/";
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-
-    let storage_client = storage_account_client.as_storage_client();
-    let data_lake_client = DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
+    let file_system_name = format!(
+        "azurerustsdk-datalake-e2etest-fs-{}",
+        Utc::now().timestamp()
     );
-
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());
@@ -111,34 +92,12 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
 #[tokio::test]
 async fn test_data_lake_file_create_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
-        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
-        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
+    let data_lake_client = create_data_lake_client().await.unwrap();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-create-{}",
         Utc::now().timestamp()
     );
-
-    let http_client = new_http_client();
-
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-
-    let resource_id = "https://storage.azure.com/";
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-
-    let storage_client = storage_account_client.as_storage_client();
-    let data_lake_client = DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
-    );
-
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());
@@ -171,34 +130,12 @@ async fn test_data_lake_file_create_functions() -> Result<(), Box<dyn Error + Se
 
 #[tokio::test]
 async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
-        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
-        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
+    let data_lake_client = create_data_lake_client().await.unwrap();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-upload-{}",
         Utc::now().timestamp()
     );
-
-    let http_client = new_http_client();
-
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-
-    let resource_id = "https://storage.azure.com/";
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-
-    let storage_client = storage_account_client.as_storage_client();
-    let data_lake_client = DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
-    );
-
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());
@@ -244,34 +181,12 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
 
 #[tokio::test]
 async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
-        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
-        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
+    let data_lake_client = create_data_lake_client().await.unwrap();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-rename-{}",
         Utc::now().timestamp()
     );
-
-    let http_client = new_http_client();
-
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-
-    let resource_id = "https://storage.azure.com/";
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-
-    let storage_client = storage_account_client.as_storage_client();
-    let data_lake_client = DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
-    );
-
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());
@@ -310,4 +225,32 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
     file_system_client.delete().execute().await?;
 
     Ok(())
+}
+
+async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Send + Sync>> {
+    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
+        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
+        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
+
+    let http_client = new_http_client();
+
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+
+    let resource_id = "https://storage.azure.com/";
+    println!("getting bearer token for '{}'...", resource_id);
+    let bearer_token = DefaultAzureCredential::default()
+        .get_token(resource_id)
+        .await?;
+    println!("token expires on {}\n", bearer_token.expires_on);
+
+    let storage_client = storage_account_client.as_storage_client();
+
+    Ok(DataLakeClient::new(
+        storage_client,
+        account,
+        bearer_token.token.secret().to_owned(),
+        None,
+    ))
 }
