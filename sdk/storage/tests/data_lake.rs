@@ -18,8 +18,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let now = Utc::now();
-    let file_system_name = format!("azurerustsdk-datalake-e2etest-fs-{}", now.timestamp());
+    let file_system_name = format!("azurerustsdk-datalake-e2etest-fs-{}", Utc::now().timestamp());
 
     let http_client = new_http_client();
 
@@ -117,10 +116,9 @@ async fn test_data_lake_file_create_functions() -> Result<(), Box<dyn Error + Se
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let now = Utc::now();
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-create-{}",
-        now.timestamp()
+        Utc::now().timestamp()
     );
 
     let http_client = new_http_client();
@@ -178,10 +176,9 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let now = Utc::now();
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-upload-{}",
-        now.timestamp()
+        Utc::now().timestamp()
     );
 
     let http_client = new_http_client();
@@ -252,10 +249,9 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let now = Utc::now();
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-rename-{}",
-        now.timestamp()
+        Utc::now().timestamp()
     );
 
     let http_client = new_http_client();
