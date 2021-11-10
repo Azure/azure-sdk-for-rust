@@ -111,14 +111,17 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 }
 
 #[tokio::test]
-async fn test_data_lake_file_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn test_data_lake_file_create_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
     let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
     let now = Utc::now();
-    let file_system_name = format!("azurerustsdk-datalake-e2etest-file-{}", now.timestamp());
+    let file_system_name = format!(
+        "azurerustsdk-datalake-e2etest-file-create-{}",
+        now.timestamp()
+    );
 
     let http_client = new_http_client();
 
@@ -154,14 +157,66 @@ async fn test_data_lake_file_functions() -> Result<(), Box<dyn Error + Send + Sy
         .create_file(Context::default(), file_path, FileCreateOptions::default())
         .await?;
 
-    file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
-
     let create_file_if_not_exists_result = file_system_client
         .create_file_if_not_exists(Context::default(), file_path)
         .await;
     assert!(create_file_if_not_exists_result.is_err());
+
+    file_system_client
+        .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .await?;
+
+    file_system_client.delete().execute().await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
+        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
+        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
+
+    let now = Utc::now();
+    let file_system_name = format!(
+        "azurerustsdk-datalake-e2etest-file-upload-{}",
+        now.timestamp()
+    );
+
+    let http_client = new_http_client();
+
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+
+    let resource_id = "https://storage.azure.com/";
+    let bearer_token = DefaultAzureCredential::default()
+        .get_token(resource_id)
+        .await?;
+
+    let storage_client = storage_account_client.as_storage_client();
+    let data_lake_client = DataLakeClient::new(
+        storage_client,
+        account,
+        bearer_token.token.secret().to_owned(),
+        None,
+    );
+
+    let file_system_client = data_lake_client
+        .clone()
+        .into_file_system_client(file_system_name.to_string());
+
+    let create_fs_response = file_system_client.create().execute().await?;
+    assert!(
+        create_fs_response.namespace_enabled,
+        "namespace should be enabled"
+    );
+
+    let file_path = "some/path/e2etest-file.txt";
+
+    file_system_client
+        .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .await?;
 
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
@@ -185,12 +240,73 @@ async fn test_data_lake_file_functions() -> Result<(), Box<dyn Error + Send + Sy
         )
         .await?;
 
-    let destination_file_path = "some/path/e2etest-file-renamed.txt";
+    file_system_client.delete().execute().await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
+        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
+    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
+        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
+
+    let now = Utc::now();
+    let file_system_name = format!(
+        "azurerustsdk-datalake-e2etest-file-rename-{}",
+        now.timestamp()
+    );
+
+    let http_client = new_http_client();
+
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+
+    let resource_id = "https://storage.azure.com/";
+    let bearer_token = DefaultAzureCredential::default()
+        .get_token(resource_id)
+        .await?;
+
+    let storage_client = storage_account_client.as_storage_client();
+    let data_lake_client = DataLakeClient::new(
+        storage_client,
+        account,
+        bearer_token.token.secret().to_owned(),
+        None,
+    );
+
+    let file_system_client = data_lake_client
+        .clone()
+        .into_file_system_client(file_system_name.to_string());
+
+    let create_fs_response = file_system_client.create().execute().await?;
+    assert!(
+        create_fs_response.namespace_enabled,
+        "namespace should be enabled"
+    );
+
+    let file_path1 = "some/path/e2etest-file1.txt";
+    let file_path2 = "some/path/e2etest-file2.txt";
+
+    file_system_client
+        .create_file(Context::default(), file_path1, FileCreateOptions::default())
+        .await?;
+
+    file_system_client
+        .create_file(Context::default(), file_path2, FileCreateOptions::default())
+        .await?;
+
+    let rename_file_result = file_system_client
+        .rename_file_if_not_exists(Context::default(), file_path1, file_path2)
+        .await;
+    assert!(rename_file_result.is_err());
+
     file_system_client
         .rename_file(
             Context::default(),
-            file_path,
-            destination_file_path,
+            file_path1,
+            file_path2,
             FileRenameOptions::default(),
         )
         .await?;
