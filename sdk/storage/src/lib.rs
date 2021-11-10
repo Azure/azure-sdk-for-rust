@@ -20,8 +20,6 @@ pub mod blob;
 pub mod core;
 #[cfg(feature = "data_lake")]
 pub mod data_lake;
-#[cfg(feature = "queue")]
-pub mod queue;
 #[cfg(feature = "table")]
 pub mod table;
 
@@ -32,7 +30,5 @@ pub use account::*;
 pub use blob::*;
 #[cfg(feature = "data_lake")]
 pub use data_lake::*;
-#[cfg(feature = "queue")]
-pub use queue::*;
 #[cfg(feature = "table")]
 pub use table::*;
