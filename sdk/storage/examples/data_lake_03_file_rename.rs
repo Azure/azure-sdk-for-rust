@@ -65,12 +65,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         "renaming file '{}' to '{}' if not exists...",
         file_path1, file_path2
     );
-    let rename_file_result = file_system_client
+    let rename_file_if_not_exists_result = file_system_client
         .rename_file_if_not_exists(Context::default(), file_path1, file_path2)
         .await;
     println!(
         "rename file result (should fail) == {:?}\n",
-        rename_file_result
+        rename_file_if_not_exists_result
     );
 
     println!("renaming file '{}' to '{}'...", file_path1, file_path2);

@@ -297,10 +297,10 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
         .create_file(Context::default(), file_path2, FileCreateOptions::default())
         .await?;
 
-    let rename_file_result = file_system_client
+    let rename_file_if_not_exists_result = file_system_client
         .rename_file_if_not_exists(Context::default(), file_path1, file_path2)
         .await;
-    assert!(rename_file_result.is_err());
+    assert!(rename_file_if_not_exists_result.is_err());
 
     file_system_client
         .rename_file(
