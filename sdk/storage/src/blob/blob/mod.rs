@@ -104,6 +104,7 @@ pub struct Blob {
     pub is_current_version: Option<bool>,
     pub deleted: Option<bool>,
     pub properties: BlobProperties,
+    pub metadata: Option<HashMap<String, String>>,
     pub tags: Option<Tags>,
 }
 
@@ -193,7 +194,6 @@ pub struct BlobProperties {
     pub remaining_retention_days: Option<u32>,
     pub tag_count: Option<u32>,
     pub rehydrate_priority: Option<RehydratePriority>,
-    pub metadata: Option<HashMap<String, String>>,
     #[serde(flatten)]
     extra: HashMap<String, String>, // For debug purposes, should be compiled out in the future
 }
@@ -386,9 +386,9 @@ impl Blob {
                 remaining_retention_days: None,     // TODO: Not present or documentation bug?
                 tag_count: None,                    // TODO
                 rehydrate_priority: None,           // TODO
-                metadata,
                 extra: HashMap::new(),
             },
+            metadata,
             tags: None,
         })
     }

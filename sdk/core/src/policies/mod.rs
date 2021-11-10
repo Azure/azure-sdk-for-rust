@@ -1,3 +1,4 @@
+mod custom_headers_injector_policy;
 #[cfg(feature = "mock_transport_framework")]
 mod mock_transport_player_policy;
 #[cfg(feature = "mock_transport_framework")]
@@ -7,6 +8,7 @@ mod telemetry_policy;
 mod transport;
 
 use crate::{PipelineContext, Request, Response};
+pub use custom_headers_injector_policy::{CustomHeaders, CustomHeadersInjectorPolicy};
 #[cfg(feature = "mock_transport_framework")]
 pub use mock_transport_player_policy::MockTransportPlayerPolicy;
 #[cfg(feature = "mock_transport_framework")]
