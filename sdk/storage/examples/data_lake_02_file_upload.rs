@@ -54,15 +54,33 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // =============================================================================================
 
-    println!("appending to file '{}'...", file_path);
-    let bytes = bytes::Bytes::from("some data");
-    let file_length = bytes.len() as i64;
+    let string1 = "some data";
+    let data1 = bytes::Bytes::from(string1);
+    let data1_length = data1.len() as i64;
+
+    let string2 = "some more data";
+    let data2 = bytes::Bytes::from(string2);
+    let data2_length = data2.len() as i64;
+
+    println!("appending '{}' to file '{}'...", string1, file_path);
     let append_to_file_response = file_system_client
         .append_to_file(
             Context::default(),
             file_path,
-            bytes,
+            data1,
             0,
+            FileAppendOptions::default(),
+        )
+        .await?;
+    println!("append to file response == {:?}\n", append_to_file_response);
+
+    println!("appending '{}' to file '{}'...", string2, file_path);
+    let append_to_file_response = file_system_client
+        .append_to_file(
+            Context::default(),
+            file_path,
+            data2,
+            data1_length,
             FileAppendOptions::default(),
         )
         .await?;
@@ -73,7 +91,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .flush_file(
             Context::default(),
             file_path,
-            file_length,
+            data1_length + data2_length,
             true,
             FileFlushOptions::default(),
         )
@@ -83,8 +101,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // =============================================================================================
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().execute().await?;
-    println!("delete file system response == {:?}\n", delete_fs_response);
+    // let delete_fs_response = file_system_client.delete().execute().await?;
+    // println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())
 }
