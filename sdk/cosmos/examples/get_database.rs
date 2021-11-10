@@ -1,5 +1,6 @@
 use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
+use http::{HeaderMap, HeaderValue};
 use std::error::Error;
 
 #[tokio::main]
@@ -24,8 +25,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let database_client = client.into_database_client(database_name.clone());
 
+    let mut context = Context::new();
+
+    // Next we create a CustomHeaders type and insert it into the context allowing us to insert custom headers.
+    let custom_headers: CustomHeaders = {
+        let mut custom_headers = HeaderMap::new();
+        custom_headers.insert("MyCoolHeader", HeaderValue::from_static("CORS maybe?"));
+        custom_headers.into()
+    };
+
+    context.insert(custom_headers);
+
     let response = database_client
-        .get_database(Context::new(), GetDatabaseOptions::new())
+        .get_database(context, GetDatabaseOptions::new())
         .await?;
     println!("response == {:?}", response);
 
