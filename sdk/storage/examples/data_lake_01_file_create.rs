@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_fs_response = file_system_client.create().execute().await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
-    let file_path = "some/path/example-file1.txt";
+    let file_path = "some/path/example-file.txt";
 
     // =============================================================================================
 
