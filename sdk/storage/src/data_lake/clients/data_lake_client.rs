@@ -93,7 +93,7 @@ impl DataLakeClient {
             account,
             bearer_token,
             None,
-            ClientOptions::<DataLakeContext>::new_with_transaction_name(transaction_name.into()),
+            ClientOptions::new_with_transaction_name(transaction_name.into()),
         )
     }
 

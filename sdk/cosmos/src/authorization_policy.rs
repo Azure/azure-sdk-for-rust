@@ -57,8 +57,6 @@ impl Policy for AuthorizationPolicy {
         let uri_path = &request.uri().path_and_query().unwrap().to_string()[1..];
         trace!("uri_path used by AuthorizationPolicy == {:#?}", uri_path);
 
-        println!("ctx == {:#?}", ctx);
-
         let auth = {
             let resource_link = generate_resource_link(uri_path);
             trace!("resource_link == {}", resource_link);
