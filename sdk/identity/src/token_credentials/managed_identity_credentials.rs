@@ -36,6 +36,10 @@ pub enum ManagedIdentityCredentialError {
     TextError(reqwest::Error),
     #[error("Error deserializing refresh token: {0}")]
     DeserializeError(serde_json::Error),
+    #[error("The requested identity has not been assigned to this resource.")]
+    IdentityUnavailableError,
+    #[error("The request failed due to a gateway error.")]
+    GatewayError,
 }
 
 #[async_trait::async_trait]
@@ -61,18 +65,25 @@ impl TokenCredential for ManagedIdentityCredential {
             .header("X-IDENTITY-HEADER", msi_secret)
             .send()
             .await
-            .map_err(ManagedIdentityCredentialError::SendError)?
-            .text()
-            .await
-            .map_err(ManagedIdentityCredentialError::TextError)?;
+            .map_err(ManagedIdentityCredentialError::SendError)?;
 
-        let token_response = serde_json::from_str::<MsiTokenResponse>(&res_body)
-            .map_err(ManagedIdentityCredentialError::DeserializeError)?;
+        match res_body.status().as_u16() {
+            400 => Err(ManagedIdentityCredentialError::IdentityUnavailableError),
+            502 | 504 => Err(ManagedIdentityCredentialError::GatewayError),
+            _ => {
+                let response = res_body
+                    .text()
+                    .await
+                    .map_err(ManagedIdentityCredentialError::TextError)?;
+                let token_response = serde_json::from_str::<MsiTokenResponse>(&response)
+                    .map_err(ManagedIdentityCredentialError::DeserializeError)?;
 
-        Ok(TokenResponse::new(
-            token_response.access_token,
-            token_response.expires_on,
-        ))
+                Ok(TokenResponse::new(
+                    token_response.access_token,
+                    token_response.expires_on,
+                ))
+            }
+        }
     }
 }
 
