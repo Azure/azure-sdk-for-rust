@@ -1,6 +1,5 @@
 use crate::core::prelude::*;
 use crate::data_lake::authorization_policy::AuthorizationPolicy;
-use crate::data_lake::authorization_policy::DataLakeContext;
 use crate::data_lake::clients::FileSystemClient;
 use crate::data_lake::requests::*;
 use azure_core::pipeline::Pipeline;
@@ -15,7 +14,7 @@ const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
-    pipeline: Pipeline<DataLakeContext>,
+    pipeline: Pipeline,
     storage_client: Arc<StorageClient>,
     account: String,
     custom_dns_suffix: Option<String>,
@@ -28,7 +27,7 @@ impl DataLakeClient {
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,
-        options: ClientOptions<DataLakeContext>,
+        options: ClientOptions,
     ) -> Self {
         // we precalculate the url once in the constructor
         // so we do not have to do it at every request.
@@ -42,7 +41,7 @@ impl DataLakeClient {
         );
 
         let per_call_policies = Vec::new();
-        let auth_policy: Arc<dyn azure_core::Policy<DataLakeContext>> =
+        let auth_policy: Arc<dyn azure_core::Policy> =
             Arc::new(AuthorizationPolicy::new(bearer_token));
 
         // take care of adding the AuthorizationPolicy as **last** retry policy.
@@ -129,7 +128,7 @@ impl DataLakeClient {
             .prepare_request(url, method, http_header_adder, request_body)
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<DataLakeContext> {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
     }
 }

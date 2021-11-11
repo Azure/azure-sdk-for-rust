@@ -1,11 +1,10 @@
 use super::*;
-use crate::authorization_policy::CosmosContext;
 use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::Continuation;
-use azure_core::{AddAsHeader, Context, PipelineContext};
+use azure_core::{AddAsHeader, Context};
 use futures::stream::unfold;
 use futures::Stream;
 
@@ -66,13 +65,12 @@ impl DatabaseClient {
         let mut request = self
             .cosmos_client()
             .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        let mut ctx = Context::from_previous_context(ctx);
+        ctx.insert_or_replace(ResourceType::Databases);
 
         options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(GetDatabaseResponse::try_from(response).await?)
     }
@@ -87,13 +85,12 @@ impl DatabaseClient {
             &format!("dbs/{}", self.database_name()),
             http::Method::DELETE,
         );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+
+        let mut ctx = Context::from_previous_context(ctx);
+        ctx.insert_or_replace(ResourceType::Databases);
 
         options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(DeleteDatabaseResponse::try_from(response).await?)
     }
@@ -115,15 +112,12 @@ impl DatabaseClient {
                             &format!("dbs/{}/colls", this.database_name()),
                             http::Method::GET,
                         );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Collections.into());
+
+                        let mut ctx = Context::from_previous_context(ctx);
+                        ctx.insert_or_replace(ResourceType::Collections);
 
                         r#try!(options.decorate_request(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
+                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
                         ListCollectionsResponse::try_from(response).await
                     }
                     State::Continuation(continuation_token) => {
@@ -132,16 +126,13 @@ impl DatabaseClient {
                             &format!("dbs/{}/colls", self.database_name()),
                             http::Method::GET,
                         );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Collections.into());
+
+                        let mut ctx = Context::from_previous_context(ctx);
+                        ctx.insert_or_replace(ResourceType::Collections);
 
                         r#try!(options.decorate_request(&mut request));
                         r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
+                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
                         ListCollectionsResponse::try_from(response).await
                     }
                     State::Done => return None,
@@ -171,13 +162,12 @@ impl DatabaseClient {
             &format!("dbs/{}/colls", self.database_name()),
             http::Method::POST,
         );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
+
+        let mut ctx = Context::from_previous_context(ctx);
+        ctx.insert_or_replace(ResourceType::Collections);
 
         options.decorate_request(&mut request, collection_name.as_ref())?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(CreateCollectionResponse::try_from(response).await?)
     }
@@ -199,15 +189,11 @@ impl DatabaseClient {
                             &format!("dbs/{}/users", this.database_name()),
                             http::Method::GET,
                         );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
+                        let mut ctx = Context::from_previous_context(ctx);
+                        ctx.insert_or_replace(ResourceType::Users);
 
                         r#try!(options.decorate_request(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
+                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
                         ListUsersResponse::try_from(response).await
                     }
                     State::Continuation(continuation_token) => {
@@ -216,16 +202,12 @@ impl DatabaseClient {
                             &format!("dbs/{}/users", self.database_name()),
                             http::Method::GET,
                         );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
+                        let mut ctx = Context::from_previous_context(ctx);
+                        ctx.insert_or_replace(ResourceType::Users);
 
                         r#try!(options.decorate_request(&mut request));
                         r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
+                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
                         ListUsersResponse::try_from(response).await
                     }
                     State::Done => return None,
@@ -257,7 +239,7 @@ impl DatabaseClient {
         UserClient::new(self, user_name)
     }
 
-    fn pipeline(&self) -> &Pipeline<CosmosContext> {
+    fn pipeline(&self) -> &Pipeline {
         self.cosmos_client.pipeline()
     }
 }

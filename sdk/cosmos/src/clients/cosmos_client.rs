@@ -1,5 +1,5 @@
 use super::DatabaseClient;
-use crate::authorization_policy::{generate_authorization, generate_resource_link, CosmosContext};
+use crate::authorization_policy::{generate_authorization, generate_resource_link};
 use crate::headers::*;
 use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
@@ -29,7 +29,7 @@ const AZURE_VERSION: &str = "2018-12-31";
 /// A plain Cosmos client.
 #[derive(Debug, Clone)]
 pub struct CosmosClient {
-    pipeline: Pipeline<CosmosContext>,
+    pipeline: Pipeline,
     auth_token: AuthorizationToken,
     cloud_location: CloudLocation,
 }
@@ -37,7 +37,7 @@ pub struct CosmosClient {
 /// Options for specifying how a Cosmos client will behave
 #[derive(Debug, Clone)]
 pub struct CosmosOptions {
-    options: ClientOptions<CosmosContext>,
+    options: ClientOptions,
 }
 
 impl CosmosOptions {
@@ -67,8 +67,8 @@ impl Default for CosmosOptions {
 fn new_pipeline_from_options(
     options: CosmosOptions,
     authorization_token: AuthorizationToken,
-) -> Pipeline<CosmosContext> {
-    let auth_policy: Arc<dyn azure_core::Policy<CosmosContext>> =
+) -> Pipeline {
+    let auth_policy: Arc<dyn azure_core::Policy> =
         Arc::new(crate::AuthorizationPolicy::new(authorization_token));
 
     // take care of adding the AuthorizationPolicy as **last** retry policy.
@@ -169,7 +169,7 @@ impl CosmosClient {
 
         // we replace the AuthorizationPolicy. This is
         // the last-1 policy by construction.
-        let auth_policy: Arc<dyn azure_core::Policy<CosmosContext>> =
+        let auth_policy: Arc<dyn azure_core::Policy> =
             Arc::new(crate::AuthorizationPolicy::new(auth_token));
 
         self.pipeline
@@ -185,13 +185,11 @@ impl CosmosClient {
     ) -> crate::Result<CreateDatabaseResponse> {
         let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut ctx = Context::from_previous_context(ctx);
+        ctx.insert_or_replace(ResourceType::Databases);
 
         options.decorate_request(&mut request, database_name.as_ref())?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }
@@ -228,31 +226,25 @@ impl CosmosClient {
                 let response = match state {
                     State::Init => {
                         let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
+
+                        let mut ctx = Context::from_previous_context(ctx);
+                        ctx.insert_or_replace(ResourceType::Databases);
 
                         r#try!(options.decorate_request(&mut request).await);
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
+                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
 
                         ListDatabasesResponse::try_from(response).await
                     }
                     State::Continuation(continuation_token) => {
                         let continuation = Continuation::new(continuation_token.as_str());
                         let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Databases.into());
+
+                        let mut ctx = Context::from_previous_context(ctx);
+                        ctx.insert_or_replace(ResourceType::Databases);
 
                         r#try!(options.decorate_request(&mut request).await);
                         r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
-                                .await
-                        );
+                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
                         ListDatabasesResponse::try_from(response).await
                     }
                     State::Done => return None,
@@ -337,7 +329,7 @@ impl CosmosClient {
             .into()
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         &self.pipeline
     }
 

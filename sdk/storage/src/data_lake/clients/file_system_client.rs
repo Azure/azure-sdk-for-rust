@@ -1,10 +1,9 @@
-use crate::data_lake::authorization_policy::DataLakeContext;
 use crate::data_lake::operations::*;
 use crate::data_lake::requests::*;
 use crate::{data_lake::clients::DataLakeClient, Properties};
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::IfMatchCondition;
-use azure_core::{Context, HttpClient, PipelineContext};
+use azure_core::{Context, HttpClient};
 use bytes::Bytes;
 use url::Url;
 
@@ -56,14 +55,9 @@ impl FileSystemClient {
         options: FileCreateOptions<'_>,
     ) -> Result<FileCreateResponse, crate::Error> {
         let mut request = self.prepare_file_create_request(file_path);
-        let contents = DataLakeContext {};
-        let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(FileCreateResponse::try_from(response).await?)
     }
@@ -76,14 +70,9 @@ impl FileSystemClient {
         let options = FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
 
         let mut request = self.prepare_file_create_request(file_path);
-        let contents = DataLakeContext {};
-        let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(FileCreateResponse::try_from(response).await?)
     }
@@ -96,15 +85,10 @@ impl FileSystemClient {
         options: FileRenameOptions<'_>,
     ) -> Result<FileRenameResponse, crate::Error> {
         let mut request = self.prepare_file_rename_request(destination_file_path);
-        let contents = DataLakeContext {};
-        let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         let rename_source = format!("/{}/{}", &self.name, source_file_path);
         options.decorate_request(&mut request, rename_source.as_str())?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(FileRenameResponse::try_from(response).await?)
     }
@@ -118,15 +102,10 @@ impl FileSystemClient {
         let options = FileRenameOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
 
         let mut request = self.prepare_file_rename_request(destination_file_path);
-        let contents = DataLakeContext {};
-        let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         let rename_source = format!("/{}/{}", &self.name, source_file_path);
         options.decorate_request(&mut request, rename_source.as_str())?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(FileRenameResponse::try_from(response).await?)
     }
@@ -140,14 +119,9 @@ impl FileSystemClient {
         options: FileAppendOptions<'_>,
     ) -> Result<FileAppendResponse, crate::Error> {
         let mut request = self.prepare_file_append_request(file_path, position);
-        let contents = DataLakeContext {};
-        let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         options.decorate_request(&mut request, bytes)?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(FileAppendResponse::try_from(response).await?)
     }
@@ -161,14 +135,9 @@ impl FileSystemClient {
         options: FileFlushOptions<'_>,
     ) -> Result<FileFlushResponse, crate::Error> {
         let mut request = self.prepare_file_flush_request(file_path, position, close);
-        let contents = DataLakeContext {};
-        let mut pipeline_context = PipelineContext::new(ctx, contents);
 
         options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx, &mut request).await?;
 
         Ok(FileFlushResponse::try_from(response).await?)
     }
@@ -248,7 +217,7 @@ impl FileSystemClient {
             .into()
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<DataLakeContext> {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         self.data_lake_client.pipeline()
     }
 }

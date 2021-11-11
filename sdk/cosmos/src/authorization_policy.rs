@@ -2,7 +2,7 @@ use crate::headers::{HEADER_DATE, HEADER_VERSION};
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::TimeNonce;
-use azure_core::{PipelineContext, Policy, PolicyResult, Request, Response};
+use azure_core::{Context, Policy, PolicyResult, Request, Response};
 use http::header::AUTHORIZATION;
 use http::HeaderValue;
 use ring::hmac;
@@ -36,24 +36,13 @@ impl AuthorizationPolicy {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(crate) struct CosmosContext {
-    pub(crate) resource_type: ResourceType,
-}
-
-impl From<ResourceType> for CosmosContext {
-    fn from(resource_type: ResourceType) -> Self {
-        Self { resource_type }
-    }
-}
-
 #[async_trait::async_trait]
-impl Policy<CosmosContext> for AuthorizationPolicy {
+impl Policy for AuthorizationPolicy {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<CosmosContext>,
+        ctx: &Context,
         request: &mut Request,
-        next: &[Arc<dyn Policy<CosmosContext>>],
+        next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         trace!("called AuthorizationPolicy::send. self == {:#?}", self);
 
@@ -68,13 +57,15 @@ impl Policy<CosmosContext> for AuthorizationPolicy {
         let uri_path = &request.uri().path_and_query().unwrap().to_string()[1..];
         trace!("uri_path used by AuthorizationPolicy == {:#?}", uri_path);
 
+        println!("ctx == {:#?}", ctx);
+
         let auth = {
             let resource_link = generate_resource_link(uri_path);
             trace!("resource_link == {}", resource_link);
             generate_authorization(
                 &self.authorization_token,
                 &request.method(),
-                &ctx.get_contents().resource_type,
+                &ctx.get().expect("Cosmos pipeline bug: ResourceType must be present in the context at this point"),
                 resource_link,
                 time_nonce,
             )
