@@ -65,7 +65,7 @@ impl Policy for AuthorizationPolicy {
             generate_authorization(
                 &self.authorization_token,
                 &request.method(),
-                &ctx.get().expect("Cosmos pipeline bug: ResourceType must be present in the context at this point"),
+                ctx.get().expect("Cosmos pipeline bug: ResourceType must be present in the context at this point"),
                 resource_link,
                 time_nonce,
             )

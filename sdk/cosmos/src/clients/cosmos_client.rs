@@ -35,7 +35,7 @@ pub struct CosmosClient {
 }
 
 /// Options for specifying how a Cosmos client will behave
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CosmosOptions {
     options: ClientOptions,
 }
@@ -51,14 +51,6 @@ impl CosmosOptions {
     pub fn new_with_transaction_name(name: String) -> Self {
         Self {
             options: ClientOptions::new_with_transaction_name(name.into()),
-        }
-    }
-}
-
-impl Default for CosmosOptions {
-    fn default() -> Self {
-        Self {
-            options: Default::default(),
         }
     }
 }
