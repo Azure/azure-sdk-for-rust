@@ -1,6 +1,3 @@
-use std::future::Future;
-use std::pin::Pin;
-
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Database;
@@ -32,53 +29,39 @@ impl CreateDatabaseBuilder {
         context: Context => context,
     }
 
-    async fn build(self) -> crate::Result<CreateDatabaseResponse> {
-        let mut request = self
-            .client
-            .prepare_request_pipeline("dbs", http::Method::POST);
-
-        let mut pipeline_context =
-            PipelineContext::new(self.context, ResourceType::Databases.into());
-
-        let body = CreateDatabaseBody {
-            id: self.database_name.as_str(),
-        };
-
-        azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-        request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
-        let response = self
-            .client
-            .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?;
-
-        Ok(CreateDatabaseResponse::try_from(response).await?)
-    }
-
     pub fn insert<E: Send + Sync + 'static>(&mut self, entity: E) -> &mut Self {
         self.context.insert(entity);
         self
     }
 
-    // impl std::future::IntoFuture for CreateDatabaseBuilder {}
     pub fn into_future(self) -> CreateDatabase {
-        CreateDatabase(Box::pin(self.build()))
+        Box::pin(async {
+            let mut request = self
+                .client
+                .prepare_request_pipeline("dbs", http::Method::POST);
+
+            let mut pipeline_context =
+                PipelineContext::new(self.context, ResourceType::Databases.into());
+
+            let body = CreateDatabaseBody {
+                id: self.database_name.as_str(),
+            };
+
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
+            let response = self
+                .client
+                .pipeline()
+                .send(&mut pipeline_context, &mut request)
+                .await?;
+
+            CreateDatabaseResponse::try_from(response).await
+        })
     }
 }
 
-pub struct CreateDatabase(
-    Pin<Box<dyn Future<Output = crate::Result<CreateDatabaseResponse>> + Send + 'static>>,
-);
-
-impl Future for CreateDatabase {
-    type Output = crate::Result<CreateDatabaseResponse>;
-    fn poll(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Self::Output> {
-        Pin::new(&mut self.0).poll(cx)
-    }
-}
+/// A future of a create database response
+type CreateDatabase = futures::future::BoxFuture<'static, crate::Result<CreateDatabaseResponse>>;
 
 #[derive(Serialize)]
 struct CreateDatabaseBody<'a> {
