@@ -169,21 +169,8 @@ impl CosmosClient {
     }
 
     /// Create a database
-    pub async fn create_database<S: AsRef<str>>(
-        &self,
-        ctx: Context,
-        database_name: S,
-        options: CreateDatabaseOptions,
-    ) -> crate::Result<CreateDatabaseResponse> {
-        let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
-
-        options.decorate_request(&mut request, database_name.as_ref())?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Databases), &mut request)
-            .await?;
-
-        Ok(CreateDatabaseResponse::try_from(response).await?)
+    pub fn create_database<S: AsRef<str>>(&self, database_name: S) -> CreateDatabaseBuilder {
+        CreateDatabaseBuilder::new(self.clone(), database_name.as_ref().to_owned())
     }
 
     /// List all databases

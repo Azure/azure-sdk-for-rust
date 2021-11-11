@@ -19,13 +19,7 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
 
     // create database!
     log::info!("Creating a database with name '{}'...", database_name);
-    let db = client
-        .create_database(
-            context.clone(),
-            &database_name,
-            CreateDatabaseOptions::new(),
-        )
-        .await?;
+    let db = client.create_database(&database_name).into_future().await?;
     log::info!("Successfully created a database");
     log::debug!("The create_database response: {:#?}", db);
 

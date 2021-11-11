@@ -1,44 +1,88 @@
+use std::future::Future;
+use std::pin::Pin;
+
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Database;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Context, PipelineContext, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct CreateDatabaseOptions {
+pub struct CreateDatabaseBuilder {
+    client: CosmosClient,
+    database_name: String,
     consistency_level: Option<ConsistencyLevel>,
+    context: Context,
 }
 
-impl CreateDatabaseOptions {
-    pub fn new() -> Self {
+impl CreateDatabaseBuilder {
+    pub(crate) fn new(client: CosmosClient, database_name: String) -> Self {
         Self {
+            client,
+            database_name,
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
+    }
+
+    async fn build(self) -> crate::Result<CreateDatabaseResponse> {
+        let mut request = self
+            .client
+            .prepare_request_pipeline("dbs", http::Method::POST);
+
+        let mut pipeline_context =
+            PipelineContext::new(self.context, ResourceType::Databases.into());
+
+        let body = CreateDatabaseBody {
+            id: self.database_name.as_str(),
+        };
+
+        azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+        request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
+        let response = self
+            .client
+            .pipeline()
+            .send(&mut pipeline_context, &mut request)
+            .await?;
+
+        Ok(CreateDatabaseResponse::try_from(response).await?)
+    }
+
+    pub fn insert<E: Send + Sync + 'static>(&mut self, entity: E) -> &mut Self {
+        self.context.insert(entity);
+        self
+    }
+
+    // impl std::future::IntoFuture for CreateDatabaseBuilder {}
+    pub fn into_future(self) -> CreateDatabase {
+        CreateDatabase(Box::pin(self.build()))
     }
 }
 
-impl CreateDatabaseOptions {
-    pub(crate) fn decorate_request(
-        &self,
-        request: &mut HttpRequest,
-        database_name: &str,
-    ) -> crate::Result<()> {
-        #[derive(Serialize)]
-        struct CreateDatabaseRequest<'a> {
-            pub id: &'a str,
-        }
-        let req = CreateDatabaseRequest { id: database_name };
+pub struct CreateDatabase(
+    Pin<Box<dyn Future<Output = crate::Result<CreateDatabaseResponse>> + Send + 'static>>,
+);
 
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        request.set_body(bytes::Bytes::from(serde_json::to_string(&req)?).into());
-        Ok(())
+impl Future for CreateDatabase {
+    type Output = crate::Result<CreateDatabaseResponse>;
+    fn poll(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        Pin::new(&mut self.0).poll(cx)
     }
+}
+
+#[derive(Serialize)]
+struct CreateDatabaseBody<'a> {
+    pub id: &'a str,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
