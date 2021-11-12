@@ -1,6 +1,6 @@
 use crate::policies::{Policy, PolicyResult, Request, Response};
 use crate::sleep::sleep;
-use crate::{Context, HttpError};
+use crate::{HttpError, OverridableContext};
 use chrono::{DateTime, Local};
 use http::StatusCode;
 use std::sync::Arc;
@@ -37,11 +37,11 @@ impl<T> Policy for T
 where
     T: RetryPolicy + std::fmt::Debug + Send + Sync,
 {
-    async fn send(
-        &self,
-        ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
+    async fn send<'a>(
+        &'a self,
+        ctx: &'a OverridableContext<'a>,
+        request: &'a mut Request,
+        next: &'a [Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         let mut first_retry_time = None;
         let mut retry_count = 0;

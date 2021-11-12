@@ -2,7 +2,7 @@ use crate::headers::{HEADER_DATE, HEADER_VERSION};
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::TimeNonce;
-use azure_core::{Context, Policy, PolicyResult, Request, Response};
+use azure_core::{OverridableContext, Policy, PolicyResult, Request, Response, TypeMapContext};
 use http::header::AUTHORIZATION;
 use http::HeaderValue;
 use ring::hmac;
@@ -38,11 +38,11 @@ impl AuthorizationPolicy {
 
 #[async_trait::async_trait]
 impl Policy for AuthorizationPolicy {
-    async fn send(
-        &self,
-        ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
+    async fn send<'a>(
+        &'a self,
+        ctx: &'a OverridableContext,
+        request: &'a mut Request,
+        next: &'a [Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         trace!("called AuthorizationPolicy::send. self == {:#?}", self);
 

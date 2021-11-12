@@ -5,7 +5,7 @@ use crate::requests;
 use crate::resources::ResourceType;
 use crate::CosmosEntity;
 use crate::ReadonlyString;
-use azure_core::{pipeline::Pipeline, Context, HttpClient, Request};
+use azure_core::{pipeline::Pipeline, Context, HttpClient, Request, TypeMapContext};
 use serde::Serialize;
 
 /// A client for Cosmos collection resources.
@@ -49,12 +49,15 @@ impl CollectionClient {
     ) -> crate::Result<GetCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::GET);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Collections);
-
         options.decorate_request(&mut request)?;
 
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Collections),
+                &mut request,
+            )
+            .await?;
 
         Ok(GetCollectionResponse::try_from(response).await?)
     }
@@ -67,12 +70,15 @@ impl CollectionClient {
     ) -> crate::Result<DeleteCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Collections);
-
         options.decorate_request(&mut request)?;
 
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Collections),
+                &mut request,
+            )
+            .await?;
 
         Ok(DeleteCollectionResponse::try_from(response).await?)
     }
@@ -85,12 +91,15 @@ impl CollectionClient {
     ) -> crate::Result<ReplaceCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::PUT);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Collections);
-
         options.decorate_request(&mut request, self.collection_name())?;
 
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Collections),
+                &mut request,
+            )
+            .await?;
 
         Ok(ReplaceCollectionResponse::try_from(response).await?)
     }
@@ -109,11 +118,14 @@ impl CollectionClient {
     ) -> crate::Result<CreateDocumentResponse> {
         let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Documents);
-
         options.decorate_request(&mut request, document)?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Documents),
+                &mut request,
+            )
+            .await?;
 
         Ok(CreateDocumentResponse::try_from(response).await?)
     }

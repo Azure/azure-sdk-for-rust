@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::permission::{PermissionMode, PermissionResponse};
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::{pipeline::Pipeline, Context, Request};
+use azure_core::{pipeline::Pipeline, Context, Request, TypeMapContext};
 
 /// A client for Cosmos permission resources.
 #[derive(Debug, Clone)]
@@ -59,12 +59,15 @@ impl PermissionClient {
             http::Method::POST,
         );
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Permissions);
-
         options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
 
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Permissions),
+                &mut request,
+            )
+            .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
     }
@@ -78,12 +81,15 @@ impl PermissionClient {
     ) -> crate::Result<PermissionResponse<'_>> {
         let mut request = self.prepare_request_with_permission_name(http::Method::PUT);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Permissions);
-
         options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
 
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Permissions),
+                &mut request,
+            )
+            .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
     }
@@ -96,12 +102,15 @@ impl PermissionClient {
     ) -> crate::Result<PermissionResponse<'_>> {
         let mut request = self.prepare_request_with_permission_name(http::Method::GET);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Permissions);
-
         options.decorate_request(&mut request)?;
 
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Permissions),
+                &mut request,
+            )
+            .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
     }
@@ -114,12 +123,15 @@ impl PermissionClient {
     ) -> crate::Result<DeletePermissionResponse> {
         let mut request = self.prepare_request_with_permission_name(http::Method::DELETE);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Permissions);
-
         options.decorate_request(&mut request)?;
 
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Permissions),
+                &mut request,
+            )
+            .await?;
 
         Ok(DeletePermissionResponse::try_from(response).await?)
     }

@@ -20,6 +20,7 @@ pub mod incompletevector;
 mod mock_transaction;
 mod models;
 mod options;
+mod overridable_context;
 pub mod parsing;
 pub mod pipeline;
 mod policies;
@@ -29,6 +30,7 @@ mod request_options;
 mod response;
 mod seekable_stream;
 mod sleep;
+mod type_map_context;
 pub mod util;
 
 use chrono::{DateTime, Utc};
@@ -47,10 +49,12 @@ pub use http_client::{new_http_client, to_json, HttpClient};
 pub use mock_transaction::constants::*;
 pub use models::*;
 pub use options::*;
+pub use overridable_context::OverridableContext;
 pub use policies::{Policy, PolicyResult};
 pub use request::*;
 pub use response::*;
 pub use seekable_stream::*;
+pub use type_map_context::TypeMapContext;
 
 pub type RequestId = Uuid;
 pub type SessionToken = String;

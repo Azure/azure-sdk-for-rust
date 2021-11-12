@@ -1,8 +1,8 @@
 use crate::bytes_response::BytesResponse;
 use crate::mock_transaction::MockTransaction;
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, Response};
 use crate::{MockFrameworkError, TransportOptions};
+use crate::{OverridableContext, Request, Response};
 
 use std::io::Write;
 use std::sync::Arc;
@@ -25,11 +25,11 @@ impl MockTransportRecorderPolicy {
 
 #[async_trait::async_trait]
 impl Policy for MockTransportRecorderPolicy {
-    async fn send(
-        &self,
-        _ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
+    async fn send<'a>(
+        &'a self,
+        _ctx: &'a OverridableContext<'a>,
+        request: &'a mut Request,
+        next: &'a [Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         // there must be no more policies
         assert_eq!(0, next.len());

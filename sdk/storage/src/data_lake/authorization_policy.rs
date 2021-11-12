@@ -1,4 +1,4 @@
-use azure_core::{Context, Policy, PolicyResult, Request, Response};
+use azure_core::{OverridableContext, Policy, PolicyResult, Request, Response};
 use http::header::AUTHORIZATION;
 use http::HeaderValue;
 use std::sync::Arc;
@@ -16,11 +16,11 @@ impl AuthorizationPolicy {
 
 #[async_trait::async_trait]
 impl Policy for AuthorizationPolicy {
-    async fn send(
-        &self,
-        ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
+    async fn send<'a>(
+        &'a self,
+        ctx: &'a OverridableContext<'a>,
+        request: &'a mut Request,
+        next: &'a [Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         if next.is_empty() {
             return Err(Box::new(azure_core::PipelineError::InvalidTailPolicy(

@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         custom_headers.into()
     };
 
-    context.insert(custom_headers);
+    context.insert_or_replace(custom_headers);
 
     let response = database_client
         .get_database(context, GetDatabaseOptions::new())

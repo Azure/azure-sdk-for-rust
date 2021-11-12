@@ -5,7 +5,6 @@ use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{ReadonlyString, TimeNonce};
-
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::Continuation;
 use azure_core::HttpClient;
@@ -15,7 +14,6 @@ use futures::stream::unfold;
 use futures::Stream;
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
-
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -177,11 +175,14 @@ impl CosmosClient {
     ) -> crate::Result<CreateDatabaseResponse> {
         let mut request = self.prepare_request_pipeline("dbs", http::Method::POST);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Databases);
-
         options.decorate_request(&mut request, database_name.as_ref())?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Databases),
+                &mut request,
+            )
+            .await?;
 
         Ok(CreateDatabaseResponse::try_from(response).await?)
     }
@@ -219,11 +220,15 @@ impl CosmosClient {
                     State::Init => {
                         let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
 
-                        let mut ctx = Context::from_previous_context(ctx);
-                        ctx.insert_or_replace(ResourceType::Databases);
-
                         r#try!(options.decorate_request(&mut request).await);
-                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(
+                                    &ctx.create_override().insert(ResourceType::Databases),
+                                    &mut request
+                                )
+                                .await
+                        );
 
                         ListDatabasesResponse::try_from(response).await
                     }
@@ -231,12 +236,16 @@ impl CosmosClient {
                         let continuation = Continuation::new(continuation_token.as_str());
                         let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
 
-                        let mut ctx = Context::from_previous_context(ctx);
-                        ctx.insert_or_replace(ResourceType::Databases);
-
                         r#try!(options.decorate_request(&mut request).await);
                         r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(
+                                    &ctx.create_override().insert(ResourceType::Databases),
+                                    &mut request
+                                )
+                                .await
+                        );
                         ListDatabasesResponse::try_from(response).await
                     }
                     State::Done => return None,

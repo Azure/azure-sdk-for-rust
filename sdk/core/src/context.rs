@@ -1,5 +1,6 @@
+use crate::{OverridableContext, TypeMapContext};
 use std::any::{Any, TypeId};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Execution context.
@@ -18,7 +19,6 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub struct Context {
     type_map: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
-    previous_context: Option<Arc<Context>>,
 }
 
 impl Default for Context {
@@ -32,26 +32,19 @@ impl Context {
     pub fn new() -> Self {
         Self {
             type_map: HashMap::new(),
-            previous_context: None,
         }
     }
+}
 
+impl TypeMapContext for Context {
     /// Creates a new, empty context that wraps the previous context.
-    pub fn from_previous_context(context: impl Into<Arc<Context>>) -> Self {
-        Self {
-            type_map: HashMap::new(),
-            previous_context: Some(context.into()),
-        }
-    }
-
-    /// Consumes this `Context` giving back the previous one, if present.
-    pub fn previous_context(self) // ....
-        self.previous_context.map(|i| Arc::try_unwrap(i).unwrap())
+    fn create_override(&self) -> OverridableContext<'_> {
+        OverridableContext::new(self)
     }
 
     /// Inserts or replaces an entity in the type map. If an entity with the same type was displaced
     /// by the insert, it will be returned to the caller.
-    pub fn insert_or_replace<E>(&mut self, entity: E) -> Option<Arc<E>>
+    fn insert_or_replace<E>(&mut self, entity: E) -> Option<Arc<E>>
     where
         E: Send + Sync + 'static,
     {
@@ -65,7 +58,7 @@ impl Context {
     /// Inserts an entity in the type map. If the an entity with the same type signature is
     /// already present it will be silently dropped. This function returns a mutable reference to
     /// the same Context so it can be chained to itself.
-    pub fn insert<E>(&mut self, entity: E) -> &mut Self
+    fn insert<E>(mut self, entity: E) -> Self
     where
         E: Send + Sync + 'static,
     {
@@ -75,7 +68,7 @@ impl Context {
     }
 
     /// Removes an entity from the type map. If present, the entity will be returned.
-    pub fn remove<E>(&mut self) -> Option<Arc<E>>
+    fn remove<E>(&mut self) -> Option<Arc<E>>
     where
         E: Send + Sync + 'static,
     {
@@ -92,29 +85,7 @@ impl Context {
     /// the latest entity inserted (where latest means further down the chain).
     ///
     /// If there is no entity with the specific type signature, `None` is returned instead.
-    pub fn get<E>(&self) -> Option<&E>
-    where
-        E: Send + Sync + 'static,
-    {
-        self.get_local().or_else(|| self.get_previous())
-    }
-
-    fn get_previous<E>(&self) -> Option<&E>
-    where
-        E: Send + Sync + 'static,
-    {
-        if let Some(previous_context) = &self.previous_context {
-            if let Some(value) = previous_context.get_local() {
-                *value
-            } else {
-                previous_context.get_previous()
-            }
-        } else {
-            None
-        }
-    }
-
-    fn get_local<E>(&self) -> Option<&E>
+    fn get<E>(&self) -> Option<&E>
     where
         E: Send + Sync + 'static,
     {
@@ -122,36 +93,6 @@ impl Context {
             .get(&TypeId::of::<E>())
             .map(|item| item.downcast_ref())
             .flatten()
-    }
-
-    // Returns the number of entities present in the type map. An overridden entity counts as one
-    // regardless on how many times it has been overridden.
-    pub fn len(&self) -> usize {
-        let mut hs = HashSet::new();
-
-        self.add_unique(&mut hs);
-        hs.len()
-    }
-
-    fn add_unique(&self, hs: &mut HashSet<TypeId>) {
-        for k in self.type_map.keys() {
-            hs.insert(*k);
-        }
-
-        if let Some(previous_content) = &self.previous_context {
-            previous_content.add_unique(hs);
-        }
-    }
-
-    /// Returns `true` if the type map is empty along with all its previous contexts, `false` otherwise.
-    pub fn is_empty(&self) -> bool {
-        if !self.type_map.is_empty() {
-            false
-        } else if let Some(previous_context) = &self.previous_context {
-            previous_context.is_empty()
-        } else {
-            true
-        }
     }
 }
 
@@ -192,16 +133,13 @@ mod tests {
         #[derive(Debug, PartialEq, Eq, Default)]
         struct S2 {}
 
-        let mut context = Context::new();
-
-        context
+        let context = Context::new()
             .insert("static str")
             .insert("a String".to_string())
             .insert(S1::default())
             .insert(S1::default()) // notice we are REPLACING S1. This call will *not* increment the counter
             .insert(S2::default());
 
-        assert_eq!(4, context.len());
         assert_eq!(Some(&"static str"), context.get());
     }
 
@@ -245,43 +183,5 @@ mod tests {
         context.insert_or_replace(Mutex::new(33u32));
         *context.get::<Mutex<u32>>().unwrap().lock().unwrap() = 42;
         assert_eq!(42, *context.get::<Mutex<u32>>().unwrap().lock().unwrap());
-    }
-
-    #[test]
-    fn overriding() {
-        #[derive(Debug, PartialEq, Eq, Default)]
-        struct S1 {
-            num: u8,
-        }
-
-        // this is the SDK user given Context.
-        let mut context = Context::new();
-        context.insert_or_replace(S1 { num: 1 });
-
-        // now let's simulate one policy that wants to change a value. First it wraps the context
-        // into a new one:
-        let mut context = Context::from_previous_context(context);
-        // then it inserts the new value
-        context.insert_or_replace(S1 { num: 2 });
-        assert_eq!(1, context.len());
-
-        // now the value is 2.
-        assert_eq!(2, context.get::<S1>().unwrap().num);
-
-        // we still have 1 entity only because overridden entities count only once.
-        assert_eq!(1, context.len());
-
-        // we can retrieve the previous, unmodified Context. This will destroy the Context.
-        let context = context.retrieve_previous_context().unwrap();
-
-        // the original context still has value of 1.
-        assert_eq!(1, context.get::<S1>().unwrap().num);
-
-        // we can rewrap the context into another one if necessary:
-        let mut context = Context::from_previous_context(context);
-        context.insert_or_replace(S1 { num: 42 });
-
-        // now the value is 42.
-        assert_eq!(42, context.get::<S1>().unwrap().num);
     }
 }

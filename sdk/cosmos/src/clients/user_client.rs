@@ -4,7 +4,7 @@ use crate::resources::user::UserResponse;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::pipeline::Pipeline;
-use azure_core::{Context, HttpClient, Request};
+use azure_core::{Context, HttpClient, Request, TypeMapContext};
 
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
@@ -50,11 +50,14 @@ impl UserClient {
             http::Method::POST,
         );
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Users);
-
         options.decorate_request(&mut request, self.user_name())?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Users),
+                &mut request,
+            )
+            .await?;
 
         Ok(UserResponse::try_from(response).await?)
     }
@@ -67,11 +70,14 @@ impl UserClient {
     ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::GET);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Users);
-
         options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Users),
+                &mut request,
+            )
+            .await?;
 
         Ok(UserResponse::try_from(response).await?)
     }
@@ -85,11 +91,14 @@ impl UserClient {
     ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::PUT);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Users);
-
         options.decorate_request(&mut request, user_name.as_ref())?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Users),
+                &mut request,
+            )
+            .await?;
 
         Ok(UserResponse::try_from(response).await?)
     }
@@ -102,11 +111,14 @@ impl UserClient {
     ) -> crate::Result<DeleteUserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::DELETE);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Users);
-
         options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Users),
+                &mut request,
+            )
+            .await?;
 
         Ok(DeleteUserResponse::try_from(response).await?)
     }

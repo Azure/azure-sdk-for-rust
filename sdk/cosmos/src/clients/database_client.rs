@@ -4,7 +4,7 @@ use crate::resources::ResourceType;
 use crate::ReadonlyString;
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::Continuation;
-use azure_core::{AddAsHeader, Context};
+use azure_core::{AddAsHeader, Context, TypeMapContext};
 use futures::stream::unfold;
 use futures::Stream;
 
@@ -66,11 +66,14 @@ impl DatabaseClient {
             .cosmos_client()
             .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Databases);
-
         options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Databases),
+                &mut request,
+            )
+            .await?;
 
         Ok(GetDatabaseResponse::try_from(response).await?)
     }
@@ -86,11 +89,14 @@ impl DatabaseClient {
             http::Method::DELETE,
         );
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Databases);
-
         options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Databases),
+                &mut request,
+            )
+            .await?;
 
         Ok(DeleteDatabaseResponse::try_from(response).await?)
     }
@@ -113,11 +119,15 @@ impl DatabaseClient {
                             http::Method::GET,
                         );
 
-                        let mut ctx = Context::from_previous_context(ctx);
-                        ctx.insert_or_replace(ResourceType::Collections);
-
                         r#try!(options.decorate_request(&mut request));
-                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(
+                                    &ctx.create_override().insert(ResourceType::Collections),
+                                    &mut request
+                                )
+                                .await
+                        );
                         ListCollectionsResponse::try_from(response).await
                     }
                     State::Continuation(continuation_token) => {
@@ -127,12 +137,16 @@ impl DatabaseClient {
                             http::Method::GET,
                         );
 
-                        let mut ctx = Context::from_previous_context(ctx);
-                        ctx.insert_or_replace(ResourceType::Collections);
-
                         r#try!(options.decorate_request(&mut request));
                         r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(
+                                    &ctx.create_override().insert(ResourceType::Collections),
+                                    &mut request
+                                )
+                                .await
+                        );
                         ListCollectionsResponse::try_from(response).await
                     }
                     State::Done => return None,
@@ -163,11 +177,14 @@ impl DatabaseClient {
             http::Method::POST,
         );
 
-        let mut ctx = Context::from_previous_context(ctx);
-        ctx.insert_or_replace(ResourceType::Collections);
-
         options.decorate_request(&mut request, collection_name.as_ref())?;
-        let response = self.pipeline().send(&ctx, &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(
+                &ctx.create_override().insert(ResourceType::Collections),
+                &mut request,
+            )
+            .await?;
 
         Ok(CreateCollectionResponse::try_from(response).await?)
     }
@@ -189,11 +206,16 @@ impl DatabaseClient {
                             &format!("dbs/{}/users", this.database_name()),
                             http::Method::GET,
                         );
-                        let mut ctx = Context::from_previous_context(ctx);
-                        ctx.insert_or_replace(ResourceType::Users);
 
                         r#try!(options.decorate_request(&mut request));
-                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(
+                                    &ctx.create_override().insert(ResourceType::Users),
+                                    &mut request
+                                )
+                                .await
+                        );
                         ListUsersResponse::try_from(response).await
                     }
                     State::Continuation(continuation_token) => {
@@ -202,12 +224,17 @@ impl DatabaseClient {
                             &format!("dbs/{}/users", self.database_name()),
                             http::Method::GET,
                         );
-                        let mut ctx = Context::from_previous_context(ctx);
-                        ctx.insert_or_replace(ResourceType::Users);
 
                         r#try!(options.decorate_request(&mut request));
                         r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(this.pipeline().send(&ctx, &mut request).await);
+                        let response = r#try!(
+                            this.pipeline()
+                                .send(
+                                    &ctx.create_override().insert(ResourceType::Users),
+                                    &mut request
+                                )
+                                .await
+                        );
                         ListUsersResponse::try_from(response).await
                     }
                     State::Done => return None,

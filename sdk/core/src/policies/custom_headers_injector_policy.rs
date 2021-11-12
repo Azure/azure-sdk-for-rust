@@ -1,5 +1,5 @@
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, Response};
+use crate::{OverridableContext, Request, Response, TypeMapContext};
 use http::header::HeaderMap;
 use std::sync::Arc;
 
@@ -17,11 +17,11 @@ pub struct CustomHeadersInjectorPolicy {}
 
 #[async_trait::async_trait]
 impl Policy for CustomHeadersInjectorPolicy {
-    async fn send(
-        &self,
-        ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
+    async fn send<'a>(
+        &'a self,
+        ctx: &'a OverridableContext<'a>,
+        request: &'a mut Request,
+        next: &'a [Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         if let Some(CustomHeaders(custom_headers)) = ctx.get::<CustomHeaders>() {
             custom_headers

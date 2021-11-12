@@ -7,7 +7,7 @@ mod retry_policies;
 mod telemetry_policy;
 mod transport;
 
-use crate::{Context, Request, Response};
+use crate::{OverridableContext, Request, Response};
 pub use custom_headers_injector_policy::{CustomHeaders, CustomHeadersInjectorPolicy};
 #[cfg(feature = "mock_transport_framework")]
 pub use mock_transport_player_policy::MockTransportPlayerPolicy;
@@ -30,10 +30,10 @@ pub type PolicyResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
 /// The `C` generic represents the *contents* of the AuthorizationPolicy specific of this pipeline.
 #[async_trait::async_trait]
 pub trait Policy: Send + Sync + std::fmt::Debug {
-    async fn send(
-        &self,
-        ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
+    async fn send<'a>(
+        &'a self,
+        ctx: &'a OverridableContext<'a>,
+        request: &'a mut Request,
+        next: &'a [Arc<dyn Policy>],
     ) -> PolicyResult<Response>;
 }
