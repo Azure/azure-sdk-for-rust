@@ -91,7 +91,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 }
 
 #[tokio::test]
-async fn test_data_lake_file_create_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
     let data_lake_client = create_data_lake_client().await.unwrap();
 
     let file_system_name = format!(
@@ -121,6 +121,10 @@ async fn test_data_lake_file_create_functions() -> Result<(), Box<dyn Error + Se
 
     file_system_client
         .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .await?;
+
+    file_system_client
+        .delete_file(Context::default(), file_path, FileDeleteOptions::default())
         .await?;
 
     file_system_client.delete().execute().await?;
