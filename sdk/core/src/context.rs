@@ -96,11 +96,7 @@ impl Context {
     where
         E: Send + Sync + 'static,
     {
-        if let Some(value) = self.get_local() {
-            Some(value)
-        } else {
-            self.get_previous()
-        }
+        self.get_local().or_else(|| self.get_previous())
     }
 
     fn get_previous<E>(&self) -> Option<&E>
