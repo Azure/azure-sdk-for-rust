@@ -68,8 +68,9 @@ impl BlobClient {
     where
         I: IntoIterator<Item = &'a str>,
     {
+        let blob_name_with_segments = self.blob_name.split("/").into_iter().chain(segments);
         self.container_client
-            .url_with_segments(Some(self.blob_name.as_str()).into_iter().chain(segments))
+            .url_with_segments(blob_name_with_segments)
     }
 
     pub fn get(&self) -> GetBlobBuilder {
@@ -206,6 +207,49 @@ impl BlobClient {
     ) -> crate::Result<(Request<Bytes>, url::Url)> {
         self.container_client
             .prepare_request(url, method, http_header_adder, request_body)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::blob::clients::AsBlobClient;
+
+    struct FakeSas {
+        token: String,
+    }
+    impl SasToken for FakeSas {
+        fn token(&self) -> String {
+            self.token.clone()
+        }
+    }
+
+    fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
+        let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
+        storage_account
+            .as_container_client(container_name)
+            .as_blob_client(blob_name)
+            .generate_signed_blob_url(sas)
+            .expect("build url failed")
+    }
+
+    #[test]
+    fn test_generate_url() {
+        let sas = FakeSas {
+            token: "fake_token".to_owned(),
+        };
+
+        let url = build_url("a", "b", &sas);
+        assert_eq!(
+            url.as_str(),
+            "http://127.0.0.1:10000/devstoreaccount1/a/b?fake_token"
+        );
+
+        let url = build_url("a", "b/c/d", &sas);
+        assert_eq!(
+            url.as_str(),
+            "http://127.0.0.1:10000/devstoreaccount1/a/b/c/d?fake_token"
+        );
     }
 }
 
