@@ -68,7 +68,7 @@ impl BlobClient {
     where
         I: IntoIterator<Item = &'a str>,
     {
-        let blob_name_with_segments = self.blob_name.split("/").into_iter().chain(segments);
+        let blob_name_with_segments = self.blob_name.split('/').into_iter().chain(segments);
         self.container_client
             .url_with_segments(blob_name_with_segments)
     }
