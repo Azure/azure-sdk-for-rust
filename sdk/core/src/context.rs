@@ -45,7 +45,7 @@ impl Context {
     }
 
     /// Consumes this `Context` giving back the previous one, if present.
-    pub fn retrieve_previous_context(self) -> Option<Context> {
+    pub fn previous_context(self) // ....
         self.previous_context.map(|i| Arc::try_unwrap(i).unwrap())
     }
 
