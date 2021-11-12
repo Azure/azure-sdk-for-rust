@@ -18,7 +18,7 @@ const MSI_API_VERSION: &str = "2019-08-01";
 /// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
 /// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
-pub struct ManagedIdentityCredential;
+pub struct ImdsManagedIdentityCredential;
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
@@ -43,7 +43,7 @@ pub enum ManagedIdentityCredentialError {
 }
 
 #[async_trait::async_trait]
-impl TokenCredential for ManagedIdentityCredential {
+impl TokenCredential for ImdsManagedIdentityCredential {
     type Error = ManagedIdentityCredentialError;
 
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
@@ -88,7 +88,7 @@ impl TokenCredential for ManagedIdentityCredential {
 }
 
 #[async_trait::async_trait]
-impl azure_core::TokenCredential for ManagedIdentityCredential {
+impl azure_core::TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(
         &self,
         resource: &str,

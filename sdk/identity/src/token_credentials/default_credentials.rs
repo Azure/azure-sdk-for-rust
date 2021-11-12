@@ -1,5 +1,5 @@
 use super::{
-    AzureCliCredential, EnvironmentCredential, ManagedIdentityCredential, TokenCredential,
+    AzureCliCredential, EnvironmentCredential, ImdsManagedIdentityCredential, TokenCredential,
 };
 use azure_core::TokenResponse;
 
@@ -47,7 +47,7 @@ impl DefaultAzureCredentialBuilder {
         }
         if self.include_managed_identity_credential {
             sources.push(DefaultAzureCredentialEnum::ManagedIdentity(
-                ManagedIdentityCredential {},
+                ImdsManagedIdentityCredential {},
             ))
         }
         if self.include_cli_credential {
@@ -76,7 +76,7 @@ pub enum DefaultAzureCredentialError {
 /// Types of TokenCredential supported by DefaultAzureCredential
 pub enum DefaultAzureCredentialEnum {
     Environment(EnvironmentCredential),
-    ManagedIdentity(ManagedIdentityCredential),
+    ManagedIdentity(ImdsManagedIdentityCredential),
     AzureCli(AzureCliCredential),
 }
 
@@ -124,7 +124,7 @@ impl Default for DefaultAzureCredential {
         DefaultAzureCredential {
             sources: vec![
                 DefaultAzureCredentialEnum::Environment(EnvironmentCredential::default()),
-                DefaultAzureCredentialEnum::ManagedIdentity(ManagedIdentityCredential {}),
+                DefaultAzureCredentialEnum::ManagedIdentity(ImdsManagedIdentityCredential {}),
                 DefaultAzureCredentialEnum::AzureCli(AzureCliCredential {}),
             ],
         }
