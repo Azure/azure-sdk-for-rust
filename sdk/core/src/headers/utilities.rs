@@ -136,7 +136,7 @@ pub async fn perform_http_request(
     req: Request<Body>,
     expected_status: StatusCode,
 ) -> Result<String, Error> {
-    log::trace!("about to perform http request: {:?}");
+    log::trace!("about to perform http request: {:?}", req);
     let res = client
         .request(req)
         .await
