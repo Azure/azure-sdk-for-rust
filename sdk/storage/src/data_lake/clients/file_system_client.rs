@@ -2,7 +2,7 @@ use crate::data_lake::operations::*;
 use crate::data_lake::requests::*;
 use crate::{data_lake::clients::DataLakeClient, Properties};
 use azure_core::pipeline::Pipeline;
-use azure_core::prelude::{IfMatchCondition, TypeMapContext};
+use azure_core::prelude::IfMatchCondition;
 use azure_core::{Context, HttpClient};
 use bytes::Bytes;
 use url::Url;
@@ -57,10 +57,7 @@ impl FileSystemClient {
         let mut request = self.prepare_file_create_request(file_path);
 
         options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&ctx.create_override(), &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx.into(), &mut request).await?;
 
         Ok(FileCreateResponse::try_from(response).await?)
     }
@@ -75,10 +72,7 @@ impl FileSystemClient {
         let mut request = self.prepare_file_create_request(file_path);
 
         options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&ctx.create_override(), &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx.into(), &mut request).await?;
 
         Ok(FileCreateResponse::try_from(response).await?)
     }
@@ -94,10 +88,7 @@ impl FileSystemClient {
 
         let rename_source = format!("/{}/{}", &self.name, source_file_path);
         options.decorate_request(&mut request, rename_source.as_str())?;
-        let response = self
-            .pipeline()
-            .send(&ctx.create_override(), &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx.into(), &mut request).await?;
 
         Ok(FileRenameResponse::try_from(response).await?)
     }
@@ -114,10 +105,7 @@ impl FileSystemClient {
 
         let rename_source = format!("/{}/{}", &self.name, source_file_path);
         options.decorate_request(&mut request, rename_source.as_str())?;
-        let response = self
-            .pipeline()
-            .send(&ctx.create_override(), &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx.into(), &mut request).await?;
 
         Ok(FileRenameResponse::try_from(response).await?)
     }
@@ -133,10 +121,7 @@ impl FileSystemClient {
         let mut request = self.prepare_file_append_request(file_path, position);
 
         options.decorate_request(&mut request, bytes)?;
-        let response = self
-            .pipeline()
-            .send(&ctx.create_override(), &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx.into(), &mut request).await?;
 
         Ok(FileAppendResponse::try_from(response).await?)
     }
@@ -152,10 +137,7 @@ impl FileSystemClient {
         let mut request = self.prepare_file_flush_request(file_path, position, close);
 
         options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(&ctx.create_override(), &mut request)
-            .await?;
+        let response = self.pipeline().send(&ctx.into(), &mut request).await?;
 
         Ok(FileFlushResponse::try_from(response).await?)
     }

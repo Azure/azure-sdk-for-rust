@@ -39,7 +39,7 @@ impl Context {
 impl TypeMapContext for Context {
     /// Creates a new, empty context that wraps the previous context.
     fn create_override(&self) -> OverridableContext<'_> {
-        OverridableContext::new(self)
+        self.into()
     }
 
     /// Inserts or replaces an entity in the type map. If an entity with the same type was displaced

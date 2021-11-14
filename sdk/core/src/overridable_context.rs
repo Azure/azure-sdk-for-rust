@@ -1,11 +1,12 @@
 use crate::{Context, TypeMapContext};
 use std::any::{Any, TypeId};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 #[derive(Debug)]
 enum PreviousContext<'a> {
-    Context(&'a Context),
+    Context(Cow<'a, Context>),
     OverridableContext(&'a OverridableContext<'a>),
 }
 
@@ -28,15 +29,25 @@ pub struct OverridableContext<'a> {
     type_map: HashMap<TypeId, Arc<dyn Any + Send + Sync>>,
 }
 
-impl<'a> OverridableContext<'a> {
-    /// Creates a new, empty context that wraps the previous context.
-    pub(crate) fn new(context: &'a Context) -> Self {
+impl<'a> From<Context> for OverridableContext<'a> {
+    fn from(context: Context) -> Self {
         Self {
             type_map: HashMap::new(),
-            previous_context: PreviousContext::Context(context),
+            previous_context: PreviousContext::Context(Cow::Owned(context)),
         }
     }
+}
 
+impl<'a> From<&'a Context> for OverridableContext<'a> {
+    fn from(context: &'a Context) -> Self {
+        Self {
+            type_map: HashMap::new(),
+            previous_context: PreviousContext::Context(Cow::Borrowed(context)),
+        }
+    }
+}
+
+impl<'a> OverridableContext<'a> {
     fn get_previous<E>(&self) -> Option<&E>
     where
         E: Send + Sync + 'static,
