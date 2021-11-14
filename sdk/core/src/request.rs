@@ -57,7 +57,7 @@ impl Serialize for Request {
     where
         S: Serializer,
     {
-        let mut hm = std::collections::BTreeMap::new();
+        let mut hm = std::collections::HashMap::new();
         for (h, v) in self.headers().iter() {
             if h.as_str().to_lowercase() == "authorization" {
                 hm.insert(h.to_string(), "<<STRIPPED>>");

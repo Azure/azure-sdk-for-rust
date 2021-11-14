@@ -31,7 +31,7 @@ impl super::RetryPolicy for ExponentialRetryPolicy {
             return true;
         }
 
-        let first_retry_time = first_retry_time.get_or_insert_with(Local::now);
+        let first_retry_time = first_retry_time.get_or_insert_with(|| Local::now());
         let max_delay = chrono::Duration::from_std(self.max_delay)
             .unwrap_or_else(|_| chrono::Duration::max_value());
 

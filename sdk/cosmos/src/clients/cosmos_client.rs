@@ -191,6 +191,8 @@ impl CosmosClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(CreateDatabaseResponse::try_from(response).await?)
@@ -237,6 +239,7 @@ impl CosmosClient {
                                 .send(&mut pipeline_context, &mut request)
                                 .await
                         );
+                        let response = r#try!(response.validate(http::StatusCode::OK).await);
 
                         ListDatabasesResponse::try_from(response).await
                     }
@@ -253,6 +256,7 @@ impl CosmosClient {
                                 .send(&mut pipeline_context, &mut request)
                                 .await
                         );
+                        let response = r#try!(response.validate(http::StatusCode::OK).await);
                         ListDatabasesResponse::try_from(response).await
                     }
                     State::Done => return None,

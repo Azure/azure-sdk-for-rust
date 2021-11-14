@@ -2,6 +2,8 @@ name: Check All Features for Services
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
 
 env:
   RUSTFLAGS: --deny warnings --allow unused_attributes

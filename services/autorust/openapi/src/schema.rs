@@ -53,7 +53,6 @@ pub struct Response {
     pub x_ms_error_response: Option<bool>,
 }
 
-#[allow(clippy::large_enum_variant)]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(untagged)]
 pub enum AdditionalProperties {

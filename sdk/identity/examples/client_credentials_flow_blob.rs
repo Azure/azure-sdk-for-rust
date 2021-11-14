@@ -26,10 +26,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         client,
         &client_id,
         &client_secret,
-        &[&format!(
+        &format!(
             "https://{}.blob.core.windows.net/.default",
             storage_account_name
-        )],
+        ),
         &tenant_id,
     )
     .await?;

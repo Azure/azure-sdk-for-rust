@@ -233,7 +233,8 @@ impl ServiceClient {
             }
         }
 
-        let iot_hub_name = iot_hub_name.ok_or(FromConnectionStringError::FailedToGetHostname)?;
+        let iot_hub_name =
+            iot_hub_name.ok_or_else(|| FromConnectionStringError::FailedToGetHostname)?;
 
         let key_name = key_name.ok_or(FromConnectionStringError::FailedToGetSharedAccessKey)?;
 

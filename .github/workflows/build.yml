@@ -19,15 +19,12 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-          components: rustfmt, clippy
+          components: rustfmt
 
       - uses: Swatinem/rust-cache@v1
 
       - name: cargo fmt sdk
         run: cargo fmt --all -- --check
-
-      - name: cargo clippy sdk
-        run: cargo clippy --all
 
       - name: cargo fmt services
         run: |
@@ -65,14 +62,6 @@ jobs:
     - name: sdk tests
       run: cargo test --all --features mock_transport_framework
 
-    - name: update readme of sdks
-      run: |
-        cargo install cargo-readme
-        ./eng/scripts/cargo_readme.sh
-        if git status sdk | grep -q *.md; then
-          echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
-        fi
-
   test-services:
     name: Services Tests
     runs-on: ubuntu-20.04
@@ -83,18 +72,12 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-        components: rustfmt, clippy
+        components: rustfmt
 
     - uses: Swatinem/rust-cache@v1
 
     - name: services check
       run: cargo check --manifest-path services/Cargo.toml --all
-
-    - name: services clippy
-      run: cargo clippy --manifest-path services/Cargo.toml --all
-
-    - name: services fmt
-      run: cargo fmt --manifest-path services/Cargo.toml --all -- --check
 
     - name: display free disk space
       run: df -h /
@@ -165,13 +148,15 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-        components: rustfmt, clippy
+        components: rustfmt
     - name: fmt check
-      run: cargo fmt --all --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml -- --check
-    - name: clippy check
-      run: cargo clippy --all --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml
+      run: |
+        cd azure-sdk-for-rust/services/autorust
+        cargo fmt --all -- --check
     - name: unit tests
-      run: cargo test --lib --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml
+      run:  |
+        cd azure-sdk-for-rust/services/autorust
+        cargo test --lib
     - name: git clone Azure/azure-rest-api-specs
       uses: actions/checkout@v2
       with:

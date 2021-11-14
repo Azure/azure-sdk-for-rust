@@ -54,7 +54,7 @@ impl CodeGen {
             .into_iter()
             .filter(|x| x.starts_with("application/json"))
             .map(|x| x.to_string())
-            .next()
+            .nth(0)
             .unwrap_or_else(|| "application/json".to_string())
     }
 }

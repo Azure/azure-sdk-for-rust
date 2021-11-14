@@ -56,6 +56,8 @@ impl UserClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -74,6 +76,8 @@ impl UserClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -93,6 +97,8 @@ impl UserClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -111,6 +117,8 @@ impl UserClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::NO_CONTENT)
             .await?;
 
         Ok(DeleteUserResponse::try_from(response).await?)

@@ -27,7 +27,7 @@
 //!         client,
 //!         &client_id,
 //!         &client_secret,
-//!         &["https://management.azure.com/"],
+//!         "https://management.azure.com/",
 //!         &tenant_id,
 //!     )
 //!     .await?;
@@ -48,12 +48,12 @@ pub async fn perform(
     client: reqwest::Client,
     client_id: &oauth2::ClientId,
     client_secret: &oauth2::ClientSecret,
-    scopes: &[&str],
+    scope: &str,
     tenant_id: &str,
 ) -> Result<LoginResponse, Error> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id.as_str())
-        .append_pair("scope", &scopes.join(" "))
+        .append_pair("scope", scope)
         .append_pair("client_secret", client_secret.secret())
         .append_pair("grant_type", "client_credentials")
         .finish();

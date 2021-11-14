@@ -20,7 +20,7 @@ mod mock_transport {
     use crate::{collect_pinned_stream, BytesStream, Response};
     use http::{header, HeaderMap, StatusCode};
     use serde::{Deserialize, Serialize};
-    use std::collections::BTreeMap;
+    use std::collections::HashMap;
 
     impl BytesResponse {
         pub(crate) fn new(status: StatusCode, headers: HeaderMap, body: Bytes) -> Self {
@@ -74,7 +74,7 @@ mod mock_transport {
         where
             S: serde::ser::Serializer,
         {
-            let mut headers = BTreeMap::new();
+            let mut headers = HashMap::new();
             for (h, v) in self.headers.iter() {
                 headers.insert(h.as_str().into(), v.to_str().unwrap().into());
             }
@@ -92,7 +92,7 @@ mod mock_transport {
     #[derive(Serialize, Deserialize)]
     pub(crate) struct SerializedBytesResponse {
         status: u16,
-        headers: BTreeMap<String, String>,
+        headers: HashMap<String, String>,
         body: String,
     }
 }

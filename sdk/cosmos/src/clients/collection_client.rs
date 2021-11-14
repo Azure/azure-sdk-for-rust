@@ -58,6 +58,8 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(GetCollectionResponse::try_from(response).await?)
@@ -78,6 +80,8 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::NO_CONTENT)
             .await?;
 
         Ok(DeleteCollectionResponse::try_from(response).await?)
@@ -98,6 +102,8 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::OK)
             .await?;
 
         Ok(ReplaceCollectionResponse::try_from(response).await?)
@@ -122,6 +128,8 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(&mut pipeline_context, &mut request)
+            .await?
+            .validate(http::StatusCode::CREATED)
             .await?;
 
         Ok(CreateDocumentResponse::try_from(response).await?)

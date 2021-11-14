@@ -12,8 +12,8 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 ///
 /// ```no_run
 /// use azure_security_keyvault::KeyClient;
-/// use azure_identity::token_credentials::DefaultAzureCredential;
-/// let creds = DefaultAzureCredential::default();
+/// use azure_identity::token_credentials::DefaultCredential;
+/// let creds = DefaultCredential::default();
 /// let client = KeyClient::new(&"https://test-key-vault.vault.azure.net", &creds).unwrap();
 /// ```
 #[derive(Debug)]
@@ -31,8 +31,8 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyClient;
-    /// use azure_identity::token_credentials::DefaultAzureCredential;
-    /// let creds = DefaultAzureCredential::default();
+    /// use azure_identity::token_credentials::DefaultCredential;
+    /// let creds = DefaultCredential::default();
     /// let client = KeyClient::new("test-key-vault.vault.azure.net", &creds).unwrap();
     /// ```
     pub fn new(vault_url: &str, token_credential: &'a T) -> Result<Self, Error> {

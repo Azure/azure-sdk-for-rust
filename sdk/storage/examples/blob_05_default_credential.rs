@@ -2,7 +2,7 @@
 extern crate log;
 
 use azure_core::prelude::*;
-use azure_identity::token_credentials::DefaultAzureCredential;
+use azure_identity::token_credentials::DefaultCredential;
 use azure_identity::token_credentials::TokenCredential;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(3)
         .expect("please specify the blob name as third command line parameter");
 
-    let bearer_token = DefaultAzureCredential::default()
+    let bearer_token = DefaultCredential::default()
         .get_token("https://storage.azure.com/")
         .await?;
 

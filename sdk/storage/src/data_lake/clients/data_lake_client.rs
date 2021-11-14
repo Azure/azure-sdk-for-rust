@@ -112,7 +112,7 @@ impl DataLakeClient {
 
         let per_call_policies = Vec::new();
         let auth_policy: Arc<dyn azure_core::Policy<DataLakeContext>> =
-            Arc::new(AuthorizationPolicy::new(bearer_token));
+            Arc::new(AuthorizationPolicy::new(bearer_token.clone()));
 
         // take care of adding the AuthorizationPolicy as **last** retry policy.
         // Policies can change the url and/or the headers and the AuthorizationPolicy
