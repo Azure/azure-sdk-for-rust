@@ -77,6 +77,20 @@ impl FileSystemClient {
         Ok(FileCreateResponse::try_from(response).await?)
     }
 
+    pub async fn delete_file(
+        &self,
+        ctx: Context,
+        file_path: &str,
+        options: FileDeleteOptions<'_>,
+    ) -> Result<FileDeleteResponse, crate::Error> {
+        let mut request = self.prepare_file_delete_request(file_path);
+
+        options.decorate_request(&mut request)?;
+        let response = self.pipeline().send(&ctx.into(), &mut request).await?;
+
+        Ok(FileDeleteResponse::try_from(response).await?)
+    }
+
     pub async fn rename_file(
         &self,
         ctx: Context,
@@ -165,6 +179,14 @@ impl FileSystemClient {
     pub(crate) fn prepare_file_create_request(&self, file_path: &str) -> azure_core::Request {
         let uri = format!("{}/{}?resource=file", self.url(), file_path);
         http::request::Request::put(uri)
+            .body(bytes::Bytes::new()) // Request builder requires a body here
+            .unwrap()
+            .into()
+    }
+
+    pub(crate) fn prepare_file_delete_request(&self, file_path: &str) -> azure_core::Request {
+        let uri = format!("{}/{}", self.url(), file_path);
+        http::request::Request::delete(uri)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
             .into()

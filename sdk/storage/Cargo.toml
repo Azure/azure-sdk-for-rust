@@ -134,7 +134,7 @@ required-features=["blob"]
 name="data_lake_00_file_system"
 required-features=["data_lake"]
 [[example]]
-name="data_lake_01_file_create"
+name="data_lake_01_file_create_delete"
 required-features=["data_lake"]
 [[example]]
 name="data_lake_02_file_upload"

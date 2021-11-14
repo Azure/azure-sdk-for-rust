@@ -42,6 +42,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("create file response == {:?}\n", create_file_response);
 
+    println!("deleting file '{}'...", file_path);
+    let delete_file_response = file_system_client
+        .delete_file(Context::default(), file_path, FileDeleteOptions::default())
+        .await?;
+    println!("delete_file file response == {:?}\n", delete_file_response);
+
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().execute().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
