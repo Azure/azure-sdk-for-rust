@@ -5,10 +5,9 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-azure_core = { path = "../../../sdk/core", version = "0.1.0" }
+azure_core = { path = "../../../sdk/core", version = "0.1.0", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version = "0.11", features = ["json"] }
 bytes = "1.0"
 thiserror = "1.0"
 http = "0.2"
@@ -19,7 +18,9 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1.0" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [features]
-default = ["package-2021-04"]
+default = ["package-2021-04", "enable_reqwest"]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []
 "package-2021-04" = []
 "package-2020-10" = []
