@@ -14,7 +14,7 @@ edition = "2018"
 
 [dependencies]
 reqwest = { version = "0.11", features = ["json"], default-features = false }
-azure_core = { path = "../core", version = "0.1.0" }
+azure_core = { path = "../core", default-features = false }
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
 futures = "0.3"
@@ -34,7 +34,7 @@ serde_test = "1"
 
 [features]
 default = ["development", "enable_reqwest"]
-enable_reqwest = ["reqwest/default-tls", "oauth2/native-tls"]
-enable_reqwest_rustls = ["reqwest/rustls-tls", "oauth2/rustls-tls"]
+enable_reqwest = ["reqwest/default-tls", "oauth2/native-tls", "azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["reqwest/rustls-tls", "oauth2/rustls-tls", "azure_core/enable_reqwest_rustls"]
 development = []
 test_e2e = []
