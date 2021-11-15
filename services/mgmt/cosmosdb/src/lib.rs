@@ -7,6 +7,10 @@
 pub mod package_2021_10;
 #[cfg(all(feature = "package-2021-10", not(feature = "no-default-version")))]
 pub use package_2021_10::{models, operations, operations::Error};
+#[cfg(feature = "package-preview-2021-10")]
+pub mod package_preview_2021_10;
+#[cfg(all(feature = "package-preview-2021-10", not(feature = "no-default-version")))]
+pub use package_preview_2021_10::{models, operations, operations::Error};
 #[cfg(feature = "package-2021-07-preview")]
 pub mod package_2021_07_preview;
 #[cfg(all(feature = "package-2021-07-preview", not(feature = "no-default-version")))]

@@ -20,6 +20,8 @@ pub struct Resource {
     pub kind: Option<Kind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
@@ -71,8 +73,20 @@ pub struct BotProperties {
     pub endpoint: String,
     #[serde(rename = "endpointVersion", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_version: Option<String>,
+    #[serde(rename = "allSettings", default, skip_serializing_if = "Option::is_none")]
+    pub all_settings: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+    #[serde(rename = "manifestUrl", default, skip_serializing_if = "Option::is_none")]
+    pub manifest_url: Option<String>,
+    #[serde(rename = "msaAppType", default, skip_serializing_if = "Option::is_none")]
+    pub msa_app_type: Option<bot_properties::MsaAppType>,
     #[serde(rename = "msaAppId")]
     pub msa_app_id: String,
+    #[serde(rename = "msaAppTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub msa_app_tenant_id: Option<String>,
+    #[serde(rename = "msaAppMSIResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub msa_app_msi_resource_id: Option<String>,
     #[serde(rename = "configuredChannels", default, skip_serializing_if = "Vec::is_empty")]
     pub configured_channels: Vec<String>,
     #[serde(rename = "enabledChannels", default, skip_serializing_if = "Vec::is_empty")]
@@ -91,14 +105,38 @@ pub struct BotProperties {
     pub is_cmek_enabled: Option<bool>,
     #[serde(rename = "cmekKeyVaultUrl", default, skip_serializing_if = "Option::is_none")]
     pub cmek_key_vault_url: Option<String>,
+    #[serde(rename = "cmekEncryptionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub cmek_encryption_status: Option<String>,
     #[serde(rename = "isIsolated", default, skip_serializing_if = "Option::is_none")]
     pub is_isolated: Option<bool>,
+    #[serde(rename = "isStreamingSupported", default, skip_serializing_if = "Option::is_none")]
+    pub is_streaming_supported: Option<bool>,
+    #[serde(rename = "isDeveloperAppInsightsApiKeySet", default, skip_serializing_if = "Option::is_none")]
+    pub is_developer_app_insights_api_key_set: Option<bool>,
+    #[serde(rename = "migrationToken", default, skip_serializing_if = "Option::is_none")]
+    pub migration_token: Option<String>,
+    #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
+    pub disable_local_auth: Option<bool>,
     #[serde(rename = "schemaTransformationVersion", default, skip_serializing_if = "Option::is_none")]
     pub schema_transformation_version: Option<String>,
     #[serde(rename = "openWithHint", default, skip_serializing_if = "Option::is_none")]
     pub open_with_hint: Option<String>,
     #[serde(rename = "appPasswordHint", default, skip_serializing_if = "Option::is_none")]
     pub app_password_hint: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "publishingCredentials", default, skip_serializing_if = "Option::is_none")]
+    pub publishing_credentials: Option<String>,
+}
+pub mod bot_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum MsaAppType {
+        #[serde(rename = "UserAssignedMSI")]
+        UserAssignedMsi,
+        SingleTenant,
+        MultiTenant,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BotResponseList {
@@ -118,6 +156,8 @@ pub struct BotChannel {
 pub struct Channel {
     #[serde(rename = "channelName")]
     pub channel_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlexaChannel {
@@ -125,6 +165,10 @@ pub struct AlexaChannel {
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlexaChannelProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlexaChannelProperties {
@@ -187,6 +231,12 @@ pub struct MsTeamsChannel {
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MsTeamsChannelProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MsTeamsChannelProperties {
@@ -196,6 +246,12 @@ pub struct MsTeamsChannelProperties {
     pub calling_web_hook: Option<String>,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
+    #[serde(rename = "incomingCallRoute", default, skip_serializing_if = "Option::is_none")]
+    pub incoming_call_route: Option<String>,
+    #[serde(rename = "deploymentEnvironment", default, skip_serializing_if = "Option::is_none")]
+    pub deployment_environment: Option<String>,
+    #[serde(rename = "acceptedTerms", default, skip_serializing_if = "Option::is_none")]
+    pub accepted_terms: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkypeChannel {
@@ -203,6 +259,8 @@ pub struct SkypeChannel {
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SkypeChannelProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkypeChannelProperties {
@@ -222,6 +280,8 @@ pub struct SkypeChannelProperties {
     pub groups_mode: Option<String>,
     #[serde(rename = "callingWebHook", default, skip_serializing_if = "Option::is_none")]
     pub calling_web_hook: Option<String>,
+    #[serde(rename = "incomingCallRoute", default, skip_serializing_if = "Option::is_none")]
+    pub incoming_call_route: Option<String>,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
@@ -249,6 +309,12 @@ pub struct WebChatChannel {
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebChatChannelProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebChatChannelProperties {
@@ -263,11 +329,19 @@ pub struct DirectLineChannel {
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DirectLineChannelProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineChannelProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sites: Vec<DirectLineSite>,
+    #[serde(rename = "DirectLineEmbedCode", default, skip_serializing_if = "Option::is_none")]
+    pub direct_line_embed_code: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TelegramChannel {
@@ -400,8 +474,8 @@ pub struct WebChatSite {
     pub key2: Option<String>,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
-    #[serde(rename = "enablePreview")]
-    pub enable_preview: bool,
+    #[serde(rename = "isWebchatPreviewEnabled")]
+    pub is_webchat_preview_enabled: bool,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSite {
@@ -421,6 +495,8 @@ pub struct DirectLineSite {
     pub is_v3_enabled: bool,
     #[serde(rename = "isSecureSiteEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_secure_site_enabled: Option<bool>,
+    #[serde(rename = "isBlockUserUploadEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_block_user_upload_enabled: Option<bool>,
     #[serde(rename = "trustedOrigins", default, skip_serializing_if = "Vec::is_empty")]
     pub trusted_origins: Vec<String>,
 }
@@ -468,6 +544,8 @@ pub struct ConnectionSettingProperties {
     pub service_provider_display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ConnectionSettingParameter>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionSetting {
@@ -504,6 +582,24 @@ pub struct ServiceProviderParameter {
     pub help_url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<service_provider_parameter::Metadata>,
+}
+pub mod service_provider_parameter {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Metadata {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub constraints: Option<metadata::Constraints>,
+    }
+    pub mod metadata {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct Constraints {
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub required: Option<bool>,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceProviderProperties {

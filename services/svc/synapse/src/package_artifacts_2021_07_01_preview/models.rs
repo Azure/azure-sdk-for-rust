@@ -5825,6 +5825,8 @@ pub struct FtpReadSettings {
     pub file_list_path: Option<serde_json::Value>,
     #[serde(rename = "useBinaryTransfer", default, skip_serializing_if = "Option::is_none")]
     pub use_binary_transfer: Option<bool>,
+    #[serde(rename = "disableChunking", default, skip_serializing_if = "Option::is_none")]
+    pub disable_chunking: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SftpReadSettings {
@@ -5848,6 +5850,8 @@ pub struct SftpReadSettings {
     pub modified_datetime_start: Option<serde_json::Value>,
     #[serde(rename = "modifiedDatetimeEnd", default, skip_serializing_if = "Option::is_none")]
     pub modified_datetime_end: Option<serde_json::Value>,
+    #[serde(rename = "disableChunking", default, skip_serializing_if = "Option::is_none")]
+    pub disable_chunking: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpReadSettings {

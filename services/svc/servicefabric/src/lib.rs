@@ -25,9 +25,13 @@ pub mod v8_0;
 pub use v8_0::{models, operations, operations::Error};
 #[cfg(feature = "8.1")]
 pub mod v8_1;
-use azure_core::setters;
 #[cfg(all(feature = "8.1", not(feature = "no-default-version")))]
 pub use v8_1::{models, operations, operations::Error};
+#[cfg(feature = "8.2")]
+pub mod v8_2;
+use azure_core::setters;
+#[cfg(all(feature = "8.2", not(feature = "no-default-version")))]
+pub use v8_2::{models, operations, operations::Error};
 pub fn config(
     http_client: std::sync::Arc<dyn azure_core::HttpClient>,
     token_credential: Box<dyn azure_core::TokenCredential>,

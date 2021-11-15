@@ -159,8 +159,6 @@ pub struct ServerProperties {
     pub availability_zone: Option<String>,
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_properties::CreateMode>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
 }
 pub mod server_properties {
     use super::*;
@@ -360,6 +358,16 @@ pub struct ConfigurationProperties {
     pub allowed_values: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    #[serde(rename = "isDynamicConfig", default, skip_serializing_if = "Option::is_none")]
+    pub is_dynamic_config: Option<bool>,
+    #[serde(rename = "isReadOnly", default, skip_serializing_if = "Option::is_none")]
+    pub is_read_only: Option<bool>,
+    #[serde(rename = "isConfigPendingRestart", default, skip_serializing_if = "Option::is_none")]
+    pub is_config_pending_restart: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(rename = "documentationLink", default, skip_serializing_if = "Option::is_none")]
+    pub documentation_link: Option<String>,
 }
 pub mod configuration_properties {
     use super::*;
@@ -445,6 +453,16 @@ pub struct NameAvailability {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<name_availability::Reason>,
+}
+pub mod name_availability {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Reason {
+        Invalid,
+        AlreadyExists,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestartParameter {

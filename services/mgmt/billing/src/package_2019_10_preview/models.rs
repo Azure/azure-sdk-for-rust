@@ -785,6 +785,8 @@ pub struct InvoiceListResult {
     pub value: Vec<Invoice>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Invoice {

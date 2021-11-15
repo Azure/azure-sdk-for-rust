@@ -625,8 +625,6 @@ pub struct QueryDataset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<query_dataset::Granularity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub configuration: Option<QueryDatasetConfiguration>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub grouping: Vec<QueryGrouping>,
