@@ -18,7 +18,7 @@ const MSI_API_VERSION: &str = "2019-08-01";
 /// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
 /// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
-pub struct ManagedIdentityCredential;
+pub struct ImdsManagedIdentityCredential;
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
@@ -32,14 +32,16 @@ pub enum ManagedIdentityCredentialError {
     MissingMsiSecret(std::env::VarError),
     #[error("Refresh token send error: {0}")]
     SendError(reqwest::Error),
-    #[error("Error getting text for refresh token: {0}")]
-    TextError(reqwest::Error),
     #[error("Error deserializing refresh token: {0}")]
-    DeserializeError(serde_json::Error),
+    DeserializeError(reqwest::Error),
+    #[error("The requested identity has not been assigned to this resource.")]
+    IdentityUnavailableError,
+    #[error("The request failed due to a gateway error.")]
+    GatewayError,
 }
 
 #[async_trait::async_trait]
-impl TokenCredential for ManagedIdentityCredential {
+impl TokenCredential for ImdsManagedIdentityCredential {
     type Error = ManagedIdentityCredentialError;
 
     async fn get_token(&self, resource: &str) -> Result<TokenResponse, Self::Error> {
@@ -55,29 +57,33 @@ impl TokenCredential for ManagedIdentityCredential {
             .map_err(ManagedIdentityCredentialError::MissingMsiSecret)?;
 
         let client = reqwest::Client::new();
-        let res_body = client
+        let response = client
             .get(msi_endpoint_url)
             .header("Metadata", "true")
             .header("X-IDENTITY-HEADER", msi_secret)
             .send()
             .await
-            .map_err(ManagedIdentityCredentialError::SendError)?
-            .text()
-            .await
-            .map_err(ManagedIdentityCredentialError::TextError)?;
+            .map_err(ManagedIdentityCredentialError::SendError)?;
 
-        let token_response = serde_json::from_str::<MsiTokenResponse>(&res_body)
-            .map_err(ManagedIdentityCredentialError::DeserializeError)?;
-
-        Ok(TokenResponse::new(
-            token_response.access_token,
-            token_response.expires_on,
-        ))
+        match response.status().as_u16() {
+            400 => Err(ManagedIdentityCredentialError::IdentityUnavailableError),
+            502 | 504 => Err(ManagedIdentityCredentialError::GatewayError),
+            _ => {
+                let token_response = response
+                    .json::<MsiTokenResponse>()
+                    .await
+                    .map_err(ManagedIdentityCredentialError::DeserializeError)?;
+                Ok(TokenResponse::new(
+                    token_response.access_token,
+                    token_response.expires_on,
+                ))
+            }
+        }
     }
 }
 
 #[async_trait::async_trait]
-impl azure_core::TokenCredential for ManagedIdentityCredential {
+impl azure_core::TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(
         &self,
         resource: &str,
