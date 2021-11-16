@@ -522,7 +522,7 @@ mod tests {
     use serde_json::json;
 
     use crate::client::API_VERSION;
-    use crate::mock_client;
+    use crate::mock_key_client;
     use crate::tests::MockCredential;
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
@@ -574,7 +574,7 @@ mod tests {
             .create();
 
         let creds = MockCredential;
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_key_client!(&"test-keyvault", &creds,);
 
         let key = client
             .get_key("test-key", Some("78deebed173b48e48f55abf87ed4cf71"))
@@ -626,7 +626,7 @@ mod tests {
             .create();
 
         let creds = MockCredential;
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_key_client!(&"test-keyvault", &creds,);
 
         let res = client
             .sign(
@@ -667,7 +667,7 @@ mod tests {
             .create();
 
         let creds = MockCredential;
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_key_client!(&"test-keyvault", &creds,);
 
         let decrypt_parameters = DecryptParameters {
             ciphertext: base64::decode("dvDmrSBpjRjtYg").unwrap(),
