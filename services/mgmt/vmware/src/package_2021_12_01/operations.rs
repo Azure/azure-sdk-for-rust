@@ -200,46 +200,108 @@ pub enum Error {
     #[error(transparent)]
     ScriptExecutions_GetExecutionLogs(#[from] script_executions::get_execution_logs::Error),
 }
+
+#[derive(Clone)]
+pub(crate) struct Context {}
+
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    pipeline: azure_core::pipeline::Pipeline<Context>,
+}
+
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn http_client(&self) -> &dyn azure_core::HttpClient {
+        self.pipeline.http_client()
+    }
+}
+
+pub struct OperationsClient(Client);
+
+impl Client {
+    pub fn new(endpoint: String, credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            pipeline,
+        }
+    }
+
+    pub fn operations(&self) -> OperationsClient {
+        OperationsClient(self.clone())
+    }
+}
+
+impl OperationsClient {
+    pub fn list(&self) -> operations::list::Builder {
+        operations::list::Builder { client: self.0.clone() }
+    }
+}
+
 pub mod operations {
     use super::{models, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationList, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.AVS/operations", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub mod list {
+        use super::{models, API_VERSION};
+
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::OperationList =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::CloudError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
+                Box::pin(async move {
+                    let http_client = self.client.http_client();
+                    let url_str = &format!("{}/providers/Microsoft.AVS/operations", &self.client.endpoint);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrlError)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token("https://management.azure.com/") // this should be scopes[]
+                        .await
+                        .map_err(Error::GetTokenError)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequestError)?;
+                    let rsp = http_client.execute_request(req).await.map_err(Error::ExecuteRequestError)?;
+                    match rsp.status() {
+                        http::StatusCode::OK => {
+                            let rsp_body = rsp.body();
+                            let rsp_value: models::OperationList =
+                                serde_json::from_slice(rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = rsp.body();
+                            let rsp_value: models::CloudError =
+                                serde_json::from_slice(rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
-    }
-    pub mod list {
-        use super::{models, API_VERSION};
+
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

@@ -11,19 +11,23 @@ cargo run --package azure_mgmt_vmware --example private_cloud_list
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
-use azure_mgmt_vmware::operations::private_clouds;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let http_client = azure_core::new_http_client();
-    let token_credential = AzureCliCredential {};
-    let subscription_id = &AzureCliCredential::get_subscription()?;
-    let config = &azure_mgmt_vmware::config(http_client, Box::new(token_credential)).build();
+    let endpoint = "https://management.azure.com".to_owned();
+    let credential = AzureCliCredential {};
+    let client = azure_mgmt_vmware::Client::new(endpoint, Arc::new(credential));
+    let ops = client.operations().list().into_future().await?;
+    println!("# of operations{}", ops.value.len());
 
-    let clouds = private_clouds::list_in_subscription(config, subscription_id).await?;
-    println!("# of private clouds {}", clouds.value.len());
-    for cloud in &clouds.value {
-        println!("{:?}", cloud.tracked_resource.resource.id);
-    }
+    // let subscription_id = &AzureCliCredential::get_subscription()?;
+    // let config = &azure_mgmt_vmware::config(http_client, Box::new(credential)).build();
+
+    // let clouds = private_clouds::list_in_subscription(config, subscription_id).await?;
+    // println!("# of private clouds {}", clouds.value.len());
+    // for cloud in &clouds.value {
+    //     println!("{:?}", cloud.tracked_resource.resource.id);
+    // }
     Ok(())
 }

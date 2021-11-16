@@ -6,7 +6,7 @@
 #[cfg(feature = "package-2021-12-01")]
 pub mod package_2021_12_01;
 #[cfg(all(feature = "package-2021-12-01", not(feature = "no-default-version")))]
-pub use package_2021_12_01::{models, operations, operations::Error};
+pub use package_2021_12_01::{models, operations, operations::Client, operations::Error};
 #[cfg(feature = "package-2021-06-01")]
 pub mod package_2021_06_01;
 #[cfg(all(feature = "package-2021-06-01", not(feature = "no-default-version")))]
