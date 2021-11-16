@@ -223,8 +223,6 @@ impl Client {
     }
 }
 
-pub struct OperationsClient(Client);
-
 impl Client {
     pub fn new(endpoint: String, credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
         let pipeline = azure_core::pipeline::Pipeline::new(
@@ -241,19 +239,22 @@ impl Client {
         }
     }
 
-    pub fn operations(&self) -> OperationsClient {
-        OperationsClient(self.clone())
-    }
-}
-
-impl OperationsClient {
-    pub fn list(&self) -> operations::list::Builder {
-        operations::list::Builder { client: self.0.clone() }
+    pub fn operations(&self) -> operations::Client {
+        operations::Client(self.clone())
     }
 }
 
 pub mod operations {
     use super::{models, API_VERSION};
+
+    pub struct Client(pub(crate) super::Client);
+
+    impl Client {
+        pub fn list(&self) -> list::Builder {
+            list::Builder { client: self.0.clone() }
+        }
+    }
+
     pub mod list {
         use super::{models, API_VERSION};
 
