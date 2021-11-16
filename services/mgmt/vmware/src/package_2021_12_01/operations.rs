@@ -2,6 +2,8 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
+use std::ops::Deref;
+
 use super::{models, API_VERSION};
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -208,6 +210,7 @@ pub(crate) struct Context {}
 pub struct Client {
     endpoint: String,
     credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
     pipeline: azure_core::pipeline::Pipeline<Context>,
 }
 
@@ -218,13 +221,18 @@ impl Client {
     pub fn credential(&self) -> &dyn azure_core::TokenCredential {
         self.credential.as_ref()
     }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
     pub fn http_client(&self) -> &dyn azure_core::HttpClient {
         self.pipeline.http_client()
     }
 }
 
 impl Client {
-    pub fn new(endpoint: String, credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+    pub fn new(endpoint: &str, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: &[&str]) -> Self {
+        let endpoint = endpoint.to_owned();
+        let scopes: Vec<String> = scopes.iter().map(|scope| scope.deref().to_owned()).collect();
         let pipeline = azure_core::pipeline::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -235,6 +243,7 @@ impl Client {
         Self {
             endpoint,
             credential,
+            scopes,
             pipeline,
         }
     }
@@ -273,7 +282,7 @@ pub mod operations {
                     req_builder = req_builder.method(http::Method::GET);
                     let credential = self.client.credential();
                     let token_response = credential
-                        .get_token("https://management.azure.com/") // this should be scopes[]
+                        .get_token(&self.client.scopes().join(" "))
                         .await
                         .map_err(Error::GetTokenError)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
