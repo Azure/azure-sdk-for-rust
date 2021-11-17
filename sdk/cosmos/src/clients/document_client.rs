@@ -2,7 +2,7 @@ use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
 use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{Context, HttpClient, PipelineContext, Request};
+use azure_core::{Context, HttpClient, Request};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -68,14 +68,16 @@ impl DocumentClient {
         T: DeserializeOwned,
     {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request)?;
 
         let response = self
             .cosmos_client()
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Documents),
+                &mut request,
+            )
             .await?;
 
         GetDocumentResponse::try_from(response).await
@@ -89,14 +91,16 @@ impl DocumentClient {
         options: ReplaceDocumentOptions<'_>,
     ) -> crate::Result<ReplaceDocumentResponse> {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::PUT);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request, document, self.partition_key_serialized())?;
 
         let response = self
             .cosmos_client()
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Documents),
+                &mut request,
+            )
             .await?;
 
         ReplaceDocumentResponse::try_from(response).await
@@ -109,14 +113,16 @@ impl DocumentClient {
         options: DeleteDocumentOptions<'_>,
     ) -> crate::Result<DeleteDocumentResponse> {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::DELETE);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request, self.partition_key_serialized())?;
 
         let response = self
             .cosmos_client()
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Documents),
+                &mut request,
+            )
             .await?;
 
         DeleteDocumentResponse::try_from(response).await

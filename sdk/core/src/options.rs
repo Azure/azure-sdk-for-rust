@@ -11,21 +11,18 @@ use std::time::Duration;
 ///
 /// ```
 /// use azure_core::{ClientOptions, RetryOptions, TelemetryOptions};
-/// let options: ClientOptions<()> = ClientOptions::default()
+/// let options: ClientOptions = ClientOptions::default()
 ///     .retry(RetryOptions::default().max_retries(10u32))
 ///     .telemetry(TelemetryOptions::default().application_id("my-application"));
 /// ```
 #[derive(Clone, Debug)]
-pub struct ClientOptions<C>
-where
-    C: Send + Sync,
-{
+pub struct ClientOptions {
     // TODO: Expose transport override.
     /// Policies called per call.
-    pub(crate) per_call_policies: Vec<Arc<dyn Policy<C>>>,
+    pub(crate) per_call_policies: Vec<Arc<dyn Policy>>,
 
     /// Policies called per retry.
-    pub(crate) per_retry_policies: Vec<Arc<dyn Policy<C>>>,
+    pub(crate) per_retry_policies: Vec<Arc<dyn Policy>>,
 
     /// Retry options.
     pub(crate) retry: RetryOptions,
@@ -37,10 +34,7 @@ where
     pub(crate) transport: TransportOptions,
 }
 
-impl<C> Default for ClientOptions<C>
-where
-    C: Send + Sync,
-{
+impl Default for ClientOptions {
     fn default() -> Self {
         Self {
             per_call_policies: Vec::new(),
@@ -52,10 +46,7 @@ where
     }
 }
 
-impl<C> ClientOptions<C>
-where
-    C: Send + Sync,
-{
+impl ClientOptions {
     pub fn new() -> Self {
         Self::default()
     }
@@ -72,18 +63,18 @@ where
     }
 
     /// A mutable reference to per-call policies.
-    pub fn per_call_policies_mut(&mut self) -> &mut Vec<Arc<dyn Policy<C>>> {
+    pub fn per_call_policies_mut(&mut self) -> &mut Vec<Arc<dyn Policy>> {
         &mut self.per_call_policies
     }
 
     /// A mutable reference to per-retry policies.
-    pub fn per_retry_policies_mut(&mut self) -> &mut Vec<Arc<dyn Policy<C>>> {
+    pub fn per_retry_policies_mut(&mut self) -> &mut Vec<Arc<dyn Policy>> {
         &mut self.per_retry_policies
     }
 
     setters! {
-        per_call_policies: Vec<Arc<dyn Policy<C>>> => per_call_policies,
-        per_retry_policies: Vec<Arc<dyn Policy<C>>> => per_retry_policies,
+        per_call_policies: Vec<Arc<dyn Policy>> => per_call_policies,
+        per_retry_policies: Vec<Arc<dyn Policy>> => per_retry_policies,
         retry: RetryOptions => retry,
         telemetry: TelemetryOptions => telemetry,
         transport: TransportOptions => transport,
@@ -157,7 +148,7 @@ impl Default for RetryOptions {
 }
 
 impl RetryOptions {
-    pub(crate) fn to_policy<C: Send + Sync>(&self) -> Arc<dyn Policy<C>> {
+    pub(crate) fn to_policy(&self) -> Arc<dyn Policy> {
         match self.mode {
             RetryMode::Exponential => Arc::new(ExponentialRetryPolicy::new(
                 self.delay,
