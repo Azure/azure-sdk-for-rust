@@ -32,7 +32,7 @@ pub type PolicyResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
 pub trait Policy: Send + Sync + std::fmt::Debug {
     async fn send(
         &self,
-        ctx: &mut Context,
+        ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response>;

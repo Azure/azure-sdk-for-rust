@@ -40,7 +40,7 @@ impl AuthorizationPolicy {
 impl Policy for AuthorizationPolicy {
     async fn send(
         &self,
-        ctx: &mut Context,
+        ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {

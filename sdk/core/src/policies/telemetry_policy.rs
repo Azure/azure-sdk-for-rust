@@ -61,7 +61,7 @@ impl<'a> TelemetryPolicy {
 impl Policy for TelemetryPolicy {
     async fn send(
         &self,
-        ctx: &mut Context,
+        ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
