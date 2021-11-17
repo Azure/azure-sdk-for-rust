@@ -203,7 +203,7 @@ pub enum Error {
     ScriptExecutions_GetExecutionLogs(#[from] script_executions::get_execution_logs::Error),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct Context {}
 
 #[derive(Clone)]
@@ -224,8 +224,10 @@ impl Client {
     pub fn scopes(&self) -> Vec<&str> {
         self.scopes.iter().map(String::as_str).collect()
     }
-    pub fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.pipeline.http_client()
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::PipelineContext::new(azure_core::Context::default(), Context::default());
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
     }
 }
 
@@ -275,7 +277,6 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let http_client = self.client.http_client();
                     let url_str = &format!("{}/providers/Microsoft.AVS/operations", &self.client.endpoint);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrlError)?;
                     let mut req_builder = http::request::Builder::new();
@@ -290,18 +291,23 @@ pub mod operations {
                     let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequestError)?;
-                    let rsp = http_client.execute_request(req).await.map_err(Error::ExecuteRequestError)?;
-                    match rsp.status() {
+                    let rsp = self.client.send(req).await.map_err(Error::SendError)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
                         http::StatusCode::OK => {
-                            let rsp_body = rsp.body();
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream)
+                                .await
+                                .map_err(Error::ResponseBytesError)?;
                             let rsp_value: models::OperationList =
-                                serde_json::from_slice(rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
-                            let rsp_body = rsp.body();
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream)
+                                .await
+                                .map_err(Error::ResponseBytesError)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -324,7 +330,9 @@ pub mod operations {
             #[error("Failed to build request: {0}")]
             BuildRequestError(http::Error),
             #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            SendError(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytesError(azure_core::StreamError),
             #[error("Failed to serialize request body: {0}")]
             SerializeError(serde_json::Error),
             #[error("Failed to deserialize response: {0}, body: {1:?}")]
