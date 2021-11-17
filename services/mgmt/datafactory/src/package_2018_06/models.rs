@@ -1046,6 +1046,8 @@ pub struct DataFlowReference {
     pub reference_name: String,
     #[serde(rename = "datasetParameters", default, skip_serializing_if = "Option::is_none")]
     pub dataset_parameters: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<ParameterValueSpecification>,
 }
 pub mod data_flow_reference {
     use super::*;
@@ -2221,6 +2223,8 @@ pub struct FtpReadSettings {
     pub file_list_path: Option<serde_json::Value>,
     #[serde(rename = "useBinaryTransfer", default, skip_serializing_if = "Option::is_none")]
     pub use_binary_transfer: Option<bool>,
+    #[serde(rename = "disableChunking", default, skip_serializing_if = "Option::is_none")]
+    pub disable_chunking: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SftpReadSettings {
@@ -2244,6 +2248,8 @@ pub struct SftpReadSettings {
     pub modified_datetime_start: Option<serde_json::Value>,
     #[serde(rename = "modifiedDatetimeEnd", default, skip_serializing_if = "Option::is_none")]
     pub modified_datetime_end: Option<serde_json::Value>,
+    #[serde(rename = "disableChunking", default, skip_serializing_if = "Option::is_none")]
+    pub disable_chunking: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpReadSettings {
@@ -5239,14 +5245,16 @@ pub struct FlowletTypeProperties {
     pub script: Option<String>,
     #[serde(rename = "scriptLines", default, skip_serializing_if = "Vec::is_empty")]
     pub script_lines: Vec<String>,
-    #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
-    pub additional_properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Transformation {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dataset: Option<DatasetReference>,
+    #[serde(rename = "linkedService", default, skip_serializing_if = "Option::is_none")]
+    pub linked_service: Option<LinkedServiceReference>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub flowlet: Option<DataFlowReference>,
 }

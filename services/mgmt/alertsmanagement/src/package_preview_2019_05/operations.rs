@@ -586,9 +586,11 @@ pub mod operations {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
+                let rsp_value: models::ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(list::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -597,8 +599,11 @@ pub mod operations {
         use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
             #[error("Failed to build request: {0}")]
@@ -653,9 +658,11 @@ pub mod alerts {
             }
             status_code => {
                 let rsp_body = rsp.body();
-                Err(meta_data::Error::UnexpectedResponse {
+                let rsp_value: models::ErrorResponse =
+                    serde_json::from_slice(rsp_body).map_err(|source| meta_data::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(meta_data::Error::DefaultResponse {
                     status_code,
-                    body: rsp_body.clone(),
+                    value: rsp_value,
                 })
             }
         }
@@ -664,8 +671,11 @@ pub mod alerts {
         use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
-            #[error("Unexpected HTTP status code {}", status_code)]
-            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
             #[error("Failed to parse request URL: {0}")]
             ParseUrlError(url::ParseError),
             #[error("Failed to build request: {0}")]

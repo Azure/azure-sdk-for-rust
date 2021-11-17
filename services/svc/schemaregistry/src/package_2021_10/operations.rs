@@ -248,7 +248,12 @@ pub mod schema {
             .map_err(query_id_by_content::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::NO_CONTENT => Ok(()),
-            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => Err(query_id_by_content::Error::UnsupportedMediaType415 {}),
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
+                    .map_err(|source| query_id_by_content::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(query_id_by_content::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: models::Error = serde_json::from_slice(rsp_body)
@@ -265,7 +270,7 @@ pub mod schema {
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
-            UnsupportedMediaType415 {},
+            UnsupportedMediaType415 { value: models::Error },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
@@ -319,7 +324,12 @@ pub mod schema {
             .map_err(register::Error::ExecuteRequestError)?;
         match rsp.status() {
             http::StatusCode::NO_CONTENT => Ok(()),
-            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => Err(register::Error::UnsupportedMediaType415 {}),
+            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                let rsp_body = rsp.body();
+                let rsp_value: models::Error =
+                    serde_json::from_slice(rsp_body).map_err(|source| register::Error::DeserializeError(source, rsp_body.clone()))?;
+                Err(register::Error::UnsupportedMediaType415 { value: rsp_value })
+            }
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: models::Error =
@@ -336,7 +346,7 @@ pub mod schema {
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
-            UnsupportedMediaType415 {},
+            UnsupportedMediaType415 { value: models::Error },
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,

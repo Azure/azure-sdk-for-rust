@@ -10,35 +10,11 @@ use getset::Getters;
 use reqwest::Url;
 use serde::Deserialize;
 use serde_json::{Map, Value};
-use std::fmt;
 
 const DEFAULT_MAX_RESULTS: usize = 25;
 
 const API_VERSION_MAX_RESULTS_PARAM: &str =
     formatcp!("{}&maxresults={}", API_VERSION_PARAM, DEFAULT_MAX_RESULTS);
-
-/// Reflects the deletion recovery level currently in effect for keys in the current Key Vault.
-/// If it contains 'Purgeable' the key can be permanently deleted by a privileged user;
-/// otherwise, only the system can purge the key, at the end of the retention interval.
-pub enum RecoveryLevel {
-    Purgeable,
-    Recoverable,
-    RecoverableAndProtectedSubscription,
-    RecoverableAndPurgeable,
-}
-
-impl fmt::Display for RecoveryLevel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            RecoveryLevel::Purgeable => write!(f, "Purgeable"),
-            RecoveryLevel::Recoverable => write!(f, "Recoverable"),
-            RecoveryLevel::RecoverableAndProtectedSubscription => {
-                write!(f, "Recoverable+ProtectedSubscription")
-            }
-            RecoveryLevel::RecoverableAndPurgeable => write!(f, "Recoverable+Purgeable"),
-        }
-    }
-}
 
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultSecretBaseIdentifierAttributedRaw {
@@ -403,7 +379,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -413,7 +389,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     ///     &"KEYVAULT_URL",
     ///     &creds,
     ///     ).unwrap();
-    ///     client.update_secret_recovery_level(&"SECRET_NAME", &"", RecoveryLevel::Purgeable).await.unwrap();
+    ///     client.update_secret_recovery_level(&"SECRET_NAME", &"", "Purgeable".into()).await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
@@ -422,13 +398,10 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         &mut self,
         secret_name: &str,
         secret_version: &str,
-        recovery_level: RecoveryLevel,
+        recovery_level: String,
     ) -> Result<(), Error> {
         let mut attributes = Map::new();
-        attributes.insert(
-            "enabled".to_owned(),
-            Value::String(recovery_level.to_string()),
-        );
+        attributes.insert("enabled".to_owned(), Value::String(recovery_level));
 
         self.update_secret(secret_name, secret_version, attributes)
             .await?;
@@ -447,7 +420,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
@@ -589,7 +562,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
     /// # Example
     ///
     /// ```no_run
-    /// use azure_security_keyvault::{KeyClient, RecoveryLevel};
+    /// use azure_security_keyvault::KeyClient;
     /// use azure_identity::token_credentials::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
@@ -625,7 +598,7 @@ mod tests {
     use serde_json::json;
 
     use crate::client::API_VERSION;
-    use crate::mock_client;
+    use crate::mock_key_client;
     use crate::tests::MockCredential;
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
@@ -661,7 +634,7 @@ mod tests {
 
         let creds = MockCredential;
         dbg!(mockito::server_url());
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_key_client!(&"test-keyvault", &creds,);
 
         let secret: KeyVaultSecret = client.get_secret("test-secret").await.unwrap();
 
@@ -730,7 +703,7 @@ mod tests {
             .create();
 
         let creds = MockCredential;
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_key_client!(&"test-keyvault", &creds,);
 
         let secret_versions = client.get_secret_versions("test-secret").await.unwrap();
 

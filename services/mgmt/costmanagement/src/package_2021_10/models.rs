@@ -314,8 +314,10 @@ pub struct ReportConfigDefinition {
     pub timeframe: report_config_definition::Timeframe,
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
     pub time_period: Option<ReportConfigTimePeriod>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dataset: Option<ReportConfigDataset>,
+    #[serde(rename = "dataSet", default, skip_serializing_if = "Option::is_none")]
+    pub data_set: Option<ReportConfigDataset>,
+    #[serde(rename = "includeMonetaryCommitment", default, skip_serializing_if = "Option::is_none")]
+    pub include_monetary_commitment: Option<bool>,
 }
 pub mod report_config_definition {
     use super::*;
@@ -452,6 +454,10 @@ pub struct ViewProperties {
     pub created_on: Option<String>,
     #[serde(rename = "modifiedOn", default, skip_serializing_if = "Option::is_none")]
     pub modified_on: Option<String>,
+    #[serde(rename = "dateRange", default, skip_serializing_if = "Option::is_none")]
+    pub date_range: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<ReportConfigDefinition>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

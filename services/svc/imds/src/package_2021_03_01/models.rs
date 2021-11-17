@@ -8,6 +8,8 @@ pub struct Compute {
     pub az_environment: Option<String>,
     #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub eviction_policy: Option<String>,
+    #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
+    pub extended_location: Option<ExtendedLocationProperties>,
     #[serde(rename = "isHostCompatibilityLayerVm", default, skip_serializing_if = "Option::is_none")]
     pub is_host_compatibility_layer_vm: Option<String>,
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
@@ -58,6 +60,8 @@ pub struct Compute {
     pub user_data: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[serde(rename = "virtualMachineScaleSet", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_scale_set: Option<VirtualMachineScaleSet>,
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
     #[serde(rename = "vmScaleSetName", default, skip_serializing_if = "Option::is_none")]
@@ -71,6 +75,13 @@ pub struct Compute {
 pub struct Network {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub interface: Vec<NetworkInterface>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtendedLocationProperties {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkInterface {
@@ -258,6 +269,11 @@ pub struct ManagedDisk {
 pub struct VirtualHardDisk {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSet {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }
 pub type ApplicationResponse = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

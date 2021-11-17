@@ -1581,7 +1581,7 @@ pub mod forecast {
         filter: Option<&str>,
         scope: &str,
         parameters: &models::ForecastDefinition,
-    ) -> std::result::Result<models::QueryResult, usage::Error> {
+    ) -> std::result::Result<usage::Response, usage::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.CostManagement/forecast",
@@ -1612,8 +1612,9 @@ pub mod forecast {
                 let rsp_body = rsp.body();
                 let rsp_value: models::QueryResult =
                     serde_json::from_slice(rsp_body).map_err(|source| usage::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+                Ok(usage::Response::Ok200(rsp_value))
             }
+            http::StatusCode::NO_CONTENT => Ok(usage::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: models::ErrorResponse =
@@ -1627,6 +1628,11 @@ pub mod forecast {
     }
     pub mod usage {
         use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::QueryResult),
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1737,7 +1743,7 @@ pub mod dimensions {
         expand: Option<&str>,
         skiptoken: Option<&str>,
         top: Option<i32>,
-    ) -> std::result::Result<models::DimensionsListResult, list::Error> {
+    ) -> std::result::Result<list::Response, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.CostManagement/dimensions",
@@ -1776,8 +1782,9 @@ pub mod dimensions {
                 let rsp_body = rsp.body();
                 let rsp_value: models::DimensionsListResult =
                     serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+                Ok(list::Response::Ok200(rsp_value))
             }
+            http::StatusCode::NO_CONTENT => Ok(list::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: models::ErrorResponse =
@@ -1791,6 +1798,11 @@ pub mod dimensions {
     }
     pub mod list {
         use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::DimensionsListResult),
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1908,7 +1920,7 @@ pub mod query {
         operation_config: &crate::OperationConfig,
         scope: &str,
         parameters: &models::QueryDefinition,
-    ) -> std::result::Result<models::QueryResult, usage::Error> {
+    ) -> std::result::Result<usage::Response, usage::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
             "{}/{}/providers/Microsoft.CostManagement/query",
@@ -1936,8 +1948,9 @@ pub mod query {
                 let rsp_body = rsp.body();
                 let rsp_value: models::QueryResult =
                     serde_json::from_slice(rsp_body).map_err(|source| usage::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+                Ok(usage::Response::Ok200(rsp_value))
             }
+            http::StatusCode::NO_CONTENT => Ok(usage::Response::NoContent204),
             status_code => {
                 let rsp_body = rsp.body();
                 let rsp_value: models::ErrorResponse =
@@ -1951,6 +1964,11 @@ pub mod query {
     }
     pub mod usage {
         use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::QueryResult),
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

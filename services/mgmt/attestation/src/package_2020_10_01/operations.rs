@@ -688,7 +688,7 @@ pub mod private_endpoint_connections {
     ) -> std::result::Result<models::PrivateEndpointConnectionListResult, list::Error> {
         let http_client = operation_config.http_client();
         let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProvider/{}/privateEndpointConnections",
+            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Attestation/attestationProviders/{}/privateEndpointConnections",
             operation_config.base_path(),
             subscription_id,
             resource_group_name,
