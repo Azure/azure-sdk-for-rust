@@ -1,11 +1,9 @@
 use super::*;
-use crate::authorization_policy::CosmosContext;
 use crate::prelude::*;
 use crate::resources::user::UserResponse;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{pipeline::Pipeline, Context, HttpClient};
-use azure_core::{PipelineContext, Request};
+use azure_core::{pipeline::Pipeline, Context, HttpClient, Request};
 
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
@@ -50,12 +48,11 @@ impl UserClient {
             &format!("dbs/{}/users", self.database_client.database_name()),
             http::Method::POST,
         );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
         options.decorate_request(&mut request, self.user_name())?;
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -68,12 +65,11 @@ impl UserClient {
         options: GetUserOptions,
     ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -87,12 +83,11 @@ impl UserClient {
         options: ReplaceUserOptions,
     ) -> crate::Result<UserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::PUT);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
 
         options.decorate_request(&mut request, user_name.as_ref())?;
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -105,12 +100,10 @@ impl UserClient {
         options: DeleteUserOptions,
     ) -> crate::Result<DeleteUserResponse> {
         let mut request = self.prepare_request_with_user_name(http::Method::DELETE);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Users.into());
-
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
+            .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
             .await?;
 
         Ok(DeleteUserResponse::try_from(response).await?)
@@ -144,7 +137,7 @@ impl UserClient {
         self.cosmos_client().http_client()
     }
 
-    fn pipeline(&self) -> &Pipeline<CosmosContext> {
+    fn pipeline(&self) -> &Pipeline {
         self.cosmos_client().pipeline()
     }
 }
