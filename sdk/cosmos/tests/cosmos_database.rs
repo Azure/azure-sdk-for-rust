@@ -13,7 +13,7 @@ async fn create_and_delete_database() {
     let client = setup::initialize().unwrap();
 
     // list existing databases and remember their number
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let databases = Box::pin(client.list_databases().into_stream())
         .next()
         .await
         .unwrap()
@@ -27,7 +27,7 @@ async fn create_and_delete_database() {
         .await
         .unwrap();
 
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let databases = Box::pin(client.list_databases().into_stream())
         .next()
         .await
         .unwrap()
@@ -48,12 +48,11 @@ async fn create_and_delete_database() {
     client
         .clone()
         .into_database_client(DATABASE_NAME)
-        .delete_database()
-        .execute()
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
         .await
         .unwrap();
 
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let databases = Box::pin(client.list_databases().into_stream())
         .next()
         .await
         .unwrap()
