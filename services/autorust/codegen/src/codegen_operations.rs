@@ -142,7 +142,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_imports)]
         use super::{API_VERSION, models};
     });
-    let mut modules: IndexMap<Option<String>, TokenStream> = IndexMap::new();
+    let mut operations_code: IndexMap<Option<String>, OperationCode> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
 
     let operations = cg.spec.operations()?;
@@ -171,47 +171,62 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
 
     for operation in &operations {
         let module_name = operation.rust_module_name();
-        let function = create_function(cg, operation)?;
-        if modules.contains_key(&module_name) {}
-        match modules.get_mut(&module_name) {
-            Some(module) => {
-                module.extend(function);
+        let code = create_operation_code(cg, operation)?;
+        // append code to existing module if it already exists
+        match operations_code.get_mut(&module_name) {
+            Some(operation_code) => {
+                let OperationCode {
+                    function_code,
+                    module_code,
+                } = code;
+                operation_code.function_code.extend(function_code);
+                operation_code.module_code.extend(module_code);
             }
             None => {
-                let mut module = TokenStream::new();
-                module.extend(function);
-                modules.insert(module_name, module);
+                operations_code.insert(module_name, code);
             }
         }
     }
 
-    for (module_name, module) in modules {
+    for (module_name, operation_code) in operations_code {
+        let OperationCode {
+            function_code,
+            module_code,
+        } = operation_code;
         match module_name {
             Some(module_name) => {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
                         use super::{API_VERSION, models};
-
                         pub struct Client(pub(crate) super::Client);
-
                         impl Client {
+                            #function_code
                         }
-
-                        #module
+                        #module_code
                     }
                 });
             }
             None => {
-                file.extend(module);
+                file.extend(quote! {
+                    impl Client {
+                        #function_code
+                    }
+                    #module_code
+                });
             }
         }
     }
     Ok(file)
 }
 
-// Create a Rust function for the web operation
-fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream, Error> {
+struct OperationCode {
+    function_code: TokenStream,
+    module_code: TokenStream,
+}
+
+// Create code for the web operation
+fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<OperationCode, Error> {
     let fname = ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
 
     let params = parse_params(&operation.path);
@@ -255,12 +270,12 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
 
     // auth
     ts_request_builder.extend(quote! {
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource()).await
-                .map_err(#fname::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
+        let credential = self.client.credential();
+        let token_response = credential
+            .get_token(&self.client.scopes().join(" "))
+            .await
+            .map_err(Error::GetToken)?;
+        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
     });
 
     // api-version param
@@ -373,14 +388,14 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
                 if required {
                     ts_request_builder.extend(quote! {
                         #set_content_type
-                        let req_body = azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?;
+                        let req_body = azure_core::to_json(#param_name_var).map_err(Error::Serialize)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
                             if let Some(#param_name_var) = #param_name_var {
                                 #set_content_type
-                                azure_core::to_json(#param_name_var).map_err(#fname::Error::SerializeError)?
+                                azure_core::to_json(#param_name_var).map_err(Error::Serialize)?
                             } else {
                                 bytes::Bytes::from_static(azure_core::EMPTY_BODY)
                             };
@@ -428,9 +443,9 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
 
     let fresponse = if is_single_response {
         let tp = create_response_type(&success_responses[0])?.unwrap_or(quote! { () });
-        quote! { std::result::Result<#tp, #fname::Error> }
+        quote! { std::result::Result<#tp, Error> }
     } else {
-        quote! { std::result::Result<#fname::Response, #fname::Error> }
+        quote! { std::result::Result<Response, Error> }
     };
 
     let mut response_enum = TokenStream::new();
@@ -486,7 +501,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let rsp_value = create_rsp_value(tp.as_ref(), &fname);
+                let rsp_value = create_rsp_value(tp.as_ref());
                 let status_code_name = get_status_code_ident(status_code)?;
                 let response_type_name = get_response_type_ident(status_code)?;
                 if is_single_response {
@@ -494,7 +509,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
                         Some(_tp) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
-                                    let rsp_body = rsp.body();
+                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                     #rsp_value
                                     Ok(rsp_value)
                                 }
@@ -513,7 +528,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
                         Some(_tp) => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
-                                    let rsp_body = rsp.body();
+                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                     #rsp_value
                                     Ok(#fname::Response::#response_type_name(rsp_value))
                                 }
@@ -536,23 +551,23 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
         match status_code {
             autorust_openapi::StatusCode::Code(_) => {
                 let tp = create_response_type(rsp)?;
-                let rsp_value = create_rsp_value(tp.as_ref(), &fname);
+                let rsp_value = create_rsp_value(tp.as_ref());
                 let status_code_name = get_status_code_ident(status_code)?;
                 let response_type_name = get_response_type_ident(status_code)?;
                 match tp {
                     Some(_tp) => {
                         match_status.extend(quote! {
                             http::StatusCode::#status_code_name => {
-                                let rsp_body = rsp.body();
+                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                 #rsp_value
-                                Err(#fname::Error::#response_type_name{value: rsp_value})
+                                Err(Error::#response_type_name{value: rsp_value})
                             }
                         });
                     }
                     None => {
                         match_status.extend(quote! {
                             http::StatusCode::#status_code_name => {
-                                Err(#fname::Error::#response_type_name{})
+                                Err(Error::#response_type_name{})
                             }
                         });
                     }
@@ -568,21 +583,21 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
                 autorust_openapi::StatusCode::Code(_) => {}
                 autorust_openapi::StatusCode::Default => {
                     let tp = create_response_type(rsp)?;
-                    let rsp_value = create_rsp_value(tp.as_ref(), &fname);
+                    let rsp_value = create_rsp_value(tp.as_ref());
                     match tp {
                         Some(_tp) => {
                             match_status.extend(quote! {
                                 status_code => {
-                                    let rsp_body = rsp.body();
+                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                     #rsp_value
-                                    Err(#fname::Error::DefaultResponse{status_code, value: rsp_value})
+                                    Err(Error::DefaultResponse{status_code, value: rsp_value})
                                 }
                             });
                         }
                         None => {
                             match_status.extend(quote! {
                                 status_code => {
-                                    Err(#fname::Error::DefaultResponse{status_code})
+                                    Err(Error::DefaultResponse{status_code})
                                 }
                             });
                         }
@@ -593,26 +608,30 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
     } else {
         match_status.extend(quote! {
             status_code => {
-                let rsp_body = rsp.body();
-                Err(#fname::Error::UnexpectedResponse{status_code, body: rsp_body.clone()})
+                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                Err(Error::UnexpectedResponse{status_code, body: rsp_body.clone()})
             }
         });
     }
 
-    let func = quote! {
-        pub async fn #fname(#fparams) -> #fresponse {
-            let http_client = operation_config.http_client();
-            let url_str = &format!(#fpath, operation_config.base_path(), #url_str_args);
-            let mut url = url::Url::parse(url_str).map_err(#fname::Error::ParseUrlError)?;
-            let mut req_builder = http::request::Builder::new();
-            #ts_request_builder
-            req_builder = req_builder.uri(url.as_str());
-            let req = req_builder.body(req_body).map_err(#fname::Error::BuildRequestError)?;
-            let rsp = http_client.execute_request(req).await.map_err(#fname::Error::ExecuteRequestError)?;
-            match rsp.status() {
-                #match_status
+    // TODO add params to builder
+    let function_code = quote! {
+        pub fn #fname(#fparams) -> #fname::Builder {
+            #fname::Builder {
+                client: self.0.clone(),
             }
         }
+    };
+
+    let builder_code = quote! {
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+        }
+    };
+
+    let module_code = quote! {
+
         pub mod #fname {
             use super::{API_VERSION, models};
 
@@ -636,19 +655,45 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
                 #[error("Failed to deserialize response: {0}, body: {1:?}")]
                 Deserialize(serde_json::Error, bytes::Bytes),
             }
+
+            #builder_code
+
+            impl Builder {
+                pub fn into_future(self) -> futures::future::BoxFuture<'static, #fresponse> {
+                    Box::pin(async move {
+                        let url_str = &format!(#fpath, &self.client.endpoint, #url_str_args);
+                        let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                        let mut req_builder = http::request::Builder::new();
+                        #ts_request_builder
+                        req_builder = req_builder.uri(url.as_str());
+                        let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                        let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                        match rsp_status {
+                            #match_status
+                        }
+                    })
+                }
+            }
+
         }
+
     };
-    Ok(func)
+
+    Ok(OperationCode {
+        function_code,
+        module_code,
+    })
 }
 
-fn create_rsp_value(tp: Option<&TokenStream>, fname: &TokenStream) -> TokenStream {
+fn create_rsp_value(tp: Option<&TokenStream>) -> TokenStream {
     if tp.map(|tp| tp.to_string()) == Some("bytes :: Bytes".to_owned()) {
         quote! {
             let rsp_value = rsp_body.clone();
         }
     } else {
         quote! {
-            let rsp_value: #tp = serde_json::from_slice(rsp_body).map_err(|source| #fname::Error::DeserializeError(source, rsp_body.clone()))?;
+            let rsp_value: #tp = serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
         }
     }
 }
@@ -664,7 +709,7 @@ fn create_function_params(parameters: &[&Parameter]) -> Result<TokenStream, Erro
         let tp = get_param_type(param)?;
         params.push(quote! { #name: #tp });
     }
-    let slf = quote! { operation_config: &crate::OperationConfig };
+    let slf = quote! { &self };
     params.insert(0, slf);
     Ok(quote! { #(#params),* })
 }
