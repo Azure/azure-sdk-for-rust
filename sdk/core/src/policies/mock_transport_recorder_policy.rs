@@ -25,7 +25,7 @@ impl MockTransportRecorderPolicy {
 impl Policy for MockTransportRecorderPolicy {
     async fn send(
         &self,
-        _ctx: &mut Context,
+        _ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {

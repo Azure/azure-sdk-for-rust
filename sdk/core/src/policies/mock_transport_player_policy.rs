@@ -24,7 +24,7 @@ impl MockTransportPlayerPolicy {
 impl Policy for MockTransportPlayerPolicy {
     async fn send(
         &self,
-        _ctx: &mut Context,
+        _ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
