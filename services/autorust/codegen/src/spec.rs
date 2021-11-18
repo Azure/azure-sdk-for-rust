@@ -254,7 +254,7 @@ impl Spec {
                     })
                 }
             })
-            .collect::<Result<Vec<_>, _>>()
+            .collect()
     }
 }
 
