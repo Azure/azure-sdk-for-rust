@@ -6,7 +6,7 @@ use crate::ResourceQuota;
 use azure_core::headers::{
     self, continuation_token_from_headers_optional, session_token_from_headers,
 };
-use azure_core::{collect_pinned_stream, prelude::*, Request, Response};
+use azure_core::{collect_pinned_stream, prelude::*, Response};
 use chrono::{DateTime, Utc};
 use futures::stream::unfold;
 use futures::Stream;
@@ -26,6 +26,7 @@ pub struct ListDatabases {
     client: CosmosClient,
     consistency_level: Option<ConsistencyLevel>,
     max_item_count: MaxItemCount,
+    context: Option<Context>,
 }
 
 impl ListDatabases {
@@ -34,36 +35,32 @@ impl ListDatabases {
             client,
             consistency_level: None,
             max_item_count: MaxItemCount::new(-1),
+            context: None,
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
+        context: Context => Some(context),
     }
 
-    pub async fn decorate_request(&self, request: &mut Request) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        azure_core::headers::add_mandatory_header2(&self.max_item_count, request)?;
-        Ok(())
-    }
-
-    fn into_stream(self, ctx: Context) -> Pageable<ListDatabasesResponse> {
-        let make_request =
-            move |this: ListDatabases, ctx: Context, continuation: Option<String>| async move {
+    pub fn into_stream(self) -> Pageable<ListDatabasesResponse> {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let ctx = self.context.clone().unwrap_or_default();
+            async move {
                 let mut request = this
                     .client
                     .prepare_request_pipeline("dbs", http::Method::GET);
 
-                // if let Err(e) = options.decorate_request(&mut request).await {
-                //     return Err(azure_core::Error::PolicyError(e.into()));
-                // }
-                // TODO inline options
+                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
+                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
 
                 if let Some(c) = continuation {
                     match http::HeaderValue::from_str(c.as_str()) {
                         Ok(h) => request.headers_mut().append(headers::CONTINUATION, h),
-                        Err(e) => return Err(azure_core::Error::PolicyError(e.into())),
+                        Err(e) => return Err(crate::Error::InvalidHeaderValue(e.into())),
                     };
                 }
 
@@ -77,13 +74,14 @@ impl ListDatabases {
                     .await
                 {
                     Ok(r) => r,
-                    Err(e) => return Err(e),
+                    Err(e) => return Err(crate::Error::Core(e)),
                 };
 
                 Ok(ListDatabasesResponse::try_from(response).await)
-            };
+            }
+        };
 
-        Pageable::new(self, ctx, Box::new(make_request))
+        Pageable::new(std::sync::Arc::new(make_request))
     }
 }
 
@@ -105,8 +103,6 @@ pub struct ListDatabasesResponse {
 }
 
 impl ListDatabasesResponse {
-    // TODO: To remove pragma when list_databases has been re-enabled
-    #[allow(dead_code)]
     pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
@@ -158,28 +154,21 @@ impl IntoIterator for ListDatabasesResponse {
 }
 
 pub struct Pageable<T> {
-    // make_request: Box<dyn Fn(O, Context) -> F>,
-    stream: Box<dyn Stream<Item = crate::Result<T>>>,
+    stream: std::pin::Pin<Box<dyn Stream<Item = crate::Result<T>>>>,
 }
 
 impl<T: Continuable> Pageable<T> {
-    fn new<O, F>(
-        builder: O,
-        ctx: Context,
-        make_request: Box<dyn Fn(O, Context, Option<String>) -> F>,
-    ) -> Self
+    fn new<F>(make_request: std::sync::Arc<dyn Fn(Option<String>) -> F>) -> Self
     where
-        O: Clone + 'static,
         F: std::future::Future<Output = crate::Result<crate::Result<T>>> + 'static,
     {
         let stream = unfold(State::Init, move |state: State| {
-            let this = builder.clone();
-            let ctx = ctx.clone();
+            let make_request = make_request.clone();
             async move {
                 let response = match state {
-                    State::Init => r#try!(make_request(this, ctx, None).await),
+                    State::Init => r#try!(make_request(None).await),
                     State::Continuation(token) => {
-                        r#try!(make_request(this, ctx, Some(token)).await)
+                        r#try!(make_request(Some(token)).await)
                     }
                     State::Done => return None,
                 };
@@ -195,25 +184,25 @@ impl<T: Continuable> Pageable<T> {
             }
         });
         Self {
-            stream: Box::new(stream),
+            stream: Box::pin(stream),
         }
     }
 }
 
-trait Continuable {
+pub trait Continuable {
     fn continuation(&self) -> Option<String>;
 }
 
-// impl<O> Stream for Pageable<O, F, T> {
-//     type Item = crate::Result<T>;
+impl<T> Stream for Pageable<T> {
+    type Item = crate::Result<T>;
 
-//     fn poll_next(
-//         self: std::pin::Pin<&mut Self>,
-//         cx: &mut std::task::Context<'_>,
-//     ) -> std::task::Poll<Option<Self::Item>> {
-//         todo!()
-//     }
-// }
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        std::pin::Pin::new(&mut self.stream).poll_next(cx)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 enum State {

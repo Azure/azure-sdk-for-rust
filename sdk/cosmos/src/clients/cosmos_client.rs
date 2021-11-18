@@ -170,80 +170,8 @@ impl CosmosClient {
     }
 
     /// List all databases
-    pub fn list_databases(&self, ctx: Context) -> ListDatabases {
-        macro_rules! r#try {
-            ($expr:expr $(,)?) => {
-                match $expr {
-                    Result::Ok(val) => val,
-                    Result::Err(err) => {
-                        return Some((Err(err.into()), State::Done));
-                    }
-                }
-            };
-        }
-
-        #[derive(Debug, Clone, PartialEq)]
-        enum State {
-            Init,
-            Continuation(String),
-            Done,
-        }
-        let make_request = move |this: CosmosClient,
-                                 ctx: Context,
-                                 options: ListDatabases,
-                                 continuation: Option<String>| async move {
-            let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-
-            if let Err(e) = options.decorate_request(&mut request).await {
-                return Err(azure_core::Error::PolicyError(e.into()));
-            }
-
-            if let Some(c) = continuation {
-                match http::HeaderValue::from_str(c.as_str()) {
-                    Ok(h) => request.headers_mut().append(headers::CONTINUATION, h),
-                    Err(e) => return Err(azure_core::Error::PolicyError(e.into())),
-                };
-            }
-
-            let response = match this
-                .pipeline()
-                .send(
-                    &mut ctx.clone().insert(ResourceType::Databases),
-                    &mut request,
-                )
-                .await
-            {
-                Ok(r) => r,
-                Err(e) => return Err(e),
-            };
-
-            Ok(ListDatabasesResponse::try_from(response).await)
-        };
-
-        unfold(State::Init, move |state: State| {
-            let this = self.clone();
-            let ctx = ctx.clone();
-            let options = options.clone();
-            async move {
-                let response = match state {
-                    State::Init => r#try!(make_request(this, ctx, options, None).await),
-                    State::Continuation(token) => {
-                        r#try!(make_request(this, ctx, options, Some(token)).await)
-                    }
-                    State::Done => return None,
-                };
-
-                let response = r#try!(response);
-
-                let next_state = response
-                    .continuation_token
-                    .clone()
-                    .map(State::Continuation)
-                    .unwrap_or(State::Done);
-
-                Some((Ok(response), next_state))
-            }
-        })
+    pub fn list_databases(&self) -> ListDatabases {
+        ListDatabases::new(self.clone())
     }
 
     /// Convert into a [`DatabaseClient`]
