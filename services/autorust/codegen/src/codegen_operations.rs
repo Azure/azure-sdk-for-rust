@@ -13,7 +13,7 @@ use heck::CamelCase;
 use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{TokenStreamExt, quote};
 use std::{collections::HashSet, path::Path};
 
 fn error_variant(operation: &WebOperation) -> Result<TokenStream, Error> {
@@ -36,6 +36,72 @@ fn error_fqn(operation: &WebOperation) -> Result<TokenStream, Error> {
     }
 }
 
+pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
+    let mut clients = TokenStream::new();
+    for md in modules {
+        let md = md.to_snake_case_ident().map_err(Error::ModuleName)?;
+        clients.extend(quote!{
+            pub fn operations(&self) -> operations::Client {
+                #md::Client(self.clone())
+            }
+        });
+    }
+
+    let mut code = TokenStream::new();
+    code.extend(quote! {
+        #[derive(Clone, Default)]
+        // pub(crate) struct Context {}
+
+        #[derive(Clone)]
+        pub struct Client {
+            endpoint: String,
+            credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+            scopes: Vec<String>,
+            pipeline: azure_core::pipeline::Pipeline,
+        }
+
+        impl Client {
+            pub fn endpoint(&self) -> &str {
+                self.endpoint.as_str()
+            }
+            pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+                self.credential.as_ref()
+            }
+            pub fn scopes(&self) -> Vec<&str> {
+                self.scopes.iter().map(String::as_str).collect()
+            }
+            pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+                let mut context = azure_core::PipelineContext::new(azure_core::Context::default(), Context::default());
+                let mut request = request.into();
+                self.pipeline.send(&mut context, &mut request).await
+            }
+        }
+
+        impl Client {
+            pub fn new(endpoint: &str, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: &[&str]) -> Self {
+                let endpoint = endpoint.to_owned();
+                let scopes: Vec<String> = scopes.iter().map(|scope| scope.deref().to_owned()).collect();
+                let pipeline = azure_core::pipeline::Pipeline::new(
+                    option_env!("CARGO_PKG_NAME"),
+                    option_env!("CARGO_PKG_VERSION"),
+                    azure_core::ClientOptions::default(),
+                    Vec::new(),
+                    Vec::new(),
+                );
+                Self {
+                    endpoint,
+                    credential,
+                    scopes,
+                    pipeline,
+                }
+            }
+
+            #clients
+        }
+    });
+    Ok(code)
+}
+
 pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();
     file.extend(create_generated_by_header());
@@ -49,6 +115,8 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     // println!("input_files {:?}", cg.input_files());
 
     let operations = cg.spec.operations()?;
+    let groups: Vec<_> = operations.iter().flat_map(|op| op.rust_module_name()).collect();
+    file.extend(create_client(&groups)?);
 
     let mut errors = TokenStream::new();
     for operation in &operations {
@@ -92,6 +160,11 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                 file.extend(quote! {
                     pub mod #name {
                         use super::{API_VERSION, models};
+
+                        pub struct Client(pub(crate) super::Client);
+
+                        impl Client {
+                        }
 
                         #module
                     }
@@ -517,17 +590,19 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
             pub enum Error {
                 #error_responses_ts
                 #[error("Failed to parse request URL: {0}")]
-                ParseUrlError(url::ParseError),
+                ParseUrl(url::ParseError),
                 #[error("Failed to build request: {0}")]
-                BuildRequestError(http::Error),
-                #[error("Failed to execute request: {0}")]
-                ExecuteRequestError(azure_core::HttpError),
+                BuildRequest(http::Error),
                 #[error("Failed to serialize request body: {0}")]
-                SerializeError(serde_json::Error),
-                #[error("Failed to deserialize response: {0}, body: {1:?}")]
-                DeserializeError(serde_json::Error, bytes::Bytes),
+                Serialize(serde_json::Error),
                 #[error("Failed to get access token: {0}")]
-                GetTokenError(azure_core::Error),
+                GetToken(azure_core::Error),
+                #[error("Failed to execute request: {0}")]
+                SendRequest(azure_core::Error),
+                #[error("Failed to get response bytes: {0}")]
+                ResponseBytes(azure_core::StreamError),
+                #[error("Failed to deserialize response: {0}, body: {1:?}")]
+                Deserialize(serde_json::Error, bytes::Bytes),
             }
         }
     };
