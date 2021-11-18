@@ -6,10 +6,7 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{ReadonlyString, TimeNonce};
 
-use azure_core::prelude::Continuation;
-use azure_core::Pipeline;
-use azure_core::{AddAsHeader, ClientOptions, HttpClient};
-use azure_core::{Context, Request};
+use azure_core::{headers, ClientOptions, Context, HttpClient, Pipeline, Request};
 use futures::stream::unfold;
 use futures::Stream;
 use http::request::Builder as RequestBuilder;
@@ -195,6 +192,37 @@ impl CosmosClient {
             Continuation(String),
             Done,
         }
+        let make_request = move |this: CosmosClient,
+                                 ctx: Context,
+                                 options: ListDatabasesOptions,
+                                 continuation: Option<String>| async move {
+            let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
+
+            if let Err(e) = options.decorate_request(&mut request).await {
+                return Err(azure_core::Error::PolicyError(e.into()));
+            }
+
+            if let Some(c) = continuation {
+                match http::HeaderValue::from_str(c.as_str()) {
+                    Ok(h) => request.headers_mut().append(headers::CONTINUATION, h),
+                    Err(e) => return Err(azure_core::Error::PolicyError(e.into())),
+                };
+            }
+
+            let response = match this
+                .pipeline()
+                .send(
+                    &mut ctx.clone().insert(ResourceType::Databases),
+                    &mut request,
+                )
+                .await
+            {
+                Ok(r) => r,
+                Err(e) => return Err(e),
+            };
+
+            Ok(ListDatabasesResponse::try_from(response).await)
+        };
 
         unfold(State::Init, move |state: State| {
             let this = self.clone();
@@ -202,30 +230,9 @@ impl CosmosClient {
             let options = options.clone();
             async move {
                 let response = match state {
-                    State::Init => {
-                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-
-                        r#try!(options.decorate_request(&mut request).await);
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(ctx.clone().insert(ResourceType::Databases), &mut request)
-                                .await
-                        );
-
-                        ListDatabasesResponse::try_from(response).await
-                    }
-                    State::Continuation(continuation_token) => {
-                        let continuation = Continuation::new(continuation_token.as_str());
-                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-
-                        r#try!(options.decorate_request(&mut request).await);
-                        r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(ctx.clone().insert(ResourceType::Databases), &mut request)
-                                .await
-                        );
-                        ListDatabasesResponse::try_from(response).await
+                    State::Init => r#try!(make_request(this, ctx, options, None).await),
+                    State::Continuation(token) => {
+                        r#try!(make_request(this, ctx, options, Some(token)).await)
                     }
                     State::Done => return None,
                 };
@@ -318,6 +325,18 @@ impl CosmosClient {
     }
 }
 
+// pub struct Pageable<'a, T> {}
+
+// impl<'a, T> Stream for Pageable<'a, T> {
+//     type Item = T;
+
+//     fn poll_next(
+//         self: std::pin::Pin<&mut Self>,
+//         cx: &mut std::task::Context<'_>,
+//     ) -> std::task::Poll<Option<Self::Item>> {
+//         todo!()
+//     }
+// }
 /// The cloud with which you want to interact.
 ///
 /// All variants require the cosmos account name. `Custom` also requires a valid
