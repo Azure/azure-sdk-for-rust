@@ -14,7 +14,7 @@ use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 
 fn error_variant(operation: &WebOperation) -> Result<TokenStream, Error> {
     let function = operation.rust_function_name().to_camel_case();
@@ -40,7 +40,7 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
     let mut clients = TokenStream::new();
     for md in modules {
         let md = md.to_snake_case_ident().map_err(Error::ModuleName)?;
-        clients.extend(quote!{
+        clients.extend(quote! {
             pub fn #md(&self) -> #md::Client {
                 #md::Client(self.clone())
             }
@@ -49,8 +49,6 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
 
     let mut code = TokenStream::new();
     code.extend(quote! {
-        #[derive(Clone, Default)]
-        // pub(crate) struct Context {}
 
         #[derive(Clone)]
         pub struct Client {
@@ -58,6 +56,39 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
             credential: std::sync::Arc<dyn azure_core::TokenCredential>,
             scopes: Vec<String>,
             pipeline: azure_core::pipeline::Pipeline,
+        }
+
+        #[derive(Clone)]
+        pub struct ClientBuilder {
+            credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+            endpoint: Option<String>,
+            scopes: Option<Vec<String>>,
+        }
+
+        pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+
+        impl ClientBuilder {
+            pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+                Self {
+                    credential,
+                    endpoint: None,
+                    scopes: None,
+                }
+            }
+
+            pub fn endpoint(mut self, endpoint: impl Into<String>) {
+                self.endpoint = Some(endpoint.into());
+            }
+
+            pub fn scopes(mut self, scopes: &[&str]) {
+                self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+            }
+
+            pub fn build(self) -> Client {
+                let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+                let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+                Client::new(endpoint, self.credential, scopes)
+            }
         }
 
         impl Client {
@@ -71,7 +102,7 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
                 self.scopes.iter().map(String::as_str).collect()
             }
             pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
-                let mut context = azure_core::PipelineContext::new(azure_core::Context::default(), Context::default());
+                let mut context = azure_core::Context::default();
                 let mut request = request.into();
                 self.pipeline.send(&mut context, &mut request).await
             }
@@ -115,8 +146,9 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     // println!("input_files {:?}", cg.input_files());
 
     let operations = cg.spec.operations()?;
-    let groups: Vec<_> = operations.iter().flat_map(|op| op.rust_module_name()).collect();
-    file.extend(create_client(&groups)?);
+    let module_names: BTreeSet<_> = operations.iter().flat_map(|op| op.rust_module_name()).collect();
+    let module_names: Vec<_> = module_names.into_iter().collect();
+    file.extend(create_client(&module_names)?);
 
     let mut errors = TokenStream::new();
     for operation in &operations {

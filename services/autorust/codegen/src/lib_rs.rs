@@ -29,7 +29,7 @@ fn create_body(feature_mod_names: &[(String, String)]) -> Result<TokenStream> {
             #[cfg(feature = #feature_name)]
             pub mod #mod_name;
             #[cfg(all(feature = #feature_name, not(feature = "no-default-version")))]
-            pub use #mod_name::{models, operations, operations::Client, operations::Error};
+            pub use #mod_name::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
         });
     }
     let generated_by = create_generated_by_header();
