@@ -152,7 +152,7 @@ impl Spec {
     }
 
     /// Find the parameter for a given doc path and reference
-    fn resolve_parameter_ref<P: AsRef<Path>>(&self, doc_file: P, reference: Reference) -> Result<Parameter> {
+    pub fn resolve_parameter_ref<P: AsRef<Path>>(&self, doc_file: P, reference: Reference) -> Result<Parameter> {
         let doc_file = doc_file.as_ref();
         let full_path = match reference.file {
             None => doc_file.to_owned(),
