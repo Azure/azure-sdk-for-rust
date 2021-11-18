@@ -170,11 +170,7 @@ impl CosmosClient {
     }
 
     /// List all databases
-    pub fn list_databases(
-        &self,
-        ctx: Context,
-        options: ListDatabasesOptions,
-    ) -> impl Stream<Item = crate::Result<ListDatabasesResponse>> + '_ {
+    pub fn list_databases(&self, ctx: Context) -> ListDatabases {
         macro_rules! r#try {
             ($expr:expr $(,)?) => {
                 match $expr {
@@ -194,7 +190,7 @@ impl CosmosClient {
         }
         let make_request = move |this: CosmosClient,
                                  ctx: Context,
-                                 options: ListDatabasesOptions,
+                                 options: ListDatabases,
                                  continuation: Option<String>| async move {
             let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
 
@@ -325,18 +321,6 @@ impl CosmosClient {
     }
 }
 
-// pub struct Pageable<'a, T> {}
-
-// impl<'a, T> Stream for Pageable<'a, T> {
-//     type Item = T;
-
-//     fn poll_next(
-//         self: std::pin::Pin<&mut Self>,
-//         cx: &mut std::task::Context<'_>,
-//     ) -> std::task::Poll<Option<Self::Item>> {
-//         todo!()
-//     }
-// }
 /// The cloud with which you want to interact.
 ///
 /// All variants require the cosmos account name. `Custom` also requires a valid
