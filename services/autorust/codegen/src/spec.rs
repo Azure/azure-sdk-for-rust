@@ -397,7 +397,7 @@ pub mod openapi {
 }
 
 // contains unresolved parameters
-pub struct WebOperationUnresolved {
+struct WebOperationUnresolved {
     pub doc_file: PathBuf,
     pub id: Option<String>,
     pub path: String,
@@ -483,7 +483,7 @@ struct OperationVerb<'a> {
     pub verb: WebVerb,
 }
 
-pub fn path_operations_unresolved<P: AsRef<Path>>(doc_file: P, path: &str, item: &PathItem) -> Vec<WebOperationUnresolved> {
+fn path_operations_unresolved<P: AsRef<Path>>(doc_file: P, path: &str, item: &PathItem) -> Vec<WebOperationUnresolved> {
     vec![
         OperationVerb {
             operation: item.get.as_ref(),
