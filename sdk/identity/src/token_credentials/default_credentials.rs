@@ -3,7 +3,7 @@ use super::{
 };
 use azure_core::TokenResponse;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
 pub struct DefaultAzureCredentialBuilder {
     include_environment_credential: bool,
@@ -14,7 +14,11 @@ pub struct DefaultAzureCredentialBuilder {
 impl DefaultAzureCredentialBuilder {
     /// Create a new `DefaultAzureCredentialBuilder`
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            include_environment_credential: true,
+            include_managed_identity_credential: true,
+            include_cli_credential: true
+        }
     }
 
     /// Exclude using credentials from the environment
