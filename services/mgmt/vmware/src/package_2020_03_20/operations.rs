@@ -3,14 +3,39 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
-#[derive(Clone, Default)]
-pub(crate) struct Context {}
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
     credential: std::sync::Arc<dyn azure_core::TokenCredential>,
     scopes: Vec<String>,
-    pipeline: azure_core::pipeline::Pipeline<Context>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) {
+        self.endpoint = Some(endpoint.into());
+    }
+    pub fn scopes(mut self, scopes: &[&str]) {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
 }
 impl Client {
     pub fn endpoint(&self) -> &str {
@@ -23,7 +48,7 @@ impl Client {
         self.scopes.iter().map(String::as_str).collect()
     }
     pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
-        let mut context = azure_core::PipelineContext::new(azure_core::Context::default(), Context::default());
+        let mut context = azure_core::Context::default();
         let mut request = request.into();
         self.pipeline.send(&mut context, &mut request).await
     }
@@ -46,74 +71,23 @@ impl Client {
             pipeline,
         }
     }
+    pub fn authorizations(&self) -> authorizations::Client {
+        authorizations::Client(self.clone())
+    }
+    pub fn clusters(&self) -> clusters::Client {
+        clusters::Client(self.clone())
+    }
+    pub fn hcx_enterprise_sites(&self) -> hcx_enterprise_sites::Client {
+        hcx_enterprise_sites::Client(self.clone())
+    }
+    pub fn locations(&self) -> locations::Client {
+        locations::Client(self.clone())
+    }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn operations(&self) -> operations::Client {
-        locations::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        locations::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
+    pub fn private_clouds(&self) -> private_clouds::Client {
         private_clouds::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        private_clouds::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        private_clouds::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        private_clouds::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        private_clouds::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        private_clouds::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        clusters::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        clusters::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        clusters::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        clusters::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        clusters::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        private_clouds::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        hcx_enterprise_sites::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        hcx_enterprise_sites::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        hcx_enterprise_sites::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        hcx_enterprise_sites::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        authorizations::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        authorizations::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        authorizations::Client(self.clone())
-    }
-    pub fn operations(&self) -> operations::Client {
-        authorizations::Client(self.clone())
     }
 }
 #[non_exhaustive]
