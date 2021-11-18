@@ -1,4 +1,4 @@
-use azure_core::{PipelineContext, Policy, PolicyResult, Request, Response};
+use azure_core::{Context, Policy, PolicyResult, Request, Response};
 use http::header::AUTHORIZATION;
 use http::HeaderValue;
 use std::sync::Arc;
@@ -14,16 +14,13 @@ impl AuthorizationPolicy {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(crate) struct DataLakeContext {}
-
 #[async_trait::async_trait]
-impl Policy<DataLakeContext> for AuthorizationPolicy {
+impl Policy for AuthorizationPolicy {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<DataLakeContext>,
+        ctx: &Context,
         request: &mut Request,
-        next: &[Arc<dyn Policy<DataLakeContext>>],
+        next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         if next.is_empty() {
             return Err(Box::new(azure_core::PipelineError::InvalidTailPolicy(

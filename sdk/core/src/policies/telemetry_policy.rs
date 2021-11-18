@@ -1,6 +1,6 @@
 use crate::options::TelemetryOptions;
 use crate::policies::{Policy, PolicyResult};
-use crate::{PipelineContext, Request, Response};
+use crate::{Context, Request, Response};
 
 use http::{header::USER_AGENT, HeaderValue};
 use std::env::consts::{ARCH, OS};
@@ -58,15 +58,12 @@ impl<'a> TelemetryPolicy {
 }
 
 #[async_trait::async_trait]
-impl<C> Policy<C> for TelemetryPolicy
-where
-    C: Send + Sync,
-{
+impl Policy for TelemetryPolicy {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<C>,
+        ctx: &Context,
         request: &mut Request,
-        next: &[Arc<dyn Policy<C>>],
+        next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         request
             .headers_mut()

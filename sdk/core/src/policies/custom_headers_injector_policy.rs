@@ -1,5 +1,5 @@
 use crate::policies::{Policy, PolicyResult};
-use crate::{PipelineContext, Request, Response};
+use crate::{Context, Request, Response};
 use http::header::HeaderMap;
 use std::sync::Arc;
 
@@ -16,18 +16,14 @@ impl From<HeaderMap> for CustomHeaders {
 pub struct CustomHeadersInjectorPolicy {}
 
 #[async_trait::async_trait]
-impl<C> Policy<C> for CustomHeadersInjectorPolicy
-where
-    C: Send + Sync,
-{
+impl Policy for CustomHeadersInjectorPolicy {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<C>,
+        ctx: &Context,
         request: &mut Request,
-        next: &[Arc<dyn Policy<C>>],
+        next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
-        if let Some(CustomHeaders(custom_headers)) = ctx.get_inner_context().get::<CustomHeaders>()
-        {
+        if let Some(CustomHeaders(custom_headers)) = ctx.get::<CustomHeaders>() {
             custom_headers
                 .iter()
                 .for_each(|(header_name, header_value)| {

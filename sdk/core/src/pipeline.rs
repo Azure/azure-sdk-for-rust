@@ -1,7 +1,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::policies::TransportPolicy;
 use crate::policies::{CustomHeadersInjectorPolicy, Policy, TelemetryPolicy};
-use crate::{ClientOptions, Error, HttpClient, PipelineContext, Request, Response};
+use crate::{ClientOptions, Context, Error, HttpClient, Request, Response};
 use std::sync::Arc;
 
 /// Execution pipeline.
@@ -32,18 +32,12 @@ use std::sync::Arc;
 /// context. For example, in CosmosDB, the generic carries the operation-specific information used by
 /// the authorization policy.
 #[derive(Debug, Clone)]
-pub struct Pipeline<C>
-where
-    C: Send + Sync,
-{
+pub struct Pipeline {
     http_client: Arc<dyn HttpClient>,
-    pipeline: Vec<Arc<dyn Policy<C>>>,
+    pipeline: Vec<Arc<dyn Policy>>,
 }
 
-impl<C> Pipeline<C>
-where
-    C: Send + Sync,
-{
+impl Pipeline {
     /// Creates a new pipeline given the client library crate name and version,
     /// alone with user-specified and client library-specified policies.
     ///
@@ -52,11 +46,11 @@ where
     pub fn new(
         crate_name: Option<&'static str>,
         crate_version: Option<&'static str>,
-        options: ClientOptions<C>,
-        per_call_policies: Vec<Arc<dyn Policy<C>>>,
-        per_retry_policies: Vec<Arc<dyn Policy<C>>>,
+        options: ClientOptions,
+        per_call_policies: Vec<Arc<dyn Policy>>,
+        per_retry_policies: Vec<Arc<dyn Policy>>,
     ) -> Self {
-        let mut pipeline: Vec<Arc<dyn Policy<C>>> = Vec::with_capacity(
+        let mut pipeline: Vec<Arc<dyn Policy>> = Vec::with_capacity(
             options.per_call_policies.len()
                 + per_call_policies.len()
                 + options.per_retry_policies.len()
@@ -83,7 +77,7 @@ where
         #[cfg(not(target_arch = "wasm32"))]
         {
             #[allow(unused_mut)]
-            let mut policy: Arc<dyn Policy<_>> =
+            let mut policy: Arc<dyn Policy> =
                 Arc::new(TransportPolicy::new(options.transport.clone()));
 
             // This code replaces the default transport policy at runtime if these two conditions
@@ -132,23 +126,15 @@ where
         self.http_client.as_ref()
     }
 
-    pub fn replace_policy(
-        &mut self,
-        policy: Arc<dyn Policy<C>>,
-        position: usize,
-    ) -> Arc<dyn Policy<C>> {
+    pub fn replace_policy(&mut self, policy: Arc<dyn Policy>, position: usize) -> Arc<dyn Policy> {
         std::mem::replace(&mut self.pipeline[position], policy)
     }
 
-    pub fn policies(&self) -> &[Arc<dyn Policy<C>>] {
+    pub fn policies(&self) -> &[Arc<dyn Policy>] {
         &self.pipeline
     }
 
-    pub async fn send(
-        &self,
-        ctx: &mut PipelineContext<C>,
-        request: &mut Request,
-    ) -> Result<Response, Error> {
+    pub async fn send(&self, ctx: &mut Context, request: &mut Request) -> Result<Response, Error> {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
