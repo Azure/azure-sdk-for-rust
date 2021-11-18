@@ -13,8 +13,8 @@ use heck::CamelCase;
 use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
-use quote::{TokenStreamExt, quote};
-use std::{collections::HashSet, path::Path};
+use quote::quote;
+use std::{collections::HashSet};
 
 fn error_variant(operation: &WebOperation) -> Result<TokenStream, Error> {
     let function = operation.rust_function_name().to_camel_case();
@@ -41,7 +41,7 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
     for md in modules {
         let md = md.to_snake_case_ident().map_err(Error::ModuleName)?;
         clients.extend(quote!{
-            pub fn operations(&self) -> operations::Client {
+            pub fn #md(&self) -> #md::Client {
                 #md::Client(self.clone())
             }
         });
@@ -199,7 +199,7 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
     }
     let parameters: Vec<_> = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
 
-    let fparams = create_function_params(cg, &operation.doc_file, &parameters)?;
+    let fparams = create_function_params(&parameters)?;
 
     // see if there is a body parameter
     // let fresponse = create_function_return(operation_verb)?;
@@ -625,7 +625,7 @@ fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &[Parameter]) -> Result<TokenStream, Error> {
+fn create_function_params(parameters: &[Parameter]) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters {
         let name = get_param_name(param)?;
