@@ -152,7 +152,7 @@ impl Spec {
     }
 
     /// Find the parameter for a given doc path and reference
-    pub fn resolve_parameter_ref<P: AsRef<Path>>(&self, doc_file: P, reference: Reference) -> Result<Parameter> {
+    fn resolve_parameter_ref<P: AsRef<Path>>(&self, doc_file: P, reference: Reference) -> Result<Parameter> {
         let doc_file = doc_file.as_ref();
         let full_path = match reference.file {
             None => doc_file.to_owned(),
@@ -167,7 +167,7 @@ impl Spec {
     }
 
     /// Resolve a reference or schema to a resolved schema
-    pub fn resolve_schema<P: AsRef<Path>>(&self, doc_file: P, ref_or_schema: &ReferenceOr<Schema>) -> Result<ResolvedSchema> {
+    fn resolve_schema<P: AsRef<Path>>(&self, doc_file: P, ref_or_schema: &ReferenceOr<Schema>) -> Result<ResolvedSchema> {
         match ref_or_schema {
             ReferenceOr::Item(schema) => Ok(ResolvedSchema {
                 ref_key: None,
@@ -175,15 +175,6 @@ impl Spec {
             }),
             ReferenceOr::Reference { reference, .. } => self.resolve_schema_ref(doc_file.as_ref(), reference.clone()),
         }
-    }
-
-    /// Resolve a collection of references or schemas to a collection of resolved schemas
-    pub fn resolve_schemas<P: AsRef<Path>>(&self, doc_file: P, ref_or_schemas: &[ReferenceOr<Schema>]) -> Result<Vec<ResolvedSchema>> {
-        let mut resolved = Vec::new();
-        for schema in ref_or_schemas {
-            resolved.push(self.resolve_schema(&doc_file, schema)?);
-        }
-        Ok(resolved)
     }
 
     /// Resolve a collection of references or schemas to a collection of resolved schemas
@@ -218,14 +209,14 @@ impl Spec {
         Ok(resolved)
     }
 
-    pub fn resolve_parameter(&self, doc_file: &Path, parameter: &ReferenceOr<Parameter>) -> Result<Parameter> {
+    fn resolve_parameter(&self, doc_file: &Path, parameter: &ReferenceOr<Parameter>) -> Result<Parameter> {
         match parameter {
             ReferenceOr::Item(param) => Ok(param.clone()),
             ReferenceOr::Reference { reference, .. } => self.resolve_parameter_ref(doc_file, reference.clone()),
         }
     }
 
-    pub fn resolve_parameters(&self, doc_file: &Path, parameters: &[ReferenceOr<Parameter>]) -> Result<Vec<Parameter>> {
+    fn resolve_parameters(&self, doc_file: &Path, parameters: &[ReferenceOr<Parameter>]) -> Result<Vec<Parameter>> {
         let mut resolved = Vec::new();
         for param in parameters {
             resolved.push(self.resolve_parameter(doc_file, param)?);
@@ -234,17 +225,36 @@ impl Spec {
     }
 
     // only operations from listed input files
-    pub fn operations(&self) -> Result<Vec<WebOperation>> {
-        let mut operations: Vec<WebOperation> = Vec::new();
+    fn operations_unresolved(&self) -> Result<Vec<WebOperationUnresolved>> {
+        let mut operations: Vec<WebOperationUnresolved> = Vec::new();
         for (doc_file, doc) in self.docs() {
             if self.is_input_file(&doc_file) {
                 let paths = self.resolve_path_map(doc_file, doc.paths())?;
                 for (path, item) in &paths {
-                    operations.extend(path_operations(doc_file, path, item))
+                    operations.extend(path_operations_unresolved(doc_file, path, item))
                 }
             }
         }
         Ok(operations)
+    }
+
+    // only operations from listed input files
+    pub fn operations(&self) -> Result<Vec<WebOperation>> {
+        self.operations_unresolved()?
+            .into_iter()
+            .map({
+                |op| {
+                    Ok(WebOperation {
+                        id: op.id,
+                        path: op.path,
+                        verb: op.verb,
+                        parameters: self.resolve_parameters(&op.doc_file, &op.parameters)?,
+                        responses: op.responses,
+                        examples: op.examples,
+                    })
+                }
+            })
+            .collect::<Result<Vec<_>, _>>()
     }
 }
 
@@ -330,7 +340,7 @@ pub mod openapi {
             match item {
                 ReferenceOr::Reference { reference, .. } => list.push(TypedReference::PathItem(reference.clone())),
                 ReferenceOr::Item(item) => {
-                    for operation in path_operations(&doc_file, path, item) {
+                    for operation in path_operations_unresolved(&doc_file, path, item) {
                         // parameters
                         for param in &operation.parameters {
                             match param {
@@ -386,12 +396,23 @@ pub mod openapi {
     }
 }
 
-pub struct WebOperation {
+// contains unresolved parameters
+pub struct WebOperationUnresolved {
     pub doc_file: PathBuf,
     pub id: Option<String>,
     pub path: String,
     pub verb: WebVerb,
     pub parameters: Vec<ReferenceOr<Parameter>>,
+    pub responses: IndexMap<StatusCode, Response>,
+    pub examples: MsExamples,
+}
+
+// contains resolved parameters
+pub struct WebOperation {
+    pub id: Option<String>,
+    pub path: String,
+    pub verb: WebVerb,
+    pub parameters: Vec<Parameter>,
     pub responses: IndexMap<StatusCode, Response>,
     pub examples: MsExamples,
 }
@@ -462,7 +483,7 @@ struct OperationVerb<'a> {
     pub verb: WebVerb,
 }
 
-pub fn path_operations<P: AsRef<Path>>(doc_file: P, path: &str, item: &PathItem) -> Vec<WebOperation> {
+pub fn path_operations_unresolved<P: AsRef<Path>>(doc_file: P, path: &str, item: &PathItem) -> Vec<WebOperationUnresolved> {
     vec![
         OperationVerb {
             operation: item.get.as_ref(),
@@ -498,7 +519,7 @@ pub fn path_operations<P: AsRef<Path>>(doc_file: P, path: &str, item: &PathItem)
         Some(op) => {
             let mut parameters = item.parameters.clone();
             parameters.append(&mut op.parameters.clone());
-            Some(WebOperation {
+            Some(WebOperationUnresolved {
                 doc_file: doc_file.as_ref().to_path_buf(),
                 id: op.operation_id.clone(),
                 path: path.to_string(),
@@ -588,7 +609,6 @@ mod tests {
     #[test]
     fn test_function_name_from_operation_id() {
         let operation = WebOperation {
-            doc_file: PathBuf::from(""),
             id: Some("PrivateClouds_CreateOrUpdate".to_owned()),
             path: "/horse".to_owned(),
             verb: WebVerb::Get,
@@ -603,7 +623,6 @@ mod tests {
     #[test]
     fn test_function_name_from_verb_and_path() {
         let operation = WebOperation {
-            doc_file: PathBuf::from(""),
             id: None,
             path: "/horse".to_owned(),
             verb: WebVerb::Get,
@@ -618,7 +637,6 @@ mod tests {
     #[test]
     fn test_function_name_with_no_module_name() {
         let operation = WebOperation {
-            doc_file: PathBuf::from(""),
             id: Some("PerformConnectivityCheck".to_owned()),
             path: "/horse".to_owned(),
             verb: WebVerb::Put,

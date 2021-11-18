@@ -14,7 +14,7 @@ use heck::SnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::{collections::HashSet, path::Path};
+use std::collections::HashSet;
 
 fn error_variant(operation: &WebOperation) -> Result<TokenStream, Error> {
     let function = operation.rust_function_name().to_camel_case();
@@ -117,16 +117,16 @@ fn create_function(cg: &CodeGen, operation: &WebOperation) -> Result<TokenStream
 
     let fpath = format!("{{}}{}", &format_path(&operation.path));
 
-    let parameters: Vec<Parameter> = cg.spec.resolve_parameters(&operation.doc_file, &operation.parameters)?;
+    let parameters = &operation.parameters;
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
     if cg.spec.api_version().is_some() {
         skip.insert("api-version");
     }
-    let parameters: Vec<_> = parameters.into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
+    let parameters: Vec<_> = parameters.iter().filter(|p| !skip.contains(p.name.as_str())).collect();
 
-    let fparams = create_function_params(cg, &operation.doc_file, &parameters)?;
+    let fparams = create_function_params(&parameters)?;
 
     // see if there is a body parameter
     // let fresponse = create_function_return(operation_verb)?;
@@ -550,7 +550,7 @@ fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-fn create_function_params(_cg: &CodeGen, _doc_file: &Path, parameters: &[Parameter]) -> Result<TokenStream, Error> {
+fn create_function_params(parameters: &[&Parameter]) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters {
         let name = get_param_name(param)?;
