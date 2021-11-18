@@ -15,10 +15,8 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let endpoint = "https://management.azure.com";
     let credential = Arc::new(AzureCliCredential {});
-    let scopes = &["https://management.azure.com/"];
-    let client = azure_mgmt_vmware::Client::new(endpoint, credential, scopes);
+    let client = azure_mgmt_vmware::ClientBuilder::new(credential).build();
 
     let ops = client.operations().list().into_future().await?;
     println!("# of operations{}", ops.value.len());

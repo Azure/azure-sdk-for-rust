@@ -203,15 +203,44 @@ pub enum Error {
     ScriptExecutions_GetExecutionLogs(#[from] script_executions::get_execution_logs::Error),
 }
 
-#[derive(Clone, Default)]
-pub(crate) struct Context {}
-
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
     credential: std::sync::Arc<dyn azure_core::TokenCredential>,
     scopes: Vec<String>,
-    pipeline: azure_core::pipeline::Pipeline<Context>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+
+    pub fn endpoint(mut self, endpoint: &str) {
+        self.endpoint = Some(endpoint.to_owned());
+    }
+
+    pub fn scopes(mut self, scopes: &[&str]) {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+    }
+
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
 }
 
 impl Client {
@@ -225,16 +254,14 @@ impl Client {
         self.scopes.iter().map(String::as_str).collect()
     }
     pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
-        let mut context = azure_core::PipelineContext::new(azure_core::Context::default(), Context::default());
+        let mut context = azure_core::Context::default();
         let mut request = request.into();
         self.pipeline.send(&mut context, &mut request).await
     }
 }
 
 impl Client {
-    pub fn new(endpoint: &str, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: &[&str]) -> Self {
-        let endpoint = endpoint.to_owned();
-        let scopes: Vec<String> = scopes.iter().map(|scope| scope.deref().to_owned()).collect();
+    pub fn new(endpoint: String, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
         let pipeline = azure_core::pipeline::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
