@@ -11,14 +11,20 @@ pub struct DefaultAzureCredentialBuilder {
     include_cli_credential: bool,
 }
 
-impl DefaultAzureCredentialBuilder {
-    /// Create a new `DefaultAzureCredentialBuilder`
-    pub fn new() -> Self {
+impl Default for DefaultAzureCredentialBuilder {
+    fn default() -> Self {
         Self {
             include_environment_credential: true,
             include_managed_identity_credential: true,
-            include_cli_credential: true
+            include_cli_credential: true,
         }
+    }
+}
+
+impl DefaultAzureCredentialBuilder {
+    /// Create a new `DefaultAzureCredentialBuilder`
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Exclude using credentials from the environment
