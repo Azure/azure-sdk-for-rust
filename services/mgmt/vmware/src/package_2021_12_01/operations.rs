@@ -228,8 +228,8 @@ impl ClientBuilder {
         }
     }
 
-    pub fn endpoint(mut self, endpoint: &str) {
-        self.endpoint = Some(endpoint.to_owned());
+    pub fn endpoint(mut self, impl Into<String>) {
+        self.endpoint = Some(endpoint.into());
     }
 
     pub fn scopes(mut self, scopes: &[&str]) {
