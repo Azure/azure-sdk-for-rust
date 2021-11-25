@@ -18,8 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential {});
     let client = azure_mgmt_vmware::ClientBuilder::new(credential).build();
 
-    let name = "George"; // this works
-    // let name = "Washington".to_owned(); // and so does this
+    let name = "George"; // allow passing a reference for parameters
     let ops = client.operations().list(name).into_future().await?;
     println!("# of operations{}", ops.value.len());
 

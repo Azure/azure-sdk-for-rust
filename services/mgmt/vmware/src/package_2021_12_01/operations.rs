@@ -289,7 +289,7 @@ pub mod operations {
 
     impl Client {
         pub fn list<'a>(&'a self, name: &'a str) -> list::Builder {
-            list::Builder { client: self.0.clone(), name: name.into() }
+            list::Builder { client: self.0.clone(), name }
         }
     }
 
