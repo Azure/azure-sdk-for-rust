@@ -283,28 +283,31 @@ impl Client {
 }
 
 pub mod operations {
+    use std::borrow::Cow;
     use super::{models, API_VERSION};
 
     pub struct Client(pub(crate) super::Client);
 
     impl Client {
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list<'a>(&'a self, name: impl Into<Cow<'a, str>>) -> list::Builder {
+            list::Builder { client: self.0.clone(), name: name.into() }
         }
     }
 
     pub mod list {
+        use std::borrow::Cow;
         use super::{models, API_VERSION};
 
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct Builder<'a> {
             pub(crate) client: crate::operations::Client,
+            pub(crate) name: Cow<'a, str>,
         }
 
-        impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
+        impl<'a> Builder<'a> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'a, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.AVS/operations", &self.client.endpoint);
+                    let url_str = &format!("{}/providers/Microsoft.AVS/operations?name={}", &self.client.endpoint, self.name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrlError)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

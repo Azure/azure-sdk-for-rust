@@ -18,7 +18,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential {});
     let client = azure_mgmt_vmware::ClientBuilder::new(credential).build();
 
-    let ops = client.operations().list().into_future().await?;
+    let name = "George"; // this works
+    // let name = "Washington".to_owned(); // and so does this
+    let ops = client.operations().list(name).into_future().await?;
     println!("# of operations{}", ops.value.len());
 
     // let subscription_id = &AzureCliCredential::get_subscription()?;
