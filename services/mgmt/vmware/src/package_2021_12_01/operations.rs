@@ -228,7 +228,7 @@ impl ClientBuilder {
         }
     }
 
-    pub fn endpoint(mut self, impl Into<String>) {
+    pub fn endpoint(mut self, endpoint: impl Into<String>) {
         self.endpoint = Some(endpoint.into());
     }
 
