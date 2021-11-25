@@ -237,14 +237,14 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
 
     let fpath = format!("{{}}{}", &format_path(&operation.path));
 
-    let parameters = &operation.parameters;
+    let parameters = operation.parameters();
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
     if cg.spec.api_version().is_some() {
         skip.insert("api-version");
     }
-    let parameters: Vec<_> = parameters.iter().filter(|p| !skip.contains(p.name.as_str())).collect();
+    let parameters: Vec<_> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
 
     let fparams = create_function_params(&parameters)?;
 
@@ -293,7 +293,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
 
     // params
     let mut has_body_parameter = false;
-    for param in &parameters {
+    for param in parameters {
         let param_name = &param.name;
         let param_name_var = get_param_name(param)?;
         let required = param.required.unwrap_or(false);

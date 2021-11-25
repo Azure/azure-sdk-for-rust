@@ -412,12 +412,16 @@ pub struct WebOperation {
     pub id: Option<String>,
     pub path: String,
     pub verb: WebVerb,
-    pub parameters: Vec<Parameter>,
+    parameters: Vec<Parameter>,
     pub responses: IndexMap<StatusCode, Response>,
     pub examples: MsExamples,
 }
 
 impl WebOperation {
+    pub fn parameters(&self) -> Vec<&Parameter> {
+        self.parameters.iter().collect()
+    }
+
     pub fn rust_module_name(&self) -> Option<String> {
         match &self.id {
             Some(id) => {
