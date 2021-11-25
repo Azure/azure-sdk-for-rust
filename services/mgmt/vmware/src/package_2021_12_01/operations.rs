@@ -283,25 +283,23 @@ impl Client {
 }
 
 pub mod operations {
-    use std::borrow::Cow;
     use super::{models, API_VERSION};
 
     pub struct Client(pub(crate) super::Client);
 
     impl Client {
-        pub fn list<'a>(&'a self, name: impl Into<Cow<'a, str>>) -> list::Builder {
+        pub fn list<'a>(&'a self, name: &'a str) -> list::Builder {
             list::Builder { client: self.0.clone(), name: name.into() }
         }
     }
 
     pub mod list {
-        use std::borrow::Cow;
         use super::{models, API_VERSION};
 
         #[derive(Clone)]
         pub struct Builder<'a> {
             pub(crate) client: crate::operations::Client,
-            pub(crate) name: Cow<'a, str>,
+            pub(crate) name: &'a str,
         }
 
         impl<'a> Builder<'a> {
