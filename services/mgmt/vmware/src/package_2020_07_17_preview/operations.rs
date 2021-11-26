@@ -319,11 +319,27 @@ pub mod locations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn check_trial_availability(&self, subscription_id: &str, location: &str) -> check_trial_availability::Builder {
-            check_trial_availability::Builder { client: self.0.clone() }
+        pub fn check_trial_availability(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+        ) -> check_trial_availability::Builder {
+            check_trial_availability::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+            }
         }
-        pub fn check_quota_availability(&self, subscription_id: &str, location: &str) -> check_quota_availability::Builder {
-            check_quota_availability::Builder { client: self.0.clone() }
+        pub fn check_quota_availability(
+            &self,
+            subscription_id: impl Into<String>,
+            location: impl Into<String>,
+        ) -> check_quota_availability::Builder {
+            check_quota_availability::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                location: location.into(),
+            }
         }
     }
     pub mod check_trial_availability {
@@ -475,59 +491,113 @@ pub mod private_clouds {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self, subscription_id: &str, resource_group_name: &str) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+            }
         }
-        pub fn list_in_subscription(&self, subscription_id: &str) -> list_in_subscription::Builder {
-            list_in_subscription::Builder { client: self.0.clone() }
+        pub fn list_in_subscription(&self, subscription_id: impl Into<String>) -> list_in_subscription::Builder {
+            list_in_subscription::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+            }
         }
-        pub fn get(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn create_or_update(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
             private_cloud: &models::PrivateCloud,
         ) -> create_or_update::Builder {
-            create_or_update::Builder { client: self.0.clone() }
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                private_cloud: private_cloud.into(),
+            }
         }
         pub fn update(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
             private_cloud_update: &models::PrivateCloudUpdate,
         ) -> update::Builder {
-            update::Builder { client: self.0.clone() }
+            update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                private_cloud_update: private_cloud_update.into(),
+            }
         }
-        pub fn delete(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> delete::Builder {
-            delete::Builder { client: self.0.clone() }
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn rotate_vcenter_password(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> rotate_vcenter_password::Builder {
-            rotate_vcenter_password::Builder { client: self.0.clone() }
+            rotate_vcenter_password::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn rotate_nsxt_password(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> rotate_nsxt_password::Builder {
-            rotate_nsxt_password::Builder { client: self.0.clone() }
+            rotate_nsxt_password::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn list_admin_credentials(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> list_admin_credentials::Builder {
-            list_admin_credentials::Builder { client: self.0.clone() }
+            list_admin_credentials::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
     }
     pub mod list {
@@ -1206,40 +1276,82 @@ pub mod clusters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
-        pub fn get(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str, cluster_name: &str) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            cluster_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                cluster_name: cluster_name.into(),
+            }
         }
         pub fn create_or_update(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            cluster_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            cluster_name: impl Into<String>,
             cluster: &models::Cluster,
         ) -> create_or_update::Builder {
-            create_or_update::Builder { client: self.0.clone() }
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                cluster_name: cluster_name.into(),
+                cluster: cluster.into(),
+            }
         }
         pub fn update(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            cluster_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            cluster_name: impl Into<String>,
             cluster_update: &models::ClusterUpdate,
         ) -> update::Builder {
-            update::Builder { client: self.0.clone() }
+            update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                cluster_name: cluster_name.into(),
+                cluster_update: cluster_update.into(),
+            }
         }
         pub fn delete(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            cluster_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            cluster_name: impl Into<String>,
         ) -> delete::Builder {
-            delete::Builder { client: self.0.clone() }
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                cluster_name: cluster_name.into(),
+            }
         }
     }
     pub mod list {
@@ -1629,36 +1741,65 @@ pub mod hcx_enterprise_sites {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            hcx_enterprise_site_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            hcx_enterprise_site_name: impl Into<String>,
         ) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                hcx_enterprise_site_name: hcx_enterprise_site_name.into(),
+            }
         }
         pub fn create_or_update(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            hcx_enterprise_site_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            hcx_enterprise_site_name: impl Into<String>,
             hcx_enterprise_site: &models::HcxEnterpriseSite,
         ) -> create_or_update::Builder {
-            create_or_update::Builder { client: self.0.clone() }
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                hcx_enterprise_site_name: hcx_enterprise_site_name.into(),
+                hcx_enterprise_site: hcx_enterprise_site.into(),
+            }
         }
         pub fn delete(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            hcx_enterprise_site_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            hcx_enterprise_site_name: impl Into<String>,
         ) -> delete::Builder {
-            delete::Builder { client: self.0.clone() }
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                hcx_enterprise_site_name: hcx_enterprise_site_name.into(),
+            }
         }
     }
     pub mod list {
@@ -1963,36 +2104,65 @@ pub mod authorizations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            authorization_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            authorization_name: impl Into<String>,
         ) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                authorization_name: authorization_name.into(),
+            }
         }
         pub fn create_or_update(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            authorization_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            authorization_name: impl Into<String>,
             authorization: &models::ExpressRouteAuthorization,
         ) -> create_or_update::Builder {
-            create_or_update::Builder { client: self.0.clone() }
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                authorization_name: authorization_name.into(),
+                authorization: authorization.into(),
+            }
         }
         pub fn delete(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            authorization_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            authorization_name: impl Into<String>,
         ) -> delete::Builder {
-            delete::Builder { client: self.0.clone() }
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                authorization_name: authorization_name.into(),
+            }
         }
     }
     pub mod list {
@@ -2301,36 +2471,65 @@ pub mod global_reach_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            global_reach_connection_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            global_reach_connection_name: impl Into<String>,
         ) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                global_reach_connection_name: global_reach_connection_name.into(),
+            }
         }
         pub fn create_or_update(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            global_reach_connection_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            global_reach_connection_name: impl Into<String>,
             global_reach_connection: &models::GlobalReachConnection,
         ) -> create_or_update::Builder {
-            create_or_update::Builder { client: self.0.clone() }
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                global_reach_connection_name: global_reach_connection_name.into(),
+                global_reach_connection: global_reach_connection.into(),
+            }
         }
         pub fn delete(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            global_reach_connection_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            global_reach_connection_name: impl Into<String>,
         ) -> delete::Builder {
-            delete::Builder { client: self.0.clone() }
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                global_reach_connection_name: global_reach_connection_name.into(),
+            }
         }
     }
     pub mod list {
@@ -2637,300 +2836,523 @@ pub mod workload_networks {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list_segments(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> list_segments::Builder {
-            list_segments::Builder { client: self.0.clone() }
+        pub fn list_segments(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> list_segments::Builder {
+            list_segments::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get_segment(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            segment_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            segment_id: impl Into<String>,
         ) -> get_segment::Builder {
-            get_segment::Builder { client: self.0.clone() }
+            get_segment::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                segment_id: segment_id.into(),
+            }
         }
         pub fn create_segments(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            segment_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            segment_id: impl Into<String>,
             workload_network_segment: &models::WorkloadNetworkSegment,
         ) -> create_segments::Builder {
-            create_segments::Builder { client: self.0.clone() }
+            create_segments::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                segment_id: segment_id.into(),
+                workload_network_segment: workload_network_segment.into(),
+            }
         }
         pub fn update_segments(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            segment_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            segment_id: impl Into<String>,
             workload_network_segment: &models::WorkloadNetworkSegment,
         ) -> update_segments::Builder {
-            update_segments::Builder { client: self.0.clone() }
+            update_segments::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                segment_id: segment_id.into(),
+                workload_network_segment: workload_network_segment.into(),
+            }
         }
         pub fn delete_segment(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            segment_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            segment_id: impl Into<String>,
         ) -> delete_segment::Builder {
-            delete_segment::Builder { client: self.0.clone() }
+            delete_segment::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                segment_id: segment_id.into(),
+            }
         }
-        pub fn list_dhcp(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> list_dhcp::Builder {
-            list_dhcp::Builder { client: self.0.clone() }
+        pub fn list_dhcp(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> list_dhcp::Builder {
+            list_dhcp::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get_dhcp(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            dhcp_id: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            dhcp_id: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> get_dhcp::Builder {
-            get_dhcp::Builder { client: self.0.clone() }
+            get_dhcp::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                dhcp_id: dhcp_id.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn create_dhcp(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dhcp_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dhcp_id: impl Into<String>,
             workload_network_dhcp: &models::WorkloadNetworkDhcp,
         ) -> create_dhcp::Builder {
-            create_dhcp::Builder { client: self.0.clone() }
+            create_dhcp::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dhcp_id: dhcp_id.into(),
+                workload_network_dhcp: workload_network_dhcp.into(),
+            }
         }
         pub fn update_dhcp(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dhcp_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dhcp_id: impl Into<String>,
             workload_network_dhcp: &models::WorkloadNetworkDhcp,
         ) -> update_dhcp::Builder {
-            update_dhcp::Builder { client: self.0.clone() }
+            update_dhcp::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dhcp_id: dhcp_id.into(),
+                workload_network_dhcp: workload_network_dhcp.into(),
+            }
         }
         pub fn delete_dhcp(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dhcp_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dhcp_id: impl Into<String>,
         ) -> delete_dhcp::Builder {
-            delete_dhcp::Builder { client: self.0.clone() }
+            delete_dhcp::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dhcp_id: dhcp_id.into(),
+            }
         }
-        pub fn list_gateways(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> list_gateways::Builder {
-            list_gateways::Builder { client: self.0.clone() }
+        pub fn list_gateways(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> list_gateways::Builder {
+            list_gateways::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get_gateway(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            gateway_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            gateway_id: impl Into<String>,
         ) -> get_gateway::Builder {
-            get_gateway::Builder { client: self.0.clone() }
+            get_gateway::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                gateway_id: gateway_id.into(),
+            }
         }
         pub fn list_port_mirroring(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> list_port_mirroring::Builder {
-            list_port_mirroring::Builder { client: self.0.clone() }
+            list_port_mirroring::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get_port_mirroring(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            port_mirroring_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            port_mirroring_id: impl Into<String>,
         ) -> get_port_mirroring::Builder {
-            get_port_mirroring::Builder { client: self.0.clone() }
+            get_port_mirroring::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                port_mirroring_id: port_mirroring_id.into(),
+            }
         }
         pub fn create_port_mirroring(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            port_mirroring_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            port_mirroring_id: impl Into<String>,
             workload_network_port_mirroring: &models::WorkloadNetworkPortMirroring,
         ) -> create_port_mirroring::Builder {
-            create_port_mirroring::Builder { client: self.0.clone() }
+            create_port_mirroring::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                port_mirroring_id: port_mirroring_id.into(),
+                workload_network_port_mirroring: workload_network_port_mirroring.into(),
+            }
         }
         pub fn update_port_mirroring(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            port_mirroring_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            port_mirroring_id: impl Into<String>,
             workload_network_port_mirroring: &models::WorkloadNetworkPortMirroring,
         ) -> update_port_mirroring::Builder {
-            update_port_mirroring::Builder { client: self.0.clone() }
+            update_port_mirroring::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                port_mirroring_id: port_mirroring_id.into(),
+                workload_network_port_mirroring: workload_network_port_mirroring.into(),
+            }
         }
         pub fn delete_port_mirroring(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            port_mirroring_id: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            port_mirroring_id: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> delete_port_mirroring::Builder {
-            delete_port_mirroring::Builder { client: self.0.clone() }
+            delete_port_mirroring::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                port_mirroring_id: port_mirroring_id.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn list_vm_groups(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> list_vm_groups::Builder {
-            list_vm_groups::Builder { client: self.0.clone() }
+            list_vm_groups::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get_vm_group(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            vm_group_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            vm_group_id: impl Into<String>,
         ) -> get_vm_group::Builder {
-            get_vm_group::Builder { client: self.0.clone() }
+            get_vm_group::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                vm_group_id: vm_group_id.into(),
+            }
         }
         pub fn create_vm_group(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            vm_group_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            vm_group_id: impl Into<String>,
             workload_network_vm_group: &models::WorkloadNetworkVmGroup,
         ) -> create_vm_group::Builder {
-            create_vm_group::Builder { client: self.0.clone() }
+            create_vm_group::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                vm_group_id: vm_group_id.into(),
+                workload_network_vm_group: workload_network_vm_group.into(),
+            }
         }
         pub fn update_vm_group(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            vm_group_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            vm_group_id: impl Into<String>,
             workload_network_vm_group: &models::WorkloadNetworkVmGroup,
         ) -> update_vm_group::Builder {
-            update_vm_group::Builder { client: self.0.clone() }
+            update_vm_group::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                vm_group_id: vm_group_id.into(),
+                workload_network_vm_group: workload_network_vm_group.into(),
+            }
         }
         pub fn delete_vm_group(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            vm_group_id: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            vm_group_id: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> delete_vm_group::Builder {
-            delete_vm_group::Builder { client: self.0.clone() }
+            delete_vm_group::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                vm_group_id: vm_group_id.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn list_virtual_machines(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> list_virtual_machines::Builder {
-            list_virtual_machines::Builder { client: self.0.clone() }
+            list_virtual_machines::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get_virtual_machine(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            virtual_machine_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            virtual_machine_id: impl Into<String>,
         ) -> get_virtual_machine::Builder {
-            get_virtual_machine::Builder { client: self.0.clone() }
+            get_virtual_machine::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                virtual_machine_id: virtual_machine_id.into(),
+            }
         }
         pub fn list_dns_services(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> list_dns_services::Builder {
-            list_dns_services::Builder { client: self.0.clone() }
+            list_dns_services::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get_dns_service(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dns_service_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dns_service_id: impl Into<String>,
         ) -> get_dns_service::Builder {
-            get_dns_service::Builder { client: self.0.clone() }
+            get_dns_service::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dns_service_id: dns_service_id.into(),
+            }
         }
         pub fn create_dns_service(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dns_service_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dns_service_id: impl Into<String>,
             workload_network_dns_service: &models::WorkloadNetworkDnsService,
         ) -> create_dns_service::Builder {
-            create_dns_service::Builder { client: self.0.clone() }
+            create_dns_service::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dns_service_id: dns_service_id.into(),
+                workload_network_dns_service: workload_network_dns_service.into(),
+            }
         }
         pub fn update_dns_service(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dns_service_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dns_service_id: impl Into<String>,
             workload_network_dns_service: &models::WorkloadNetworkDnsService,
         ) -> update_dns_service::Builder {
-            update_dns_service::Builder { client: self.0.clone() }
+            update_dns_service::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dns_service_id: dns_service_id.into(),
+                workload_network_dns_service: workload_network_dns_service.into(),
+            }
         }
         pub fn delete_dns_service(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            dns_service_id: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            dns_service_id: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> delete_dns_service::Builder {
-            delete_dns_service::Builder { client: self.0.clone() }
+            delete_dns_service::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                dns_service_id: dns_service_id.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn list_dns_zones(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> list_dns_zones::Builder {
-            list_dns_zones::Builder { client: self.0.clone() }
+            list_dns_zones::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
         pub fn get_dns_zone(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dns_zone_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dns_zone_id: impl Into<String>,
         ) -> get_dns_zone::Builder {
-            get_dns_zone::Builder { client: self.0.clone() }
+            get_dns_zone::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dns_zone_id: dns_zone_id.into(),
+            }
         }
         pub fn create_dns_zone(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dns_zone_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dns_zone_id: impl Into<String>,
             workload_network_dns_zone: &models::WorkloadNetworkDnsZone,
         ) -> create_dns_zone::Builder {
-            create_dns_zone::Builder { client: self.0.clone() }
+            create_dns_zone::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dns_zone_id: dns_zone_id.into(),
+                workload_network_dns_zone: workload_network_dns_zone.into(),
+            }
         }
         pub fn update_dns_zone(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            dns_zone_id: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            dns_zone_id: impl Into<String>,
             workload_network_dns_zone: &models::WorkloadNetworkDnsZone,
         ) -> update_dns_zone::Builder {
-            update_dns_zone::Builder { client: self.0.clone() }
+            update_dns_zone::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                dns_zone_id: dns_zone_id.into(),
+                workload_network_dns_zone: workload_network_dns_zone.into(),
+            }
         }
         pub fn delete_dns_zone(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            dns_zone_id: &str,
-            private_cloud_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            dns_zone_id: impl Into<String>,
+            private_cloud_name: impl Into<String>,
         ) -> delete_dns_zone::Builder {
-            delete_dns_zone::Builder { client: self.0.clone() }
+            delete_dns_zone::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                dns_zone_id: dns_zone_id.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
     }
     pub mod list_segments {
@@ -5412,30 +5834,65 @@ pub mod addons {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn list(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+            }
         }
-        pub fn get(&self, subscription_id: &str, resource_group_name: &str, private_cloud_name: &str, addon_name: &str) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            addon_name: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                addon_name: addon_name.into(),
+            }
         }
         pub fn create_or_update(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            addon_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            addon_name: impl Into<String>,
             addon: &models::Addon,
         ) -> create_or_update::Builder {
-            create_or_update::Builder { client: self.0.clone() }
+            create_or_update::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                addon_name: addon_name.into(),
+                addon: addon.into(),
+            }
         }
         pub fn delete(
             &self,
-            subscription_id: &str,
-            resource_group_name: &str,
-            private_cloud_name: &str,
-            addon_name: &str,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            private_cloud_name: impl Into<String>,
+            addon_name: impl Into<String>,
         ) -> delete::Builder {
-            delete::Builder { client: self.0.clone() }
+            delete::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                private_cloud_name: private_cloud_name.into(),
+                addon_name: addon_name.into(),
+            }
         }
     }
     pub mod list {
