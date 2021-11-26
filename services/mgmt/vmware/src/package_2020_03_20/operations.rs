@@ -272,6 +272,8 @@ pub mod locations {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Trial, Error>> {
@@ -344,6 +346,8 @@ pub mod locations {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) location: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Quota, Error>> {
@@ -504,6 +508,8 @@ pub mod private_clouds {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateCloudList, Error>> {
@@ -575,6 +581,7 @@ pub mod private_clouds {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateCloudList, Error>> {
@@ -646,6 +653,9 @@ pub mod private_clouds {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateCloud, Error>> {
@@ -722,6 +732,10 @@ pub mod private_clouds {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) private_cloud: models::PrivateCloud,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -805,6 +819,10 @@ pub mod private_clouds {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) private_cloud_update: models::PrivateCloudUpdate,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -889,6 +907,9 @@ pub mod private_clouds {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -957,6 +978,9 @@ pub mod private_clouds {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AdminCredentials, Error>> {
@@ -1112,6 +1136,9 @@ pub mod clusters {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ClusterList, Error>> {
@@ -1183,6 +1210,10 @@ pub mod clusters {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) cluster_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Cluster, Error>> {
@@ -1259,6 +1290,11 @@ pub mod clusters {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) cluster: models::Cluster,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -1342,6 +1378,11 @@ pub mod clusters {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) cluster_name: String,
+            pub(crate) cluster_update: models::ClusterUpdate,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -1426,6 +1467,10 @@ pub mod clusters {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) cluster_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -1560,6 +1605,9 @@ pub mod hcx_enterprise_sites {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::HcxEnterpriseSiteList, Error>> {
@@ -1631,6 +1679,10 @@ pub mod hcx_enterprise_sites {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) hcx_enterprise_site_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::HcxEnterpriseSite, Error>> {
@@ -1707,6 +1759,11 @@ pub mod hcx_enterprise_sites {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) hcx_enterprise_site_name: String,
+            pub(crate) hcx_enterprise_site: models::HcxEnterpriseSite,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -1790,6 +1847,10 @@ pub mod hcx_enterprise_sites {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) hcx_enterprise_site_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -1923,6 +1984,9 @@ pub mod authorizations {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
         }
         impl Builder {
             pub fn into_future(
@@ -1996,6 +2060,10 @@ pub mod authorizations {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) authorization_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ExpressRouteAuthorization, Error>> {
@@ -2072,6 +2140,11 @@ pub mod authorizations {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) authorization_name: String,
+            pub(crate) authorization: models::ExpressRouteAuthorization,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
@@ -2156,6 +2229,10 @@ pub mod authorizations {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) private_cloud_name: String,
+            pub(crate) authorization_name: String,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
