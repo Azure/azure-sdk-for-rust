@@ -1,7 +1,5 @@
-use crate::path;
-use autorust_openapi::{
-    AdditionalProperties, MsExamples, OpenAPI, Operation, Parameter, PathItem, Reference, ReferenceOr, Response, Schema, StatusCode,
-};
+use crate::{codegen::{TypeName, get_type_name_for_schema, get_type_name_for_schema_ref}, path};
+use autorust_openapi::{AdditionalProperties, CollectionFormat, DataType, MsExamples, OpenAPI, Operation, Parameter, ParameterType, PathItem, Reference, ReferenceOr, Response, Schema, StatusCode};
 use heck::SnakeCase;
 use indexmap::{IndexMap, IndexSet};
 use std::{
@@ -216,10 +214,10 @@ impl Spec {
         }
     }
 
-    fn resolve_parameters(&self, doc_file: &Path, parameters: &[ReferenceOr<Parameter>]) -> Result<Vec<Parameter>> {
+    fn resolve_parameters(&self, doc_file: &Path, parameters: &[ReferenceOr<Parameter>]) -> Result<Vec<WebParameter>> {
         let mut resolved = Vec::new();
         for param in parameters {
-            resolved.push(self.resolve_parameter(doc_file, param)?);
+            resolved.push(WebParameter(self.resolve_parameter(doc_file, param)?));
         }
         Ok(resolved)
     }
@@ -278,6 +276,16 @@ pub enum Error {
     DeserializeYaml { source: serde_yaml::Error, path: PathBuf },
     #[error("DeserializeJson")]
     DeserializeJson { source: serde_json::Error, path: PathBuf },
+    #[error("TypeName {0}")]
+    TypeName (#[source] Box<crate::codegen::Error>),
+}
+
+impl Error {
+
+}
+
+impl Error {
+
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -412,13 +420,60 @@ pub struct WebOperation {
     pub id: Option<String>,
     pub path: String,
     pub verb: WebVerb,
-    parameters: Vec<Parameter>,
+    parameters: Vec<WebParameter>,
     pub responses: IndexMap<StatusCode, Response>,
     pub examples: MsExamples,
 }
 
+pub struct WebParameter(Parameter);
+
+impl WebParameter {
+    pub fn name(&self) -> &str {
+        self.0.name.as_str()
+    }
+
+    pub fn required(&self) -> bool {
+        self.0.required.unwrap_or(false)
+    }
+
+    pub fn is_bool(&self) -> bool {
+        matches!(self.0.common.type_, Some(DataType::Boolean))
+    }
+
+    pub fn collection_format(&self) -> &CollectionFormat {
+        self.0.collection_format.as_ref().unwrap_or(&CollectionFormat::Csv)
+    }
+
+    pub fn type_(&self) -> &ParameterType {
+        &self.0.in_
+    }
+
+    pub fn data_type(&self) -> &Option<DataType> {
+        &self.0.common.type_
+    }
+
+    pub fn is_array(&self) -> bool {
+        matches!(self.data_type(), Some(DataType::Array))
+    }
+
+    pub fn is_string(&self) -> bool {
+        matches!(self.data_type(), Some(DataType::String))
+    }
+
+    pub fn type_name(&self) -> Result<TypeName, Error> {
+        Ok(if let Some(_data_type) = self.data_type() {
+            get_type_name_for_schema(&self.0.common).map_err(|err| Error::TypeName(Box::new(err)))?
+        } else if let Some(schema) = &self.0.schema {
+            get_type_name_for_schema_ref(schema).map_err(|err| Error::TypeName(Box::new(err)))?
+        } else {
+            // eprintln!("WARN unknown param type name for {}", self.name());
+            TypeName::Value
+        })
+    }
+}
+
 impl WebOperation {
-    pub fn parameters(&self) -> Vec<&Parameter> {
+    pub fn parameters(&self) -> Vec<&WebParameter> {
         self.parameters.iter().collect()
     }
 

@@ -123,14 +123,6 @@ pub fn is_vec(ts: &TokenStream) -> bool {
     ts.to_string().starts_with("Vec <")
 }
 
-pub fn is_array(schema: &SchemaCommon) -> bool {
-    matches!(schema.type_, Some(DataType::Array))
-}
-
-pub fn is_string(schema: &SchemaCommon) -> bool {
-    matches!(schema.type_, Some(DataType::String))
-}
-
 pub fn get_schema_array_items(schema: &SchemaCommon) -> Result<&ReferenceOr<Schema>, Error> {
     schema.items.as_ref().as_ref().ok_or(Error::ArrayExpectedToHaveItems)
 }

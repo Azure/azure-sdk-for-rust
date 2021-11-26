@@ -1,12 +1,12 @@
 use crate::{
     codegen::{
         create_generated_by_header, enum_values_as_strings, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref,
-        is_array, is_basic_type, is_local_enum, is_local_struct, is_vec, require, Error,
+        is_basic_type, is_local_enum, is_local_struct, is_vec, require, Error,
     },
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec, CodeGen, PropertyName, ResolvedSchema,
 };
-use autorust_openapi::Reference;
+use autorust_openapi::{DataType, Reference, SchemaCommon};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -15,6 +15,10 @@ use std::{
     collections::HashSet,
     path::{Path, PathBuf},
 };
+
+fn is_array(schema: &SchemaCommon) -> bool {
+    matches!(schema.type_, Some(DataType::Array))
+}
 
 pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut file = TokenStream::new();

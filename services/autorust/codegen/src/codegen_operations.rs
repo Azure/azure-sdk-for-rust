@@ -1,14 +1,5 @@
-use crate::{
-    codegen::{create_generated_by_header, get_type_name_for_schema, get_type_name_for_schema_ref, is_array, is_string, require, Error},
-    codegen::{parse_params, PARAM_RE},
-    identifier::ident,
-    identifier::SnakeCaseIdent,
-    spec::{WebOperation, WebVerb},
-    status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
-    status_codes::{get_response_type_ident, get_status_code_ident},
-    CodeGen,
-};
-use autorust_openapi::{CollectionFormat, DataType, Parameter, ParameterType, Response};
+use crate::{CodeGen, codegen::{create_generated_by_header, get_type_name_for_schema_ref, require, Error}, codegen::{parse_params, PARAM_RE}, identifier::SnakeCaseIdent, identifier::ident, spec::{WebOperation, WebParameter, WebVerb}, status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response}, status_codes::{get_response_type_ident, get_status_code_ident}};
+use autorust_openapi::{CollectionFormat, ParameterType, Response};
 use heck::CamelCase;
 use heck::SnakeCase;
 use indexmap::IndexMap;
@@ -238,13 +229,13 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
     let fpath = format!("{{}}{}", &format_path(&operation.path));
 
     let parameters = operation.parameters();
-    let param_names: HashSet<_> = parameters.iter().map(|p| p.name.as_str()).collect();
+    let param_names: HashSet<_> = parameters.iter().map(|p| p.name()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
     if cg.spec.api_version().is_some() {
         skip.insert("api-version");
     }
-    let parameters: Vec<_> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name.as_str())).collect();
+    let parameters: Vec<_> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name())).collect();
 
     let fparams = create_function_params(&parameters)?;
 
@@ -289,24 +280,24 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
 
     let has_content_type_header = parameters
         .iter()
-        .any(|p| p.name.to_snake_case() == "content_type" && p.in_ == ParameterType::Header);
+        .any(|p| p.name().to_snake_case() == "content_type" && p.type_() == &ParameterType::Header);
 
     // params
     let mut has_body_parameter = false;
     for param in parameters {
-        let param_name = &param.name;
+        let param_name = param.name();
         let param_name_var = get_param_name(param)?;
-        let required = param.required.unwrap_or(false);
-        let is_bool = matches!(&param.common.type_, Some(DataType::Boolean));
-        match param.in_ {
+        let required = param.required();
+        let is_bool = param.is_bool();
+        match param.type_() {
             ParameterType::Path => {} // handled above
             ParameterType::Query => {
-                let is_array = is_array(&param.common);
+                let is_array = param.is_array();
                 let query_body = if is_array {
-                    let collection_format = param.collection_format.as_ref().unwrap_or(&CollectionFormat::Csv);
+                    let collection_format = param.collection_format();
                     match collection_format {
                         CollectionFormat::Multi => Some(
-                            if is_string(&param.common){
+                            if param.is_string(){
                                 quote! {
                                     for value in #param_name_var {
                                         url.query_pairs_mut().append_pair(#param_name, value);
@@ -326,7 +317,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                         CollectionFormat::Pipes => None,
                     }
                 } else {
-                    Some(if is_string(&param.common) {
+                    Some(if param.is_string() {
                         quote! {
                             url.query_pairs_mut().append_pair(#param_name, #param_name_var);
                         }
@@ -702,7 +693,7 @@ fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-fn create_function_params(parameters: &[&Parameter]) -> Result<TokenStream, Error> {
+fn create_function_params(parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters {
         let name = get_param_name(param)?;
@@ -714,21 +705,14 @@ fn create_function_params(parameters: &[&Parameter]) -> Result<TokenStream, Erro
     Ok(quote! { #(#params),* })
 }
 
-fn get_param_name(param: &Parameter) -> Result<TokenStream, Error> {
-    param.name.to_snake_case_ident().map_err(Error::ParamName)
+fn get_param_name(param: &WebParameter) -> Result<TokenStream, Error> {
+    param.name().to_snake_case_ident().map_err(Error::ParamName)
 }
 
-fn get_param_type(param: &Parameter) -> Result<TokenStream, Error> {
-    let is_required = param.required.unwrap_or(false);
-    let is_array = is_array(&param.common);
-    let tp = if let Some(_param_type) = &param.common.type_ {
-        get_type_name_for_schema(&param.common)?.to_token_stream(true, true)?
-    } else if let Some(schema) = &param.schema {
-        get_type_name_for_schema_ref(schema)?.to_token_stream(true, true)?
-    } else {
-        eprintln!("WARN unknown param type for {}", &param.name);
-        quote! { &serde_json::Value }
-    };
+fn get_param_type(param: &WebParameter) -> Result<TokenStream, Error> {
+    let is_required = param.required();
+    let is_array = param.is_array();
+    let tp = param.type_name()?.to_token_stream(true, true)?;
     Ok(require(is_required || is_array, tp))
 }
 
