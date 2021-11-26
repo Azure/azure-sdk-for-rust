@@ -610,13 +610,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
     }
 
     let function_code = create_builder_instance_code(&fname, &parameters)?;
-
-    let builder_code = quote! {
-        #[derive(Clone)]
-        pub struct Builder {
-            pub(crate) client: crate::operations::Client,
-        }
-    };
+    let builder_code = create_builder_struct_code(&parameters)?;
 
     let module_code = quote! {
 
@@ -723,6 +717,27 @@ fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter
             #fname::Builder {
                 #(#params),*
             }
+        }
+    })
+}
+
+fn create_builder_struct_code(parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
+    let mut params: Vec<TokenStream> = Vec::new();
+    params.push(quote! { pub(crate) client: crate::operations::Client });
+    for param in parameters.iter().filter(|p| p.required()) {
+        let name = get_param_name(param)?;
+        let tp = get_param_type(param, false)?;
+        params.push(quote! { pub(crate) #name: #tp });
+    }
+    for param in parameters.iter().filter(|p| !p.required()) {
+        let name = get_param_name(param)?;
+        let tp = get_param_type(param, false)?;
+        params.push(quote! { pub(crate) #name: #tp });
+    }
+    Ok(quote! {
+        #[derive(Clone)]
+        pub struct Builder {
+            #(#params),*
         }
     })
 }
