@@ -192,7 +192,7 @@ impl TypeName {
                     idt
                 };
                 match as_ref {
-                    true => quote! { &#idt },
+                    true => quote! { impl Into<#idt> },
                     false => idt,
                 }
             }
