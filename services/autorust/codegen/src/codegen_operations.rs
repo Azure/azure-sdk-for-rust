@@ -106,12 +106,8 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
                 let mut request = request.into();
                 self.pipeline.send(&mut context, &mut request).await
             }
-        }
-
-        impl Client {
-            pub fn new(endpoint: &str, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: &[&str]) -> Self {
-                let endpoint = endpoint.to_owned();
-                let scopes: Vec<String> = scopes.iter().map(|scope| scope.deref().to_owned()).collect();
+            pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+                let endpoint = endpoint.into();
                 let pipeline = azure_core::pipeline::Pipeline::new(
                     option_env!("CARGO_PKG_NAME"),
                     option_env!("CARGO_PKG_VERSION"),
@@ -231,7 +227,13 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
 
     let params = parse_params(&operation.path);
     // println!("path params {:#?}", params);
-    let params: Result<Vec<_>, Error> = params.iter().map(|s| s.to_snake_case_ident().map_err(Error::ParamName)).collect();
+    let params: Result<Vec<_>, Error> = params
+        .iter()
+        .map(|s| {
+            let param = s.to_snake_case_ident().map_err(Error::ParamName)?;
+            Ok(quote! { &self.#param })
+        })
+        .collect();
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
@@ -303,13 +305,13 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                         CollectionFormat::Multi => Some(
                             if param.is_string(){
                                 quote! {
-                                    for value in #param_name_var {
+                                    for value in &self.#param_name_var {
                                         url.query_pairs_mut().append_pair(#param_name, value);
                                     }
                                 }
                             } else {
                                 quote! {
-                                    for value in #param_name_var {
+                                    for value in &self.#param_name_var {
                                         url.query_pairs_mut().append_pair(#param_name, value.to_string().as_str());
                                     }
                                 }
@@ -323,11 +325,11 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 } else {
                     Some(if param.is_string() {
                         quote! {
-                            url.query_pairs_mut().append_pair(#param_name, #param_name_var);
+                            url.query_pairs_mut().append_pair(#param_name, &self.#param_name_var);
                         }
                     } else {
                         quote! {
-                            url.query_pairs_mut().append_pair(#param_name, #param_name_var.to_string().as_str());
+                            url.query_pairs_mut().append_pair(#param_name, &self.#param_name_var.to_string());
                         }
                     })
                 };
@@ -336,7 +338,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                         ts_request_builder.extend(query_body);
                     } else {
                         ts_request_builder.extend(quote! {
-                            if let Some(#param_name_var) = #param_name_var {
+                            if let Some(#param_name_var) = &self.#param_name_var {
                                 #query_body
                             }
                         });
@@ -348,22 +350,22 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 if required {
                     if is_bool {
                         ts_request_builder.extend(quote! {
-                            req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                            req_builder = req_builder.header(#param_name, &self.#param_name_var .to_string());
                         });
                     } else {
                         ts_request_builder.extend(quote! {
-                            req_builder = req_builder.header(#param_name, #param_name_var);
+                            req_builder = req_builder.header(#param_name, &self.#param_name_var);
                         });
                     }
                 } else if is_bool {
                     ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
+                        if let Some(#param_name_var) = &self.#param_name_var {
                             req_builder = req_builder.header(#param_name, #param_name_var .to_string());
                         }
                     });
                 } else {
                     ts_request_builder.extend(quote! {
-                        if let Some(#param_name_var) = #param_name_var {
+                        if let Some(#param_name_var) = &self.#param_name_var {
                             req_builder = req_builder.header(#param_name, #param_name_var);
                         }
                     });
@@ -383,12 +385,12 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 if required {
                     ts_request_builder.extend(quote! {
                         #set_content_type
-                        let req_body = azure_core::to_json(#param_name_var).map_err(Error::Serialize)?;
+                        let req_body = azure_core::to_json(&self.#param_name_var).map_err(Error::Serialize)?;
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         let req_body =
-                            if let Some(#param_name_var) = #param_name_var {
+                            if let Some(#param_name_var) = &self.#param_name_var {
                                 #set_content_type
                                 azure_core::to_json(#param_name_var).map_err(Error::Serialize)?
                             } else {
@@ -404,11 +406,11 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 // https://github.com/Azure/azure-sdk-for-rust/issues/500
                 // if required {
                 //     cargo run --example gen_svc --release
-                //         req_builder = req_builder.form(#param_name_var);
+                //         req_builder = req_builder.form(&self.#param_name_var);
                 //     });
                 // } else {
                 //     ts_request_builder.extend(quote! {
-                //         if let Some(#param_name_var) = #param_name_var {
+                //         if let Some(#param_name_var) = &self.#param_name_var {
                 //             req_builder = req_builder.form(#param_name_var);
                 //         }
                 //     });
@@ -525,14 +527,14 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                                 http::StatusCode::#status_code_name => {
                                     let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                                     #rsp_value
-                                    Ok(#fname::Response::#response_type_name(rsp_value))
+                                    Ok(Response::#response_type_name(rsp_value))
                                 }
                             });
                         }
                         None => {
                             match_status.extend(quote! {
                                 http::StatusCode::#status_code_name => {
-                                    Ok(#fname::Response::#response_type_name)
+                                    Ok(Response::#response_type_name)
                                 }
                             });
                         }
@@ -675,7 +677,7 @@ fn create_rsp_value(tp: Option<&TokenStream>) -> TokenStream {
         }
     } else {
         quote! {
-            let rsp_value: #tp = serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+            let rsp_value: #tp = serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
         }
     }
 }
