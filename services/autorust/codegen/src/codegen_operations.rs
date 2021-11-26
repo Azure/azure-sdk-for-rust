@@ -76,12 +76,14 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
                 }
             }
 
-            pub fn endpoint(mut self, endpoint: impl Into<String>) {
+            pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
                 self.endpoint = Some(endpoint.into());
+                self
             }
 
-            pub fn scopes(mut self, scopes: &[&str]) {
+            pub fn scopes(mut self, scopes: &[&str]) -> Self {
                 self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+                self
             }
 
             pub fn build(self) -> Client {
@@ -312,7 +314,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                             } else {
                                 quote! {
                                     for value in &self.#param_name_var {
-                                        url.query_pairs_mut().append_pair(#param_name, value.to_string().as_str());
+                                        url.query_pairs_mut().append_pair(#param_name, &value.to_string());
                                     }
                                 }
                             }
@@ -325,11 +327,11 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 } else {
                     Some(if param.is_string() {
                         quote! {
-                            url.query_pairs_mut().append_pair(#param_name, &self.#param_name_var);
+                            url.query_pairs_mut().append_pair(#param_name, #param_name_var);
                         }
                     } else {
                         quote! {
-                            url.query_pairs_mut().append_pair(#param_name, &self.#param_name_var.to_string());
+                            url.query_pairs_mut().append_pair(#param_name, &#param_name_var.to_string());
                         }
                     })
                 };
