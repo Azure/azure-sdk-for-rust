@@ -425,7 +425,7 @@ pub mod private_clouds {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
-            private_cloud: &models::PrivateCloud,
+            private_cloud: impl Into<models::PrivateCloud>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -440,7 +440,7 @@ pub mod private_clouds {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
-            private_cloud_update: &models::PrivateCloudUpdate,
+            private_cloud_update: impl Into<models::PrivateCloudUpdate>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1041,7 +1041,7 @@ pub mod clusters {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             cluster_name: impl Into<String>,
-            cluster: &models::Cluster,
+            cluster: impl Into<models::Cluster>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -1058,7 +1058,7 @@ pub mod clusters {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             cluster_name: impl Into<String>,
-            cluster_update: &models::ClusterUpdate,
+            cluster_update: impl Into<models::ClusterUpdate>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1506,7 +1506,7 @@ pub mod hcx_enterprise_sites {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             hcx_enterprise_site_name: impl Into<String>,
-            hcx_enterprise_site: &models::HcxEnterpriseSite,
+            hcx_enterprise_site: impl Into<models::HcxEnterpriseSite>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -1869,7 +1869,7 @@ pub mod authorizations {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             authorization_name: impl Into<String>,
-            authorization: &models::ExpressRouteAuthorization,
+            authorization: impl Into<models::ExpressRouteAuthorization>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),

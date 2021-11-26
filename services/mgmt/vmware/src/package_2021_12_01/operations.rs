@@ -601,7 +601,7 @@ pub mod private_clouds {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
-            private_cloud: &models::PrivateCloud,
+            private_cloud: impl Into<models::PrivateCloud>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -616,7 +616,7 @@ pub mod private_clouds {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
-            private_cloud_update: &models::PrivateCloudUpdate,
+            private_cloud_update: impl Into<models::PrivateCloudUpdate>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1389,7 +1389,7 @@ pub mod clusters {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             cluster_name: impl Into<String>,
-            cluster: &models::Cluster,
+            cluster: impl Into<models::Cluster>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -1406,7 +1406,7 @@ pub mod clusters {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             cluster_name: impl Into<String>,
-            cluster_update: &models::ClusterUpdate,
+            cluster_update: impl Into<models::ClusterUpdate>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1859,7 +1859,7 @@ pub mod datastores {
             private_cloud_name: impl Into<String>,
             cluster_name: impl Into<String>,
             datastore_name: impl Into<String>,
-            datastore: &models::Datastore,
+            datastore: impl Into<models::Datastore>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -2227,7 +2227,7 @@ pub mod hcx_enterprise_sites {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             hcx_enterprise_site_name: impl Into<String>,
-            hcx_enterprise_site: &models::HcxEnterpriseSite,
+            hcx_enterprise_site: impl Into<models::HcxEnterpriseSite>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -2590,7 +2590,7 @@ pub mod authorizations {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             authorization_name: impl Into<String>,
-            authorization: &models::ExpressRouteAuthorization,
+            authorization: impl Into<models::ExpressRouteAuthorization>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -2957,7 +2957,7 @@ pub mod global_reach_connections {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             global_reach_connection_name: impl Into<String>,
-            global_reach_connection: &models::GlobalReachConnection,
+            global_reach_connection: impl Into<models::GlobalReachConnection>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -3322,7 +3322,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             segment_id: impl Into<String>,
-            workload_network_segment: &models::WorkloadNetworkSegment,
+            workload_network_segment: impl Into<models::WorkloadNetworkSegment>,
         ) -> create_segments::Builder {
             create_segments::Builder {
                 client: self.0.clone(),
@@ -3339,7 +3339,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             segment_id: impl Into<String>,
-            workload_network_segment: &models::WorkloadNetworkSegment,
+            workload_network_segment: impl Into<models::WorkloadNetworkSegment>,
         ) -> update_segments::Builder {
             update_segments::Builder {
                 client: self.0.clone(),
@@ -3399,7 +3399,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             dhcp_id: impl Into<String>,
-            workload_network_dhcp: &models::WorkloadNetworkDhcp,
+            workload_network_dhcp: impl Into<models::WorkloadNetworkDhcp>,
         ) -> create_dhcp::Builder {
             create_dhcp::Builder {
                 client: self.0.clone(),
@@ -3416,7 +3416,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             dhcp_id: impl Into<String>,
-            workload_network_dhcp: &models::WorkloadNetworkDhcp,
+            workload_network_dhcp: impl Into<models::WorkloadNetworkDhcp>,
         ) -> update_dhcp::Builder {
             update_dhcp::Builder {
                 client: self.0.clone(),
@@ -3504,7 +3504,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             port_mirroring_id: impl Into<String>,
-            workload_network_port_mirroring: &models::WorkloadNetworkPortMirroring,
+            workload_network_port_mirroring: impl Into<models::WorkloadNetworkPortMirroring>,
         ) -> create_port_mirroring::Builder {
             create_port_mirroring::Builder {
                 client: self.0.clone(),
@@ -3521,7 +3521,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             port_mirroring_id: impl Into<String>,
-            workload_network_port_mirroring: &models::WorkloadNetworkPortMirroring,
+            workload_network_port_mirroring: impl Into<models::WorkloadNetworkPortMirroring>,
         ) -> update_port_mirroring::Builder {
             update_port_mirroring::Builder {
                 client: self.0.clone(),
@@ -3581,7 +3581,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             vm_group_id: impl Into<String>,
-            workload_network_vm_group: &models::WorkloadNetworkVmGroup,
+            workload_network_vm_group: impl Into<models::WorkloadNetworkVmGroup>,
         ) -> create_vm_group::Builder {
             create_vm_group::Builder {
                 client: self.0.clone(),
@@ -3598,7 +3598,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             vm_group_id: impl Into<String>,
-            workload_network_vm_group: &models::WorkloadNetworkVmGroup,
+            workload_network_vm_group: impl Into<models::WorkloadNetworkVmGroup>,
         ) -> update_vm_group::Builder {
             update_vm_group::Builder {
                 client: self.0.clone(),
@@ -3686,7 +3686,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             dns_service_id: impl Into<String>,
-            workload_network_dns_service: &models::WorkloadNetworkDnsService,
+            workload_network_dns_service: impl Into<models::WorkloadNetworkDnsService>,
         ) -> create_dns_service::Builder {
             create_dns_service::Builder {
                 client: self.0.clone(),
@@ -3703,7 +3703,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             dns_service_id: impl Into<String>,
-            workload_network_dns_service: &models::WorkloadNetworkDnsService,
+            workload_network_dns_service: impl Into<models::WorkloadNetworkDnsService>,
         ) -> update_dns_service::Builder {
             update_dns_service::Builder {
                 client: self.0.clone(),
@@ -3763,7 +3763,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             dns_zone_id: impl Into<String>,
-            workload_network_dns_zone: &models::WorkloadNetworkDnsZone,
+            workload_network_dns_zone: impl Into<models::WorkloadNetworkDnsZone>,
         ) -> create_dns_zone::Builder {
             create_dns_zone::Builder {
                 client: self.0.clone(),
@@ -3780,7 +3780,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             dns_zone_id: impl Into<String>,
-            workload_network_dns_zone: &models::WorkloadNetworkDnsZone,
+            workload_network_dns_zone: impl Into<models::WorkloadNetworkDnsZone>,
         ) -> update_dns_zone::Builder {
             update_dns_zone::Builder {
                 client: self.0.clone(),
@@ -3840,7 +3840,7 @@ pub mod workload_networks {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             public_ip_id: impl Into<String>,
-            workload_network_public_ip: &models::WorkloadNetworkPublicIp,
+            workload_network_public_ip: impl Into<models::WorkloadNetworkPublicIp>,
         ) -> create_public_ip::Builder {
             create_public_ip::Builder {
                 client: self.0.clone(),
@@ -6672,7 +6672,7 @@ pub mod cloud_links {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             cloud_link_name: impl Into<String>,
-            cloud_link: &models::CloudLink,
+            cloud_link: impl Into<models::CloudLink>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -7037,7 +7037,7 @@ pub mod addons {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             addon_name: impl Into<String>,
-            addon: &models::Addon,
+            addon: impl Into<models::Addon>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -7407,7 +7407,7 @@ pub mod virtual_machines {
             private_cloud_name: impl Into<String>,
             cluster_name: impl Into<String>,
             virtual_machine_id: impl Into<String>,
-            restrict_movement: &models::VirtualMachineRestrictMovement,
+            restrict_movement: impl Into<models::VirtualMachineRestrictMovement>,
         ) -> restrict_movement::Builder {
             restrict_movement::Builder {
                 client: self.0.clone(),
@@ -7670,7 +7670,7 @@ pub mod placement_policies {
             private_cloud_name: impl Into<String>,
             cluster_name: impl Into<String>,
             placement_policy_name: impl Into<String>,
-            placement_policy: &models::PlacementPolicy,
+            placement_policy: impl Into<models::PlacementPolicy>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -7689,7 +7689,7 @@ pub mod placement_policies {
             private_cloud_name: impl Into<String>,
             cluster_name: impl Into<String>,
             placement_policy_name: impl Into<String>,
-            placement_policy_update: &models::PlacementPolicyUpdate,
+            placement_policy_update: impl Into<models::PlacementPolicyUpdate>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -8521,7 +8521,7 @@ pub mod script_executions {
             resource_group_name: impl Into<String>,
             private_cloud_name: impl Into<String>,
             script_execution_name: impl Into<String>,
-            script_execution: &models::ScriptExecution,
+            script_execution: impl Into<models::ScriptExecution>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
