@@ -52,11 +52,8 @@ impl Client {
         let mut request = request.into();
         self.pipeline.send(&mut context, &mut request).await
     }
-}
-impl Client {
-    pub fn new(endpoint: &str, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: &[&str]) -> Self {
-        let endpoint = endpoint.to_owned();
-        let scopes: Vec<String> = scopes.iter().map(|scope| scope.deref().to_owned()).collect();
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
         let pipeline = azure_core::pipeline::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -376,13 +373,13 @@ pub mod operations {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::OperationList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -456,7 +453,7 @@ pub mod locations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.AVS/locations/{}/checkTrialAvailability",
-                        &self.client.endpoint, subscription_id, location
+                        &self.client.endpoint, &self.subscription_id, &self.location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -478,13 +475,13 @@ pub mod locations {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Trial =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -530,7 +527,7 @@ pub mod locations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.AVS/locations/{}/checkQuotaAvailability",
-                        &self.client.endpoint, subscription_id, location
+                        &self.client.endpoint, &self.subscription_id, &self.location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -552,13 +549,13 @@ pub mod locations {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Quota =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -718,7 +715,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds",
-                        &self.client.endpoint, subscription_id, resource_group_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -739,13 +736,13 @@ pub mod private_clouds {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateCloudList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -790,7 +787,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.AVS/privateClouds",
-                        &self.client.endpoint, subscription_id
+                        &self.client.endpoint, &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -811,13 +808,13 @@ pub mod private_clouds {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateCloudList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -864,7 +861,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -885,13 +882,13 @@ pub mod private_clouds {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateCloud =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -944,7 +941,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -957,7 +954,7 @@ pub mod private_clouds {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(private_cloud).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.private_cloud).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -966,19 +963,19 @@ pub mod private_clouds {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateCloud =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateCloud =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1031,7 +1028,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1044,7 +1041,7 @@ pub mod private_clouds {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(private_cloud_update).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.private_cloud_update).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1053,19 +1050,19 @@ pub mod private_clouds {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateCloud =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateCloud =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1118,7 +1115,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1136,13 +1133,13 @@ pub mod private_clouds {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1194,7 +1191,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/rotateVcenterPassword",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1213,12 +1210,12 @@ pub mod private_clouds {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(rotate_vcenter_password::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(rotate_vcenter_password::Response::NoContent204),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1270,7 +1267,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/rotateNsxtPassword",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1289,12 +1286,12 @@ pub mod private_clouds {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::ACCEPTED => Ok(rotate_nsxt_password::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(rotate_nsxt_password::Response::NoContent204),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1341,7 +1338,7 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/listAdminCredentials",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1363,13 +1360,13 @@ pub mod private_clouds {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::AdminCredentials =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1499,7 +1496,7 @@ pub mod clusters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1520,13 +1517,13 @@ pub mod clusters {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ClusterList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1574,7 +1571,11 @@ pub mod clusters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1595,13 +1596,13 @@ pub mod clusters {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Cluster =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1655,7 +1656,11 @@ pub mod clusters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1668,7 +1673,7 @@ pub mod clusters {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(cluster).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.cluster).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1677,19 +1682,19 @@ pub mod clusters {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Cluster =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Cluster =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1743,7 +1748,11 @@ pub mod clusters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1756,7 +1765,7 @@ pub mod clusters {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(cluster_update).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.cluster_update).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1765,19 +1774,19 @@ pub mod clusters {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Cluster =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Cluster =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1831,7 +1840,11 @@ pub mod clusters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1849,13 +1862,13 @@ pub mod clusters {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -1977,7 +1990,11 @@ pub mod datastores {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/datastores",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1998,13 +2015,13 @@ pub mod datastores {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::DatastoreList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2053,7 +2070,12 @@ pub mod datastores {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/datastores/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name, datastore_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name,
+                        &self.datastore_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2074,13 +2096,13 @@ pub mod datastores {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Datastore =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2135,7 +2157,12 @@ pub mod datastores {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/datastores/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name, datastore_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name,
+                        &self.datastore_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2148,7 +2175,7 @@ pub mod datastores {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(datastore).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.datastore).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2157,19 +2184,19 @@ pub mod datastores {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Datastore =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Datastore =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2224,7 +2251,12 @@ pub mod datastores {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/datastores/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name, datastore_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name,
+                        &self.datastore_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2242,13 +2274,13 @@ pub mod datastores {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2361,7 +2393,7 @@ pub mod hcx_enterprise_sites {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/hcxEnterpriseSites",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2382,13 +2414,13 @@ pub mod hcx_enterprise_sites {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::HcxEnterpriseSiteList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2436,7 +2468,11 @@ pub mod hcx_enterprise_sites {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/hcxEnterpriseSites/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, hcx_enterprise_site_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.hcx_enterprise_site_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2457,13 +2493,13 @@ pub mod hcx_enterprise_sites {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::HcxEnterpriseSite =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2517,7 +2553,11 @@ pub mod hcx_enterprise_sites {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/hcxEnterpriseSites/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, hcx_enterprise_site_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.hcx_enterprise_site_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2530,7 +2570,7 @@ pub mod hcx_enterprise_sites {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(hcx_enterprise_site).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.hcx_enterprise_site).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2539,19 +2579,19 @@ pub mod hcx_enterprise_sites {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::HcxEnterpriseSite =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::HcxEnterpriseSite =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2604,7 +2644,11 @@ pub mod hcx_enterprise_sites {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/hcxEnterpriseSites/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, hcx_enterprise_site_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.hcx_enterprise_site_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2622,12 +2666,12 @@ pub mod hcx_enterprise_sites {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2742,7 +2786,7 @@ pub mod authorizations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/authorizations",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2763,13 +2807,13 @@ pub mod authorizations {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ExpressRouteAuthorizationList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2817,7 +2861,11 @@ pub mod authorizations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/authorizations/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, authorization_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.authorization_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2838,13 +2886,13 @@ pub mod authorizations {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ExpressRouteAuthorization =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2898,7 +2946,11 @@ pub mod authorizations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/authorizations/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, authorization_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.authorization_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2911,7 +2963,7 @@ pub mod authorizations {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(authorization).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.authorization).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2920,19 +2972,19 @@ pub mod authorizations {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ExpressRouteAuthorization =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ExpressRouteAuthorization =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -2986,7 +3038,11 @@ pub mod authorizations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/authorizations/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, authorization_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.authorization_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3004,13 +3060,13 @@ pub mod authorizations {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -3123,7 +3179,7 @@ pub mod global_reach_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/globalReachConnections",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3144,13 +3200,13 @@ pub mod global_reach_connections {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::GlobalReachConnectionList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -3198,7 +3254,11 @@ pub mod global_reach_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/globalReachConnections/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, global_reach_connection_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.global_reach_connection_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3219,13 +3279,13 @@ pub mod global_reach_connections {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::GlobalReachConnection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -3279,7 +3339,11 @@ pub mod global_reach_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/globalReachConnections/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, global_reach_connection_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.global_reach_connection_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3292,7 +3356,7 @@ pub mod global_reach_connections {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(global_reach_connection).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.global_reach_connection).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3301,19 +3365,19 @@ pub mod global_reach_connections {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::GlobalReachConnection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::GlobalReachConnection =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -3367,7 +3431,11 @@ pub mod global_reach_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/globalReachConnections/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, global_reach_connection_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.global_reach_connection_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3385,13 +3453,13 @@ pub mod global_reach_connections {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4024,7 +4092,7 @@ pub mod workload_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4045,13 +4113,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkSegmentsList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4097,7 +4165,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkSegment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , segment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . segment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4117,13 +4185,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkSegment =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4175,7 +4243,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , segment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . segment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4187,7 +4255,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_segment).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_segment).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4196,19 +4264,19 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkSegment =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_segments::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkSegment =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_segments::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4260,7 +4328,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , segment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . segment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -4272,7 +4340,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_segment).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_segment).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4281,14 +4349,14 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkSegment =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update_segments::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
-                        http::StatusCode::ACCEPTED => Ok(update_segments::Response::Accepted202),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4340,7 +4408,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , segment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/segments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . segment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4357,13 +4425,13 @@ pub mod workload_networks {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete_segment::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete_segment::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete_segment::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4408,7 +4476,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkDhcpList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4428,13 +4496,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDhcpList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4480,7 +4548,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkDhcp, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dhcp_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dhcp_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4500,13 +4568,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDhcp =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4558,7 +4626,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dhcp_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dhcp_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4570,7 +4638,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_dhcp).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_dhcp).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4579,19 +4647,19 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDhcp =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_dhcp::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDhcp =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_dhcp::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4643,7 +4711,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dhcp_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dhcp_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -4655,7 +4723,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_dhcp).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_dhcp).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4664,14 +4732,14 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDhcp =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update_dhcp::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
-                        http::StatusCode::ACCEPTED => Ok(update_dhcp::Response::Accepted202),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4723,7 +4791,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dhcp_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dhcpConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dhcp_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4740,13 +4808,13 @@ pub mod workload_networks {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete_dhcp::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete_dhcp::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete_dhcp::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4795,7 +4863,7 @@ pub mod workload_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/gateways",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4816,13 +4884,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkGatewayList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4868,7 +4936,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkGateway, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/gateways/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , gateway_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/gateways/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . gateway_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4888,13 +4956,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkGateway =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -4941,7 +5009,7 @@ pub mod workload_networks {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkPortMirroringList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4961,13 +5029,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPortMirroringList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5015,7 +5083,7 @@ pub mod workload_networks {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkPortMirroring, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , port_mirroring_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . port_mirroring_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5035,13 +5103,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPortMirroring =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5093,7 +5161,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , port_mirroring_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . port_mirroring_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -5105,7 +5173,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_port_mirroring).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_port_mirroring).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5114,19 +5182,19 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPortMirroring =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_port_mirroring::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPortMirroring =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_port_mirroring::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5178,7 +5246,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , port_mirroring_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . port_mirroring_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -5190,7 +5258,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_port_mirroring).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_port_mirroring).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5199,14 +5267,14 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPortMirroring =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update_port_mirroring::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
-                        http::StatusCode::ACCEPTED => Ok(update_port_mirroring::Response::Accepted202),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5258,7 +5326,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , port_mirroring_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/portMirroringProfiles/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . port_mirroring_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -5275,13 +5343,13 @@ pub mod workload_networks {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete_port_mirroring::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete_port_mirroring::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete_port_mirroring::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5330,7 +5398,7 @@ pub mod workload_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5351,13 +5419,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkVmGroupsList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5403,7 +5471,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkVmGroup, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , vm_group_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . vm_group_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5423,13 +5491,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkVmGroup =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5481,7 +5549,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , vm_group_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . vm_group_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -5493,7 +5561,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_vm_group).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_vm_group).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5502,19 +5570,19 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkVmGroup =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_vm_group::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkVmGroup =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_vm_group::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5566,7 +5634,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , vm_group_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . vm_group_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -5578,7 +5646,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_vm_group).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_vm_group).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5587,14 +5655,14 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkVmGroup =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update_vm_group::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
-                        http::StatusCode::ACCEPTED => Ok(update_vm_group::Response::Accepted202),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5646,7 +5714,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , vm_group_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/vmGroups/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . vm_group_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -5663,13 +5731,13 @@ pub mod workload_networks {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete_vm_group::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete_vm_group::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete_vm_group::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5716,7 +5784,7 @@ pub mod workload_networks {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkVirtualMachinesList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/virtualMachines" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/virtualMachines" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5736,13 +5804,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkVirtualMachinesList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5790,7 +5858,7 @@ pub mod workload_networks {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkVirtualMachine, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/virtualMachines/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , virtual_machine_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/virtualMachines/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . virtual_machine_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5810,13 +5878,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkVirtualMachine =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5863,7 +5931,7 @@ pub mod workload_networks {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkDnsServicesList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5883,13 +5951,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsServicesList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -5935,7 +6003,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkDnsService, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dns_service_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dns_service_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5955,13 +6023,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsService =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6013,7 +6081,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dns_service_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dns_service_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -6025,7 +6093,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_dns_service).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_dns_service).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6034,19 +6102,19 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsService =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_dns_service::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsService =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_dns_service::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6098,7 +6166,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dns_service_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dns_service_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -6110,7 +6178,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_dns_service).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_dns_service).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6119,14 +6187,14 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsService =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update_dns_service::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
-                        http::StatusCode::ACCEPTED => Ok(update_dns_service::Response::Accepted202),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6178,7 +6246,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dns_service_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsServices/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dns_service_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -6195,13 +6263,13 @@ pub mod workload_networks {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete_dns_service::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete_dns_service::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete_dns_service::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6250,7 +6318,7 @@ pub mod workload_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6271,13 +6339,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsZonesList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6323,7 +6391,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkDnsZone, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dns_zone_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dns_zone_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -6343,13 +6411,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsZone =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6401,7 +6469,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dns_zone_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dns_zone_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -6413,7 +6481,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_dns_zone).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_dns_zone).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6422,19 +6490,19 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsZone =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_dns_zone::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsZone =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_dns_zone::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6486,7 +6554,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dns_zone_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dns_zone_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -6498,7 +6566,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_dns_zone).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_dns_zone).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6507,14 +6575,14 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkDnsZone =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update_dns_zone::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
-                        http::StatusCode::ACCEPTED => Ok(update_dns_zone::Response::Accepted202),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6566,7 +6634,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , dns_zone_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/dnsZones/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . dns_zone_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -6583,13 +6651,13 @@ pub mod workload_networks {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete_dns_zone::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete_dns_zone::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete_dns_zone::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6638,7 +6706,7 @@ pub mod workload_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/publicIPs",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6659,13 +6727,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPublicIPsList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6711,7 +6779,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadNetworkPublicIp, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/publicIPs/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , public_ip_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/publicIPs/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . public_ip_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -6731,13 +6799,13 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPublicIp =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6789,7 +6857,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/publicIPs/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , public_ip_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/publicIPs/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . public_ip_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -6801,7 +6869,7 @@ pub mod workload_networks {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(workload_network_public_ip).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.workload_network_public_ip).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6810,19 +6878,19 @@ pub mod workload_networks {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPublicIp =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_public_ip::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::WorkloadNetworkPublicIp =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_public_ip::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -6874,7 +6942,7 @@ pub mod workload_networks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/publicIPs/{}" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , public_ip_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/workloadNetworks/default/publicIPs/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . public_ip_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -6891,13 +6959,13 @@ pub mod workload_networks {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete_public_ip::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete_public_ip::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete_public_ip::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7010,7 +7078,7 @@ pub mod cloud_links {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/cloudLinks",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7031,13 +7099,13 @@ pub mod cloud_links {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudLinkList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7085,7 +7153,11 @@ pub mod cloud_links {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/cloudLinks/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cloud_link_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cloud_link_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7106,13 +7178,13 @@ pub mod cloud_links {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudLink =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7166,7 +7238,11 @@ pub mod cloud_links {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/cloudLinks/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cloud_link_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cloud_link_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7179,7 +7255,7 @@ pub mod cloud_links {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(cloud_link).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.cloud_link).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7188,19 +7264,19 @@ pub mod cloud_links {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudLink =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudLink =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7254,7 +7330,11 @@ pub mod cloud_links {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/cloudLinks/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cloud_link_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cloud_link_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7272,13 +7352,13 @@ pub mod cloud_links {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7391,7 +7471,7 @@ pub mod addons {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/addons",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7412,13 +7492,13 @@ pub mod addons {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::AddonList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7466,7 +7546,7 @@ pub mod addons {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/addons/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, addon_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name, &self.addon_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7487,13 +7567,13 @@ pub mod addons {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Addon =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7547,7 +7627,7 @@ pub mod addons {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/addons/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, addon_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name, &self.addon_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7560,7 +7640,7 @@ pub mod addons {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(addon).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.addon).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7569,19 +7649,19 @@ pub mod addons {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Addon =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Addon =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7635,7 +7715,7 @@ pub mod addons {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/addons/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, addon_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name, &self.addon_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7653,13 +7733,13 @@ pub mod addons {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7764,7 +7844,11 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/virtualMachines",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7785,13 +7869,13 @@ pub mod virtual_machines {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::VirtualMachinesList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7840,7 +7924,12 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/virtualMachines/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name, virtual_machine_id
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name,
+                        &self.virtual_machine_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7861,13 +7950,13 @@ pub mod virtual_machines {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::VirtualMachine =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -7915,7 +8004,7 @@ pub mod virtual_machines {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/virtualMachines/{}/restrictMovement" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , cluster_name , virtual_machine_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/virtualMachines/{}/restrictMovement" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . cluster_name , & self . virtual_machine_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -7927,7 +8016,7 @@ pub mod virtual_machines {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(restrict_movement).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.restrict_movement).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7937,7 +8026,7 @@ pub mod virtual_machines {
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8078,7 +8167,11 @@ pub mod placement_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/placementPolicies",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, cluster_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8099,13 +8192,13 @@ pub mod placement_policies {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PlacementPoliciesList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8155,11 +8248,11 @@ pub mod placement_policies {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/placementPolicies/{}",
                         &self.client.endpoint,
-                        subscription_id,
-                        resource_group_name,
-                        private_cloud_name,
-                        cluster_name,
-                        placement_policy_name
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name,
+                        &self.placement_policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8180,13 +8273,13 @@ pub mod placement_policies {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PlacementPolicy =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8242,11 +8335,11 @@ pub mod placement_policies {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/placementPolicies/{}",
                         &self.client.endpoint,
-                        subscription_id,
-                        resource_group_name,
-                        private_cloud_name,
-                        cluster_name,
-                        placement_policy_name
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name,
+                        &self.placement_policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8259,7 +8352,7 @@ pub mod placement_policies {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(placement_policy).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.placement_policy).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8268,19 +8361,19 @@ pub mod placement_policies {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PlacementPolicy =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PlacementPolicy =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8336,11 +8429,11 @@ pub mod placement_policies {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/placementPolicies/{}",
                         &self.client.endpoint,
-                        subscription_id,
-                        resource_group_name,
-                        private_cloud_name,
-                        cluster_name,
-                        placement_policy_name
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name,
+                        &self.placement_policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8353,7 +8446,7 @@ pub mod placement_policies {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(placement_policy_update).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.placement_policy_update).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8362,19 +8455,19 @@ pub mod placement_policies {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PlacementPolicy =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::ACCEPTED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PlacementPolicy =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(update::Response::Accepted202(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Accepted202(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8430,11 +8523,11 @@ pub mod placement_policies {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/clusters/{}/placementPolicies/{}",
                         &self.client.endpoint,
-                        subscription_id,
-                        resource_group_name,
-                        private_cloud_name,
-                        cluster_name,
-                        placement_policy_name
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.cluster_name,
+                        &self.placement_policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8452,13 +8545,13 @@ pub mod placement_policies {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8539,7 +8632,7 @@ pub mod script_packages {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptPackages",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8560,13 +8653,13 @@ pub mod script_packages {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptPackagesList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8614,7 +8707,11 @@ pub mod script_packages {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptPackages/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, script_package_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.script_package_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8635,13 +8732,13 @@ pub mod script_packages {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptPackage =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8727,7 +8824,11 @@ pub mod script_cmdlets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptPackages/{}/scriptCmdlets",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, script_package_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.script_package_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8748,13 +8849,13 @@ pub mod script_cmdlets {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptCmdletsList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8804,11 +8905,11 @@ pub mod script_cmdlets {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptPackages/{}/scriptCmdlets/{}",
                         &self.client.endpoint,
-                        subscription_id,
-                        resource_group_name,
-                        private_cloud_name,
-                        script_package_name,
-                        script_cmdlet_name
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.script_package_name,
+                        &self.script_cmdlet_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8829,13 +8930,13 @@ pub mod script_cmdlets {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptCmdlet =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -8964,7 +9065,7 @@ pub mod script_executions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptExecutions",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_cloud_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8985,13 +9086,13 @@ pub mod script_executions {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptExecutionsList =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -9039,7 +9140,11 @@ pub mod script_executions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptExecutions/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, script_execution_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.script_execution_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -9060,13 +9165,13 @@ pub mod script_executions {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptExecution =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -9120,7 +9225,11 @@ pub mod script_executions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptExecutions/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, script_execution_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.script_execution_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -9133,7 +9242,7 @@ pub mod script_executions {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(script_execution).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.script_execution).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9142,19 +9251,19 @@ pub mod script_executions {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptExecution =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Ok200(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
                         }
                         http::StatusCode::CREATED => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptExecution =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
-                            Ok(create_or_update::Response::Created201(rsp_value))
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -9208,7 +9317,11 @@ pub mod script_executions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptExecutions/{}",
-                        &self.client.endpoint, subscription_id, resource_group_name, private_cloud_name, script_execution_name
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_cloud_name,
+                        &self.script_execution_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -9226,13 +9339,13 @@ pub mod script_executions {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::OK => Ok(delete::Response::Ok200),
-                        http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-                        http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
@@ -9279,7 +9392,7 @@ pub mod script_executions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ScriptExecution, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptExecutions/{}/getExecutionLogs" , & self . client . endpoint , subscription_id , resource_group_name , private_cloud_name , script_execution_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AVS/privateClouds/{}/scriptExecutions/{}/getExecutionLogs" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_cloud_name , & self . script_execution_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -9290,7 +9403,7 @@ pub mod script_executions {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = if let Some(script_output_stream_type) = script_output_stream_type {
+                    let req_body = if let Some(script_output_stream_type) = &self.script_output_stream_type {
                         req_builder = req_builder.header("content-type", "application/json");
                         azure_core::to_json(script_output_stream_type).map_err(Error::Serialize)?
                     } else {
@@ -9304,13 +9417,13 @@ pub mod script_executions {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ScriptExecution =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::CloudError =
-                                serde_json::from_slice(&rsp_body).map_err(|source| Error::DeserializeError(source, rsp_body.clone()))?;
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
                                 value: rsp_value,
