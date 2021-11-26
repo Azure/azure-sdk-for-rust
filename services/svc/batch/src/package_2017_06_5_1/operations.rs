@@ -25,11 +25,13 @@ impl ClientBuilder {
             scopes: None,
         }
     }
-    pub fn endpoint(mut self, endpoint: impl Into<String>) {
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
         self.endpoint = Some(endpoint.into());
+        self
     }
-    pub fn scopes(mut self, scopes: &[&str]) {
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
         self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
     }
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
@@ -324,10 +326,10 @@ pub mod application {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -412,7 +414,7 @@ pub mod application {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -738,19 +740,19 @@ pub mod pool {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(starttime) = &self.starttime {
-                        url.query_pairs_mut().append_pair("starttime", &self.starttime);
+                        url.query_pairs_mut().append_pair("starttime", starttime);
                     }
                     if let Some(endtime) = &self.endtime {
-                        url.query_pairs_mut().append_pair("endtime", &self.endtime);
+                        url.query_pairs_mut().append_pair("endtime", endtime);
                     }
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -834,7 +836,7 @@ pub mod pool {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -922,19 +924,19 @@ pub mod pool {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1021,7 +1023,7 @@ pub mod pool {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.pool).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1106,13 +1108,13 @@ pub mod pool {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1216,7 +1218,7 @@ pub mod pool {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.pool_patch_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1311,7 +1313,7 @@ pub mod pool {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1409,7 +1411,7 @@ pub mod pool {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1502,7 +1504,7 @@ pub mod pool {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1590,7 +1592,7 @@ pub mod pool {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.pool_enable_auto_scale_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1684,7 +1686,7 @@ pub mod pool {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.pool_evaluate_auto_scale_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1775,7 +1777,7 @@ pub mod pool {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.pool_resize_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1870,7 +1872,7 @@ pub mod pool {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -1966,7 +1968,7 @@ pub mod pool {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.pool_update_properties_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -2052,7 +2054,7 @@ pub mod pool {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.pool_upgrade_os_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -2150,7 +2152,7 @@ pub mod pool {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.node_remove_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -2261,13 +2263,13 @@ pub mod account {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -2537,7 +2539,7 @@ pub mod job {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -2628,13 +2630,13 @@ pub mod job {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -2738,7 +2740,7 @@ pub mod job {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.job_update_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -2836,7 +2838,7 @@ pub mod job {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.job_patch_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -2931,7 +2933,7 @@ pub mod job {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3030,7 +3032,7 @@ pub mod job {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.job_disable_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3125,7 +3127,7 @@ pub mod job {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3229,7 +3231,7 @@ pub mod job {
                         bytes::Bytes::from_static(azure_core::EMPTY_BODY)
                     };
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3323,19 +3325,19 @@ pub mod job {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3422,7 +3424,7 @@ pub mod job {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.job).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3505,19 +3507,19 @@ pub mod job {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3608,16 +3610,16 @@ pub mod job {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3702,7 +3704,7 @@ pub mod job {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3851,16 +3853,16 @@ pub mod certificate {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -3947,7 +3949,7 @@ pub mod certificate {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.certificate).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4030,7 +4032,7 @@ pub mod certificate {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4116,10 +4118,10 @@ pub mod certificate {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4208,7 +4210,7 @@ pub mod certificate {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4444,7 +4446,7 @@ pub mod file {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4543,10 +4545,10 @@ pub mod file {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(recursive) = &self.recursive {
-                        url.query_pairs_mut().append_pair("recursive", &self.recursive.to_string());
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4633,7 +4635,7 @@ pub mod file {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4727,7 +4729,7 @@ pub mod file {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4826,10 +4828,10 @@ pub mod file {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(recursive) = &self.recursive {
-                        url.query_pairs_mut().append_pair("recursive", &self.recursive.to_string());
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -4916,7 +4918,7 @@ pub mod file {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5006,16 +5008,16 @@ pub mod file {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(recursive) = &self.recursive {
-                        url.query_pairs_mut().append_pair("recursive", &self.recursive.to_string());
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5104,16 +5106,16 @@ pub mod file {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(recursive) = &self.recursive {
-                        url.query_pairs_mut().append_pair("recursive", &self.recursive.to_string());
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5357,13 +5359,13 @@ pub mod job_schedule {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5467,7 +5469,7 @@ pub mod job_schedule {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.job_schedule_update_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5565,7 +5567,7 @@ pub mod job_schedule {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.job_schedule_patch_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5660,7 +5662,7 @@ pub mod job_schedule {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5758,7 +5760,7 @@ pub mod job_schedule {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5855,7 +5857,7 @@ pub mod job_schedule {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -5952,7 +5954,7 @@ pub mod job_schedule {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -6049,7 +6051,7 @@ pub mod job_schedule {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -6147,19 +6149,19 @@ pub mod job_schedule {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -6244,7 +6246,7 @@ pub mod job_schedule {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.cloud_job_schedule).map_err(Error::Serialize)?;
@@ -6470,19 +6472,19 @@ pub mod task {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -6570,7 +6572,7 @@ pub mod task {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.task).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -6652,7 +6654,7 @@ pub mod task {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.task_collection).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -6743,13 +6745,13 @@ pub mod task {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(expand) = &self.expand {
-                        url.query_pairs_mut().append_pair("$expand", &self.expand);
+                        url.query_pairs_mut().append_pair("$expand", expand);
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -6854,7 +6856,7 @@ pub mod task {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.task_update_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -6950,7 +6952,7 @@ pub mod task {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7049,10 +7051,10 @@ pub mod task {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7142,7 +7144,7 @@ pub mod task {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7240,7 +7242,7 @@ pub mod task {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7494,7 +7496,7 @@ pub mod compute_node {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.user).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7581,7 +7583,7 @@ pub mod compute_node {
                     req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
                     let req_body = azure_core::to_json(&self.node_update_user_parameter).map_err(Error::Serialize)?;
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7665,7 +7667,7 @@ pub mod compute_node {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7747,10 +7749,10 @@ pub mod compute_node {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7843,7 +7845,7 @@ pub mod compute_node {
                         bytes::Bytes::from_static(azure_core::EMPTY_BODY)
                     };
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -7930,7 +7932,7 @@ pub mod compute_node {
                         bytes::Bytes::from_static(azure_core::EMPTY_BODY)
                     };
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -8020,7 +8022,7 @@ pub mod compute_node {
                         bytes::Bytes::from_static(azure_core::EMPTY_BODY)
                     };
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -8103,7 +8105,7 @@ pub mod compute_node {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -8191,7 +8193,7 @@ pub mod compute_node {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -8277,7 +8279,7 @@ pub mod compute_node {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
@@ -8364,16 +8366,16 @@ pub mod compute_node {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     if let Some(filter) = &self.filter {
-                        url.query_pairs_mut().append_pair("$filter", &self.filter);
+                        url.query_pairs_mut().append_pair("$filter", filter);
                     }
                     if let Some(select) = &self.select {
-                        url.query_pairs_mut().append_pair("$select", &self.select);
+                        url.query_pairs_mut().append_pair("$select", select);
                     }
                     if let Some(maxresults) = &self.maxresults {
-                        url.query_pairs_mut().append_pair("maxresults", &self.maxresults.to_string());
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
                     }
                     if let Some(timeout) = &self.timeout {
-                        url.query_pairs_mut().append_pair("timeout", &self.timeout.to_string());
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     if let Some(client_request_id) = &self.client_request_id {
                         req_builder = req_builder.header("client-request-id", client_request_id);
