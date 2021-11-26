@@ -1,4 +1,13 @@
-use crate::{CodeGen, codegen::{create_generated_by_header, get_type_name_for_schema_ref, require, Error}, codegen::{parse_params, PARAM_RE}, identifier::SnakeCaseIdent, identifier::ident, spec::{WebOperation, WebParameter, WebVerb}, status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response}, status_codes::{get_response_type_ident, get_status_code_ident}};
+use crate::{
+    codegen::{create_generated_by_header, get_type_name_for_schema_ref, require, Error},
+    codegen::{parse_params, PARAM_RE},
+    identifier::ident,
+    identifier::SnakeCaseIdent,
+    spec::{WebOperation, WebParameter, WebVerb},
+    status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
+    status_codes::{get_response_type_ident, get_status_code_ident},
+    CodeGen,
+};
 use autorust_openapi::{CollectionFormat, ParameterType, Response};
 use heck::CamelCase;
 use heck::SnakeCase;
@@ -237,11 +246,6 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
     }
     let parameters: Vec<_> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name())).collect();
 
-    let fparams = create_function_params(&parameters)?;
-
-    // see if there is a body parameter
-    // let fresponse = create_function_return(operation_verb)?;
-
     let mut ts_request_builder = TokenStream::new();
 
     let mut is_post = false;
@@ -284,7 +288,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
 
     // params
     let mut has_body_parameter = false;
-    for param in parameters {
+    for param in &parameters {
         let param_name = param.name();
         let param_name_var = get_param_name(param)?;
         let required = param.required();
@@ -605,14 +609,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         });
     }
 
-    // TODO add params to builder
-    let function_code = quote! {
-        pub fn #fname(#fparams) -> #fname::Builder {
-            #fname::Builder {
-                client: self.0.clone(),
-            }
-        }
-    };
+    let function_code = create_builder_instance_code(&fname, &parameters)?;
 
     let builder_code = quote! {
         #[derive(Clone)]
@@ -693,11 +690,11 @@ fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-fn create_function_params(parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
+fn create_function_params_code(parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
-    for param in parameters {
+    for param in parameters.iter().filter(|p| p.required()) {
         let name = get_param_name(param)?;
-        let tp = get_param_type(param)?;
+        let tp = get_param_type(param, true)?;
         params.push(quote! { #name: #tp });
     }
     let slf = quote! { &self };
@@ -705,14 +702,39 @@ fn create_function_params(parameters: &[&WebParameter]) -> Result<TokenStream, E
     Ok(quote! { #(#params),* })
 }
 
+fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
+    let fparams = create_function_params_code(parameters)?;
+    let mut params: Vec<TokenStream> = Vec::new();
+    params.push(quote! { client: self.0.clone() });
+    for param in parameters.iter().filter(|p| p.required()) {
+        let name = get_param_name(param)?;
+        if param.type_is_ref()? {
+            params.push(quote! { #name: #name.into() });
+        } else {
+            params.push(quote! { #name });
+        }
+    }
+    for param in parameters.iter().filter(|p| !p.required()) {
+        let name = get_param_name(param)?;
+        params.push(quote! { #name: None });
+    }
+    Ok(quote! {
+        pub fn #fname(#fparams) -> #fname::Builder {
+            #fname::Builder {
+                #(#params),*
+            }
+        }
+    })
+}
+
 fn get_param_name(param: &WebParameter) -> Result<TokenStream, Error> {
     param.name().to_snake_case_ident().map_err(Error::ParamName)
 }
 
-fn get_param_type(param: &WebParameter) -> Result<TokenStream, Error> {
+fn get_param_type(param: &WebParameter, as_ref: bool) -> Result<TokenStream, Error> {
     let is_required = param.required();
     let is_array = param.is_array();
-    let tp = param.type_name()?.to_token_stream(true, true)?;
+    let tp = param.type_name()?.to_token_stream(as_ref, true)?;
     Ok(require(is_required || is_array, tp))
 }
 

@@ -1,5 +1,11 @@
-use crate::{codegen::{TypeName, get_type_name_for_schema, get_type_name_for_schema_ref}, path};
-use autorust_openapi::{AdditionalProperties, CollectionFormat, DataType, MsExamples, OpenAPI, Operation, Parameter, ParameterType, PathItem, Reference, ReferenceOr, Response, Schema, StatusCode};
+use crate::{
+    codegen::{get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
+    path,
+};
+use autorust_openapi::{
+    AdditionalProperties, CollectionFormat, DataType, MsExamples, OpenAPI, Operation, Parameter, ParameterType, PathItem, Reference,
+    ReferenceOr, Response, Schema, StatusCode,
+};
 use heck::SnakeCase;
 use indexmap::{IndexMap, IndexSet};
 use std::{
@@ -277,16 +283,12 @@ pub enum Error {
     #[error("DeserializeJson")]
     DeserializeJson { source: serde_json::Error, path: PathBuf },
     #[error("TypeName {0}")]
-    TypeName (#[source] Box<crate::codegen::Error>),
+    TypeName(#[source] Box<crate::codegen::Error>),
 }
 
-impl Error {
+impl Error {}
 
-}
-
-impl Error {
-
-}
+impl Error {}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RefKey {
@@ -468,6 +470,14 @@ impl WebParameter {
         } else {
             // eprintln!("WARN unknown param type name for {}", self.name());
             TypeName::Value
+        })
+    }
+
+    pub fn type_is_ref(&self) -> Result<bool, Error> {
+        Ok(if let Some(data_type) = self.data_type() {
+            matches!(data_type, DataType::String | DataType::Object | DataType::File)
+        } else {
+            true
         })
     }
 }

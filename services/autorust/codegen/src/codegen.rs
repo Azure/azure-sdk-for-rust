@@ -204,17 +204,20 @@ impl TypeName {
                 }
             }
             TypeName::Value => match as_ref {
-                true => quote! { &serde_json::Value },
+                true => quote! { impl Into<serde_json::Value> },
                 false => quote! { serde_json::Value },
             },
-            TypeName::Bytes => quote! { bytes::Bytes },
+            TypeName::Bytes => match as_ref {
+                true => quote! { impl Into<bytes::Bytes> },
+                false => quote! { bytes::Bytes },
+            },
             TypeName::Int32 => quote! { i32 },
             TypeName::Int64 => quote! { i64 },
             TypeName::Float32 => quote! { f32 },
             TypeName::Float64 => quote! { f64 },
             TypeName::Boolean => quote! { bool },
             TypeName::String => match as_ref {
-                true => quote! { &str },
+                true => quote! { impl Into<String> },
                 false => quote! { String },
             },
         })
