@@ -11,7 +11,8 @@ $
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
-use azure_svc_applicationinsights::{models::QueryBody, operations::query};
+use azure_svc_applicationinsights::{models::QueryBody};
+use std::sync::Arc;
 
 const ENDPOINT: &str = "https://api.applicationinsights.io";
 
@@ -21,21 +22,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let query = std::env::args().nth(2).expect("please specify query");
     let timespan = std::env::args().nth(3);
 
-    let base_path = format!("{}/v1", ENDPOINT);
-    let http_client = azure_core::new_http_client();
-    let token_credential = Box::new(AzureCliCredential {});
-    let config = &azure_svc_applicationinsights::config(http_client, token_credential)
-        .base_path(base_path)
-        .token_credential_resource(ENDPOINT)
-        .build();
+    let endpoint = format!("{}/v1", ENDPOINT);
+    let credential = Arc::new(AzureCliCredential {});
+    let client = azure_svc_applicationinsights::ClientBuilder::new(credential).endpoint(endpoint).build();
 
-    let body = &QueryBody {
+    let body = QueryBody {
         query,
         timespan,
         applications: None,
     };
 
-    let response = query::execute(config, &app_id, body).await?;
+    let response = client.query().execute(app_id, body).into_future().await?;
 
     let unnamed = "unnamed".to_string();
 

@@ -658,7 +658,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 #builder_setters_code
                 pub fn into_future(self) -> futures::future::BoxFuture<'static, #fresponse> {
                     Box::pin(async move {
-                        let url_str = &format!(#fpath, &self.client.endpoint, #url_str_args);
+                        let url_str = &format!(#fpath, self.client.endpoint(), #url_str_args);
                         let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                         let mut req_builder = http::request::Builder::new();
                         #ts_request_builder
