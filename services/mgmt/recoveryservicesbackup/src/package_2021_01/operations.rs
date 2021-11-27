@@ -40,13 +40,13 @@ impl ClientBuilder {
     }
 }
 impl Client {
-    pub fn endpoint(&self) -> &str {
+    pub(crate) fn endpoint(&self) -> &str {
         self.endpoint.as_str()
     }
-    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+    pub(crate) fn token_credential(&self) -> &dyn azure_core::TokenCredential {
         self.credential.as_ref()
     }
-    pub fn scopes(&self) -> Vec<&str> {
+    pub(crate) fn scopes(&self) -> Vec<&str> {
         self.scopes.iter().map(String::as_str).collect()
     }
     pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
@@ -486,7 +486,7 @@ pub mod backup_resource_vault_configs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -563,7 +563,7 @@ pub mod backup_resource_vault_configs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -641,7 +641,7 @@ pub mod backup_resource_vault_configs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -753,7 +753,7 @@ pub mod backup_resource_encryption_configs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -825,7 +825,7 @@ pub mod backup_resource_encryption_configs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -951,7 +951,7 @@ pub mod private_endpoint_connection {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1029,7 +1029,7 @@ pub mod private_endpoint_connection {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1114,7 +1114,7 @@ pub mod private_endpoint_connection {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1210,7 +1210,7 @@ pub mod private_endpoint {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1353,7 +1353,7 @@ pub mod get_operation_status {
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
-                let credential = self.client.credential();
+                let credential = self.client.token_credential();
                 let token_response = credential
                     .get_token(&self.client.scopes().join(" "))
                     .await
@@ -1430,7 +1430,7 @@ pub mod bms_prepare_data_move {
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
-                let credential = self.client.credential();
+                let credential = self.client.token_credential();
                 let token_response = credential
                     .get_token(&self.client.scopes().join(" "))
                     .await
@@ -1504,7 +1504,7 @@ pub mod bms_trigger_data_move {
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
-                let credential = self.client.credential();
+                let credential = self.client.token_credential();
                 let token_response = credential
                     .get_token(&self.client.scopes().join(" "))
                     .await
@@ -1577,7 +1577,7 @@ pub mod move_recovery_point {
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
-                let credential = self.client.credential();
+                let credential = self.client.token_credential();
                 let token_response = credential
                     .get_token(&self.client.scopes().join(" "))
                     .await
@@ -1673,7 +1673,7 @@ pub mod bms_prepare_data_move_operation_result {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1822,7 +1822,7 @@ pub mod protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1905,7 +1905,7 @@ pub mod protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1987,7 +1987,7 @@ pub mod protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2095,7 +2095,7 @@ pub mod protected_item_operation_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2249,7 +2249,7 @@ pub mod recovery_points {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2327,7 +2327,7 @@ pub mod recovery_points {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2405,7 +2405,7 @@ pub mod recovery_points {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2515,7 +2515,7 @@ pub mod restores {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2615,7 +2615,7 @@ pub mod backup_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2749,7 +2749,7 @@ pub mod protection_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2830,7 +2830,7 @@ pub mod protection_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2912,7 +2912,7 @@ pub mod protection_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3007,7 +3007,7 @@ pub mod protection_policy_operation_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3115,7 +3115,7 @@ pub mod backup_jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3220,7 +3220,7 @@ pub mod job_details {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3319,7 +3319,7 @@ pub mod job_cancellations {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3420,7 +3420,7 @@ pub mod job_operation_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3518,7 +3518,7 @@ pub mod export_jobs_operation_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3626,7 +3626,7 @@ pub mod jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3733,7 +3733,7 @@ pub mod backup_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3840,7 +3840,7 @@ pub mod operation {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3968,7 +3968,7 @@ pub mod backup_engines {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4059,7 +4059,7 @@ pub mod backup_engines {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4169,7 +4169,7 @@ pub mod protection_container_refresh_operation_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4269,7 +4269,7 @@ pub mod protectable_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4443,7 +4443,7 @@ pub mod protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4522,7 +4522,7 @@ pub mod protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4603,7 +4603,7 @@ pub mod protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4678,7 +4678,7 @@ pub mod protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4754,7 +4754,7 @@ pub mod protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4864,7 +4864,7 @@ pub mod backup_workload_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4978,7 +4978,7 @@ pub mod protection_container_operation_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5085,7 +5085,7 @@ pub mod backups {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5186,7 +5186,7 @@ pub mod protected_item_operation_statuses {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5315,7 +5315,7 @@ pub mod item_level_recovery_connections {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5386,7 +5386,7 @@ pub mod item_level_recovery_connections {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5487,7 +5487,7 @@ pub mod backup_operation_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5583,7 +5583,7 @@ pub mod backup_operation_statuses {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5682,7 +5682,7 @@ pub mod protection_policy_operation_statuses {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5792,7 +5792,7 @@ pub mod backup_protectable_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5902,7 +5902,7 @@ pub mod backup_protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6001,7 +6001,7 @@ pub mod security_pi_ns {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6107,7 +6107,7 @@ pub mod recovery_points_recommended_for_move {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6216,7 +6216,7 @@ pub mod backup_usage_summaries_crr {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6317,7 +6317,7 @@ pub mod aad_properties {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6421,7 +6421,7 @@ pub mod cross_region_restore {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6514,7 +6514,7 @@ pub mod backup_crr_job_details {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6623,7 +6623,7 @@ pub mod backup_crr_jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6731,7 +6731,7 @@ pub mod crr_operation_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6823,7 +6823,7 @@ pub mod crr_operation_status {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6948,7 +6948,7 @@ pub mod backup_resource_storage_configs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7022,7 +7022,7 @@ pub mod backup_resource_storage_configs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7095,7 +7095,7 @@ pub mod backup_resource_storage_configs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7199,7 +7199,7 @@ pub mod recovery_points_crr {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7310,7 +7310,7 @@ pub mod backup_protected_items_crr {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7464,7 +7464,7 @@ pub mod protection_intent {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7533,7 +7533,7 @@ pub mod protection_intent {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7602,7 +7602,7 @@ pub mod protection_intent {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7671,7 +7671,7 @@ pub mod protection_intent {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7757,7 +7757,7 @@ pub mod backup_status {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7852,7 +7852,7 @@ pub mod feature_support {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7958,7 +7958,7 @@ pub mod backup_protection_intent {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8067,7 +8067,7 @@ pub mod backup_usage_summaries {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8148,7 +8148,7 @@ pub mod operations {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await

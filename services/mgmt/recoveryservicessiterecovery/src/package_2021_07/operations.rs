@@ -40,13 +40,13 @@ impl ClientBuilder {
     }
 }
 impl Client {
-    pub fn endpoint(&self) -> &str {
+    pub(crate) fn endpoint(&self) -> &str {
         self.endpoint.as_str()
     }
-    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+    pub(crate) fn token_credential(&self) -> &dyn azure_core::TokenCredential {
         self.credential.as_ref()
     }
-    pub fn scopes(&self) -> Vec<&str> {
+    pub(crate) fn scopes(&self) -> Vec<&str> {
         self.scopes.iter().map(String::as_str).collect()
     }
     pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
@@ -495,7 +495,7 @@ pub mod operations {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -618,7 +618,7 @@ pub mod replication_alert_settings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -692,7 +692,7 @@ pub mod replication_alert_settings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -767,7 +767,7 @@ pub mod replication_alert_settings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -872,7 +872,7 @@ pub mod replication_eligibility_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -940,7 +940,7 @@ pub mod replication_eligibility_results {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1052,7 +1052,7 @@ pub mod replication_events {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1125,7 +1125,7 @@ pub mod replication_events {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1343,7 +1343,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1418,7 +1418,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1497,7 +1497,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1574,7 +1574,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1642,7 +1642,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1716,7 +1716,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1786,7 +1786,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1863,7 +1863,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -1933,7 +1933,7 @@ pub mod replication_fabrics {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2043,7 +2043,7 @@ pub mod replication_logical_networks {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2111,7 +2111,7 @@ pub mod replication_logical_networks {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2232,7 +2232,7 @@ pub mod replication_networks {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2300,7 +2300,7 @@ pub mod replication_networks {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2369,7 +2369,7 @@ pub mod replication_networks {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2556,7 +2556,7 @@ pub mod replication_network_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2625,7 +2625,7 @@ pub mod replication_network_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2700,7 +2700,7 @@ pub mod replication_network_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2777,7 +2777,7 @@ pub mod replication_network_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2853,7 +2853,7 @@ pub mod replication_network_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -2918,7 +2918,7 @@ pub mod replication_network_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3115,7 +3115,7 @@ pub mod replication_protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3183,7 +3183,7 @@ pub mod replication_protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3257,7 +3257,7 @@ pub mod replication_protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3333,7 +3333,7 @@ pub mod replication_protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3408,7 +3408,7 @@ pub mod replication_protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3479,7 +3479,7 @@ pub mod replication_protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3549,7 +3549,7 @@ pub mod replication_protection_containers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3842,7 +3842,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3920,7 +3920,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -3995,7 +3995,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4072,7 +4072,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4153,7 +4153,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4227,7 +4227,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4304,7 +4304,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4381,7 +4381,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4458,7 +4458,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4544,7 +4544,7 @@ pub mod replication_migration_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4673,7 +4673,7 @@ pub mod migration_recovery_points {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4743,7 +4743,7 @@ pub mod migration_recovery_points {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4874,7 +4874,7 @@ pub mod replication_protectable_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -4952,7 +4952,7 @@ pub mod replication_protectable_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5452,7 +5452,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5521,7 +5521,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5596,7 +5596,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5673,7 +5673,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5749,7 +5749,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5820,7 +5820,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5897,7 +5897,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -5973,7 +5973,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6049,7 +6049,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6126,7 +6126,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6203,7 +6203,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6275,7 +6275,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6351,7 +6351,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6428,7 +6428,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6505,7 +6505,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6582,7 +6582,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6659,7 +6659,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6736,7 +6736,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6813,7 +6813,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6890,7 +6890,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -6973,7 +6973,7 @@ pub mod replication_protected_items {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7097,7 +7097,7 @@ pub mod recovery_points {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7167,7 +7167,7 @@ pub mod recovery_points {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7266,7 +7266,7 @@ pub mod target_compute_sizes {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7476,7 +7476,7 @@ pub mod replication_protection_container_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7547,7 +7547,7 @@ pub mod replication_protection_container_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7622,7 +7622,7 @@ pub mod replication_protection_container_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7699,7 +7699,7 @@ pub mod replication_protection_container_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7775,7 +7775,7 @@ pub mod replication_protection_container_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7846,7 +7846,7 @@ pub mod replication_protection_container_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -7911,7 +7911,7 @@ pub mod replication_protection_container_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8104,7 +8104,7 @@ pub mod replication_recovery_services_providers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8172,7 +8172,7 @@ pub mod replication_recovery_services_providers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8246,7 +8246,7 @@ pub mod replication_recovery_services_providers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8321,7 +8321,7 @@ pub mod replication_recovery_services_providers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8390,7 +8390,7 @@ pub mod replication_recovery_services_providers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8465,7 +8465,7 @@ pub mod replication_recovery_services_providers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8530,7 +8530,7 @@ pub mod replication_recovery_services_providers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8653,7 +8653,7 @@ pub mod replication_storage_classifications {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8721,7 +8721,7 @@ pub mod replication_storage_classifications {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8789,7 +8789,7 @@ pub mod replication_storage_classifications {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -8958,7 +8958,7 @@ pub mod replication_storage_classification_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9029,7 +9029,7 @@ pub mod replication_storage_classification_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9104,7 +9104,7 @@ pub mod replication_storage_classification_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9180,7 +9180,7 @@ pub mod replication_storage_classification_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9245,7 +9245,7 @@ pub mod replication_storage_classification_mappings {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9421,7 +9421,7 @@ pub mod replicationv_centers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9489,7 +9489,7 @@ pub mod replicationv_centers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9563,7 +9563,7 @@ pub mod replicationv_centers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9639,7 +9639,7 @@ pub mod replicationv_centers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9714,7 +9714,7 @@ pub mod replicationv_centers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9779,7 +9779,7 @@ pub mod replicationv_centers {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -9953,7 +9953,7 @@ pub mod replication_jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10026,7 +10026,7 @@ pub mod replication_jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10101,7 +10101,7 @@ pub mod replication_jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10178,7 +10178,7 @@ pub mod replication_jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10256,7 +10256,7 @@ pub mod replication_jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10333,7 +10333,7 @@ pub mod replication_jobs {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10490,7 +10490,7 @@ pub mod replication_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10560,7 +10560,7 @@ pub mod replication_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10636,7 +10636,7 @@ pub mod replication_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10714,7 +10714,7 @@ pub mod replication_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10791,7 +10791,7 @@ pub mod replication_policies {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -10925,7 +10925,7 @@ pub mod replication_protection_intents {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11000,7 +11000,7 @@ pub mod replication_protection_intents {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11070,7 +11070,7 @@ pub mod replication_protection_intents {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11339,7 +11339,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11413,7 +11413,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11493,7 +11493,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11575,7 +11575,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11656,7 +11656,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11724,7 +11724,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11798,7 +11798,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11873,7 +11873,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -11947,7 +11947,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12022,7 +12022,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12097,7 +12097,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12172,7 +12172,7 @@ pub mod replication_recovery_plans {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12268,7 +12268,7 @@ pub mod supported_operating_systems {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12375,7 +12375,7 @@ pub mod replication_vault_health {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12446,7 +12446,7 @@ pub mod replication_vault_health {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12571,7 +12571,7 @@ pub mod replication_vault_setting {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12645,7 +12645,7 @@ pub mod replication_vault_setting {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
@@ -12720,7 +12720,7 @@ pub mod replication_vault_setting {
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
-                    let credential = self.client.credential();
+                    let credential = self.client.token_credential();
                     let token_response = credential
                         .get_token(&self.client.scopes().join(" "))
                         .await
