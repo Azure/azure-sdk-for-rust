@@ -97,7 +97,7 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
             pub fn endpoint(&self) -> &str {
                 self.endpoint.as_str()
             }
-            pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+            pub fn token_credential(&self) -> &dyn azure_core::TokenCredential {
                 self.credential.as_ref()
             }
             pub fn scopes(&self) -> Vec<&str> {
@@ -276,7 +276,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
 
     // auth
     ts_request_builder.extend(quote! {
-        let credential = self.client.credential();
+        let credential = self.client.token_credential();
         let token_response = credential
             .get_token(&self.client.scopes().join(" "))
             .await
