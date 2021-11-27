@@ -194,7 +194,7 @@ pub mod spark_batch {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkBatchJobCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/batches", &self.client.endpoint,);
+                    let url_str = &format!("{}/batches", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -271,7 +271,7 @@ pub mod spark_batch {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkBatchJob, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/batches", &self.client.endpoint,);
+                    let url_str = &format!("{}/batches", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -343,7 +343,7 @@ pub mod spark_batch {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkBatchJob, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/batches/{}", &self.client.endpoint, &self.batch_id);
+                    let url_str = &format!("{}/batches/{}", self.client.endpoint(), &self.batch_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -409,7 +409,7 @@ pub mod spark_batch {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/batches/{}", &self.client.endpoint, &self.batch_id);
+                    let url_str = &format!("{}/batches/{}", self.client.endpoint(), &self.batch_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -555,7 +555,7 @@ pub mod spark_session {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkSessionCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sessions", &self.client.endpoint,);
+                    let url_str = &format!("{}/sessions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -632,7 +632,7 @@ pub mod spark_session {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkSession, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sessions", &self.client.endpoint,);
+                    let url_str = &format!("{}/sessions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -704,7 +704,7 @@ pub mod spark_session {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkSession, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sessions/{}", &self.client.endpoint, &self.session_id);
+                    let url_str = &format!("{}/sessions/{}", self.client.endpoint(), &self.session_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -770,7 +770,7 @@ pub mod spark_session {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sessions/{}", &self.client.endpoint, &self.session_id);
+                    let url_str = &format!("{}/sessions/{}", self.client.endpoint(), &self.session_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -828,7 +828,7 @@ pub mod spark_session {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sessions/{}/reset-timeout", &self.client.endpoint, &self.session_id);
+                    let url_str = &format!("{}/sessions/{}/reset-timeout", self.client.endpoint(), &self.session_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -886,7 +886,7 @@ pub mod spark_session {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkStatementCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sessions/{}/statements", &self.client.endpoint, &self.session_id);
+                    let url_str = &format!("{}/sessions/{}/statements", self.client.endpoint(), &self.session_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -950,7 +950,7 @@ pub mod spark_session {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkStatement, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sessions/{}/statements", &self.client.endpoint, &self.session_id);
+                    let url_str = &format!("{}/sessions/{}/statements", self.client.endpoint(), &self.session_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1017,7 +1017,9 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/sessions/{}/statements/{}",
-                        &self.client.endpoint, &self.session_id, &self.statement_id
+                        self.client.endpoint(),
+                        &self.session_id,
+                        &self.statement_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1086,7 +1088,9 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/sessions/{}/statements/{}/cancel",
-                        &self.client.endpoint, &self.session_id, &self.statement_id
+                        self.client.endpoint(),
+                        &self.session_id,
+                        &self.statement_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

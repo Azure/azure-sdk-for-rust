@@ -323,7 +323,8 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Cdn/profiles",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -396,7 +397,9 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -470,7 +473,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -551,7 +557,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -644,7 +653,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -730,7 +742,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -800,7 +815,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/generateSsoUri",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -877,7 +895,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getSupportedOptimizationTypes",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -952,7 +973,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/checkResourceUsage",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1209,7 +1233,10 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1284,7 +1311,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1366,7 +1397,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1460,7 +1495,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1547,7 +1586,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1623,7 +1666,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/start",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1710,7 +1757,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/stop",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1798,7 +1849,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/purge",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1876,7 +1931,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/load",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1951,7 +2010,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/validateCustomDomain",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2027,7 +2090,11 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/checkResourceUsage",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2163,7 +2230,11 @@ pub mod origins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2239,7 +2310,7 @@ pub mod origins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -2326,7 +2397,7 @@ pub mod origins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -2524,7 +2595,11 @@ pub mod custom_domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2600,7 +2675,7 @@ pub mod custom_domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -2688,7 +2763,7 @@ pub mod custom_domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -2788,7 +2863,7 @@ pub mod custom_domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -2874,7 +2949,7 @@ pub mod custom_domains {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}/disableCustomHttps" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . profile_name , & self . endpoint_name , & self . custom_domain_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}/disableCustomHttps" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . profile_name , & self . endpoint_name , & self . custom_domain_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2954,7 +3029,7 @@ pub mod custom_domains {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}/enableCustomHttps" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . profile_name , & self . endpoint_name , & self . custom_domain_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}/enableCustomHttps" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . profile_name , & self . endpoint_name , & self . custom_domain_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3048,7 +3123,7 @@ pub mod check_name_availability {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameAvailabilityOutput, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/providers/Microsoft.Cdn/checkNameAvailability", &self.client.endpoint,);
+                let url_str = &format!("{}/providers/Microsoft.Cdn/checkNameAvailability", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -3121,7 +3196,8 @@ pub mod validate_probe {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.Cdn/validateProbe",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -3208,7 +3284,8 @@ pub mod resource_usage {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Cdn/checkResourceUsage",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3290,7 +3367,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Cdn/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Cdn/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3370,7 +3447,7 @@ pub mod edge_nodes {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EdgenodeResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Cdn/edgenodes", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Cdn/edgenodes", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

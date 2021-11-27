@@ -157,7 +157,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.OperationalInsights/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.OperationalInsights/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -312,7 +312,8 @@ pub mod query_packs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.OperationalInsights/queryPacks",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -387,7 +388,9 @@ pub mod query_packs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -461,7 +464,10 @@ pub mod query_packs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -536,7 +542,10 @@ pub mod query_packs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -612,7 +621,10 @@ pub mod query_packs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -692,7 +704,10 @@ pub mod query_packs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -886,7 +901,10 @@ pub mod queries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -987,7 +1005,10 @@ pub mod queries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/search",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1074,7 +1095,11 @@ pub mod queries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name, &self.id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name,
+                        &self.id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1152,7 +1177,11 @@ pub mod queries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name, &self.id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name,
+                        &self.id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1231,7 +1260,11 @@ pub mod queries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name, &self.id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name,
+                        &self.id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1312,7 +1345,11 @@ pub mod queries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/queryPacks/{}/queries/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.query_pack_name, &self.id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.query_pack_name,
+                        &self.id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

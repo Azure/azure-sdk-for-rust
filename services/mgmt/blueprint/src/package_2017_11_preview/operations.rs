@@ -209,7 +209,9 @@ pub mod blueprints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -278,7 +280,9 @@ pub mod blueprints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -352,7 +356,9 @@ pub mod blueprints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -420,7 +426,8 @@ pub mod blueprints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints",
-                        &self.client.endpoint, &self.management_group_name
+                        self.client.endpoint(),
+                        &self.management_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -546,7 +553,10 @@ pub mod artifacts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name, &self.artifact_name
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name,
+                        &self.artifact_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -616,7 +626,10 @@ pub mod artifacts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name, &self.artifact_name
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name,
+                        &self.artifact_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -691,7 +704,10 @@ pub mod artifacts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name, &self.artifact_name
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name,
+                        &self.artifact_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -760,7 +776,9 @@ pub mod artifacts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/artifacts",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -884,7 +902,10 @@ pub mod published_blueprints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name, &self.version_id
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name,
+                        &self.version_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -953,7 +974,10 @@ pub mod published_blueprints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name, &self.version_id
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name,
+                        &self.version_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1027,7 +1051,10 @@ pub mod published_blueprints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name, &self.version_id
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name,
+                        &self.version_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1096,7 +1123,9 @@ pub mod published_blueprints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions",
-                        &self.client.endpoint, &self.management_group_name, &self.blueprint_name
+                        self.client.endpoint(),
+                        &self.management_group_name,
+                        &self.blueprint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1201,7 +1230,7 @@ pub mod published_artifacts {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Artifact, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts/{}" , & self . client . endpoint , & self . management_group_name , & self . blueprint_name , & self . version_id , & self . artifact_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts/{}" , self . client . endpoint () , & self . management_group_name , & self . blueprint_name , & self . version_id , & self . artifact_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1267,7 +1296,7 @@ pub mod published_artifacts {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ArtifactList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts" , & self . client . endpoint , & self . management_group_name , & self . blueprint_name , & self . version_id) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Blueprint/blueprints/{}/versions/{}/artifacts" , self . client . endpoint () , & self . management_group_name , & self . blueprint_name , & self . version_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1344,7 +1373,7 @@ pub mod operations {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ResourceProviderOperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Blueprint/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Blueprint/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1453,7 +1482,9 @@ pub mod assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.assignment_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1522,7 +1553,9 @@ pub mod assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.assignment_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1596,7 +1629,9 @@ pub mod assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Blueprint/blueprintAssignments/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.assignment_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1664,7 +1699,8 @@ pub mod assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Blueprint/blueprintAssignments",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

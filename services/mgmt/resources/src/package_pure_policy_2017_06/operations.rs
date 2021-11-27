@@ -256,7 +256,9 @@ pub mod policy_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.policy_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.policy_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -330,7 +332,9 @@ pub mod policy_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.policy_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.policy_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -409,7 +413,9 @@ pub mod policy_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/policyAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.policy_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.policy_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -490,7 +496,9 @@ pub mod policy_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/policyAssignments",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -577,7 +585,7 @@ pub mod policy_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/policyAssignments",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.resource_provider_namespace,
@@ -665,7 +673,8 @@ pub mod policy_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/policyAssignments",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -738,7 +747,7 @@ pub mod policy_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyAssignment, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.policy_assignment_id);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.policy_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -808,7 +817,7 @@ pub mod policy_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyAssignment, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.policy_assignment_id);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.policy_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -878,7 +887,7 @@ pub mod policy_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyAssignment, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.policy_assignment_id);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.policy_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1042,7 +1051,9 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.policy_set_definition_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_set_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1121,7 +1132,9 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.policy_set_definition_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_set_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1206,7 +1219,9 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.policy_set_definition_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_set_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1274,7 +1289,8 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-                        &self.client.endpoint, &self.policy_set_definition_name
+                        self.client.endpoint(),
+                        &self.policy_set_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1348,7 +1364,8 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/policySetDefinitions",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1419,7 +1436,7 @@ pub mod policy_set_definitions {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicySetDefinitionListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Authorization/policySetDefinitions", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Authorization/policySetDefinitions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1491,7 +1508,9 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementgroups/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-                        &self.client.endpoint, &self.management_group_id, &self.policy_set_definition_name
+                        self.client.endpoint(),
+                        &self.management_group_id,
+                        &self.policy_set_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1570,7 +1589,9 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementgroups/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-                        &self.client.endpoint, &self.management_group_id, &self.policy_set_definition_name
+                        self.client.endpoint(),
+                        &self.management_group_id,
+                        &self.policy_set_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1655,7 +1676,9 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementgroups/{}/providers/Microsoft.Authorization/policySetDefinitions/{}",
-                        &self.client.endpoint, &self.management_group_id, &self.policy_set_definition_name
+                        self.client.endpoint(),
+                        &self.management_group_id,
+                        &self.policy_set_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1725,7 +1748,8 @@ pub mod policy_set_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementgroups/{}/providers/Microsoft.Authorization/policySetDefinitions",
-                        &self.client.endpoint, &self.management_group_id
+                        self.client.endpoint(),
+                        &self.management_group_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

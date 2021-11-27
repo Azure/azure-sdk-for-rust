@@ -348,7 +348,8 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.NotificationHubs/checkNamespaceAvailability",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -418,7 +419,10 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.namespace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -493,7 +497,10 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.namespace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -570,7 +577,10 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.namespace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -646,7 +656,10 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.namespace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -716,7 +729,7 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.namespace_name,
@@ -794,7 +807,7 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.namespace_name,
@@ -874,7 +887,7 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.namespace_name,
@@ -942,7 +955,9 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1009,7 +1024,8 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.NotificationHubs/namespaces",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1081,7 +1097,10 @@ pub mod namespaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.namespace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1149,7 +1168,7 @@ pub mod namespaces {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ResourceListKeys, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}/listKeys" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . authorization_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}/listKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . authorization_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1218,7 +1237,7 @@ pub mod namespaces {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ResourceListKeys, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}/regenerateKeys" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . authorization_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}/regenerateKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . authorization_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1489,7 +1508,7 @@ pub mod notification_hubs {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckAvailabilityResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/checkNotificationHubAvailability" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/checkNotificationHubAvailability" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1559,7 +1578,7 @@ pub mod notification_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.namespace_name,
@@ -1639,7 +1658,7 @@ pub mod notification_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.namespace_name,
@@ -1720,7 +1739,7 @@ pub mod notification_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.namespace_name,
@@ -1791,7 +1810,7 @@ pub mod notification_hubs {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SharedAccessAuthorizationRuleResource, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1863,7 +1882,7 @@ pub mod notification_hubs {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SharedAccessAuthorizationRuleResource, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1937,7 +1956,7 @@ pub mod notification_hubs {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -2001,7 +2020,10 @@ pub mod notification_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.namespace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.namespace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2072,7 +2094,7 @@ pub mod notification_hubs {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SharedAccessAuthorizationRuleListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2140,7 +2162,7 @@ pub mod notification_hubs {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ResourceListKeys, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/listKeys" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/listKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2210,7 +2232,7 @@ pub mod notification_hubs {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ResourceListKeys, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/regenerateKeys" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/AuthorizationRules/{}/regenerateKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name , & self . authorization_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2278,7 +2300,7 @@ pub mod notification_hubs {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PnsCredentialsResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/pnsCredentials" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/notificationHubs/{}/pnsCredentials" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . notification_hub_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);

@@ -214,7 +214,10 @@ pub mod private_link_for_azure_ad {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -294,7 +297,10 @@ pub mod private_link_for_azure_ad {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -380,7 +386,10 @@ pub mod private_link_for_azure_ad {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -464,7 +473,10 @@ pub mod private_link_for_azure_ad {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -534,7 +546,8 @@ pub mod private_link_for_azure_ad {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/microsoft.aadiam/privateLinkForAzureAd",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -609,7 +622,9 @@ pub mod private_link_for_azure_ad {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -719,7 +734,10 @@ pub mod private_link_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}/privateLinkResources",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -789,7 +807,11 @@ pub mod private_link_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.aadiam/privateLinkForAzureAd/{}/privateLinkResources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

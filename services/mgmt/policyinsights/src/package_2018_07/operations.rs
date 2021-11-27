@@ -329,7 +329,7 @@ pub mod policy_tracked_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.management_groups_namespace,
                         &self.management_group_name,
                         &self.policy_tracked_resources_resource
@@ -424,7 +424,9 @@ pub mod policy_tracked_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
-                        &self.client.endpoint, &self.subscription_id, &self.policy_tracked_resources_resource
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_tracked_resources_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -517,7 +519,10 @@ pub mod policy_tracked_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_tracked_resources_resource
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_tracked_resources_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -609,7 +614,9 @@ pub mod policy_tracked_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/policyTrackedResources/{}/queryResults",
-                        &self.client.endpoint, &self.resource_id, &self.policy_tracked_resources_resource
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.policy_tracked_resources_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -996,7 +1003,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
-                        &self.client.endpoint, &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1074,7 +1084,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
-                        &self.client.endpoint, &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1158,7 +1171,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations",
-                        &self.client.endpoint, &self.management_groups_namespace, &self.management_group_id
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1238,7 +1253,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1318,7 +1336,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1404,7 +1425,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.management_groups_namespace, &self.management_group_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1485,7 +1509,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
-                        &self.client.endpoint, &self.subscription_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1562,7 +1588,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
-                        &self.client.endpoint, &self.subscription_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1645,7 +1673,8 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1724,7 +1753,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1803,7 +1834,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1888,7 +1921,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1970,7 +2005,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2048,7 +2086,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2132,7 +2173,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2212,7 +2255,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2292,7 +2338,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2378,7 +2427,10 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2459,7 +2511,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}/listDeployments",
-                        &self.client.endpoint, &self.resource_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2536,7 +2590,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}/cancel",
-                        &self.client.endpoint, &self.resource_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2619,7 +2675,8 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/remediations",
-                        &self.client.endpoint, &self.resource_id
+                        self.client.endpoint(),
+                        &self.resource_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2698,7 +2755,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.resource_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2777,7 +2836,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.resource_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2862,7 +2923,9 @@ pub mod remediations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/remediations/{}",
-                        &self.client.endpoint, &self.resource_id, &self.remediation_name
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.remediation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3160,7 +3223,10 @@ pub mod policy_events {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                        &self.client.endpoint, &self.management_groups_namespace, &self.management_group_name, &self.policy_events_resource
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_name,
+                        &self.policy_events_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3298,7 +3364,9 @@ pub mod policy_events {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                        &self.client.endpoint, &self.subscription_id, &self.policy_events_resource
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_events_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3437,7 +3505,10 @@ pub mod policy_events {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_events_resource
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_events_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3575,7 +3646,9 @@ pub mod policy_events {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults",
-                        &self.client.endpoint, &self.resource_id, &self.policy_events_resource
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.policy_events_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3713,7 +3786,7 @@ pub mod policy_events {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_events_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_events_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3850,7 +3923,7 @@ pub mod policy_events {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_events_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_events_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3987,7 +4060,7 @@ pub mod policy_events {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_events_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_events_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4125,7 +4198,7 @@ pub mod policy_events {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyEventsQueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_events_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyEvents/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_events_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4595,7 +4668,10 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                        &self.client.endpoint, &self.management_groups_namespace, &self.management_group_name, &self.policy_states_resource
+                        self.client.endpoint(),
+                        &self.management_groups_namespace,
+                        &self.management_group_name,
+                        &self.policy_states_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4714,7 +4790,7 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/{}/managementGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.management_groups_namespace,
                         &self.management_group_name,
                         &self.policy_states_summary_resource
@@ -4843,7 +4919,9 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                        &self.client.endpoint, &self.subscription_id, &self.policy_states_resource
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_states_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4961,7 +5039,9 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                        &self.client.endpoint, &self.subscription_id, &self.policy_states_summary_resource
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.policy_states_summary_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5088,7 +5168,10 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_states_resource
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_states_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5207,7 +5290,10 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.policy_states_summary_resource
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.policy_states_summary_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5338,7 +5424,9 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults",
-                        &self.client.endpoint, &self.resource_id, &self.policy_states_resource
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.policy_states_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5459,7 +5547,9 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize",
-                        &self.client.endpoint, &self.resource_id, &self.policy_states_summary_resource
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.policy_states_summary_resource
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5585,7 +5675,7 @@ pub mod policy_states {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_states_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_states_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -5702,7 +5792,7 @@ pub mod policy_states {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_states_summary_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policySetDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_set_definition_name , & self . policy_states_summary_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -5827,7 +5917,7 @@ pub mod policy_states {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_states_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_states_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -5944,7 +6034,7 @@ pub mod policy_states {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_states_summary_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_definition_name , & self . policy_states_summary_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -6069,7 +6159,7 @@ pub mod policy_states {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -6186,7 +6276,7 @@ pub mod policy_states {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , & self . client . endpoint , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_summary_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_summary_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -6312,7 +6402,7 @@ pub mod policy_states {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyStatesQueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/queryResults" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -6430,7 +6520,7 @@ pub mod policy_states {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SummarizeResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_summary_resource) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/policyStates/{}/summarize" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . authorization_namespace , & self . policy_assignment_name , & self . policy_states_summary_resource) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -6514,7 +6604,8 @@ pub mod policy_states {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.PolicyInsights/policyStates/$metadata",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6595,7 +6686,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsListResults, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.PolicyInsights/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.PolicyInsights/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

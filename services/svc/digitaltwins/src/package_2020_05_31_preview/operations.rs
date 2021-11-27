@@ -228,7 +228,7 @@ pub mod digital_twin_models {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PagedModelDataCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/models", &self.client.endpoint,);
+                    let url_str = &format!("{}/models", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -314,7 +314,7 @@ pub mod digital_twin_models {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::NonPagedModelDataCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/models", &self.client.endpoint,);
+                    let url_str = &format!("{}/models", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -393,7 +393,7 @@ pub mod digital_twin_models {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ModelData, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/models/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/models/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -467,7 +467,7 @@ pub mod digital_twin_models {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/models/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/models/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -532,7 +532,7 @@ pub mod digital_twin_models {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/models/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/models/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -611,7 +611,7 @@ pub mod query {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::QueryResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/query", &self.client.endpoint,);
+                    let url_str = &format!("{}/query", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -811,7 +811,7 @@ pub mod digital_twins {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/digitaltwins/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/digitaltwins/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -891,7 +891,7 @@ pub mod digital_twins {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/digitaltwins/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/digitaltwins/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -976,7 +976,7 @@ pub mod digital_twins {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/digitaltwins/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/digitaltwins/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -1050,7 +1050,7 @@ pub mod digital_twins {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/digitaltwins/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/digitaltwins/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1120,7 +1120,9 @@ pub mod digital_twins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/digitaltwins/{}/relationships/{}",
-                        &self.client.endpoint, &self.id, &self.relationship_id
+                        self.client.endpoint(),
+                        &self.id,
+                        &self.relationship_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1203,7 +1205,9 @@ pub mod digital_twins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/digitaltwins/{}/relationships/{}",
-                        &self.client.endpoint, &self.id, &self.relationship_id
+                        self.client.endpoint(),
+                        &self.id,
+                        &self.relationship_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1294,7 +1298,9 @@ pub mod digital_twins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/digitaltwins/{}/relationships/{}",
-                        &self.client.endpoint, &self.id, &self.relationship_id
+                        self.client.endpoint(),
+                        &self.id,
+                        &self.relationship_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1375,7 +1381,9 @@ pub mod digital_twins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/digitaltwins/{}/relationships/{}",
-                        &self.client.endpoint, &self.id, &self.relationship_id
+                        self.client.endpoint(),
+                        &self.id,
+                        &self.relationship_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1448,7 +1456,7 @@ pub mod digital_twins {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationshipCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/digitaltwins/{}/relationships", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/digitaltwins/{}/relationships", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1522,7 +1530,7 @@ pub mod digital_twins {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::IncomingRelationshipCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/digitaltwins/{}/incomingrelationships", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/digitaltwins/{}/incomingrelationships", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1598,7 +1606,7 @@ pub mod digital_twins {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/digitaltwins/{}/telemetry", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/digitaltwins/{}/telemetry", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1677,7 +1685,9 @@ pub mod digital_twins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/digitaltwins/{}/components/{}/telemetry",
-                        &self.client.endpoint, &self.id, &self.component_path
+                        self.client.endpoint(),
+                        &self.id,
+                        &self.component_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1750,7 +1760,9 @@ pub mod digital_twins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/digitaltwins/{}/components/{}",
-                        &self.client.endpoint, &self.id, &self.component_path
+                        self.client.endpoint(),
+                        &self.id,
+                        &self.component_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1838,7 +1850,9 @@ pub mod digital_twins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/digitaltwins/{}/components/{}",
-                        &self.client.endpoint, &self.id, &self.component_path
+                        self.client.endpoint(),
+                        &self.id,
+                        &self.component_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1950,7 +1964,7 @@ pub mod event_routes {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EventRouteCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/eventroutes", &self.client.endpoint,);
+                    let url_str = &format!("{}/eventroutes", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2022,7 +2036,7 @@ pub mod event_routes {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EventRoute, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/eventroutes/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/eventroutes/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2096,7 +2110,7 @@ pub mod event_routes {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/eventroutes/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/eventroutes/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2165,7 +2179,7 @@ pub mod event_routes {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/eventroutes/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/eventroutes/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);

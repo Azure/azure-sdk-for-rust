@@ -234,7 +234,10 @@ pub mod connected_cluster {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Kubernetes/connectedClusters/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -314,7 +317,10 @@ pub mod connected_cluster {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Kubernetes/connectedClusters/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -401,7 +407,10 @@ pub mod connected_cluster {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Kubernetes/connectedClusters/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -483,7 +492,10 @@ pub mod connected_cluster {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Kubernetes/connectedClusters/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.cluster_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.cluster_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -553,7 +565,7 @@ pub mod connected_cluster {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CredentialResults, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Kubernetes/connectedClusters/{}/listClusterUserCredentials" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . cluster_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Kubernetes/connectedClusters/{}/listClusterUserCredentials" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -626,7 +638,9 @@ pub mod connected_cluster {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Kubernetes/connectedClusters",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -698,7 +712,8 @@ pub mod connected_cluster {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Kubernetes/connectedClusters",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -779,7 +794,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Kubernetes/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Kubernetes/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

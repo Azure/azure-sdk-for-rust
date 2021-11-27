@@ -236,7 +236,7 @@ pub mod service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageServiceProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/?restype=service&comp=properties", &self.client.endpoint,);
+                    let url_str = &format!("{}/?restype=service&comp=properties", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -328,7 +328,7 @@ pub mod service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/?restype=service&comp=properties", &self.client.endpoint,);
+                    let url_str = &format!("{}/?restype=service&comp=properties", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -415,7 +415,7 @@ pub mod service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageServiceStats, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/?restype=service&comp=stats", &self.client.endpoint,);
+                    let url_str = &format!("{}/?restype=service&comp=stats", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -525,7 +525,7 @@ pub mod service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ListQueuesSegmentResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/?comp=list", &self.client.endpoint,);
+                    let url_str = &format!("{}/?comp=list", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -722,7 +722,7 @@ pub mod queue {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -807,7 +807,7 @@ pub mod queue {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -889,7 +889,7 @@ pub mod queue {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?comp=metadata", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}?comp=metadata", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -978,7 +978,7 @@ pub mod queue {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?comp=metadata", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}?comp=metadata", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1065,7 +1065,7 @@ pub mod queue {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SignedIdentifiers, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?comp=acl", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}?comp=acl", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1159,7 +1159,7 @@ pub mod queue {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?comp=acl", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}?comp=acl", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1314,7 +1314,7 @@ pub mod messages {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DequeuedMessagesList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/messages", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}/messages", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1418,7 +1418,7 @@ pub mod messages {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EnqueuedMessageList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/messages", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}/messages", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1512,7 +1512,7 @@ pub mod messages {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/messages", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}/messages", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1599,7 +1599,7 @@ pub mod messages {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeekedMessagesList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/messages?peekonly=true", &self.client.endpoint, &self.queue_name);
+                    let url_str = &format!("{}/{}/messages?peekonly=true", self.client.endpoint(), &self.queue_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1744,7 +1744,7 @@ pub mod message_id {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/messages/{}", &self.client.endpoint, &self.queue_name, &self.messageid);
+                    let url_str = &format!("{}/{}/messages/{}", self.client.endpoint(), &self.queue_name, &self.messageid);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1837,7 +1837,7 @@ pub mod message_id {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/messages/{}", &self.client.endpoint, &self.queue_name, &self.messageid);
+                    let url_str = &format!("{}/{}/messages/{}", self.client.endpoint(), &self.queue_name, &self.messageid);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);

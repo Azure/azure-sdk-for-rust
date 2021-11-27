@@ -156,7 +156,8 @@ pub mod software_plan {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.SoftwarePlan/register",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -287,7 +288,8 @@ pub mod hybrid_use_benefit {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -363,7 +365,9 @@ pub mod hybrid_use_benefit {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}",
-                        &self.client.endpoint, &self.scope, &self.plan_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.plan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -437,7 +441,9 @@ pub mod hybrid_use_benefit {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}",
-                        &self.client.endpoint, &self.scope, &self.plan_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.plan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -512,7 +518,9 @@ pub mod hybrid_use_benefit {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}",
-                        &self.client.endpoint, &self.scope, &self.plan_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.plan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -591,7 +599,9 @@ pub mod hybrid_use_benefit {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}",
-                        &self.client.endpoint, &self.scope, &self.plan_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.plan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -678,7 +688,9 @@ pub mod hybrid_use_benefit_revision {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.SoftwarePlan/hybridUseBenefits/{}/revisions",
-                        &self.client.endpoint, &self.scope, &self.plan_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.plan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -765,7 +777,8 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.SoftwarePlan/operations",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

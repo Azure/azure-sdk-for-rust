@@ -193,7 +193,11 @@ pub mod alert_rule_incidents {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules/{}/incidents/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rule_name, &self.incident_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rule_name,
+                        &self.incident_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -264,7 +268,10 @@ pub mod alert_rule_incidents {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/alertrules/{}/incidents",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rule_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -418,7 +425,10 @@ pub mod alert_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rule_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -498,7 +508,10 @@ pub mod alert_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rule_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -585,7 +598,10 @@ pub mod alert_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rule_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -671,7 +687,10 @@ pub mod alert_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rule_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -742,7 +761,9 @@ pub mod alert_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Insights/alertrules",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -816,7 +837,8 @@ pub mod alert_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Insights/alertrules",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -944,7 +966,9 @@ pub mod log_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.log_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.log_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1015,7 +1039,9 @@ pub mod log_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.log_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.log_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1088,7 +1114,9 @@ pub mod log_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.log_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.log_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1159,7 +1187,9 @@ pub mod log_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.log_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.log_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1221,7 +1251,8 @@ pub mod log_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Insights/logprofiles",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1314,7 +1345,8 @@ pub mod metric_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/metricDefinitions",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

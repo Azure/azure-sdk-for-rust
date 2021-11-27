@@ -167,7 +167,7 @@ pub mod health_api {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/health", &self.client.endpoint,);
+                    let url_str = &format!("{}/api/health", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::HEAD);
@@ -464,7 +464,7 @@ pub mod web_pub_sub {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ClientTokenResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/hubs/{}/:generateToken", &self.client.endpoint, &self.hub);
+                    let url_str = &format!("{}/api/hubs/{}/:generateToken", self.client.endpoint(), &self.hub);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -554,7 +554,7 @@ pub mod web_pub_sub {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/hubs/{}/:closeConnections", &self.client.endpoint, &self.hub);
+                    let url_str = &format!("{}/api/hubs/{}/:closeConnections", self.client.endpoint(), &self.hub);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -632,7 +632,7 @@ pub mod web_pub_sub {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/hubs/{}/:send", &self.client.endpoint, &self.hub);
+                    let url_str = &format!("{}/api/hubs/{}/:send", self.client.endpoint(), &self.hub);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -709,7 +709,9 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/connections/{}",
-                        &self.client.endpoint, &self.hub, &self.connection_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.connection_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -782,7 +784,9 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/connections/{}",
-                        &self.client.endpoint, &self.hub, &self.connection_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.connection_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -852,7 +856,9 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/connections/{}/:send",
-                        &self.client.endpoint, &self.hub, &self.connection_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.connection_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -921,7 +927,7 @@ pub mod web_pub_sub {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/hubs/{}/groups/{}", &self.client.endpoint, &self.hub, &self.group);
+                    let url_str = &format!("{}/api/hubs/{}/groups/{}", self.client.endpoint(), &self.hub, &self.group);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::HEAD);
@@ -999,7 +1005,9 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/groups/{}/:closeConnections",
-                        &self.client.endpoint, &self.hub, &self.group
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.group
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1079,7 +1087,7 @@ pub mod web_pub_sub {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/hubs/{}/groups/{}/:send", &self.client.endpoint, &self.hub, &self.group);
+                    let url_str = &format!("{}/api/hubs/{}/groups/{}/:send", self.client.endpoint(), &self.hub, &self.group);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1152,7 +1160,10 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/groups/{}/connections/{}",
-                        &self.client.endpoint, &self.hub, &self.group, &self.connection_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.group,
+                        &self.connection_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1221,7 +1232,10 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/groups/{}/connections/{}",
-                        &self.client.endpoint, &self.hub, &self.group, &self.connection_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.group,
+                        &self.connection_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1289,7 +1303,7 @@ pub mod web_pub_sub {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/hubs/{}/users/{}", &self.client.endpoint, &self.hub, &self.user_id);
+                    let url_str = &format!("{}/api/hubs/{}/users/{}", self.client.endpoint(), &self.hub, &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::HEAD);
@@ -1367,7 +1381,9 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/users/{}/:closeConnections",
-                        &self.client.endpoint, &self.hub, &self.user_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.user_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1442,7 +1458,7 @@ pub mod web_pub_sub {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/hubs/{}/users/{}/:send", &self.client.endpoint, &self.hub, &self.user_id);
+                    let url_str = &format!("{}/api/hubs/{}/users/{}/:send", self.client.endpoint(), &self.hub, &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1511,7 +1527,10 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/users/{}/groups/{}",
-                        &self.client.endpoint, &self.hub, &self.user_id, &self.group
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.user_id,
+                        &self.group
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1580,7 +1599,10 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/users/{}/groups/{}",
-                        &self.client.endpoint, &self.hub, &self.user_id, &self.group
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.user_id,
+                        &self.group
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1646,7 +1668,7 @@ pub mod web_pub_sub {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/api/hubs/{}/users/{}/groups", &self.client.endpoint, &self.hub, &self.user_id);
+                    let url_str = &format!("{}/api/hubs/{}/users/{}/groups", self.client.endpoint(), &self.hub, &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1719,7 +1741,10 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/permissions/{}/connections/{}",
-                        &self.client.endpoint, &self.hub, &self.permission, &self.connection_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.permission,
+                        &self.connection_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1796,7 +1821,10 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/permissions/{}/connections/{}",
-                        &self.client.endpoint, &self.hub, &self.permission, &self.connection_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.permission,
+                        &self.connection_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1875,7 +1903,10 @@ pub mod web_pub_sub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/api/hubs/{}/permissions/{}/connections/{}",
-                        &self.client.endpoint, &self.hub, &self.permission, &self.connection_id
+                        self.client.endpoint(),
+                        &self.hub,
+                        &self.permission,
+                        &self.connection_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

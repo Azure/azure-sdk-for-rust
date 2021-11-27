@@ -170,7 +170,7 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.MachineLearningExperimentation/operations",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -326,7 +326,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -406,7 +409,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -488,7 +494,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -568,7 +577,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -637,7 +649,9 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -709,7 +723,8 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.MachineLearningExperimentation/accounts",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -868,7 +883,7 @@ pub mod workspaces {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Workspace, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -946,7 +961,7 @@ pub mod workspaces {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1026,7 +1041,7 @@ pub mod workspaces {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Workspace, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -1104,7 +1119,7 @@ pub mod workspaces {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1173,7 +1188,10 @@ pub mod workspaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1343,7 +1361,7 @@ pub mod projects {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Project, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name , & self . project_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name , & self . project_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1422,7 +1440,7 @@ pub mod projects {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name , & self . project_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name , & self . project_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1503,7 +1521,7 @@ pub mod projects {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Project, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name , & self . project_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name , & self . project_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -1582,7 +1600,7 @@ pub mod projects {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name , & self . project_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name , & self . project_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1650,7 +1668,7 @@ pub mod projects {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProjectListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearningExperimentation/accounts/{}/workspaces/{}/projects" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -349,7 +349,7 @@ pub mod linked_service {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LinkedServiceListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/linkedservices", &self.client.endpoint,);
+                    let url_str = &format!("{}/linkedservices", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -425,7 +425,7 @@ pub mod linked_service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LinkedServiceResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/linkedservices/{}", &self.client.endpoint, &self.linked_service_name);
+                    let url_str = &format!("{}/linkedservices/{}", self.client.endpoint(), &self.linked_service_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -509,7 +509,7 @@ pub mod linked_service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/linkedservices/{}", &self.client.endpoint, &self.linked_service_name);
+                    let url_str = &format!("{}/linkedservices/{}", self.client.endpoint(), &self.linked_service_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -589,7 +589,7 @@ pub mod linked_service {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/linkedservices/{}", &self.client.endpoint, &self.linked_service_name);
+                    let url_str = &format!("{}/linkedservices/{}", self.client.endpoint(), &self.linked_service_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -661,7 +661,7 @@ pub mod linked_service {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/linkedservices/{}/rename", &self.client.endpoint, &self.linked_service_name);
+                    let url_str = &format!("{}/linkedservices/{}/rename", self.client.endpoint(), &self.linked_service_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -774,7 +774,7 @@ pub mod dataset {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DatasetListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasets", &self.client.endpoint,);
+                    let url_str = &format!("{}/datasets", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -850,7 +850,7 @@ pub mod dataset {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DatasetResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasets/{}", &self.client.endpoint, &self.dataset_name);
+                    let url_str = &format!("{}/datasets/{}", self.client.endpoint(), &self.dataset_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -934,7 +934,7 @@ pub mod dataset {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasets/{}", &self.client.endpoint, &self.dataset_name);
+                    let url_str = &format!("{}/datasets/{}", self.client.endpoint(), &self.dataset_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1014,7 +1014,7 @@ pub mod dataset {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasets/{}", &self.client.endpoint, &self.dataset_name);
+                    let url_str = &format!("{}/datasets/{}", self.client.endpoint(), &self.dataset_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1086,7 +1086,7 @@ pub mod dataset {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasets/{}/rename", &self.client.endpoint, &self.dataset_name);
+                    let url_str = &format!("{}/datasets/{}/rename", self.client.endpoint(), &self.dataset_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1209,7 +1209,7 @@ pub mod pipeline {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PipelineListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelines", &self.client.endpoint,);
+                    let url_str = &format!("{}/pipelines", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1285,7 +1285,7 @@ pub mod pipeline {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PipelineResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelines/{}", &self.client.endpoint, &self.pipeline_name);
+                    let url_str = &format!("{}/pipelines/{}", self.client.endpoint(), &self.pipeline_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1369,7 +1369,7 @@ pub mod pipeline {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelines/{}", &self.client.endpoint, &self.pipeline_name);
+                    let url_str = &format!("{}/pipelines/{}", self.client.endpoint(), &self.pipeline_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1449,7 +1449,7 @@ pub mod pipeline {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelines/{}", &self.client.endpoint, &self.pipeline_name);
+                    let url_str = &format!("{}/pipelines/{}", self.client.endpoint(), &self.pipeline_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1521,7 +1521,7 @@ pub mod pipeline {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelines/{}/rename", &self.client.endpoint, &self.pipeline_name);
+                    let url_str = &format!("{}/pipelines/{}/rename", self.client.endpoint(), &self.pipeline_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1607,7 +1607,7 @@ pub mod pipeline {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CreateRunResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelines/{}/createRun", &self.client.endpoint, &self.pipeline_name);
+                    let url_str = &format!("{}/pipelines/{}/createRun", self.client.endpoint(), &self.pipeline_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1735,7 +1735,7 @@ pub mod pipeline_run {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PipelineRunsQueryResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/queryPipelineRuns", &self.client.endpoint,);
+                    let url_str = &format!("{}/queryPipelineRuns", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1805,7 +1805,7 @@ pub mod pipeline_run {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PipelineRun, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelineruns/{}", &self.client.endpoint, &self.run_id);
+                    let url_str = &format!("{}/pipelineruns/{}", self.client.endpoint(), &self.run_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1878,7 +1878,9 @@ pub mod pipeline_run {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/pipelines/{}/pipelineruns/{}/queryActivityruns",
-                        &self.client.endpoint, &self.pipeline_name, &self.run_id
+                        self.client.endpoint(),
+                        &self.pipeline_name,
+                        &self.run_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1954,7 +1956,7 @@ pub mod pipeline_run {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelineruns/{}/cancel", &self.client.endpoint, &self.run_id);
+                    let url_str = &format!("{}/pipelineruns/{}/cancel", self.client.endpoint(), &self.run_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2088,7 +2090,7 @@ pub mod trigger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TriggerListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/triggers", &self.client.endpoint,);
+                    let url_str = &format!("{}/triggers", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2164,7 +2166,7 @@ pub mod trigger {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TriggerResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/triggers/{}", &self.client.endpoint, &self.trigger_name);
+                    let url_str = &format!("{}/triggers/{}", self.client.endpoint(), &self.trigger_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2248,7 +2250,7 @@ pub mod trigger {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/triggers/{}", &self.client.endpoint, &self.trigger_name);
+                    let url_str = &format!("{}/triggers/{}", self.client.endpoint(), &self.trigger_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2328,7 +2330,7 @@ pub mod trigger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/triggers/{}", &self.client.endpoint, &self.trigger_name);
+                    let url_str = &format!("{}/triggers/{}", self.client.endpoint(), &self.trigger_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -2399,7 +2401,7 @@ pub mod trigger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/triggers/{}/subscribeToEvents", &self.client.endpoint, &self.trigger_name);
+                    let url_str = &format!("{}/triggers/{}/subscribeToEvents", self.client.endpoint(), &self.trigger_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2474,7 +2476,8 @@ pub mod trigger {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/triggers/{}/getEventSubscriptionStatus",
-                        &self.client.endpoint, &self.trigger_name
+                        self.client.endpoint(),
+                        &self.trigger_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2550,7 +2553,7 @@ pub mod trigger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/triggers/{}/unsubscribeFromEvents", &self.client.endpoint, &self.trigger_name);
+                    let url_str = &format!("{}/triggers/{}/unsubscribeFromEvents", self.client.endpoint(), &self.trigger_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2621,7 +2624,7 @@ pub mod trigger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/triggers/{}/start", &self.client.endpoint, &self.trigger_name);
+                    let url_str = &format!("{}/triggers/{}/start", self.client.endpoint(), &self.trigger_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2686,7 +2689,7 @@ pub mod trigger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/triggers/{}/stop", &self.client.endpoint, &self.trigger_name);
+                    let url_str = &format!("{}/triggers/{}/stop", self.client.endpoint(), &self.trigger_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2794,7 +2797,9 @@ pub mod trigger_run {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/triggers/{}/triggerRuns/{}/rerun",
-                        &self.client.endpoint, &self.trigger_name, &self.run_id
+                        self.client.endpoint(),
+                        &self.trigger_name,
+                        &self.run_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2863,7 +2868,9 @@ pub mod trigger_run {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/triggers/{}/triggerRuns/{}/cancel",
-                        &self.client.endpoint, &self.trigger_name, &self.run_id
+                        self.client.endpoint(),
+                        &self.trigger_name,
+                        &self.run_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2929,7 +2936,7 @@ pub mod trigger_run {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TriggerRunsQueryResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/queryTriggerRuns", &self.client.endpoint,);
+                    let url_str = &format!("{}/queryTriggerRuns", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3052,7 +3059,7 @@ pub mod data_flow {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataFlowResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/dataflows/{}", &self.client.endpoint, &self.data_flow_name);
+                    let url_str = &format!("{}/dataflows/{}", self.client.endpoint(), &self.data_flow_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3135,7 +3142,7 @@ pub mod data_flow {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/dataflows/{}", &self.client.endpoint, &self.data_flow_name);
+                    let url_str = &format!("{}/dataflows/{}", self.client.endpoint(), &self.data_flow_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3215,7 +3222,7 @@ pub mod data_flow {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/dataflows/{}", &self.client.endpoint, &self.data_flow_name);
+                    let url_str = &format!("{}/dataflows/{}", self.client.endpoint(), &self.data_flow_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3287,7 +3294,7 @@ pub mod data_flow {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/dataflows/{}/rename", &self.client.endpoint, &self.data_flow_name);
+                    let url_str = &format!("{}/dataflows/{}/rename", self.client.endpoint(), &self.data_flow_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3352,7 +3359,7 @@ pub mod data_flow {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataFlowListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/dataflows", &self.client.endpoint,);
+                    let url_str = &format!("{}/dataflows", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3468,7 +3475,7 @@ pub mod data_flow_debug_session {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/createDataFlowDebugSession", &self.client.endpoint,);
+                    let url_str = &format!("{}/createDataFlowDebugSession", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3540,7 +3547,7 @@ pub mod data_flow_debug_session {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::QueryDataFlowDebugSessionsResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/queryDataFlowDebugSessions", &self.client.endpoint,);
+                    let url_str = &format!("{}/queryDataFlowDebugSessions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3612,7 +3619,7 @@ pub mod data_flow_debug_session {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::AddDataFlowToDebugSessionResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/addDataFlowToDebugSession", &self.client.endpoint,);
+                    let url_str = &format!("{}/addDataFlowToDebugSession", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3682,7 +3689,7 @@ pub mod data_flow_debug_session {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/deleteDataFlowDebugSession", &self.client.endpoint,);
+                    let url_str = &format!("{}/deleteDataFlowDebugSession", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3752,7 +3759,7 @@ pub mod data_flow_debug_session {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/executeDataFlowDebugCommand", &self.client.endpoint,);
+                    let url_str = &format!("{}/executeDataFlowDebugCommand", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3870,7 +3877,7 @@ pub mod sql_script {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlScriptsListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sqlScripts", &self.client.endpoint,);
+                    let url_str = &format!("{}/sqlScripts", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3946,7 +3953,7 @@ pub mod sql_script {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlScriptResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sqlScripts/{}", &self.client.endpoint, &self.sql_script_name);
+                    let url_str = &format!("{}/sqlScripts/{}", self.client.endpoint(), &self.sql_script_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4030,7 +4037,7 @@ pub mod sql_script {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sqlScripts/{}", &self.client.endpoint, &self.sql_script_name);
+                    let url_str = &format!("{}/sqlScripts/{}", self.client.endpoint(), &self.sql_script_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4110,7 +4117,7 @@ pub mod sql_script {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sqlScripts/{}", &self.client.endpoint, &self.sql_script_name);
+                    let url_str = &format!("{}/sqlScripts/{}", self.client.endpoint(), &self.sql_script_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4182,7 +4189,7 @@ pub mod sql_script {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sqlScripts/{}/rename", &self.client.endpoint, &self.sql_script_name);
+                    let url_str = &format!("{}/sqlScripts/{}/rename", self.client.endpoint(), &self.sql_script_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4312,7 +4319,7 @@ pub mod spark_job_definition {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkJobDefinitionsListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sparkJobDefinitions", &self.client.endpoint,);
+                    let url_str = &format!("{}/sparkJobDefinitions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4390,7 +4397,7 @@ pub mod spark_job_definition {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SparkJobDefinitionResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sparkJobDefinitions/{}", &self.client.endpoint, &self.spark_job_definition_name);
+                    let url_str = &format!("{}/sparkJobDefinitions/{}", self.client.endpoint(), &self.spark_job_definition_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4474,7 +4481,7 @@ pub mod spark_job_definition {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sparkJobDefinitions/{}", &self.client.endpoint, &self.spark_job_definition_name);
+                    let url_str = &format!("{}/sparkJobDefinitions/{}", self.client.endpoint(), &self.spark_job_definition_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4554,7 +4561,7 @@ pub mod spark_job_definition {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sparkJobDefinitions/{}", &self.client.endpoint, &self.spark_job_definition_name);
+                    let url_str = &format!("{}/sparkJobDefinitions/{}", self.client.endpoint(), &self.spark_job_definition_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4627,7 +4634,8 @@ pub mod spark_job_definition {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/sparkJobDefinitions/{}/execute",
-                        &self.client.endpoint, &self.spark_job_definition_name
+                        self.client.endpoint(),
+                        &self.spark_job_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4712,7 +4720,8 @@ pub mod spark_job_definition {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/sparkJobDefinitions/{}/rename",
-                        &self.client.endpoint, &self.spark_job_definition_name
+                        self.client.endpoint(),
+                        &self.spark_job_definition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4784,7 +4793,7 @@ pub mod spark_job_definition {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/debugSparkJobDefinition", &self.client.endpoint,);
+                    let url_str = &format!("{}/debugSparkJobDefinition", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4910,7 +4919,7 @@ pub mod notebook {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NotebookListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/notebooks", &self.client.endpoint,);
+                    let url_str = &format!("{}/notebooks", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4978,7 +4987,7 @@ pub mod notebook {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NotebookListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/notebooks/summary", &self.client.endpoint,);
+                    let url_str = &format!("{}/notebooks/summary", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5054,7 +5063,7 @@ pub mod notebook {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NotebookResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/notebooks/{}", &self.client.endpoint, &self.notebook_name);
+                    let url_str = &format!("{}/notebooks/{}", self.client.endpoint(), &self.notebook_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5138,7 +5147,7 @@ pub mod notebook {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/notebooks/{}", &self.client.endpoint, &self.notebook_name);
+                    let url_str = &format!("{}/notebooks/{}", self.client.endpoint(), &self.notebook_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -5218,7 +5227,7 @@ pub mod notebook {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/notebooks/{}", &self.client.endpoint, &self.notebook_name);
+                    let url_str = &format!("{}/notebooks/{}", self.client.endpoint(), &self.notebook_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -5290,7 +5299,7 @@ pub mod notebook {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/notebooks/{}/rename", &self.client.endpoint, &self.notebook_name);
+                    let url_str = &format!("{}/notebooks/{}/rename", self.client.endpoint(), &self.notebook_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -5367,7 +5376,7 @@ pub mod workspace {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Workspace, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/workspace", &self.client.endpoint,);
+                    let url_str = &format!("{}/workspace", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5453,7 +5462,7 @@ pub mod sql_pools {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolInfoListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sqlPools", &self.client.endpoint,);
+                    let url_str = &format!("{}/sqlPools", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5522,7 +5531,7 @@ pub mod sql_pools {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPool, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/sqlPools/{}", &self.client.endpoint, &self.sql_pool_name);
+                    let url_str = &format!("{}/sqlPools/{}", self.client.endpoint(), &self.sql_pool_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5610,7 +5619,7 @@ pub mod big_data_pools {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::BigDataPoolResourceInfoListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/bigDataPools", &self.client.endpoint,);
+                    let url_str = &format!("{}/bigDataPools", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5679,7 +5688,7 @@ pub mod big_data_pools {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BigDataPoolResourceInfo, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/bigDataPools/{}", &self.client.endpoint, &self.big_data_pool_name);
+                    let url_str = &format!("{}/bigDataPools/{}", self.client.endpoint(), &self.big_data_pool_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5767,7 +5776,7 @@ pub mod integration_runtimes {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::IntegrationRuntimeListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/integrationRuntimes", &self.client.endpoint,);
+                    let url_str = &format!("{}/integrationRuntimes", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5838,7 +5847,7 @@ pub mod integration_runtimes {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::IntegrationRuntimeResource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/integrationRuntimes/{}", &self.client.endpoint, &self.integration_runtime_name);
+                    let url_str = &format!("{}/integrationRuntimes/{}", self.client.endpoint(), &self.integration_runtime_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5932,7 +5941,7 @@ pub mod library {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/libraries/{}?comp=appendblock", &self.client.endpoint, &self.library_name);
+                    let url_str = &format!("{}/libraries/{}?comp=appendblock", self.client.endpoint(), &self.library_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -6023,7 +6032,7 @@ pub mod workspace_git_repo_management {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GitHubAccessTokenResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/getGitHubAccessToken", &self.client.endpoint,);
+                    let url_str = &format!("{}/getGitHubAccessToken", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);

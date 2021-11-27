@@ -132,7 +132,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Support/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Support/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -216,7 +216,7 @@ pub mod look_up_resource_id {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LookUpResourceIdResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Support/lookUpResourceId", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Support/lookUpResourceId", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);

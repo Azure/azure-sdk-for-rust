@@ -170,7 +170,9 @@ pub mod management_group_diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/microsoft.management/managementGroups/{}/providers/microsoft.insights/diagnosticSettings/{}",
-                        &self.client.endpoint, &self.management_group_id, &self.name
+                        self.client.endpoint(),
+                        &self.management_group_id,
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -247,7 +249,9 @@ pub mod management_group_diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/microsoft.management/managementGroups/{}/providers/microsoft.insights/diagnosticSettings/{}",
-                        &self.client.endpoint, &self.management_group_id, &self.name
+                        self.client.endpoint(),
+                        &self.management_group_id,
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -326,7 +330,9 @@ pub mod management_group_diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/microsoft.management/managementGroups/{}/providers/microsoft.insights/diagnosticSettings/{}",
-                        &self.client.endpoint, &self.management_group_id, &self.name
+                        self.client.endpoint(),
+                        &self.management_group_id,
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -397,7 +403,8 @@ pub mod management_group_diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/microsoft.management/managementGroups/{}/providers/microsoft.insights/diagnosticSettings",
-                        &self.client.endpoint, &self.management_group_id
+                        self.client.endpoint(),
+                        &self.management_group_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

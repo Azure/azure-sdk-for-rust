@@ -213,7 +213,9 @@ pub mod guest_diagnostics_settings_association {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/guestDiagnosticSettingsAssociation/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.association_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.association_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -292,7 +294,9 @@ pub mod guest_diagnostics_settings_association {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/guestDiagnosticSettingsAssociation/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.association_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.association_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -376,7 +380,9 @@ pub mod guest_diagnostics_settings_association {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/guestDiagnosticSettingsAssociation/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.association_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.association_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -455,7 +461,9 @@ pub mod guest_diagnostics_settings_association {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/guestDiagnosticSettingsAssociation/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.association_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.association_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -526,7 +534,8 @@ pub mod guest_diagnostics_settings_association {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/microsoft.insights/guestDiagnosticSettingsAssociations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -602,7 +611,9 @@ pub mod guest_diagnostics_settings_association {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/guestDiagnosticSettingsAssociations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -760,7 +771,10 @@ pub mod guest_diagnostics_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/guestDiagnosticSettings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.diagnostic_settings_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.diagnostic_settings_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -840,7 +854,10 @@ pub mod guest_diagnostics_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/guestDiagnosticSettings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.diagnostic_settings_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.diagnostic_settings_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -927,7 +944,10 @@ pub mod guest_diagnostics_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/guestDiagnosticSettings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.diagnostic_settings_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.diagnostic_settings_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1013,7 +1033,10 @@ pub mod guest_diagnostics_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/guestDiagnosticSettings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.diagnostic_settings_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.diagnostic_settings_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1083,7 +1106,8 @@ pub mod guest_diagnostics_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/microsoft.insights/guestDiagnosticSettings",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1158,7 +1182,9 @@ pub mod guest_diagnostics_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/guestDiagnosticSettings",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

@@ -300,7 +300,9 @@ pub mod get_user_settings_with_location {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-                    &self.client.endpoint, &self.location, &self.user_settings_name
+                    self.client.endpoint(),
+                    &self.location,
+                    &self.user_settings_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -374,7 +376,9 @@ pub mod put_user_settings_with_location {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-                    &self.client.endpoint, &self.location, &self.user_settings_name
+                    self.client.endpoint(),
+                    &self.location,
+                    &self.user_settings_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -449,7 +453,9 @@ pub mod patch_user_settings_with_location {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-                    &self.client.endpoint, &self.location, &self.user_settings_name
+                    self.client.endpoint(),
+                    &self.location,
+                    &self.user_settings_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -528,7 +534,9 @@ pub mod delete_user_settings_with_location {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/locations/{}/userSettings/{}",
-                    &self.client.endpoint, &self.location, &self.user_settings_name
+                    self.client.endpoint(),
+                    &self.location,
+                    &self.user_settings_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -597,7 +605,9 @@ pub mod get_console_with_location {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-                    &self.client.endpoint, &self.location, &self.console_name
+                    self.client.endpoint(),
+                    &self.location,
+                    &self.console_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -675,7 +685,9 @@ pub mod put_console_with_location {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-                    &self.client.endpoint, &self.location, &self.console_name
+                    self.client.endpoint(),
+                    &self.location,
+                    &self.console_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -759,7 +771,9 @@ pub mod delete_console_with_location {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/locations/{}/consoles/{}",
-                    &self.client.endpoint, &self.location, &self.console_name
+                    self.client.endpoint(),
+                    &self.location,
+                    &self.console_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -828,7 +842,9 @@ pub mod keep_alive_with_location {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/locations/{}/consoles/{}/keepAlive",
-                    &self.client.endpoint, &self.location, &self.console_name
+                    self.client.endpoint(),
+                    &self.location,
+                    &self.console_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -895,7 +911,8 @@ pub mod get_user_settings {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/userSettings/{}",
-                    &self.client.endpoint, &self.user_settings_name
+                    self.client.endpoint(),
+                    &self.user_settings_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -968,7 +985,8 @@ pub mod put_user_settings {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/userSettings/{}",
-                    &self.client.endpoint, &self.user_settings_name
+                    self.client.endpoint(),
+                    &self.user_settings_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1042,7 +1060,8 @@ pub mod patch_user_settings {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/userSettings/{}",
-                    &self.client.endpoint, &self.user_settings_name
+                    self.client.endpoint(),
+                    &self.user_settings_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1120,7 +1139,8 @@ pub mod delete_user_settings {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/userSettings/{}",
-                    &self.client.endpoint, &self.user_settings_name
+                    self.client.endpoint(),
+                    &self.user_settings_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1188,7 +1208,8 @@ pub mod get_console {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/consoles/{}",
-                    &self.client.endpoint, &self.console_name
+                    self.client.endpoint(),
+                    &self.console_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1266,7 +1287,8 @@ pub mod put_console {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/consoles/{}",
-                    &self.client.endpoint, &self.console_name
+                    self.client.endpoint(),
+                    &self.console_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1350,7 +1372,8 @@ pub mod delete_console {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/consoles/{}",
-                    &self.client.endpoint, &self.console_name
+                    self.client.endpoint(),
+                    &self.console_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1418,7 +1441,8 @@ pub mod keep_alive {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.Portal/consoles/{}/keepAlive",
-                    &self.client.endpoint, &self.console_name
+                    self.client.endpoint(),
+                    &self.console_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();

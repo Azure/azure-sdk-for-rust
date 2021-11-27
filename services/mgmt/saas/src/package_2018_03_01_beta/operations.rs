@@ -181,7 +181,7 @@ pub mod operations {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SaasAppOperationsResponseWithContinuation, Error>>
             {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.SaaS/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.SaaS/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -271,7 +271,9 @@ pub mod applications {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/applications",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -382,7 +384,8 @@ pub mod saa_s {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.SaaS/saasresources/{}",
-                        &self.client.endpoint, &self.resource_id
+                        self.client.endpoint(),
+                        &self.resource_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -461,7 +464,8 @@ pub mod saa_s {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.SaaS/saasresources/{}",
-                        &self.client.endpoint, &self.resource_id
+                        self.client.endpoint(),
+                        &self.resource_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -542,7 +546,8 @@ pub mod saa_s {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.SaaS/saasresources/{}",
-                        &self.client.endpoint, &self.resource_id
+                        self.client.endpoint(),
+                        &self.resource_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -614,7 +619,7 @@ pub mod saa_s {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.SaaS/saasresources", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.SaaS/saasresources", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -698,7 +703,7 @@ pub mod saas_resources {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SaasResourceResponseWithContinuation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.SaaS/saasresources", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.SaaS/saasresources", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -778,7 +783,8 @@ pub mod saas_resource_list_access_token {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/providers/Microsoft.SaaS/saasresources/{}/listAccessToken",
-                    &self.client.endpoint, &self.resource_id
+                    self.client.endpoint(),
+                    &self.resource_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -988,7 +994,8 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.SaaS/resources",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1063,7 +1070,9 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1137,7 +1146,10 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1218,7 +1230,10 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1302,7 +1317,10 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1385,7 +1403,10 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1463,7 +1484,10 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources/{}/unsubscribe",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1535,7 +1559,10 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SaaS/resources/{}/listAccessToken",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1610,7 +1637,9 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/validateMoveResources",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1685,7 +1714,9 @@ pub mod saas_subscription_level {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/moveResources",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1774,7 +1805,8 @@ pub mod saa_s_operation {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.SaaS/operationResults/{}",
-                        &self.client.endpoint, &self.operation_id
+                        self.client.endpoint(),
+                        &self.operation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

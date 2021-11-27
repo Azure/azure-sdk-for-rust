@@ -159,7 +159,7 @@ pub mod authorization_operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Authorization/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Authorization/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -450,7 +450,10 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lock_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -525,7 +528,10 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lock_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -606,7 +612,10 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lock_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -670,7 +679,9 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.scope, &self.lock_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -744,7 +755,9 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.scope, &self.lock_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -824,7 +837,9 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.scope, &self.lock_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -893,7 +908,7 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.resource_provider_namespace,
@@ -979,7 +994,7 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.resource_provider_namespace,
@@ -1071,7 +1086,7 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.resource_provider_namespace,
@@ -1142,7 +1157,9 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.lock_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1216,7 +1233,9 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.lock_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1296,7 +1315,9 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/locks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.lock_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.lock_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1365,7 +1386,9 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/locks",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1445,7 +1468,7 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/locks",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.resource_provider_namespace,
@@ -1526,7 +1549,8 @@ pub mod management_locks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/locks",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1599,7 +1623,7 @@ pub mod management_locks {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ManagementLockListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/providers/Microsoft.Authorization/locks", &self.client.endpoint, &self.scope);
+                    let url_str = &format!("{}/{}/providers/Microsoft.Authorization/locks", self.client.endpoint(), &self.scope);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -190,7 +190,8 @@ pub mod classic_administrators {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/classicAdministrators",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -302,7 +303,9 @@ pub mod permissions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/Microsoft.Authorization/permissions",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -379,7 +382,7 @@ pub mod permissions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/permissions",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.resource_provider_namespace,
@@ -507,7 +510,9 @@ pub mod role_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/roleDefinitions/{}",
-                        &self.client.endpoint, &self.scope, &self.role_definition_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.role_definition_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -581,7 +586,9 @@ pub mod role_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/roleDefinitions/{}",
-                        &self.client.endpoint, &self.scope, &self.role_definition_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.role_definition_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -660,7 +667,9 @@ pub mod role_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/roleDefinitions/{}",
-                        &self.client.endpoint, &self.scope, &self.role_definition_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.role_definition_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -738,7 +747,8 @@ pub mod role_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/roleDefinitions",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -811,7 +821,7 @@ pub mod role_definitions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleDefinition, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.role_definition_id);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.role_definition_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -911,7 +921,8 @@ pub mod provider_operations_metadata {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Authorization/providerOperations/{}",
-                        &self.client.endpoint, &self.resource_provider_namespace
+                        self.client.endpoint(),
+                        &self.resource_provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -990,7 +1001,7 @@ pub mod provider_operations_metadata {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ProviderOperationsMetadataListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Authorization/providerOperations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Authorization/providerOperations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1073,7 +1084,7 @@ pub mod global_administrator {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Authorization/elevateAccess", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Authorization/elevateAccess", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1255,7 +1266,7 @@ pub mod role_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourcegroups/{}/providers/{}/{}/{}/{}/providers/Microsoft.Authorization/roleAssignments",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.resource_provider_namespace,
@@ -1342,7 +1353,9 @@ pub mod role_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Authorization/roleAssignments",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1418,7 +1431,9 @@ pub mod role_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/roleAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.role_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.role_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1492,7 +1507,9 @@ pub mod role_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/roleAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.role_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.role_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1571,7 +1588,9 @@ pub mod role_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/roleAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.role_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.role_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1642,7 +1661,7 @@ pub mod role_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignment, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.role_assignment_id);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.role_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1712,7 +1731,7 @@ pub mod role_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignment, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.role_assignment_id);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.role_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1787,7 +1806,7 @@ pub mod role_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}", &self.client.endpoint, &self.role_assignment_id);
+                    let url_str = &format!("{}/{}", self.client.endpoint(), &self.role_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1864,7 +1883,8 @@ pub mod role_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Authorization/roleAssignments",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1944,7 +1964,8 @@ pub mod role_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Authorization/roleAssignments",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

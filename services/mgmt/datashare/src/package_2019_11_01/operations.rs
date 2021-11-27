@@ -347,7 +347,8 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DataShare/accounts",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -424,7 +425,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -504,7 +508,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -586,7 +593,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -667,7 +677,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -747,7 +760,9 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -857,7 +872,7 @@ pub mod consumer_invitations {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ConsumerInvitationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.DataShare/listInvitations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.DataShare/listInvitations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -932,7 +947,9 @@ pub mod consumer_invitations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.DataShare/locations/{}/consumerInvitations/{}",
-                        &self.client.endpoint, &self.location, &self.invitation_id
+                        self.client.endpoint(),
+                        &self.location,
+                        &self.invitation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1005,7 +1022,8 @@ pub mod consumer_invitations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.DataShare/locations/{}/rejectInvitation",
-                        &self.client.endpoint, &self.location
+                        self.client.endpoint(),
+                        &self.location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1162,7 +1180,7 @@ pub mod data_sets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -1249,7 +1267,7 @@ pub mod data_sets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -1343,7 +1361,7 @@ pub mod data_sets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -1435,7 +1453,11 @@ pub mod data_sets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/dataSets",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.share_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1598,7 +1620,7 @@ pub mod data_set_mappings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataSetMapping, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1677,7 +1699,7 @@ pub mod data_set_mappings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1762,7 +1784,7 @@ pub mod data_set_mappings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name , & self . data_set_mapping_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1845,7 +1867,7 @@ pub mod data_set_mappings {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataSetMappingList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/dataSetMappings" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1952,7 +1974,8 @@ pub mod email_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.DataShare/locations/{}/activateEmail",
-                        &self.client.endpoint, &self.location
+                        self.client.endpoint(),
+                        &self.location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2025,7 +2048,8 @@ pub mod email_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.DataShare/locations/{}/registerEmail",
-                        &self.client.endpoint, &self.location
+                        self.client.endpoint(),
+                        &self.location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2182,7 +2206,7 @@ pub mod invitations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -2269,7 +2293,7 @@ pub mod invitations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -2362,7 +2386,7 @@ pub mod invitations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -2453,7 +2477,11 @@ pub mod invitations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/invitations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.share_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2543,7 +2571,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.DataShare/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.DataShare/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2743,7 +2771,7 @@ pub mod shares {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SynchronizationDetailsList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizationDetails" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizationDetails" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2842,7 +2870,11 @@ pub mod shares {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/listSynchronizations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.share_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2927,7 +2959,11 @@ pub mod shares {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.share_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3008,7 +3044,11 @@ pub mod shares {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.share_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3096,7 +3136,11 @@ pub mod shares {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.share_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3187,7 +3231,10 @@ pub mod shares {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3346,7 +3393,7 @@ pub mod provider_share_subscriptions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProviderShareSubscription, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/reinstate" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/reinstate" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3425,7 +3472,7 @@ pub mod provider_share_subscriptions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/revoke" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}/revoke" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3505,7 +3552,7 @@ pub mod provider_share_subscriptions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProviderShareSubscription, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . provider_share_subscription_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3584,7 +3631,7 @@ pub mod provider_share_subscriptions {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ProviderShareSubscriptionList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/providerShareSubscriptions" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3825,7 +3872,7 @@ pub mod share_subscriptions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/cancelSynchronization" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/cancelSynchronization" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3912,7 +3959,7 @@ pub mod share_subscriptions {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SourceShareSynchronizationSettingList, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSourceShareSynchronizationSettings" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSourceShareSynchronizationSettings" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4006,7 +4053,7 @@ pub mod share_subscriptions {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SynchronizationDetailsList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizationDetails" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizationDetails" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4105,7 +4152,7 @@ pub mod share_subscriptions {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ShareSubscriptionSynchronizationList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/listSynchronizations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4195,7 +4242,7 @@ pub mod share_subscriptions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/synchronize",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -4281,7 +4328,7 @@ pub mod share_subscriptions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -4366,7 +4413,7 @@ pub mod share_subscriptions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -4458,7 +4505,7 @@ pub mod share_subscriptions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -4553,7 +4600,10 @@ pub mod share_subscriptions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4665,7 +4715,7 @@ pub mod consumer_source_data_sets {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ConsumerSourceDataSetList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/consumerSourceDataSets" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/consumerSourceDataSets" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_subscription_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4819,7 +4869,7 @@ pub mod synchronization_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SynchronizationSetting, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . synchronization_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . synchronization_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4898,7 +4948,7 @@ pub mod synchronization_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . synchronization_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . synchronization_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4984,7 +5034,7 @@ pub mod synchronization_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . synchronization_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . share_name , & self . synchronization_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -5067,7 +5117,11 @@ pub mod synchronization_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shares/{}/synchronizationSettings",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.share_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.share_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5224,7 +5278,7 @@ pub mod triggers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -5311,7 +5365,7 @@ pub mod triggers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -5405,7 +5459,7 @@ pub mod triggers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -5492,7 +5546,7 @@ pub mod triggers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataShare/accounts/{}/shareSubscriptions/{}/triggers",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,

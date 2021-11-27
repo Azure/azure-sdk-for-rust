@@ -409,7 +409,8 @@ pub mod usage_details {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/usageDetails",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -522,7 +523,9 @@ pub mod usage_details {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails",
-                        &self.client.endpoint, &self.subscription_id, &self.billing_period_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.billing_period_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -634,7 +637,8 @@ pub mod usage_details {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/usageDetails",
-                        &self.client.endpoint, &self.billing_account_id
+                        self.client.endpoint(),
+                        &self.billing_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -745,7 +749,7 @@ pub mod usage_details {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UsageDetailsListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & self . client . endpoint , & self . billing_account_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , self . client . endpoint () , & self . billing_account_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -856,7 +860,8 @@ pub mod usage_details {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Consumption/usageDetails",
-                        &self.client.endpoint, &self.department_id
+                        self.client.endpoint(),
+                        &self.department_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -967,7 +972,7 @@ pub mod usage_details {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UsageDetailsListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & self . client . endpoint , & self . department_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , self . client . endpoint () , & self . department_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1078,7 +1083,8 @@ pub mod usage_details {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Consumption/usageDetails",
-                        &self.client.endpoint, &self.enrollment_account_id
+                        self.client.endpoint(),
+                        &self.enrollment_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1189,7 +1195,7 @@ pub mod usage_details {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UsageDetailsListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & self . client . endpoint , & self . enrollment_account_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , self . client . endpoint () , & self . enrollment_account_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1300,7 +1306,8 @@ pub mod usage_details {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Consumption/usageDetails",
-                        &self.client.endpoint, &self.management_group_id
+                        self.client.endpoint(),
+                        &self.management_group_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1411,7 +1418,7 @@ pub mod usage_details {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UsageDetailsListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , & self . client . endpoint , & self . management_group_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/usageDetails" , self . client . endpoint () , & self . management_group_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1613,7 +1620,8 @@ pub mod marketplaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/marketplaces",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1710,7 +1718,9 @@ pub mod marketplaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces",
-                        &self.client.endpoint, &self.subscription_id, &self.billing_period_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.billing_period_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1806,7 +1816,8 @@ pub mod marketplaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/marketplaces",
-                        &self.client.endpoint, &self.billing_account_id
+                        self.client.endpoint(),
+                        &self.billing_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1901,7 +1912,7 @@ pub mod marketplaces {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MarketplacesListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & self . client . endpoint , & self . billing_account_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , self . client . endpoint () , & self . billing_account_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1996,7 +2007,8 @@ pub mod marketplaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Consumption/marketplaces",
-                        &self.client.endpoint, &self.department_id
+                        self.client.endpoint(),
+                        &self.department_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2091,7 +2103,7 @@ pub mod marketplaces {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MarketplacesListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & self . client . endpoint , & self . department_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/departments/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , self . client . endpoint () , & self . department_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2186,7 +2198,8 @@ pub mod marketplaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Consumption/marketplaces",
-                        &self.client.endpoint, &self.enrollment_account_id
+                        self.client.endpoint(),
+                        &self.enrollment_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2281,7 +2294,7 @@ pub mod marketplaces {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MarketplacesListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , & self . client . endpoint , & self . enrollment_account_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/enrollmentAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/marketplaces" , self . client . endpoint () , & self . enrollment_account_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2387,7 +2400,8 @@ pub mod balances {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/balances",
-                        &self.client.endpoint, &self.billing_account_id
+                        self.client.endpoint(),
+                        &self.billing_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2458,7 +2472,7 @@ pub mod balances {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Balance, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/balances" , & self . client . endpoint , & self . billing_account_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/balances" , self . client . endpoint () , & self . billing_account_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2572,7 +2586,8 @@ pub mod reservations_summaries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationorders/{}/providers/Microsoft.Consumption/reservationSummaries",
-                        &self.client.endpoint, &self.reservation_order_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2656,7 +2671,7 @@ pub mod reservations_summaries {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ReservationSummariesListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Capacity/reservationorders/{}/reservations/{}/providers/Microsoft.Consumption/reservationSummaries" , & self . client . endpoint , & self . reservation_order_id , & self . reservation_id) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Capacity/reservationorders/{}/reservations/{}/providers/Microsoft.Consumption/reservationSummaries" , self . client . endpoint () , & self . reservation_order_id , & self . reservation_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2768,7 +2783,8 @@ pub mod reservations_details {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationorders/{}/providers/Microsoft.Consumption/reservationDetails",
-                        &self.client.endpoint, &self.reservation_order_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2844,7 +2860,7 @@ pub mod reservations_details {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ReservationDetailsListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Capacity/reservationorders/{}/reservations/{}/providers/Microsoft.Consumption/reservationDetails" , & self . client . endpoint , & self . reservation_order_id , & self . reservation_id) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Capacity/reservationorders/{}/reservations/{}/providers/Microsoft.Consumption/reservationDetails" , self . client . endpoint () , & self . reservation_order_id , & self . reservation_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2940,7 +2956,8 @@ pub mod reservation_recommendations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/reservationRecommendations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3109,7 +3126,8 @@ pub mod budgets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/budgets",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3182,7 +3200,9 @@ pub mod budgets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Consumption/budgets",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3255,7 +3275,9 @@ pub mod budgets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/budgets/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.budget_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.budget_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3334,7 +3356,9 @@ pub mod budgets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/budgets/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.budget_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.budget_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3414,7 +3438,9 @@ pub mod budgets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/budgets/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.budget_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.budget_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3483,7 +3509,10 @@ pub mod budgets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Consumption/budgets/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.budget_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.budget_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3563,7 +3592,10 @@ pub mod budgets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Consumption/budgets/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.budget_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.budget_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3644,7 +3676,10 @@ pub mod budgets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Consumption/budgets/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.budget_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.budget_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3758,7 +3793,8 @@ pub mod price_sheet {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/pricesheets/default",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3853,7 +3889,7 @@ pub mod price_sheet {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PriceSheetResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/pricesheets/default" , & self . client . endpoint , & self . subscription_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.Billing/billingPeriods/{}/providers/Microsoft.Consumption/pricesheets/default" , self . client . endpoint () , & self . subscription_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3959,7 +3995,8 @@ pub mod cost_tags {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/costTags",
-                        &self.client.endpoint, &self.billing_account_id
+                        self.client.endpoint(),
+                        &self.billing_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4037,7 +4074,8 @@ pub mod cost_tags {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Consumption/costTags",
-                        &self.client.endpoint, &self.billing_account_id
+                        self.client.endpoint(),
+                        &self.billing_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4131,7 +4169,8 @@ pub mod tags {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.CostManagement/billingAccounts/{}/providers/Microsoft.Consumption/tags",
-                        &self.client.endpoint, &self.billing_account_id
+                        self.client.endpoint(),
+                        &self.billing_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4224,7 +4263,8 @@ pub mod forecasts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Consumption/forecasts",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4308,7 +4348,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Consumption/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Consumption/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4407,7 +4447,8 @@ pub mod aggregated_cost {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Consumption/aggregatedcost",
-                        &self.client.endpoint, &self.management_group_id
+                        self.client.endpoint(),
+                        &self.management_group_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4480,7 +4521,7 @@ pub mod aggregated_cost {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ManagementGroupAggregatedCostResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/Microsoft.Consumption/aggregatedcost" , & self . client . endpoint , & self . management_group_id , & self . billing_period_name) ;
+                    let url_str = & format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Billing/billingPeriods/{}/Microsoft.Consumption/aggregatedcost" , self . client . endpoint () , & self . management_group_id , & self . billing_period_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

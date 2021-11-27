@@ -198,7 +198,8 @@ pub mod check_name_availability {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.DeviceUpdate/checknameavailability",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -365,7 +366,8 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DeviceUpdate/accounts",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -438,7 +440,9 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -512,7 +516,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -587,7 +594,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -668,7 +678,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -755,7 +768,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -826,7 +842,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -996,7 +1015,10 @@ pub mod instances {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/instances",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1071,7 +1093,11 @@ pub mod instances {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/instances/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.instance_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.instance_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1147,7 +1173,11 @@ pub mod instances {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/instances/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.instance_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.instance_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1224,7 +1254,11 @@ pub mod instances {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/instances/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.instance_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.instance_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1306,7 +1340,11 @@ pub mod instances {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/instances/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.instance_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.instance_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1378,7 +1416,11 @@ pub mod instances {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/instances/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.instance_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.instance_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1518,7 +1560,10 @@ pub mod private_endpoint_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnections",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1593,7 +1638,7 @@ pub mod private_endpoint_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnections/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -1673,7 +1718,7 @@ pub mod private_endpoint_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnections/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -1759,7 +1804,7 @@ pub mod private_endpoint_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnections/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.account_name,
@@ -1873,7 +1918,10 @@ pub mod private_link_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateLinkResources",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1948,7 +1996,11 @@ pub mod private_link_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateLinkResources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.group_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.group_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2109,7 +2161,7 @@ pub mod private_endpoint_connection_proxies {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateEndpointConnectionProxyListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2182,7 +2234,7 @@ pub mod private_endpoint_connection_proxies {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies/{}/validate" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . private_endpoint_connection_proxy_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies/{}/validate" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . private_endpoint_connection_proxy_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2252,7 +2304,7 @@ pub mod private_endpoint_connection_proxies {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateEndpointConnectionProxy, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . private_endpoint_connection_proxy_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . private_endpoint_connection_proxy_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2327,7 +2379,7 @@ pub mod private_endpoint_connection_proxies {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateEndpointConnectionProxy, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . private_endpoint_connection_proxy_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . private_endpoint_connection_proxy_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2406,7 +2458,7 @@ pub mod private_endpoint_connection_proxies {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . private_endpoint_connection_proxy_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeviceUpdate/accounts/{}/privateEndpointConnectionProxies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . private_endpoint_connection_proxy_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -2483,7 +2535,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.DeviceUpdate/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.DeviceUpdate/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -490,7 +490,7 @@ pub mod adds_services {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Services, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/addsservices", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/addsservices", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -566,7 +566,7 @@ pub mod adds_services {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ServiceProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/addsservices", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/addsservices", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -633,7 +633,8 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -701,7 +702,8 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -774,7 +776,8 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -839,7 +842,8 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/forestsummary",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -908,7 +912,10 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metrics/{}/groups/{}/average",
-                        &self.client.endpoint, &self.service_name, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -977,7 +984,10 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metrics/{}/groups/{}/sum",
-                        &self.client.endpoint, &self.service_name, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1054,7 +1064,8 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metricmetadata",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1128,7 +1139,9 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metricmetadata/{}",
-                        &self.client.endpoint, &self.service_name, &self.metric_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1212,7 +1225,10 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metricmetadata/{}/groups/{}",
-                        &self.client.endpoint, &self.service_name, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1298,7 +1314,8 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/replicationdetails",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1385,7 +1402,8 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/replicationsummary",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1487,7 +1505,9 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers/{}/alerts",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1585,7 +1605,7 @@ pub mod adds_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/premiumCheck",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1703,7 +1723,8 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/alerts",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1815,7 +1836,8 @@ pub mod configuration {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/configuration",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1881,7 +1903,7 @@ pub mod configuration {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Tenant, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/configuration", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/configuration", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1944,7 +1966,7 @@ pub mod configuration {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Tenant, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/configuration", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/configuration", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2009,7 +2031,7 @@ pub mod configuration {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Tenant, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/configuration", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/configuration", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -2093,7 +2115,9 @@ pub mod dimensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/dimensions/{}",
-                        &self.client.endpoint, &self.service_name, &self.dimension
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.dimension
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2204,7 +2228,8 @@ pub mod adds_service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/addsservicemembers",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2275,7 +2300,9 @@ pub mod adds_service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers/{}",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2348,7 +2375,9 @@ pub mod adds_service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers/{}",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2419,7 +2448,9 @@ pub mod adds_service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers/{}/credentials",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2534,7 +2565,8 @@ pub mod ad_domain_service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/addomainservicemembers",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2653,7 +2685,9 @@ pub mod adds_services_user_preference {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/features/{}/userpreference",
-                        &self.client.endpoint, &self.service_name, &self.feature_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2722,7 +2756,9 @@ pub mod adds_services_user_preference {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/features/{}/userpreference",
-                        &self.client.endpoint, &self.service_name, &self.feature_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2786,7 +2822,9 @@ pub mod adds_services_user_preference {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/features/{}/userpreference",
-                        &self.client.endpoint, &self.service_name, &self.feature_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2890,7 +2928,10 @@ pub mod adds_service {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/metrics/{}/groups/{}",
-                        &self.client.endpoint, &self.service_name, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2981,7 +3022,8 @@ pub mod adds_services_replication_status {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/replicationstatus",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3088,7 +3130,8 @@ pub mod adds_services_service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3165,7 +3208,8 @@ pub mod adds_services_service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/addsservices/{}/servicemembers",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3242,7 +3286,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3319,7 +3363,7 @@ pub mod reports {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/reports/DevOps/IsDevOps",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3625,7 +3669,7 @@ pub mod services {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Services, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/services", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/services", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3701,7 +3745,7 @@ pub mod services {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ServiceProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/services", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ADHybridHealthService/services", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3787,7 +3831,7 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/premiumCheck",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3866,7 +3910,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3934,7 +3979,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4007,7 +4053,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4092,7 +4139,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/alerts",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4172,7 +4220,9 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/checkServiceFeatureAvailibility/{}",
-                        &self.client.endpoint, &self.service_name, &self.feature_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4239,7 +4289,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/exporterrors/counts",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4307,7 +4358,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/exporterrors/listV2",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4376,7 +4428,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/exportstatus",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4444,7 +4497,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/feedbacktype/alerts/feedback",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4513,7 +4567,9 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/feedbacktype/alerts/{}/alertfeedback",
-                        &self.client.endpoint, &self.service_name, &self.short_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.short_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4582,7 +4638,10 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/metrics/{}/groups/{}/average",
-                        &self.client.endpoint, &self.service_name, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4651,7 +4710,10 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/metrics/{}/groups/{}/sum",
-                        &self.client.endpoint, &self.service_name, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4728,7 +4790,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/metricmetadata",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4802,7 +4865,9 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/metricmetadata/{}",
-                        &self.client.endpoint, &self.service_name, &self.metric_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4886,7 +4951,10 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/metricmetadata/{}/groups/{}",
-                        &self.client.endpoint, &self.service_name, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4963,7 +5031,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/monitoringconfiguration",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5026,7 +5095,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/monitoringconfigurations",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5098,7 +5168,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/reports/badpassword/details/user",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5169,7 +5240,9 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/TenantWhitelisting/{}",
-                        &self.client.endpoint, &self.service_name, &self.feature_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5236,7 +5309,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/reports/riskyIp/blobUris",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5303,7 +5377,8 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/reports/riskyIp/generateBlobUri",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5413,7 +5488,10 @@ pub mod service {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/metrics/{}/groups/{}",
-                        &self.client.endpoint, &self.service_name, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5652,7 +5730,8 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5729,7 +5808,8 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5798,7 +5878,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5871,7 +5953,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5957,7 +6041,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/alerts",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6037,7 +6123,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/service/{}/servicemembers/{}/connectors",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6110,7 +6198,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/credentials",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6181,7 +6271,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/data",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6244,7 +6336,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/datafreshness",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6312,7 +6406,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/exportstatus",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6380,7 +6476,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/globalconfiguration",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6465,7 +6563,11 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/metrics/{}/groups/{}",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id, &self.metric_name, &self.group_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id,
+                        &self.metric_name,
+                        &self.group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6542,7 +6644,9 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/serviceconfiguration",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6611,7 +6715,10 @@ pub mod service_members {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/servicemembers/{}/metrics/{}",
-                        &self.client.endpoint, &self.service_name, &self.service_member_id, &self.metric_name
+                        self.client.endpoint(),
+                        &self.service_name,
+                        &self.service_member_id,
+                        &self.metric_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6705,7 +6812,8 @@ pub mod list {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/ipAddressAggregates",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6775,7 +6883,8 @@ pub mod list {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/ipAddressAggregateSettings",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6863,7 +6972,8 @@ pub mod update {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ADHybridHealthService/services/{}/ipAddressAggregateSettings",
-                        &self.client.endpoint, &self.service_name
+                        self.client.endpoint(),
+                        &self.service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

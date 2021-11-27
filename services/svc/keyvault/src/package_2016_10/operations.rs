@@ -792,7 +792,7 @@ pub mod create_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/create", &self.client.endpoint, &self.key_name);
+                let url_str = &format!("{}/keys/{}/create", self.client.endpoint(), &self.key_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -863,7 +863,7 @@ pub mod import_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}", &self.client.endpoint, &self.key_name);
+                let url_str = &format!("{}/keys/{}", self.client.endpoint(), &self.key_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PUT);
@@ -933,7 +933,7 @@ pub mod delete_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedKeyBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}", &self.client.endpoint, &self.key_name);
+                let url_str = &format!("{}/keys/{}", self.client.endpoint(), &self.key_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -1003,7 +1003,7 @@ pub mod get_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}", &self.client.endpoint, &self.key_name, &self.key_version);
+                let url_str = &format!("{}/keys/{}/{}", self.client.endpoint(), &self.key_name, &self.key_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1074,7 +1074,7 @@ pub mod update_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}", &self.client.endpoint, &self.key_name, &self.key_version);
+                let url_str = &format!("{}/keys/{}/{}", self.client.endpoint(), &self.key_name, &self.key_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -1149,7 +1149,7 @@ pub mod get_key_versions {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/versions", &self.client.endpoint, &self.key_name);
+                let url_str = &format!("{}/keys/{}/versions", self.client.endpoint(), &self.key_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1225,7 +1225,7 @@ pub mod get_keys {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys", &self.client.endpoint,);
+                let url_str = &format!("{}/keys", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1297,7 +1297,7 @@ pub mod backup_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BackupKeyResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/backup", &self.client.endpoint, &self.key_name);
+                let url_str = &format!("{}/keys/{}/backup", self.client.endpoint(), &self.key_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1367,7 +1367,7 @@ pub mod restore_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/restore", &self.client.endpoint,);
+                let url_str = &format!("{}/keys/restore", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1439,7 +1439,7 @@ pub mod encrypt {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyOperationResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}/encrypt", &self.client.endpoint, &self.key_name, &self.key_version);
+                let url_str = &format!("{}/keys/{}/{}/encrypt", self.client.endpoint(), &self.key_name, &self.key_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1511,7 +1511,7 @@ pub mod decrypt {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyOperationResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}/decrypt", &self.client.endpoint, &self.key_name, &self.key_version);
+                let url_str = &format!("{}/keys/{}/{}/decrypt", self.client.endpoint(), &self.key_name, &self.key_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1583,7 +1583,7 @@ pub mod sign {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyOperationResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}/sign", &self.client.endpoint, &self.key_name, &self.key_version);
+                let url_str = &format!("{}/keys/{}/{}/sign", self.client.endpoint(), &self.key_name, &self.key_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1655,7 +1655,7 @@ pub mod verify {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyVerifyResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}/verify", &self.client.endpoint, &self.key_name, &self.key_version);
+                let url_str = &format!("{}/keys/{}/{}/verify", self.client.endpoint(), &self.key_name, &self.key_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1727,7 +1727,7 @@ pub mod wrap_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyOperationResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}/wrapkey", &self.client.endpoint, &self.key_name, &self.key_version);
+                let url_str = &format!("{}/keys/{}/{}/wrapkey", self.client.endpoint(), &self.key_name, &self.key_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1799,7 +1799,7 @@ pub mod unwrap_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyOperationResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}/unwrapkey", &self.client.endpoint, &self.key_name, &self.key_version);
+                let url_str = &format!("{}/keys/{}/{}/unwrapkey", self.client.endpoint(), &self.key_name, &self.key_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1873,7 +1873,7 @@ pub mod get_deleted_keys {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedKeyListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedkeys", &self.client.endpoint,);
+                let url_str = &format!("{}/deletedkeys", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1945,7 +1945,7 @@ pub mod get_deleted_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedKeyBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedkeys/{}", &self.client.endpoint, &self.key_name);
+                let url_str = &format!("{}/deletedkeys/{}", self.client.endpoint(), &self.key_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -2014,7 +2014,7 @@ pub mod purge_deleted_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedkeys/{}", &self.client.endpoint, &self.key_name);
+                let url_str = &format!("{}/deletedkeys/{}", self.client.endpoint(), &self.key_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -2078,7 +2078,7 @@ pub mod recover_deleted_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedkeys/{}/recover", &self.client.endpoint, &self.key_name);
+                let url_str = &format!("{}/deletedkeys/{}/recover", self.client.endpoint(), &self.key_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -2149,7 +2149,7 @@ pub mod set_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecretBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/secrets/{}", &self.client.endpoint, &self.secret_name);
+                let url_str = &format!("{}/secrets/{}", self.client.endpoint(), &self.secret_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PUT);
@@ -2219,7 +2219,7 @@ pub mod delete_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedSecretBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/secrets/{}", &self.client.endpoint, &self.secret_name);
+                let url_str = &format!("{}/secrets/{}", self.client.endpoint(), &self.secret_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -2289,7 +2289,7 @@ pub mod get_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecretBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/secrets/{}/{}", &self.client.endpoint, &self.secret_name, &self.secret_version);
+                let url_str = &format!("{}/secrets/{}/{}", self.client.endpoint(), &self.secret_name, &self.secret_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -2360,7 +2360,7 @@ pub mod update_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecretBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/secrets/{}/{}", &self.client.endpoint, &self.secret_name, &self.secret_version);
+                let url_str = &format!("{}/secrets/{}/{}", self.client.endpoint(), &self.secret_name, &self.secret_version);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -2434,7 +2434,7 @@ pub mod get_secrets {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecretListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/secrets", &self.client.endpoint,);
+                let url_str = &format!("{}/secrets", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -2511,7 +2511,7 @@ pub mod get_secret_versions {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecretListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/secrets/{}/versions", &self.client.endpoint, &self.secret_name);
+                let url_str = &format!("{}/secrets/{}/versions", self.client.endpoint(), &self.secret_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -2587,7 +2587,7 @@ pub mod get_deleted_secrets {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedSecretListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedsecrets", &self.client.endpoint,);
+                let url_str = &format!("{}/deletedsecrets", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -2659,7 +2659,7 @@ pub mod get_deleted_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedSecretBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedsecrets/{}", &self.client.endpoint, &self.secret_name);
+                let url_str = &format!("{}/deletedsecrets/{}", self.client.endpoint(), &self.secret_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -2728,7 +2728,7 @@ pub mod purge_deleted_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedsecrets/{}", &self.client.endpoint, &self.secret_name);
+                let url_str = &format!("{}/deletedsecrets/{}", self.client.endpoint(), &self.secret_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -2792,7 +2792,7 @@ pub mod recover_deleted_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecretBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedsecrets/{}/recover", &self.client.endpoint, &self.secret_name);
+                let url_str = &format!("{}/deletedsecrets/{}/recover", self.client.endpoint(), &self.secret_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -2862,7 +2862,7 @@ pub mod backup_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BackupSecretResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/secrets/{}/backup", &self.client.endpoint, &self.secret_name);
+                let url_str = &format!("{}/secrets/{}/backup", self.client.endpoint(), &self.secret_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -2932,7 +2932,7 @@ pub mod restore_secret {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecretBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/secrets/restore", &self.client.endpoint,);
+                let url_str = &format!("{}/secrets/restore", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -3006,7 +3006,7 @@ pub mod get_certificates {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates", &self.client.endpoint,);
+                let url_str = &format!("{}/certificates", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -3078,7 +3078,7 @@ pub mod delete_certificate {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedCertificateBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -3146,7 +3146,7 @@ pub mod get_certificate_contacts {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Contacts, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/contacts", &self.client.endpoint,);
+                let url_str = &format!("{}/certificates/contacts", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -3215,7 +3215,7 @@ pub mod set_certificate_contacts {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Contacts, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/contacts", &self.client.endpoint,);
+                let url_str = &format!("{}/certificates/contacts", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PUT);
@@ -3284,7 +3284,7 @@ pub mod delete_certificate_contacts {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Contacts, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/contacts", &self.client.endpoint,);
+                let url_str = &format!("{}/certificates/contacts", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -3357,7 +3357,7 @@ pub mod get_certificate_issuers {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateIssuerListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/issuers", &self.client.endpoint,);
+                let url_str = &format!("{}/certificates/issuers", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -3429,7 +3429,7 @@ pub mod get_certificate_issuer {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IssuerBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/issuers/{}", &self.client.endpoint, &self.issuer_name);
+                let url_str = &format!("{}/certificates/issuers/{}", self.client.endpoint(), &self.issuer_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -3499,7 +3499,7 @@ pub mod set_certificate_issuer {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IssuerBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/issuers/{}", &self.client.endpoint, &self.issuer_name);
+                let url_str = &format!("{}/certificates/issuers/{}", self.client.endpoint(), &self.issuer_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PUT);
@@ -3570,7 +3570,7 @@ pub mod update_certificate_issuer {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IssuerBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/issuers/{}", &self.client.endpoint, &self.issuer_name);
+                let url_str = &format!("{}/certificates/issuers/{}", self.client.endpoint(), &self.issuer_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -3640,7 +3640,7 @@ pub mod delete_certificate_issuer {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IssuerBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/issuers/{}", &self.client.endpoint, &self.issuer_name);
+                let url_str = &format!("{}/certificates/issuers/{}", self.client.endpoint(), &self.issuer_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -3710,7 +3710,7 @@ pub mod create_certificate {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateOperation, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/create", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/create", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -3781,7 +3781,7 @@ pub mod import_certificate {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/import", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/import", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -3856,7 +3856,7 @@ pub mod get_certificate_versions {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/versions", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/versions", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -3928,7 +3928,7 @@ pub mod get_certificate_policy {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificatePolicy, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/policy", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/policy", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -3998,7 +3998,7 @@ pub mod update_certificate_policy {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificatePolicy, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/policy", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/policy", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -4071,7 +4071,9 @@ pub mod get_certificate {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/certificates/{}/{}",
-                    &self.client.endpoint, &self.certificate_name, &self.certificate_version
+                    self.client.endpoint(),
+                    &self.certificate_name,
+                    &self.certificate_version
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -4145,7 +4147,9 @@ pub mod update_certificate {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/certificates/{}/{}",
-                    &self.client.endpoint, &self.certificate_name, &self.certificate_version
+                    self.client.endpoint(),
+                    &self.certificate_name,
+                    &self.certificate_version
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -4216,7 +4220,7 @@ pub mod get_certificate_operation {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateOperation, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/pending", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/pending", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -4286,7 +4290,7 @@ pub mod update_certificate_operation {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateOperation, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/pending", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/pending", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -4356,7 +4360,7 @@ pub mod delete_certificate_operation {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateOperation, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/pending", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/pending", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -4426,7 +4430,7 @@ pub mod merge_certificate {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/certificates/{}/pending/merge", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/certificates/{}/pending/merge", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -4500,7 +4504,7 @@ pub mod get_deleted_certificates {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedCertificateListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedcertificates", &self.client.endpoint,);
+                let url_str = &format!("{}/deletedcertificates", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -4572,7 +4576,7 @@ pub mod get_deleted_certificate {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedCertificateBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedcertificates/{}", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/deletedcertificates/{}", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -4641,7 +4645,7 @@ pub mod purge_deleted_certificate {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedcertificates/{}", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/deletedcertificates/{}", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -4705,7 +4709,7 @@ pub mod recover_deleted_certificate {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/deletedcertificates/{}/recover", &self.client.endpoint, &self.certificate_name);
+                let url_str = &format!("{}/deletedcertificates/{}/recover", self.client.endpoint(), &self.certificate_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -4779,7 +4783,7 @@ pub mod get_storage_accounts {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/storage", &self.client.endpoint,);
+                let url_str = &format!("{}/storage", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -4851,7 +4855,7 @@ pub mod get_storage_account {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/storage/{}", &self.client.endpoint, &self.storage_account_name);
+                let url_str = &format!("{}/storage/{}", self.client.endpoint(), &self.storage_account_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -4921,7 +4925,7 @@ pub mod set_storage_account {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/storage/{}", &self.client.endpoint, &self.storage_account_name);
+                let url_str = &format!("{}/storage/{}", self.client.endpoint(), &self.storage_account_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PUT);
@@ -4992,7 +4996,7 @@ pub mod update_storage_account {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/storage/{}", &self.client.endpoint, &self.storage_account_name);
+                let url_str = &format!("{}/storage/{}", self.client.endpoint(), &self.storage_account_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -5062,7 +5066,7 @@ pub mod delete_storage_account {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/storage/{}", &self.client.endpoint, &self.storage_account_name);
+                let url_str = &format!("{}/storage/{}", self.client.endpoint(), &self.storage_account_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -5132,7 +5136,7 @@ pub mod regenerate_storage_account_key {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageBundle, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/storage/{}/regeneratekey", &self.client.endpoint, &self.storage_account_name);
+                let url_str = &format!("{}/storage/{}/regeneratekey", self.client.endpoint(), &self.storage_account_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -5207,7 +5211,7 @@ pub mod get_sas_definitions {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SasDefinitionListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/storage/{}/sas", &self.client.endpoint, &self.storage_account_name);
+                let url_str = &format!("{}/storage/{}/sas", self.client.endpoint(), &self.storage_account_name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -5282,7 +5286,9 @@ pub mod get_sas_definition {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/storage/{}/sas/{}",
-                    &self.client.endpoint, &self.storage_account_name, &self.sas_definition_name
+                    self.client.endpoint(),
+                    &self.storage_account_name,
+                    &self.sas_definition_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -5356,7 +5362,9 @@ pub mod set_sas_definition {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/storage/{}/sas/{}",
-                    &self.client.endpoint, &self.storage_account_name, &self.sas_definition_name
+                    self.client.endpoint(),
+                    &self.storage_account_name,
+                    &self.sas_definition_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -5431,7 +5439,9 @@ pub mod update_sas_definition {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/storage/{}/sas/{}",
-                    &self.client.endpoint, &self.storage_account_name, &self.sas_definition_name
+                    self.client.endpoint(),
+                    &self.storage_account_name,
+                    &self.sas_definition_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -5505,7 +5515,9 @@ pub mod delete_sas_definition {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/storage/{}/sas/{}",
-                    &self.client.endpoint, &self.storage_account_name, &self.sas_definition_name
+                    self.client.endpoint(),
+                    &self.storage_account_name,
+                    &self.sas_definition_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();

@@ -220,7 +220,9 @@ pub mod protection_intent {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/Subscriptions/{}/providers/Microsoft.RecoveryServices/locations/{}/backupPreValidateProtection",
-                        &self.client.endpoint, &self.subscription_id, &self.azure_region
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.azure_region
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -290,7 +292,7 @@ pub mod protection_intent {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProtectionIntentResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/backupProtectionIntent/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . vault_name , & self . fabric_name , & self . intent_object_name) ;
+                    let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/backupProtectionIntent/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vault_name , & self . fabric_name , & self . intent_object_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -359,7 +361,7 @@ pub mod protection_intent {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProtectionIntentResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/backupProtectionIntent/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . vault_name , & self . fabric_name , & self . intent_object_name) ;
+                    let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/backupProtectionIntent/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vault_name , & self . fabric_name , & self . intent_object_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -428,7 +430,7 @@ pub mod protection_intent {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/backupProtectionIntent/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . vault_name , & self . fabric_name , & self . intent_object_name) ;
+                    let url_str = & format ! ("{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/backupProtectionIntent/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vault_name , & self . fabric_name , & self . intent_object_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -513,7 +515,9 @@ pub mod backup_status {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/Subscriptions/{}/providers/Microsoft.RecoveryServices/locations/{}/backupStatus",
-                        &self.client.endpoint, &self.subscription_id, &self.azure_region
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.azure_region
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -608,7 +612,9 @@ pub mod feature_support {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/Subscriptions/{}/providers/Microsoft.RecoveryServices/locations/{}/backupValidateFeatures",
-                        &self.client.endpoint, &self.subscription_id, &self.azure_region
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.azure_region
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -714,7 +720,10 @@ pub mod backup_protection_intent {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupProtectionIntents",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.vault_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.vault_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -823,7 +832,10 @@ pub mod backup_usage_summaries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/Subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupUsageSummaries",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.vault_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.vault_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

@@ -315,7 +315,8 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/alerts",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -420,7 +421,9 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/alerts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -525,7 +528,9 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts",
-                        &self.client.endpoint, &self.subscription_id, &self.asc_location
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.asc_location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -631,7 +636,10 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.asc_location
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.asc_location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -717,7 +725,10 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.asc_location, &self.alert_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.asc_location,
+                        &self.alert_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -792,7 +803,11 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.alert_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.asc_location,
+                        &self.alert_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -866,7 +881,10 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}/dismiss",
-                        &self.client.endpoint, &self.subscription_id, &self.asc_location, &self.alert_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.asc_location,
+                        &self.alert_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -936,7 +954,10 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/locations/{}/alerts/{}/reactivate",
-                        &self.client.endpoint, &self.subscription_id, &self.asc_location, &self.alert_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.asc_location,
+                        &self.alert_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1007,7 +1028,11 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}/dismiss",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.alert_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.asc_location,
+                        &self.alert_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1078,7 +1103,11 @@ pub mod alerts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Security/locations/{}/alerts/{}/reactivate",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.asc_location, &self.alert_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.asc_location,
+                        &self.alert_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1181,7 +1210,8 @@ pub mod settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/settings",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1254,7 +1284,9 @@ pub mod settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/settings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.setting_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.setting_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1328,7 +1360,9 @@ pub mod settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/settings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.setting_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.setting_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

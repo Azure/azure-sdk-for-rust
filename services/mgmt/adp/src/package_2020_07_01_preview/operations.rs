@@ -157,7 +157,7 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.AutonomousDevelopmentPlatform/operations",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -309,7 +309,8 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -382,7 +383,9 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -456,7 +459,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -540,7 +546,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -635,7 +644,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -726,7 +738,10 @@ pub mod accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -881,7 +896,10 @@ pub mod data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}/dataPools",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -956,7 +974,11 @@ pub mod data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}/dataPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.data_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.data_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1041,7 +1063,11 @@ pub mod data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}/dataPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.data_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.data_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1137,7 +1163,11 @@ pub mod data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}/dataPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.data_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.data_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1229,7 +1259,11 @@ pub mod data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AutonomousDevelopmentPlatform/accounts/{}/dataPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.account_name, &self.data_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.account_name,
+                        &self.data_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

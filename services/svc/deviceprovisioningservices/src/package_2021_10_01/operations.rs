@@ -204,7 +204,7 @@ pub mod individual_enrollment {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IndividualEnrollment, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollments/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/enrollments/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -279,7 +279,7 @@ pub mod individual_enrollment {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IndividualEnrollment, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollments/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/enrollments/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -357,7 +357,7 @@ pub mod individual_enrollment {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollments/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/enrollments/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -434,7 +434,7 @@ pub mod individual_enrollment {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<models::IndividualEnrollment>, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollments/query", &self.client.endpoint,);
+                    let url_str = &format!("{}/enrollments/query", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -510,7 +510,7 @@ pub mod individual_enrollment {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AttestationMechanism, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollments/{}/attestationmechanism", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/enrollments/{}/attestationmechanism", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -582,7 +582,7 @@ pub mod individual_enrollment {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::BulkEnrollmentOperationResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollments", &self.client.endpoint,);
+                    let url_str = &format!("{}/enrollments", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -706,7 +706,7 @@ pub mod enrollment_group {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EnrollmentGroup, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollmentGroups/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/enrollmentGroups/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -781,7 +781,7 @@ pub mod enrollment_group {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EnrollmentGroup, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollmentGroups/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/enrollmentGroups/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -859,7 +859,7 @@ pub mod enrollment_group {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollmentGroups/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/enrollmentGroups/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -936,7 +936,7 @@ pub mod enrollment_group {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<models::EnrollmentGroup>, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollmentGroups/query", &self.client.endpoint,);
+                    let url_str = &format!("{}/enrollmentGroups/query", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1012,7 +1012,7 @@ pub mod enrollment_group {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AttestationMechanism, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollmentGroups/{}/attestationmechanism", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/enrollmentGroups/{}/attestationmechanism", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1084,7 +1084,7 @@ pub mod enrollment_group {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::BulkEnrollmentGroupOperationResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/enrollmentGroups", &self.client.endpoint,);
+                    let url_str = &format!("{}/enrollmentGroups", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1184,7 +1184,7 @@ pub mod device_registration_state {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceRegistrationState, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/registrations/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/registrations/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1258,7 +1258,7 @@ pub mod device_registration_state {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/registrations/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/registrations/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1337,7 +1337,7 @@ pub mod device_registration_state {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<Vec<models::DeviceRegistrationState>, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/registrations/{}/query", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/registrations/{}/query", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);

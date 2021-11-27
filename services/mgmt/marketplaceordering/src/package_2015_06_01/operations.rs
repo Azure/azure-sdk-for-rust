@@ -233,7 +233,7 @@ pub mod marketplace_agreements {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AgreementTerms, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current" , & self . client . endpoint , & self . subscription_id , & self . offer_type , & self . publisher_id , & self . offer_id , & self . plan_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current" , self . client . endpoint () , & self . subscription_id , & self . offer_type , & self . publisher_id , & self . offer_id , & self . plan_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -315,7 +315,7 @@ pub mod marketplace_agreements {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AgreementTerms, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current" , & self . client . endpoint , & self . subscription_id , & self . offer_type , & self . publisher_id , & self . offer_id , & self . plan_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/offerTypes/{}/publishers/{}/offers/{}/plans/{}/agreements/current" , self . client . endpoint () , & self . subscription_id , & self . offer_type , & self . publisher_id , & self . offer_id , & self . plan_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -398,7 +398,11 @@ pub mod marketplace_agreements {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/sign",
-                        &self.client.endpoint, &self.subscription_id, &self.publisher_id, &self.offer_id, &self.plan_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.publisher_id,
+                        &self.offer_id,
+                        &self.plan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -482,7 +486,11 @@ pub mod marketplace_agreements {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}/cancel",
-                        &self.client.endpoint, &self.subscription_id, &self.publisher_id, &self.offer_id, &self.plan_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.publisher_id,
+                        &self.offer_id,
+                        &self.plan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -566,7 +574,11 @@ pub mod marketplace_agreements {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements/{}/offers/{}/plans/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.publisher_id, &self.offer_id, &self.plan_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.publisher_id,
+                        &self.offer_id,
+                        &self.plan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -646,7 +658,8 @@ pub mod marketplace_agreements {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.MarketplaceOrdering/agreements",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -735,7 +748,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.MarketplaceOrdering/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.MarketplaceOrdering/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

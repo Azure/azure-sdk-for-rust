@@ -169,7 +169,7 @@ pub mod catalog {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/catalog/usql/acl?op=GRANTACE", &self.client.endpoint,);
+                    let url_str = &format!("{}/catalog/usql/acl?op=GRANTACE", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -235,7 +235,8 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/acl?op=GRANTACE",
-                        &self.client.endpoint, &self.database_name
+                        self.client.endpoint(),
+                        &self.database_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -299,7 +300,7 @@ pub mod catalog {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/catalog/usql/acl?op=REVOKEACE", &self.client.endpoint,);
+                    let url_str = &format!("{}/catalog/usql/acl?op=REVOKEACE", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -365,7 +366,8 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/acl?op=REVOKEACE",
-                        &self.client.endpoint, &self.database_name
+                        self.client.endpoint(),
+                        &self.database_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

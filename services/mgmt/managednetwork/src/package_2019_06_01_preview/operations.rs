@@ -254,7 +254,10 @@ pub mod managed_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.managed_network_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.managed_network_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -334,7 +337,10 @@ pub mod managed_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.managed_network_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.managed_network_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -421,7 +427,10 @@ pub mod managed_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.managed_network_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.managed_network_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -508,7 +517,10 @@ pub mod managed_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.managed_network_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.managed_network_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -588,7 +600,9 @@ pub mod managed_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -676,7 +690,8 @@ pub mod managed_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ManagedNetwork/managedNetworks",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -797,7 +812,9 @@ pub mod scope_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.scope_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.scope_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -876,7 +893,9 @@ pub mod scope_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.scope_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.scope_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -953,7 +972,9 @@ pub mod scope_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.scope_assignment_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.scope_assignment_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1012,7 +1033,8 @@ pub mod scope_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedNetwork/scopeAssignments",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1156,7 +1178,7 @@ pub mod managed_network_groups {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ManagedNetworkGroup, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_group_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_group_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1234,7 +1256,7 @@ pub mod managed_network_groups {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_group_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_group_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1319,7 +1341,7 @@ pub mod managed_network_groups {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_group_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_group_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1401,7 +1423,10 @@ pub mod managed_network_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkGroups",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.managed_network_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.managed_network_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1553,7 +1578,7 @@ pub mod managed_network_peering_policies {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ManagedNetworkPeeringPolicy, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_peering_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_peering_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1631,7 +1656,7 @@ pub mod managed_network_peering_policies {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_peering_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_peering_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1716,7 +1741,7 @@ pub mod managed_network_peering_policies {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_peering_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_network_name , & self . managed_network_peering_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1797,7 +1822,7 @@ pub mod managed_network_peering_policies {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ManagedNetworkPeeringPolicyListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . managed_network_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ManagedNetwork/managedNetworks/{}/managedNetworkPeeringPolicies" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . managed_network_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1883,7 +1908,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ManagedNetwork/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ManagedNetwork/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

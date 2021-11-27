@@ -126,7 +126,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/microsoft.insights/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/microsoft.insights/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -228,7 +228,10 @@ pub mod get_test_result_file {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourcegroups/{}/providers/microsoft.insights/webtests/{}/getTestResultFile",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.web_test_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.web_test_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();

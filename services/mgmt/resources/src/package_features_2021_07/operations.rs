@@ -144,7 +144,7 @@ pub mod list_operations {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/providers/Microsoft.Features/operations", &self.client.endpoint,);
+                let url_str = &format!("{}/providers/Microsoft.Features/operations", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -277,7 +277,8 @@ pub mod features {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/features",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -352,7 +353,9 @@ pub mod features {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -426,7 +429,10 @@ pub mod features {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_provider_namespace, &self.feature_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_provider_namespace,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -500,7 +506,10 @@ pub mod features {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/register",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_provider_namespace, &self.feature_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_provider_namespace,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -575,7 +584,10 @@ pub mod features {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/providers/{}/features/{}/unregister",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_provider_namespace, &self.feature_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_provider_namespace,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -718,7 +730,10 @@ pub mod subscription_feature_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.feature_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -802,7 +817,10 @@ pub mod subscription_feature_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.feature_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -886,7 +904,10 @@ pub mod subscription_feature_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.feature_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.feature_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -957,7 +978,9 @@ pub mod subscription_feature_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/featureProviders/{}/subscriptionFeatureRegistrations",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1031,7 +1054,8 @@ pub mod subscription_feature_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Features/subscriptionFeatureRegistrations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

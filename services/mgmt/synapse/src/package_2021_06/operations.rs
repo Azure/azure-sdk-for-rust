@@ -765,7 +765,7 @@ pub mod big_data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/bigDataPools/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -855,7 +855,7 @@ pub mod big_data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/bigDataPools/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -945,7 +945,7 @@ pub mod big_data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/bigDataPools/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -1031,7 +1031,7 @@ pub mod big_data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/bigDataPools/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -1118,7 +1118,10 @@ pub mod big_data_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/bigDataPools",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1246,7 +1249,8 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Synapse/checkNameAvailability",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1316,7 +1320,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<models::AvailableRpOperation>, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Synapse/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Synapse/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1396,7 +1400,11 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/operationResults/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.operation_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.operation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1471,7 +1479,11 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/operationStatuses/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.operation_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.operation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1632,7 +1644,10 @@ pub mod ip_firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/firewallRules",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1707,7 +1722,11 @@ pub mod ip_firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/firewallRules/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.rule_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1788,7 +1807,11 @@ pub mod ip_firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/firewallRules/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.rule_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1876,7 +1899,11 @@ pub mod ip_firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/firewallRules/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.rule_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1958,7 +1985,10 @@ pub mod ip_firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/replaceAllIpFirewallRules",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2222,7 +2252,7 @@ pub mod integration_runtimes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -2316,7 +2346,7 @@ pub mod integration_runtimes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -2403,7 +2433,7 @@ pub mod integration_runtimes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -2489,7 +2519,7 @@ pub mod integration_runtimes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -2565,7 +2595,7 @@ pub mod integration_runtimes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/upgrade",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -2641,7 +2671,10 @@ pub mod integration_runtimes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2721,7 +2754,7 @@ pub mod integration_runtimes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/start",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -2807,7 +2840,7 @@ pub mod integration_runtimes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/stop",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -2886,7 +2919,7 @@ pub mod integration_runtimes {
                 std::result::Result<models::IntegrationRuntimeOutboundNetworkDependenciesEndpointsResponse, Error>,
             > {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/outboundNetworkDependenciesEndpoints" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/outboundNetworkDependenciesEndpoints" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2963,7 +2996,7 @@ pub mod integration_runtimes {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/enableInteractiveQuery" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/enableInteractiveQuery" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3037,7 +3070,7 @@ pub mod integration_runtimes {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/disableInteractiveQuery" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/disableInteractiveQuery" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3135,7 +3168,7 @@ pub mod integration_runtime_node_ip_address {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::IntegrationRuntimeNodeIpAddress, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/nodes/{}/ipAddress" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name , & self . node_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/nodes/{}/ipAddress" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name , & self . node_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3255,7 +3288,7 @@ pub mod integration_runtime_object_metadata {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SsisObjectMetadataListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/getObjectMetadata" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/getObjectMetadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3337,7 +3370,7 @@ pub mod integration_runtime_object_metadata {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/refreshObjectMetadata" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/refreshObjectMetadata" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3478,7 +3511,7 @@ pub mod integration_runtime_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/nodes/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -3562,7 +3595,7 @@ pub mod integration_runtime_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/nodes/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -3649,7 +3682,7 @@ pub mod integration_runtime_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/nodes/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -3747,7 +3780,7 @@ pub mod integration_runtime_credentials {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/syncCredentials" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/syncCredentials" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3841,7 +3874,7 @@ pub mod integration_runtime_connection_infos {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::IntegrationRuntimeConnectionInfo, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/getConnectionInfo" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/getConnectionInfo" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3958,7 +3991,7 @@ pub mod integration_runtime_auth_keys {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::IntegrationRuntimeAuthKeys, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/regenerateAuthKey" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/regenerateAuthKey" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4033,7 +4066,7 @@ pub mod integration_runtime_auth_keys {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::IntegrationRuntimeAuthKeys, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/listAuthKeys" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/listAuthKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4132,7 +4165,7 @@ pub mod integration_runtime_monitoring_data {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::IntegrationRuntimeMonitoringData, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/monitoringData" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/monitoringData" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . integration_runtime_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4233,7 +4266,7 @@ pub mod integration_runtime_status {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/getStatus",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -4381,7 +4414,10 @@ pub mod keys {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/keys",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4456,7 +4492,11 @@ pub mod keys {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/keys/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.key_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.key_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4532,7 +4572,11 @@ pub mod keys {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/keys/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.key_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.key_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4613,7 +4657,11 @@ pub mod keys {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/keys/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.key_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.key_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4713,7 +4761,11 @@ pub mod library {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/libraries/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.library_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.library_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4809,7 +4861,10 @@ pub mod libraries {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/libraries",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4953,7 +5008,7 @@ pub mod private_endpoint_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/privateEndpointConnections/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -5038,7 +5093,7 @@ pub mod private_endpoint_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/privateEndpointConnections/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -5130,7 +5185,7 @@ pub mod private_endpoint_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/privateEndpointConnections/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -5212,7 +5267,10 @@ pub mod private_endpoint_connections {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/privateEndpointConnections",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5325,7 +5383,10 @@ pub mod private_link_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/privateLinkResources",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5400,7 +5461,7 @@ pub mod private_link_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/privateLinkResources/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -5517,7 +5578,10 @@ pub mod private_link_hub_private_link_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}/privateLinkResources",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_link_hub_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_link_hub_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5592,7 +5656,7 @@ pub mod private_link_hub_private_link_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}/privateLinkResources/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.private_link_hub_name,
@@ -5753,7 +5817,9 @@ pub mod private_link_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5827,7 +5893,10 @@ pub mod private_link_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_link_hub_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_link_hub_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5907,7 +5976,10 @@ pub mod private_link_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_link_hub_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_link_hub_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5994,7 +6066,10 @@ pub mod private_link_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_link_hub_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_link_hub_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6081,7 +6156,10 @@ pub mod private_link_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_link_hub_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_link_hub_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6152,7 +6230,8 @@ pub mod private_link_hubs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Synapse/privateLinkHubs",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6268,7 +6347,10 @@ pub mod private_endpoint_connections_private_link_hub {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}/privateEndpointConnections",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.private_link_hub_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.private_link_hub_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6344,7 +6426,7 @@ pub mod private_endpoint_connections_private_link_hub {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateEndpointConnectionForPrivateLinkHub, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}/privateEndpointConnections/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . private_link_hub_name , & self . private_endpoint_connection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/privateLinkHubs/{}/privateEndpointConnections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . private_link_hub_name , & self . private_endpoint_connection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -6551,7 +6633,11 @@ pub mod sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6634,7 +6720,11 @@ pub mod sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6718,7 +6808,11 @@ pub mod sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6801,7 +6895,11 @@ pub mod sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6882,7 +6980,10 @@ pub mod sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -6962,7 +7063,11 @@ pub mod sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/pause",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7044,7 +7149,11 @@ pub mod sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/resume",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7119,7 +7228,11 @@ pub mod sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/move",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7225,7 +7338,11 @@ pub mod sql_pool_metadata_sync_configs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/metadataSync/config",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7304,7 +7421,11 @@ pub mod sql_pool_metadata_sync_configs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/metadataSync/config",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7413,7 +7534,7 @@ pub mod sql_pool_operation_results {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/operationResults/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -7559,7 +7680,11 @@ pub mod sql_pool_geo_backup_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/geoBackupPolicies",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7635,7 +7760,7 @@ pub mod sql_pool_geo_backup_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/geoBackupPolicies/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -7722,7 +7847,7 @@ pub mod sql_pool_geo_backup_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/geoBackupPolicies/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -7833,7 +7958,7 @@ pub mod sql_pool_data_warehouse_user_activities {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::DataWarehouseUserActivities, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataWarehouseUserActivities/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_warehouse_user_activity_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataWarehouseUserActivities/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_warehouse_user_activity_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -7974,7 +8099,11 @@ pub mod sql_pool_restore_points {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/restorePoints",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8053,7 +8182,11 @@ pub mod sql_pool_restore_points {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/restorePoints",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8126,7 +8259,7 @@ pub mod sql_pool_restore_points {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/restorePoints/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -8201,7 +8334,7 @@ pub mod sql_pool_restore_points {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/restorePoints/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -8310,7 +8443,11 @@ pub mod sql_pool_replication_links {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/replicationLinks",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -8386,7 +8523,7 @@ pub mod sql_pool_replication_links {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/replicationLinks/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -8510,7 +8647,7 @@ pub mod sql_pool_maintenance_windows {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MaintenanceWindows, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/maintenancewindows/current" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/maintenancewindows/current" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -8583,7 +8720,7 @@ pub mod sql_pool_maintenance_windows {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/maintenancewindows/current" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/maintenancewindows/current" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -8669,7 +8806,7 @@ pub mod sql_pool_maintenance_window_options {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MaintenanceWindowOptions, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/maintenanceWindowOptions/current" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/maintenanceWindowOptions/current" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -8797,7 +8934,7 @@ pub mod sql_pool_transparent_data_encryptions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TransparentDataEncryption, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/transparentDataEncryption/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . transparent_data_encryption_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/transparentDataEncryption/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . transparent_data_encryption_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -8876,7 +9013,7 @@ pub mod sql_pool_transparent_data_encryptions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/transparentDataEncryption/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . transparent_data_encryption_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/transparentDataEncryption/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . transparent_data_encryption_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -8954,7 +9091,7 @@ pub mod sql_pool_transparent_data_encryptions {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::TransparentDataEncryptionListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/transparentDataEncryption" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/transparentDataEncryption" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -9078,7 +9215,7 @@ pub mod sql_pool_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/auditingSettings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -9154,7 +9291,7 @@ pub mod sql_pool_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/auditingSettings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -9232,7 +9369,11 @@ pub mod sql_pool_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/auditingSettings",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -9323,7 +9464,11 @@ pub mod sql_pool_operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/operations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -9414,7 +9559,11 @@ pub mod sql_pool_usages {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/usages",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -9671,7 +9820,7 @@ pub mod sql_pool_sensitivity_labels {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SensitivityLabelListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/currentSensitivityLabels" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/currentSensitivityLabels" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -9744,7 +9893,7 @@ pub mod sql_pool_sensitivity_labels {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/currentSensitivityLabels" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/currentSensitivityLabels" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -9818,7 +9967,7 @@ pub mod sql_pool_sensitivity_labels {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SensitivityLabelListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/recommendedSensitivityLabels" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/recommendedSensitivityLabels" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -9893,7 +10042,7 @@ pub mod sql_pool_sensitivity_labels {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SensitivityLabel, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -9964,7 +10113,7 @@ pub mod sql_pool_sensitivity_labels {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -10041,7 +10190,7 @@ pub mod sql_pool_sensitivity_labels {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -10102,7 +10251,7 @@ pub mod sql_pool_sensitivity_labels {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}/enable" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}/enable" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -10163,7 +10312,7 @@ pub mod sql_pool_sensitivity_labels {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}/disable" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}/sensitivityLabels/{}/disable" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name , & self . sensitivity_label_source) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -10247,7 +10396,7 @@ pub mod sql_pool_recommended_sensitivity_labels {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/recommendedSensitivityLabels" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/recommendedSensitivityLabels" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -10353,7 +10502,11 @@ pub mod sql_pool_schemas {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -10421,7 +10574,7 @@ pub mod sql_pool_schemas {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -10542,7 +10695,7 @@ pub mod sql_pool_tables {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -10616,7 +10769,7 @@ pub mod sql_pool_tables {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -10720,7 +10873,7 @@ pub mod sql_pool_table_columns {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolColumnListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -10816,7 +10969,7 @@ pub mod sql_pool_connection_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/connectionPolicies/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -10971,7 +11124,7 @@ pub mod sql_pool_vulnerability_assessments {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolVulnerabilityAssessmentListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -11035,7 +11188,7 @@ pub mod sql_pool_vulnerability_assessments {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolVulnerabilityAssessment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -11103,7 +11256,7 @@ pub mod sql_pool_vulnerability_assessments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -11177,7 +11330,7 @@ pub mod sql_pool_vulnerability_assessments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -11321,7 +11474,7 @@ pub mod sql_pool_vulnerability_assessment_scans {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::VulnerabilityAssessmentScanRecordListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/scans" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/scans" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -11389,7 +11542,7 @@ pub mod sql_pool_vulnerability_assessment_scans {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/scans/{}/initiateScan" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . scan_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/scans/{}/initiateScan" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . scan_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -11454,7 +11607,7 @@ pub mod sql_pool_vulnerability_assessment_scans {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/scans/{}/export" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . scan_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/scans/{}/export" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . scan_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -11526,7 +11679,7 @@ pub mod sql_pool_vulnerability_assessment_scans {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::VulnerabilityAssessmentScanRecord, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/scans/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . scan_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/scans/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . scan_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -11651,7 +11804,11 @@ pub mod sql_pool_security_alert_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/securityAlertPolicies",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -11716,7 +11873,7 @@ pub mod sql_pool_security_alert_policies {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolSecurityAlertPolicy, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/securityAlertPolicies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . security_alert_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/securityAlertPolicies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . security_alert_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -11784,7 +11941,7 @@ pub mod sql_pool_security_alert_policies {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/securityAlertPolicies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . security_alert_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/securityAlertPolicies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . security_alert_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -11932,7 +12089,7 @@ pub mod sql_pool_vulnerability_assessment_rule_baselines {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolVulnerabilityAssessmentRuleBaseline, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . rule_id , & self . baseline_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . rule_id , & self . baseline_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -12000,7 +12157,7 @@ pub mod sql_pool_vulnerability_assessment_rule_baselines {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolVulnerabilityAssessmentRuleBaseline, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . rule_id , & self . baseline_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . rule_id , & self . baseline_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -12070,7 +12227,7 @@ pub mod sql_pool_vulnerability_assessment_rule_baselines {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . rule_id , & self . baseline_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/vulnerabilityAssessments/{}/rules/{}/baselines/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . vulnerability_assessment_name , & self . rule_id , & self . baseline_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -12190,7 +12347,7 @@ pub mod extended_sql_pool_blob_auditing_policies {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ExtendedSqlPoolBlobAuditingPolicy, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/extendedAuditingSettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . blob_auditing_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/extendedAuditingSettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . blob_auditing_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -12258,7 +12415,7 @@ pub mod extended_sql_pool_blob_auditing_policies {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/extendedAuditingSettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . blob_auditing_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/extendedAuditingSettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . blob_auditing_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -12329,7 +12486,7 @@ pub mod extended_sql_pool_blob_auditing_policies {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ExtendedSqlPoolBlobAuditingPolicyListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/extendedAuditingSettings" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/extendedAuditingSettings" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -12439,7 +12596,7 @@ pub mod data_masking_policies {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataMaskingPolicy, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -12513,7 +12670,7 @@ pub mod data_masking_policies {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataMaskingPolicy, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -12654,7 +12811,7 @@ pub mod data_masking_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataMaskingRule, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}/rules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name , & self . data_masking_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}/rules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name , & self . data_masking_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -12734,7 +12891,7 @@ pub mod data_masking_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}/rules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name , & self . data_masking_rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}/rules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name , & self . data_masking_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -12814,7 +12971,7 @@ pub mod data_masking_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataMaskingRuleListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}/rules" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/dataMaskingPolicies/{}/rules" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . data_masking_policy_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -12916,7 +13073,7 @@ pub mod sql_pool_columns {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolColumn, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/schemas/{}/tables/{}/columns/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . schema_name , & self . table_name , & self . column_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -13057,7 +13214,7 @@ pub mod sql_pool_workload_group {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -13134,7 +13291,7 @@ pub mod sql_pool_workload_group {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -13218,7 +13375,7 @@ pub mod sql_pool_workload_group {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -13284,7 +13441,11 @@ pub mod sql_pool_workload_group {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -13433,7 +13594,7 @@ pub mod sql_pool_workload_classifier {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadClassifier, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}/workloadClassifiers/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . workload_group_name , & self . workload_classifier_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}/workloadClassifiers/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . workload_group_name , & self . workload_classifier_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -13503,7 +13664,7 @@ pub mod sql_pool_workload_classifier {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}/workloadClassifiers/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . workload_group_name , & self . workload_classifier_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}/workloadClassifiers/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . workload_group_name , & self . workload_classifier_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -13580,7 +13741,7 @@ pub mod sql_pool_workload_classifier {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}/workloadClassifiers/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . workload_group_name , & self . workload_classifier_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}/workloadClassifiers/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . workload_group_name , & self . workload_classifier_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -13641,7 +13802,7 @@ pub mod sql_pool_workload_classifier {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::WorkloadClassifierListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}/workloadClassifiers" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . workload_group_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlPools/{}/workloadGroups/{}/workloadClassifiers" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . sql_pool_name , & self . workload_group_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -13758,7 +13919,7 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/auditingSettings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -13832,7 +13993,7 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/auditingSettings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -13903,7 +14064,10 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/auditingSettings",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -14023,7 +14187,7 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/extendedAuditingSettings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -14097,7 +14261,7 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/extendedAuditingSettings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -14169,7 +14333,10 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/extendedAuditingSettings",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -14287,7 +14454,7 @@ pub mod workspace_managed_sql_server_security_alert_policy {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/securityAlertPolicies/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -14361,7 +14528,7 @@ pub mod workspace_managed_sql_server_security_alert_policy {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/securityAlertPolicies/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -14432,7 +14599,10 @@ pub mod workspace_managed_sql_server_security_alert_policy {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/securityAlertPolicies",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -14567,7 +14737,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/vulnerabilityAssessments/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -14641,7 +14811,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/vulnerabilityAssessments/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -14721,7 +14891,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/vulnerabilityAssessments/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -14787,7 +14957,10 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/vulnerabilityAssessments",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -14923,7 +15096,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/encryptionProtector/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -15008,7 +15181,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/encryptionProtector/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -15087,7 +15260,10 @@ pub mod workspace_managed_sql_server_encryption_protector {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/encryptionProtector",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15156,7 +15332,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/encryptionProtector/{}/revalidate",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -15242,7 +15418,10 @@ pub mod workspace_managed_sql_server_usages {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlUsages",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15344,7 +15523,10 @@ pub mod workspace_managed_sql_server_recoverable_sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/recoverableSqlPools",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15408,7 +15590,11 @@ pub mod workspace_managed_sql_server_recoverable_sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/recoverableSqlPools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name, &self.sql_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name,
+                        &self.sql_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15555,7 +15741,9 @@ pub mod workspaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15629,7 +15817,10 @@ pub mod workspaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15709,7 +15900,10 @@ pub mod workspaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15796,7 +15990,10 @@ pub mod workspaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15883,7 +16080,10 @@ pub mod workspaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -15962,7 +16162,8 @@ pub mod workspaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Synapse/workspaces",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -16086,7 +16287,10 @@ pub mod workspace_aad_admins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/administrators/activeDirectory",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -16166,7 +16370,10 @@ pub mod workspace_aad_admins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/administrators/activeDirectory",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -16253,7 +16460,10 @@ pub mod workspace_aad_admins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/administrators/activeDirectory",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -16374,7 +16584,10 @@ pub mod workspace_sql_aad_admins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlAdministrators/activeDirectory",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -16454,7 +16667,10 @@ pub mod workspace_sql_aad_admins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlAdministrators/activeDirectory",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -16541,7 +16757,10 @@ pub mod workspace_sql_aad_admins {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/sqlAdministrators/activeDirectory",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -16650,7 +16869,7 @@ pub mod workspace_managed_identity_sql_control_settings {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ManagedIdentitySqlControlSettingsModel, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/managedIdentitySqlControlSettings/default" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/managedIdentitySqlControlSettings/default" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -16727,7 +16946,7 @@ pub mod workspace_managed_identity_sql_control_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/managedIdentitySqlControlSettings/default" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/managedIdentitySqlControlSettings/default" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -16840,7 +17059,7 @@ pub mod restorable_dropped_sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/restorableDroppedSqlPools/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -16920,7 +17139,10 @@ pub mod restorable_dropped_sql_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/restorableDroppedSqlPools",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -17049,7 +17271,7 @@ pub mod azure_ad_only_authentications {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/azureADOnlyAuthentications/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -17135,7 +17357,7 @@ pub mod azure_ad_only_authentications {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/azureADOnlyAuthentications/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.workspace_name,
@@ -17223,7 +17445,10 @@ pub mod azure_ad_only_authentications {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/azureADOnlyAuthentications",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.workspace_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.workspace_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

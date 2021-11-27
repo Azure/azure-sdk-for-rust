@@ -241,7 +241,7 @@ pub mod key_vault_connections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AzureKeyVault, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/azureKeyVaults/{}", &self.client.endpoint, &self.key_vault_name);
+                    let url_str = &format!("{}/azureKeyVaults/{}", self.client.endpoint(), &self.key_vault_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -311,7 +311,7 @@ pub mod key_vault_connections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AzureKeyVault, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/azureKeyVaults/{}", &self.client.endpoint, &self.key_vault_name);
+                    let url_str = &format!("{}/azureKeyVaults/{}", self.client.endpoint(), &self.key_vault_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -386,7 +386,7 @@ pub mod key_vault_connections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/azureKeyVaults/{}", &self.client.endpoint, &self.key_vault_name);
+                    let url_str = &format!("{}/azureKeyVaults/{}", self.client.endpoint(), &self.key_vault_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -455,7 +455,7 @@ pub mod key_vault_connections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AzureKeyVaultList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/azureKeyVaults", &self.client.endpoint,);
+                    let url_str = &format!("{}/azureKeyVaults", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -577,7 +577,7 @@ pub mod classification_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ClassificationRule, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/classificationrules/{}", &self.client.endpoint, &self.classification_rule_name);
+                    let url_str = &format!("{}/classificationrules/{}", self.client.endpoint(), &self.classification_rule_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -656,7 +656,7 @@ pub mod classification_rules {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/classificationrules/{}", &self.client.endpoint, &self.classification_rule_name);
+                    let url_str = &format!("{}/classificationrules/{}", self.client.endpoint(), &self.classification_rule_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -741,7 +741,7 @@ pub mod classification_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/classificationrules/{}", &self.client.endpoint, &self.classification_rule_name);
+                    let url_str = &format!("{}/classificationrules/{}", self.client.endpoint(), &self.classification_rule_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -810,7 +810,7 @@ pub mod classification_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ClassificationRuleList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/classificationrules", &self.client.endpoint,);
+                    let url_str = &format!("{}/classificationrules", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -881,7 +881,8 @@ pub mod classification_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/classificationrules/{}/versions",
-                        &self.client.endpoint, &self.classification_rule_name
+                        self.client.endpoint(),
+                        &self.classification_rule_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -955,7 +956,9 @@ pub mod classification_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/classificationrules/{}/versions/{}/:tag",
-                        &self.client.endpoint, &self.classification_rule_name, &self.classification_rule_version
+                        self.client.endpoint(),
+                        &self.classification_rule_name,
+                        &self.classification_rule_version
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1059,7 +1062,7 @@ pub mod data_sources {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataSource, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasources/{}", &self.client.endpoint, &self.data_source_name);
+                    let url_str = &format!("{}/datasources/{}", self.client.endpoint(), &self.data_source_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1138,7 +1141,7 @@ pub mod data_sources {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasources/{}", &self.client.endpoint, &self.data_source_name);
+                    let url_str = &format!("{}/datasources/{}", self.client.endpoint(), &self.data_source_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1223,7 +1226,7 @@ pub mod data_sources {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasources/{}", &self.client.endpoint, &self.data_source_name);
+                    let url_str = &format!("{}/datasources/{}", self.client.endpoint(), &self.data_source_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1292,7 +1295,7 @@ pub mod data_sources {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataSourceList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasources", &self.client.endpoint,);
+                    let url_str = &format!("{}/datasources", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1388,7 +1391,9 @@ pub mod filters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}/filters/custom",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1471,7 +1476,9 @@ pub mod filters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}/filters/custom",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1597,7 +1604,9 @@ pub mod scans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1676,7 +1685,9 @@ pub mod scans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1761,7 +1772,9 @@ pub mod scans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1832,7 +1845,7 @@ pub mod scans {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ScanList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/datasources/{}/scans", &self.client.endpoint, &self.data_source_name);
+                    let url_str = &format!("{}/datasources/{}/scans", self.client.endpoint(), &self.data_source_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1953,7 +1966,10 @@ pub mod scan_result {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}/runs/{}",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name, &self.run_id
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name,
+                        &self.run_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2030,7 +2046,10 @@ pub mod scan_result {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}/runs/{}/:cancel",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name, &self.run_id
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name,
+                        &self.run_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2104,7 +2123,9 @@ pub mod scan_result {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}/runs",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2205,7 +2226,7 @@ pub mod scan_rulesets {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ScanRuleset, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/scanrulesets/{}", &self.client.endpoint, &self.scan_ruleset_name);
+                    let url_str = &format!("{}/scanrulesets/{}", self.client.endpoint(), &self.scan_ruleset_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2284,7 +2305,7 @@ pub mod scan_rulesets {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/scanrulesets/{}", &self.client.endpoint, &self.scan_ruleset_name);
+                    let url_str = &format!("{}/scanrulesets/{}", self.client.endpoint(), &self.scan_ruleset_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2369,7 +2390,7 @@ pub mod scan_rulesets {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/scanrulesets/{}", &self.client.endpoint, &self.scan_ruleset_name);
+                    let url_str = &format!("{}/scanrulesets/{}", self.client.endpoint(), &self.scan_ruleset_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -2438,7 +2459,7 @@ pub mod scan_rulesets {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ScanRulesetList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/scanrulesets", &self.client.endpoint,);
+                    let url_str = &format!("{}/scanrulesets", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2543,7 +2564,7 @@ pub mod system_scan_rulesets {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SystemScanRulesetList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/systemScanRulesets", &self.client.endpoint,);
+                    let url_str = &format!("{}/systemScanRulesets", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2614,7 +2635,8 @@ pub mod system_scan_rulesets {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/systemScanRulesets/datasources/{}",
-                        &self.client.endpoint, &self.data_source_type
+                        self.client.endpoint(),
+                        &self.data_source_type
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2689,7 +2711,7 @@ pub mod system_scan_rulesets {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SystemScanRuleset, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/systemScanRulesets/versions/{}", &self.client.endpoint, &self.version);
+                    let url_str = &format!("{}/systemScanRulesets/versions/{}", self.client.endpoint(), &self.version);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2765,7 +2787,7 @@ pub mod system_scan_rulesets {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SystemScanRuleset, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/systemScanRulesets/versions/latest", &self.client.endpoint,);
+                    let url_str = &format!("{}/systemScanRulesets/versions/latest", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2841,7 +2863,7 @@ pub mod system_scan_rulesets {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SystemScanRulesetList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/systemScanRulesets/versions", &self.client.endpoint,);
+                    let url_str = &format!("{}/systemScanRulesets/versions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2952,7 +2974,9 @@ pub mod triggers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}/triggers/default",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3031,7 +3055,9 @@ pub mod triggers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}/triggers/default",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3116,7 +3142,9 @@ pub mod triggers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/datasources/{}/scans/{}/triggers/default",
-                        &self.client.endpoint, &self.data_source_name, &self.scan_name
+                        self.client.endpoint(),
+                        &self.data_source_name,
+                        &self.scan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

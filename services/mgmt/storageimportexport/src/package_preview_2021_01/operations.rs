@@ -169,7 +169,7 @@ pub mod locations {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LocationsResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ImportExport/locations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ImportExport/locations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -248,7 +248,8 @@ pub mod locations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ImportExport/locations/{}",
-                        &self.client.endpoint, &self.location_name
+                        self.client.endpoint(),
+                        &self.location_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -431,7 +432,8 @@ pub mod jobs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ImportExport/jobs",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -528,7 +530,9 @@ pub mod jobs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -616,7 +620,10 @@ pub mod jobs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.job_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.job_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -709,7 +716,10 @@ pub mod jobs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.job_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.job_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -802,7 +812,10 @@ pub mod jobs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.job_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.job_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -885,7 +898,10 @@ pub mod jobs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.job_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.job_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -985,7 +1001,10 @@ pub mod bit_locker_keys {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ImportExport/jobs/{}/listBitLockerKeys",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.job_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.job_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1078,7 +1097,7 @@ pub mod operations {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ListOperationsResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ImportExport/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ImportExport/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

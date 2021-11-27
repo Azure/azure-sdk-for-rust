@@ -138,7 +138,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListValue, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Addons/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Addons/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -269,7 +269,10 @@ pub mod support_plan_types {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Addons/supportProviders/{}/supportPlanTypes/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_name, &self.plan_type_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_name,
+                        &self.plan_type_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -351,7 +354,10 @@ pub mod support_plan_types {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Addons/supportProviders/{}/supportPlanTypes/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_name, &self.plan_type_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_name,
+                        &self.plan_type_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -437,7 +443,10 @@ pub mod support_plan_types {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Addons/supportProviders/{}/supportPlanTypes/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_name, &self.plan_type_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_name,
+                        &self.plan_type_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -512,7 +521,8 @@ pub mod support_plan_types {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Addons/supportProviders/canonical/listSupportPlanInfo",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

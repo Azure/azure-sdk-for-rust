@@ -254,7 +254,9 @@ pub mod reservation {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/availableScopes",
-                        &self.client.endpoint, &self.reservation_order_id, &self.reservation_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id,
+                        &self.reservation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -333,7 +335,8 @@ pub mod reservation {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}/split",
-                        &self.client.endpoint, &self.reservation_order_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -413,7 +416,8 @@ pub mod reservation {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}/merge",
-                        &self.client.endpoint, &self.reservation_order_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -487,7 +491,8 @@ pub mod reservation {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations",
-                        &self.client.endpoint, &self.reservation_order_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -565,7 +570,9 @@ pub mod reservation {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}",
-                        &self.client.endpoint, &self.reservation_order_id, &self.reservation_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id,
+                        &self.reservation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -647,7 +654,9 @@ pub mod reservation {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}",
-                        &self.client.endpoint, &self.reservation_order_id, &self.reservation_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id,
+                        &self.reservation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -722,7 +731,9 @@ pub mod reservation {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}/reservations/{}/revisions",
-                        &self.client.endpoint, &self.reservation_order_id, &self.reservation_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id,
+                        &self.reservation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -817,7 +828,8 @@ pub mod get_catalog {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.Capacity/catalogs",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -894,7 +906,8 @@ pub mod get_applied_reservation_list {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.Capacity/appliedReservations",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -995,7 +1008,7 @@ pub mod reservation_order {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CalculatePriceResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Capacity/calculatePrice", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Capacity/calculatePrice", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1064,7 +1077,7 @@ pub mod reservation_order {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ReservationOrderList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Capacity/reservationOrders", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Capacity/reservationOrders", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1140,7 +1153,8 @@ pub mod reservation_order {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}",
-                        &self.client.endpoint, &self.reservation_order_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1221,7 +1235,8 @@ pub mod reservation_order {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Capacity/reservationOrders/{}",
-                        &self.client.endpoint, &self.reservation_order_id
+                        self.client.endpoint(),
+                        &self.reservation_order_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1309,7 +1324,7 @@ pub mod operation {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Capacity/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Capacity/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1398,7 +1413,7 @@ pub mod calculate_exchange {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Capacity/calculateExchange", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Capacity/calculateExchange", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1489,7 +1504,7 @@ pub mod exchange {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Capacity/exchange", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Capacity/exchange", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1636,7 +1651,11 @@ pub mod quota {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Capacity/resourceProviders/{}/locations/{}/serviceLimits/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_id, &self.location, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_id,
+                        &self.location,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1717,7 +1736,11 @@ pub mod quota {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Capacity/resourceProviders/{}/locations/{}/serviceLimits/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_id, &self.location, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_id,
+                        &self.location,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1805,7 +1828,11 @@ pub mod quota {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Capacity/resourceProviders/{}/locations/{}/serviceLimits/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_id, &self.location, &self.resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_id,
+                        &self.location,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1886,7 +1913,10 @@ pub mod quota {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Capacity/resourceProviders/{}/locations/{}/serviceLimits",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_id, &self.location
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_id,
+                        &self.location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2001,7 +2031,11 @@ pub mod quota_request_status {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Capacity/resourceProviders/{}/locations/{}/serviceLimitsRequests/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_id, &self.location, &self.id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_id,
+                        &self.location,
+                        &self.id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2090,7 +2124,10 @@ pub mod quota_request_status {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Capacity/resourceProviders/{}/locations/{}/serviceLimitsRequests",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_id, &self.location
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_id,
+                        &self.location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

@@ -419,7 +419,7 @@ pub mod list_operations {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/providers/Microsoft.EdgeOrder/operations", &self.client.endpoint,);
+                let url_str = &format!("{}/providers/Microsoft.EdgeOrder/operations", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -500,7 +500,8 @@ pub mod list_addresses_at_subscription_level {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/addresses",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -589,7 +590,8 @@ pub mod list_product_families {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/listProductFamilies",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -674,7 +676,8 @@ pub mod list_configurations {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/listConfigurations",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -755,7 +758,8 @@ pub mod list_product_families_metadata {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/productFamiliesMetadata",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -836,7 +840,8 @@ pub mod list_order_at_subscription_level {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/orders",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -926,7 +931,8 @@ pub mod list_order_items_at_subscription_level {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.EdgeOrder/orderItems",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1018,7 +1024,9 @@ pub mod list_addresses_at_resource_group_level {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/addresses",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1098,7 +1106,10 @@ pub mod get_address_by_name {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/addresses/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.address_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.address_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1178,7 +1189,10 @@ pub mod create_address {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/addresses/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.address_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.address_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1265,7 +1279,10 @@ pub mod update_address {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/addresses/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.address_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.address_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1350,7 +1367,10 @@ pub mod delete_address_by_name {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/addresses/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.address_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.address_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1425,7 +1445,9 @@ pub mod list_order_at_resource_group_level {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orders",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1503,7 +1525,11 @@ pub mod get_order_by_name {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/locations/{}/orders/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.location, &self.order_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.location,
+                    &self.order_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1591,7 +1617,9 @@ pub mod list_order_items_at_resource_group_level {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1679,7 +1707,10 @@ pub mod get_order_item_by_name {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.order_item_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.order_item_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1762,7 +1793,10 @@ pub mod create_order_item {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.order_item_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.order_item_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1849,7 +1883,10 @@ pub mod update_order_item {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.order_item_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.order_item_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1934,7 +1971,10 @@ pub mod delete_order_item_by_name {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.order_item_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.order_item_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -2011,7 +2051,10 @@ pub mod cancel_order_item {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}/cancel",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.order_item_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.order_item_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -2088,7 +2131,10 @@ pub mod return_order_item {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.EdgeOrder/orderItems/{}/return",
-                    &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.order_item_name
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.order_item_name
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();

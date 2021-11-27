@@ -145,7 +145,7 @@ pub mod operations {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsDiscoveryCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/microsoft.aadiam/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/microsoft.aadiam/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -250,7 +250,7 @@ pub mod diagnostic_settings {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::DiagnosticSettingsResourceCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/microsoft.aadiam/diagnosticSettings", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/microsoft.aadiam/diagnosticSettings", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -323,7 +323,8 @@ pub mod diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/microsoft.aadiam/diagnosticSettings/{}",
-                        &self.client.endpoint, &self.name
+                        self.client.endpoint(),
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -398,7 +399,8 @@ pub mod diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/microsoft.aadiam/diagnosticSettings/{}",
-                        &self.client.endpoint, &self.name
+                        self.client.endpoint(),
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -476,7 +478,8 @@ pub mod diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/microsoft.aadiam/diagnosticSettings/{}",
-                        &self.client.endpoint, &self.name
+                        self.client.endpoint(),
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -556,7 +559,7 @@ pub mod diagnostic_settings_category {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::DiagnosticSettingsCategoryResourceCollection, Error>>
             {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/microsoft.aadiam/diagnosticSettingsCategories", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/microsoft.aadiam/diagnosticSettingsCategories", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -281,7 +281,10 @@ pub mod custom_rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -356,7 +359,10 @@ pub mod custom_rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -433,7 +439,9 @@ pub mod custom_rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/customRollouts",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -581,7 +589,10 @@ pub mod default_rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -661,7 +672,10 @@ pub mod default_rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -747,7 +761,10 @@ pub mod default_rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -819,7 +836,9 @@ pub mod default_rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -893,7 +912,10 @@ pub mod default_rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/defaultRollouts/{}/stop",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -989,7 +1011,9 @@ pub mod generate_manifest {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/generateManifest",
-                    &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.provider_namespace
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1064,7 +1088,9 @@ pub mod checkin_manifest {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/checkinManifest",
-                    &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.provider_namespace
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -1199,7 +1225,10 @@ pub mod notification_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.notification_registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.notification_registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1274,7 +1303,10 @@ pub mod notification_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.notification_registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.notification_registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1354,7 +1386,10 @@ pub mod notification_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.notification_registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.notification_registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1428,7 +1463,9 @@ pub mod notification_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/notificationRegistrations",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1543,7 +1580,7 @@ pub mod operations {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsDefinitionArrayResponseWithContinuation, Error>>
             {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ProviderHub/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ProviderHub/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1614,7 +1651,9 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1688,7 +1727,9 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1767,7 +1808,9 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/operations/default",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1889,7 +1932,9 @@ pub mod provider_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1968,7 +2013,9 @@ pub mod provider_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2048,7 +2095,9 @@ pub mod provider_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2119,7 +2168,8 @@ pub mod provider_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2192,7 +2242,9 @@ pub mod provider_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/generateOperations",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2328,7 +2380,10 @@ pub mod resource_type_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.resource_type
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.resource_type
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2408,7 +2463,10 @@ pub mod resource_type_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.resource_type
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.resource_type
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2494,7 +2552,10 @@ pub mod resource_type_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.resource_type
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.resource_type
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2568,7 +2629,9 @@ pub mod resource_type_registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2940,7 +3003,11 @@ pub mod skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.resource_type, &self.sku
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.resource_type,
+                        &self.sku
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3016,7 +3083,11 @@ pub mod skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.resource_type, &self.sku
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.resource_type,
+                        &self.sku
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3097,7 +3168,11 @@ pub mod skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.resource_type, &self.sku
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.resource_type,
+                        &self.sku
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3167,7 +3242,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3241,7 +3316,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3320,7 +3395,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3390,7 +3465,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3465,7 +3540,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3545,7 +3620,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3616,7 +3691,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3692,7 +3767,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3773,7 +3848,7 @@ pub mod skus {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus/{}" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third , & self . sku) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3845,7 +3920,10 @@ pub mod skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/skus",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.resource_type
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.resource_type
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3921,7 +3999,7 @@ pub mod skus {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResourceArrayResponseWithContinuation, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3997,7 +4075,7 @@ pub mod skus {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResourceArrayResponseWithContinuation, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4074,7 +4152,7 @@ pub mod skus {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SkuResourceArrayResponseWithContinuation, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , & self . client . endpoint , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/resourcetypeRegistrations/{}/skus" , self . client . endpoint () , & self . subscription_id , & self . provider_namespace , & self . resource_type , & self . nested_resource_type_first , & self . nested_resource_type_second , & self . nested_resource_type_third) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4172,7 +4250,10 @@ pub mod resource_actions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ProviderHub/providerRegistrations/{}/resourceActions/{}/deleteResources",
-                        &self.client.endpoint, &self.subscription_id, &self.provider_namespace, &self.resource_action_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.provider_namespace,
+                        &self.resource_action_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

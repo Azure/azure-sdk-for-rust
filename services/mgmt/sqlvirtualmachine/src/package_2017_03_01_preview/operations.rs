@@ -228,7 +228,7 @@ pub mod availability_group_listeners {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AvailabilityGroupListener, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name , & self . availability_group_listener_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name , & self . availability_group_listener_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -295,7 +295,7 @@ pub mod availability_group_listeners {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name , & self . availability_group_listener_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name , & self . availability_group_listener_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -369,7 +369,7 @@ pub mod availability_group_listeners {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name , & self . availability_group_listener_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name , & self . availability_group_listener_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -428,7 +428,7 @@ pub mod availability_group_listeners {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::AvailabilityGroupListenerListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/availabilityGroupListeners" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -497,7 +497,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.SqlVirtualMachine/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.SqlVirtualMachine/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -641,7 +641,10 @@ pub mod sql_virtual_machine_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.sql_virtual_machine_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.sql_virtual_machine_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -710,7 +713,10 @@ pub mod sql_virtual_machine_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.sql_virtual_machine_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.sql_virtual_machine_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -781,7 +787,10 @@ pub mod sql_virtual_machine_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.sql_virtual_machine_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.sql_virtual_machine_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -851,7 +860,10 @@ pub mod sql_virtual_machine_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.sql_virtual_machine_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.sql_virtual_machine_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -912,7 +924,9 @@ pub mod sql_virtual_machine_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -975,7 +989,8 @@ pub mod sql_virtual_machine_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1134,7 +1149,7 @@ pub mod sql_virtual_machines {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlVirtualMachineListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/sqlVirtualMachines" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups/{}/sqlVirtualMachines" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . sql_virtual_machine_group_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1196,7 +1211,8 @@ pub mod sql_virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1264,7 +1280,10 @@ pub mod sql_virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.sql_virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.sql_virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1336,7 +1355,10 @@ pub mod sql_virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.sql_virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.sql_virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1407,7 +1429,10 @@ pub mod sql_virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.sql_virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.sql_virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1477,7 +1502,10 @@ pub mod sql_virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.sql_virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.sql_virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1538,7 +1566,9 @@ pub mod sql_virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SqlVirtualMachine/sqlVirtualMachines",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

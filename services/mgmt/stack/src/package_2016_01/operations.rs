@@ -159,7 +159,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.AzureStack/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.AzureStack/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -332,7 +332,10 @@ pub mod products {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/products",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -407,7 +410,11 @@ pub mod products {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/products/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name, &self.product_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name,
+                        &self.product_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -482,7 +489,11 @@ pub mod products {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/products/{}/listDetails",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name, &self.product_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name,
+                        &self.product_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -563,7 +574,11 @@ pub mod products {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/products/{}/getProducts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name, &self.product_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name,
+                        &self.product_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -648,7 +663,11 @@ pub mod products {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/products/{}/getProduct",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name, &self.product_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name,
+                        &self.product_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -734,7 +753,7 @@ pub mod products {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProductLog, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/products/{}/uploadProductLog" , & self . client . endpoint , & self . subscription_id , & self . resource_group , & self . registration_name , & self . product_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/products/{}/uploadProductLog" , self . client . endpoint () , & self . subscription_id , & self . resource_group , & self . registration_name , & self . product_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -902,7 +921,9 @@ pub mod registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -974,7 +995,8 @@ pub mod registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.AzureStack/registrations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1048,7 +1070,10 @@ pub mod registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1128,7 +1153,10 @@ pub mod registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1210,7 +1238,10 @@ pub mod registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1290,7 +1321,10 @@ pub mod registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1360,7 +1394,10 @@ pub mod registrations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AzureStack/registrations/{}/getActivationKey",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group, &self.registration_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group,
+                        &self.registration_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

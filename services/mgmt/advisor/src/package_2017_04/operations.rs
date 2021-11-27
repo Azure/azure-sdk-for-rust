@@ -173,7 +173,7 @@ pub mod recommendation_metadata {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataEntity, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Advisor/metadata/{}", &self.client.endpoint, &self.name);
+                    let url_str = &format!("{}/providers/Microsoft.Advisor/metadata/{}", self.client.endpoint(), &self.name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -242,7 +242,7 @@ pub mod recommendation_metadata {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataEntityListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Advisor/metadata", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Advisor/metadata", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -358,7 +358,8 @@ pub mod configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Advisor/configurations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -428,7 +429,8 @@ pub mod configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Advisor/configurations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -498,7 +500,9 @@ pub mod configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Advisor/configurations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -569,7 +573,9 @@ pub mod configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Advisor/configurations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -680,7 +686,8 @@ pub mod recommendations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Advisor/generateRecommendations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -749,7 +756,9 @@ pub mod recommendations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Advisor/generateRecommendations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.operation_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.operation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -829,7 +838,8 @@ pub mod recommendations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Advisor/recommendations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -908,7 +918,9 @@ pub mod recommendations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Advisor/recommendations/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.recommendation_id
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.recommendation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -984,7 +996,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationEntityListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Advisor/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Advisor/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1105,7 +1117,10 @@ pub mod suppressions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Advisor/recommendations/{}/suppressions/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.recommendation_id, &self.name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.recommendation_id,
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1175,7 +1190,10 @@ pub mod suppressions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Advisor/recommendations/{}/suppressions/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.recommendation_id, &self.name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.recommendation_id,
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1245,7 +1263,10 @@ pub mod suppressions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Advisor/recommendations/{}/suppressions/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.recommendation_id, &self.name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.recommendation_id,
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1319,7 +1340,8 @@ pub mod suppressions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Advisor/suppressions",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

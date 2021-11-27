@@ -201,7 +201,8 @@ pub mod subscription {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Subscription/cancel",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -275,7 +276,8 @@ pub mod subscription {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Subscription/rename",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -348,7 +350,8 @@ pub mod subscription {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Subscription/enable",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -422,7 +425,8 @@ pub mod subscription {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Subscription/{}/acceptOwnership",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -492,7 +496,8 @@ pub mod subscription {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Subscription/{}/acceptOwnershipStatus",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -573,7 +578,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Subscription/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Subscription/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -675,7 +680,8 @@ pub mod alias {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Subscription/aliases/{}",
-                        &self.client.endpoint, &self.alias_name
+                        self.client.endpoint(),
+                        &self.alias_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -753,7 +759,8 @@ pub mod alias {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Subscription/aliases/{}",
-                        &self.client.endpoint, &self.alias_name
+                        self.client.endpoint(),
+                        &self.alias_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -837,7 +844,8 @@ pub mod alias {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Subscription/aliases/{}",
-                        &self.client.endpoint, &self.alias_name
+                        self.client.endpoint(),
+                        &self.alias_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -904,7 +912,7 @@ pub mod alias {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SubscriptionAliasListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Subscription/aliases", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Subscription/aliases", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -996,7 +1004,7 @@ pub mod subscription_policy {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GetTenantPolicyResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Subscription/policies/default", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Subscription/policies/default", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1065,7 +1073,7 @@ pub mod subscription_policy {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GetTenantPolicyResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Subscription/policies/default", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Subscription/policies/default", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1136,7 +1144,7 @@ pub mod subscription_policy {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::GetTenantPolicyListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Subscription/policies", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Subscription/policies", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1224,7 +1232,8 @@ pub mod billing_account {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.Subscription/policies/default",
-                        &self.client.endpoint, &self.billing_account_id
+                        self.client.endpoint(),
+                        &self.billing_account_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

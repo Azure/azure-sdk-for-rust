@@ -221,7 +221,9 @@ pub mod remote_rendering {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/accounts/{}/conversions/{}",
-                        &self.client.endpoint, &self.account_id, &self.conversion_id
+                        self.client.endpoint(),
+                        &self.account_id,
+                        &self.conversion_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -317,7 +319,9 @@ pub mod remote_rendering {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/accounts/{}/conversions/{}",
-                        &self.client.endpoint, &self.account_id, &self.conversion_id
+                        self.client.endpoint(),
+                        &self.account_id,
+                        &self.conversion_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -418,7 +422,7 @@ pub mod remote_rendering {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ConversionList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/accounts/{}/conversions", &self.client.endpoint, &self.account_id);
+                    let url_str = &format!("{}/accounts/{}/conversions", self.client.endpoint(), &self.account_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -504,7 +508,9 @@ pub mod remote_rendering {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/accounts/{}/sessions/{}",
-                        &self.client.endpoint, &self.account_id, &self.session_id
+                        self.client.endpoint(),
+                        &self.account_id,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -600,7 +606,9 @@ pub mod remote_rendering {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/accounts/{}/sessions/{}",
-                        &self.client.endpoint, &self.account_id, &self.session_id
+                        self.client.endpoint(),
+                        &self.account_id,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -709,7 +717,9 @@ pub mod remote_rendering {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/accounts/{}/sessions/{}",
-                        &self.client.endpoint, &self.account_id, &self.session_id
+                        self.client.endpoint(),
+                        &self.account_id,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -804,7 +814,9 @@ pub mod remote_rendering {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/accounts/{}/sessions/{}/:stop",
-                        &self.client.endpoint, &self.account_id, &self.session_id
+                        self.client.endpoint(),
+                        &self.account_id,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -883,7 +895,7 @@ pub mod remote_rendering {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SessionsList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/accounts/{}/sessions", &self.client.endpoint, &self.account_id);
+                    let url_str = &format!("{}/accounts/{}/sessions", self.client.endpoint(), &self.account_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

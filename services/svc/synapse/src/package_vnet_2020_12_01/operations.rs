@@ -172,7 +172,9 @@ pub mod managed_private_endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
-                        &self.client.endpoint, &self.managed_virtual_network_name, &self.managed_private_endpoint_name
+                        self.client.endpoint(),
+                        &self.managed_virtual_network_name,
+                        &self.managed_private_endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -241,7 +243,9 @@ pub mod managed_private_endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
-                        &self.client.endpoint, &self.managed_virtual_network_name, &self.managed_private_endpoint_name
+                        self.client.endpoint(),
+                        &self.managed_virtual_network_name,
+                        &self.managed_private_endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -315,7 +319,9 @@ pub mod managed_private_endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}",
-                        &self.client.endpoint, &self.managed_virtual_network_name, &self.managed_private_endpoint_name
+                        self.client.endpoint(),
+                        &self.managed_virtual_network_name,
+                        &self.managed_private_endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -380,7 +386,8 @@ pub mod managed_private_endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/managedVirtualNetworks/{}/managedPrivateEndpoints",
-                        &self.client.endpoint, &self.managed_virtual_network_name
+                        self.client.endpoint(),
+                        &self.managed_virtual_network_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

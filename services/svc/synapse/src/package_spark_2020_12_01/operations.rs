@@ -222,7 +222,9 @@ pub mod spark_batch {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/batches",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -304,7 +306,9 @@ pub mod spark_batch {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/batches",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -381,7 +385,10 @@ pub mod spark_batch {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/batches/{}",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.batch_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.batch_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -452,7 +459,10 @@ pub mod spark_batch {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/batches/{}",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.batch_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.batch_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -664,7 +674,9 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -746,7 +758,9 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -823,7 +837,10 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -894,7 +911,10 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -957,7 +977,10 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/reset-timeout",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1020,7 +1043,10 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1089,7 +1115,10 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.session_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.session_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1159,7 +1188,11 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements/{}",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.session_id, &self.statement_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.session_id,
+                        &self.statement_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1230,7 +1263,11 @@ pub mod spark_session {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/livyApi/versions/{}/sparkPools/{}/sessions/{}/statements/{}/cancel",
-                        &self.client.endpoint, &self.livy_api_version, &self.spark_pool_name, &self.session_id, &self.statement_id
+                        self.client.endpoint(),
+                        &self.livy_api_version,
+                        &self.spark_pool_name,
+                        &self.session_id,
+                        &self.statement_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

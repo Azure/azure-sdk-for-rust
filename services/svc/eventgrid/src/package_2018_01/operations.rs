@@ -127,7 +127,7 @@ pub mod publish_cloud_event_events {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/api/events?overload=cloudEvent", &self.client.endpoint,);
+                let url_str = &format!("{}/api/events?overload=cloudEvent", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -181,7 +181,7 @@ pub mod publish_custom_event_events {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/api/events?overload=customEvent", &self.client.endpoint,);
+                let url_str = &format!("{}/api/events?overload=customEvent", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);

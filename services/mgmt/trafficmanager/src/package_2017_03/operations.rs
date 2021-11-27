@@ -231,7 +231,7 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}/{}/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -318,7 +318,7 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}/{}/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -407,7 +407,7 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}/{}/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -494,7 +494,7 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}/{}/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.profile_name,
@@ -670,7 +670,7 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Network/checkTrafficManagerNameAvailability",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -744,7 +744,9 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -816,7 +818,8 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Network/trafficmanagerprofiles",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -890,7 +893,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -970,7 +976,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1052,7 +1061,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1132,7 +1144,10 @@ pub mod profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/trafficmanagerprofiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1223,7 +1238,7 @@ pub mod geographic_hierarchies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Network/trafficManagerGeographicHierarchies/default",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

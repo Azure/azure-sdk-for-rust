@@ -327,7 +327,7 @@ pub mod get_docker_registry_v2_support {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/v2/", &self.client.endpoint,);
+                let url_str = &format!("{}/v2/", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -390,7 +390,7 @@ pub mod get_tag_list {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RepositoryTags, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/v2/{}/tags/list", &self.client.endpoint, &self.name);
+                let url_str = &format!("{}/v2/{}/tags/list", self.client.endpoint(), &self.name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -464,7 +464,7 @@ pub mod get_manifest {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Manifest, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/v2/{}/manifests/{}", &self.client.endpoint, &self.name, &self.reference);
+                let url_str = &format!("{}/v2/{}/manifests/{}", self.client.endpoint(), &self.name, &self.reference);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -537,7 +537,7 @@ pub mod create_manifest {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/v2/{}/manifests/{}", &self.client.endpoint, &self.name, &self.reference);
+                let url_str = &format!("{}/v2/{}/manifests/{}", self.client.endpoint(), &self.name, &self.reference);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PUT);
@@ -607,7 +607,7 @@ pub mod delete_manifest {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/v2/{}/manifests/{}", &self.client.endpoint, &self.name, &self.reference);
+                let url_str = &format!("{}/v2/{}/manifests/{}", self.client.endpoint(), &self.name, &self.reference);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -679,7 +679,7 @@ pub mod get_repositories {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Repositories, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/v2/_catalog", &self.client.endpoint,);
+                let url_str = &format!("{}/v2/_catalog", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -762,7 +762,7 @@ pub mod get_acr_repositories {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Repositories, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/_catalog", &self.client.endpoint,);
+                let url_str = &format!("{}/acr/v1/_catalog", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -836,7 +836,7 @@ pub mod get_acr_repository_attributes {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RepositoryAttributes, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}", &self.client.endpoint, &self.name);
+                let url_str = &format!("{}/acr/v1/{}", self.client.endpoint(), &self.name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -909,7 +909,7 @@ pub mod update_acr_repository_attributes {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}", &self.client.endpoint, &self.name);
+                let url_str = &format!("{}/acr/v1/{}", self.client.endpoint(), &self.name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -977,7 +977,7 @@ pub mod delete_acr_repository {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedRepository, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}", &self.client.endpoint, &self.name);
+                let url_str = &format!("{}/acr/v1/{}", self.client.endpoint(), &self.name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -1065,7 +1065,7 @@ pub mod get_acr_tags {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AcrRepositoryTags, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}/_tags", &self.client.endpoint, &self.name);
+                let url_str = &format!("{}/acr/v1/{}/_tags", self.client.endpoint(), &self.name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1146,7 +1146,7 @@ pub mod get_acr_tag_attributes {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AcrTagAttributes, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}/_tags/{}", &self.client.endpoint, &self.name, &self.reference);
+                let url_str = &format!("{}/acr/v1/{}/_tags/{}", self.client.endpoint(), &self.name, &self.reference);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1220,7 +1220,7 @@ pub mod update_acr_tag_attributes {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}/_tags/{}", &self.client.endpoint, &self.name, &self.reference);
+                let url_str = &format!("{}/acr/v1/{}/_tags/{}", self.client.endpoint(), &self.name, &self.reference);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -1289,7 +1289,7 @@ pub mod delete_acr_tag {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}/_tags/{}", &self.client.endpoint, &self.name, &self.reference);
+                let url_str = &format!("{}/acr/v1/{}/_tags/{}", self.client.endpoint(), &self.name, &self.reference);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -1367,7 +1367,7 @@ pub mod get_acr_manifests {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AcrManifests, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}/_manifests", &self.client.endpoint, &self.name);
+                let url_str = &format!("{}/acr/v1/{}/_manifests", self.client.endpoint(), &self.name);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1445,7 +1445,7 @@ pub mod get_acr_manifest_attributes {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AcrManifestAttributes, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}/_manifests/{}", &self.client.endpoint, &self.name, &self.reference);
+                let url_str = &format!("{}/acr/v1/{}/_manifests/{}", self.client.endpoint(), &self.name, &self.reference);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1519,7 +1519,7 @@ pub mod update_acr_manifest_attributes {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/acr/v1/{}/_manifests/{}", &self.client.endpoint, &self.name, &self.reference);
+                let url_str = &format!("{}/acr/v1/{}/_manifests/{}", self.client.endpoint(), &self.name, &self.reference);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PATCH);
@@ -1603,7 +1603,7 @@ pub mod get_acr_refresh_token_from_exchange {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RefreshToken, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/oauth2/exchange", &self.client.endpoint,);
+                let url_str = &format!("{}/oauth2/exchange", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -1678,7 +1678,7 @@ pub mod get_acr_access_token_from_login {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AccessToken, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/oauth2/token", &self.client.endpoint,);
+                let url_str = &format!("{}/oauth2/token", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1753,7 +1753,7 @@ pub mod get_acr_access_token {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AccessToken, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/oauth2/token", &self.client.endpoint,);
+                let url_str = &format!("{}/oauth2/token", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);

@@ -127,7 +127,7 @@ pub mod resources {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::QueryResponse, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/providers/Microsoft.ResourceGraph/resources", &self.client.endpoint,);
+                let url_str = &format!("{}/providers/Microsoft.ResourceGraph/resources", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -204,7 +204,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ResourceGraph/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ResourceGraph/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

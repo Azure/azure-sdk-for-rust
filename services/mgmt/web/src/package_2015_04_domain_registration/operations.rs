@@ -361,7 +361,8 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DomainRegistration/checkDomainAvailability",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -429,7 +430,8 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DomainRegistration/domains",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -498,7 +500,8 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DomainRegistration/generateSsoRequest",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -567,7 +570,8 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DomainRegistration/listDomainRecommendations",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -636,7 +640,9 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -705,7 +711,10 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.domain_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.domain_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -780,7 +789,10 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.domain_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.domain_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -862,7 +874,10 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.domain_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.domain_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -948,7 +963,10 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.domain_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.domain_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1017,7 +1035,7 @@ pub mod domains {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::DomainOwnershipIdentifierCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . domain_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . domain_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1084,7 +1102,7 @@ pub mod domains {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DomainOwnershipIdentifier, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . domain_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . domain_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1152,7 +1170,7 @@ pub mod domains {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DomainOwnershipIdentifier, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . domain_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . domain_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1221,7 +1239,7 @@ pub mod domains {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DomainOwnershipIdentifier, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . domain_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . domain_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -1294,7 +1312,7 @@ pub mod domains {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . domain_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/domainOwnershipIdentifiers/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . domain_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1367,7 +1385,10 @@ pub mod domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DomainRegistration/domains/{}/renew",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.domain_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.domain_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1469,7 +1490,8 @@ pub mod top_level_domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DomainRegistration/topLevelDomains",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1537,7 +1559,9 @@ pub mod top_level_domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DomainRegistration/topLevelDomains/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1608,7 +1632,9 @@ pub mod top_level_domains {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DomainRegistration/topLevelDomains/{}/listAgreements",
-                        &self.client.endpoint, &self.subscription_id, &self.name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1685,7 +1711,7 @@ pub mod domain_registration_provider {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CsmOperationCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.DomainRegistration/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.DomainRegistration/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

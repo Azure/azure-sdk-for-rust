@@ -167,7 +167,8 @@ pub mod partner {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ManagementPartner/partners/{}",
-                        &self.client.endpoint, &self.partner_id
+                        self.client.endpoint(),
+                        &self.partner_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -239,7 +240,8 @@ pub mod partner {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ManagementPartner/partners/{}",
-                        &self.client.endpoint, &self.partner_id
+                        self.client.endpoint(),
+                        &self.partner_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -311,7 +313,8 @@ pub mod partner {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ManagementPartner/partners/{}",
-                        &self.client.endpoint, &self.partner_id
+                        self.client.endpoint(),
+                        &self.partner_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -383,7 +386,8 @@ pub mod partner {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ManagementPartner/partners/{}",
-                        &self.client.endpoint, &self.partner_id
+                        self.client.endpoint(),
+                        &self.partner_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -459,7 +463,7 @@ pub mod operation {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ManagementPartner/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ManagementPartner/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -539,7 +543,7 @@ pub mod partners {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PartnerResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ManagementPartner/partners", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ManagementPartner/partners", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

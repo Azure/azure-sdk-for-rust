@@ -311,7 +311,8 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -384,7 +385,9 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -458,7 +461,10 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -539,7 +545,10 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -627,7 +636,10 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -709,7 +721,10 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -785,7 +800,10 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/restart",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -861,7 +879,10 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/start",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -937,7 +958,10 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/stop",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1007,7 +1031,8 @@ pub mod server_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.DBForPostgreSql/checkNameAvailability",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1121,7 +1146,10 @@ pub mod servers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/servers",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1196,7 +1224,11 @@ pub mod servers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/servers/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name, &self.server_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name,
+                        &self.server_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1340,7 +1372,7 @@ pub mod configurations {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ServerConfigurationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/servers/{}/configurations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . server_group_name , & self . server_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/servers/{}/configurations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . server_group_name , & self . server_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1415,7 +1447,10 @@ pub mod configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/configurations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1490,7 +1525,7 @@ pub mod configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/configurations/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.server_group_name,
@@ -1575,7 +1610,7 @@ pub mod configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/configurations/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.server_group_name,
@@ -1725,7 +1760,7 @@ pub mod firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/firewallRules/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.server_group_name,
@@ -1811,7 +1846,7 @@ pub mod firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/firewallRules/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.server_group_name,
@@ -1904,7 +1939,7 @@ pub mod firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/firewallRules/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.server_group_name,
@@ -1979,7 +2014,10 @@ pub mod firewall_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/firewallRules",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2115,7 +2153,11 @@ pub mod roles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/roles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name, &self.role_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name,
+                        &self.role_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2204,7 +2246,11 @@ pub mod roles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/roles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name, &self.role_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name,
+                        &self.role_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2275,7 +2321,10 @@ pub mod roles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DBForPostgreSql/serverGroupsv2/{}/roles",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.server_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.server_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2356,7 +2405,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.DBForPostgreSql/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.DBForPostgreSql/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

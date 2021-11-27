@@ -163,7 +163,7 @@ pub mod public_offers {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CatalogItem, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/offers/{}", &self.client.endpoint, &self.id);
+                    let url_str = &format!("{}/offers/{}", self.client.endpoint(), &self.id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -258,7 +258,7 @@ pub mod public_offers {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageResultOfCatalogItem, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/offers", &self.client.endpoint,);
+                    let url_str = &format!("{}/offers", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

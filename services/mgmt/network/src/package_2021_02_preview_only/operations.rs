@@ -360,7 +360,10 @@ pub mod network_managers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -440,7 +443,10 @@ pub mod network_managers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -522,7 +528,10 @@ pub mod network_managers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -602,7 +611,10 @@ pub mod network_managers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -680,7 +692,8 @@ pub mod network_managers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Network/networkManagers",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -769,7 +782,9 @@ pub mod network_managers {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -874,7 +889,10 @@ pub mod network_manager_commits {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/commit",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -977,7 +995,10 @@ pub mod network_manager_deployment_status {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/listDeploymentStatus",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1108,7 +1129,10 @@ pub mod effective_virtual_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/listEffectiveVirtualNetworks",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1191,7 +1215,7 @@ pub mod effective_virtual_networks {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::EffectiveVirtualNetworksListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/networkGroups/{}/listEffectiveVirtualNetworks" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . network_group_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/networkGroups/{}/listEffectiveVirtualNetworks" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . network_group_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1338,7 +1362,7 @@ pub mod network_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/networkGroups/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.network_manager_name,
@@ -1428,7 +1452,7 @@ pub mod network_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/networkGroups/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.network_manager_name,
@@ -1522,7 +1546,7 @@ pub mod network_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/networkGroups/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.network_manager_name,
@@ -1606,7 +1630,10 @@ pub mod network_groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/networkGroups",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1712,7 +1739,7 @@ pub mod active_connectivity_configurations {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ActiveConnectivityConfigurationsListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/listActiveConnectivityConfigurations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/listActiveConnectivityConfigurations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1813,7 +1840,10 @@ pub mod active_security_admin_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/listActiveSecurityAdminRules",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1915,7 +1945,10 @@ pub mod active_security_user_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/listActiveSecurityUserRules",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2018,7 +2051,7 @@ pub mod effective_connectivity_configurations {
                 std::result::Result<models::NetworkManagerEffectiveConnectivityConfigurationListResult, Error>,
             > {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/virtualNetworks/{}/listNetworkManagerEffectiveConnectivityConfigurations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_network_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/virtualNetworks/{}/listNetworkManagerEffectiveConnectivityConfigurations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . virtual_network_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2118,7 +2151,7 @@ pub mod network_manager_effective_security_admin_rules {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkManagerEffectiveSecurityAdminRulesListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/virtualNetworks/{}/listNetworkManagerEffectiveSecurityAdminRules" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_network_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/virtualNetworks/{}/listNetworkManagerEffectiveSecurityAdminRules" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . virtual_network_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -2262,7 +2295,7 @@ pub mod connectivity_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ConnectivityConfiguration, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2340,7 +2373,7 @@ pub mod connectivity_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2424,7 +2457,7 @@ pub mod connectivity_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -2505,7 +2538,10 @@ pub mod connectivity_configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/connectivityConfigurations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2668,7 +2704,10 @@ pub mod security_admin_configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2747,7 +2786,7 @@ pub mod security_admin_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecurityConfiguration, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2825,7 +2864,7 @@ pub mod security_admin_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2909,7 +2948,7 @@ pub mod security_admin_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3066,7 +3105,7 @@ pub mod admin_rule_collections {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RuleCollectionListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3145,7 +3184,7 @@ pub mod admin_rule_collections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RuleCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3224,7 +3263,7 @@ pub mod admin_rule_collections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3309,7 +3348,7 @@ pub mod admin_rule_collections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3475,7 +3514,7 @@ pub mod admin_rules {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AdminRuleListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3555,7 +3594,7 @@ pub mod admin_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BaseAdminRule, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3635,7 +3674,7 @@ pub mod admin_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3721,7 +3760,7 @@ pub mod admin_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityAdminConfigurations/{}/ruleCollections/{}/rules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3873,7 +3912,10 @@ pub mod security_user_configurations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_manager_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_manager_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3952,7 +3994,7 @@ pub mod security_user_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SecurityConfiguration, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4030,7 +4072,7 @@ pub mod security_user_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4114,7 +4156,7 @@ pub mod security_user_configurations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4271,7 +4313,7 @@ pub mod user_rule_collections {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RuleCollectionListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4350,7 +4392,7 @@ pub mod user_rule_collections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RuleCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4429,7 +4471,7 @@ pub mod user_rule_collections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4514,7 +4556,7 @@ pub mod user_rule_collections {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4680,7 +4722,7 @@ pub mod user_rules {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UserRuleListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4760,7 +4802,7 @@ pub mod user_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BaseUserRule, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4840,7 +4882,7 @@ pub mod user_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4926,7 +4968,7 @@ pub mod user_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkManagers/{}/securityUserConfigurations/{}/ruleCollections/{}/rules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . network_manager_name , & self . configuration_name , & self . rule_collection_name , & self . rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -5062,7 +5104,10 @@ pub mod network_security_perimeters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkSecurityPerimeters/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_security_perimeter_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_security_perimeter_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5142,7 +5187,10 @@ pub mod network_security_perimeters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkSecurityPerimeters/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_security_perimeter_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_security_perimeter_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5228,7 +5276,10 @@ pub mod network_security_perimeters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkSecurityPerimeters/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_security_perimeter_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_security_perimeter_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5308,7 +5359,8 @@ pub mod network_security_perimeters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Network/networkSecurityPerimeters",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5399,7 +5451,9 @@ pub mod network_security_perimeters {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Network/networkSecurityPerimeters",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5497,7 +5551,9 @@ pub mod perimeter_associable_resource_types {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Network/locations/{}/perimeterAssociableResourceTypes",
-                        &self.client.endpoint, &self.subscription_id, &self.location
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.location
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

@@ -248,7 +248,7 @@ pub mod extensions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Extension, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -328,7 +328,7 @@ pub mod extensions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -412,7 +412,7 @@ pub mod extensions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Extension, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -504,7 +504,7 @@ pub mod extensions {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -579,7 +579,7 @@ pub mod extensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.cluster_rp,
@@ -707,7 +707,7 @@ pub mod operation_status {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/operations",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.cluster_rp,
@@ -788,7 +788,7 @@ pub mod operation_status {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationStatusResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}/operations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name , & self . operation_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/{}/{}/providers/Microsoft.KubernetesConfiguration/extensions/{}/operations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . cluster_rp , & self . cluster_resource_name , & self . cluster_name , & self . extension_name , & self . operation_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -870,7 +870,7 @@ pub mod operations {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ResourceProviderOperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.KubernetesConfiguration/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.KubernetesConfiguration/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -135,7 +135,8 @@ pub mod vm_insights {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Insights/vmInsightsOnboardingStatuses/default",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

@@ -183,7 +183,7 @@ pub mod role_assignments {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckPrincipalAccessResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/checkAccessSynapseRbac", &self.client.endpoint,);
+                    let url_str = &format!("{}/checkAccessSynapseRbac", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -272,7 +272,7 @@ pub mod role_assignments {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignmentDetailsList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/roleAssignments", &self.client.endpoint,);
+                    let url_str = &format!("{}/roleAssignments", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -353,7 +353,7 @@ pub mod role_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignmentDetails, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/roleAssignments/{}", &self.client.endpoint, &self.role_assignment_id);
+                    let url_str = &format!("{}/roleAssignments/{}", self.client.endpoint(), &self.role_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -423,7 +423,7 @@ pub mod role_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignmentDetails, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/roleAssignments/{}", &self.client.endpoint, &self.role_assignment_id);
+                    let url_str = &format!("{}/roleAssignments/{}", self.client.endpoint(), &self.role_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -503,7 +503,7 @@ pub mod role_assignments {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/roleAssignments/{}", &self.client.endpoint, &self.role_assignment_id);
+                    let url_str = &format!("{}/roleAssignments/{}", self.client.endpoint(), &self.role_assignment_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -607,7 +607,7 @@ pub mod role_definitions {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleDefinitionsListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/roleDefinitions", &self.client.endpoint,);
+                    let url_str = &format!("{}/roleDefinitions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -682,7 +682,7 @@ pub mod role_definitions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SynapseRoleDefinition, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/roleDefinitions/{}", &self.client.endpoint, &self.role_definition_id);
+                    let url_str = &format!("{}/roleDefinitions/{}", self.client.endpoint(), &self.role_definition_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -750,7 +750,7 @@ pub mod role_definitions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<String>, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/rbacScopes", &self.client.endpoint,);
+                    let url_str = &format!("{}/rbacScopes", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

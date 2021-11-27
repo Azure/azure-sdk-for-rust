@@ -256,7 +256,7 @@ pub mod provider_operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProviderOperationResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.LabServices/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.LabServices/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -442,7 +442,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/getEnvironment",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -521,7 +522,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/getOperationBatchStatus",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -595,7 +597,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/getOperationStatus",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -671,7 +674,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/getPersonalPreferences",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -745,7 +749,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/listEnvironments",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -818,7 +823,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/listLabs",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -892,7 +898,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/register",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -966,7 +973,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/resetPassword",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1041,7 +1049,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/startEnvironment",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1116,7 +1125,8 @@ pub mod global_users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.LabServices/users/{}/stopEnvironment",
-                        &self.client.endpoint, &self.user_name
+                        self.client.endpoint(),
+                        &self.user_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1326,7 +1336,8 @@ pub mod lab_accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.LabServices/labaccounts",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1433,7 +1444,9 @@ pub mod lab_accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1524,7 +1537,10 @@ pub mod lab_accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1607,7 +1623,10 @@ pub mod lab_accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1689,7 +1708,10 @@ pub mod lab_accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1769,7 +1791,10 @@ pub mod lab_accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1840,7 +1865,10 @@ pub mod lab_accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/createLab",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1912,7 +1940,10 @@ pub mod lab_accounts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/getRegionalAvailability",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2009,7 +2040,10 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.LabServices/locations/{}/operations/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.location_name, &self.operation_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.location_name,
+                        &self.operation_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2196,7 +2230,10 @@ pub mod gallery_images {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/galleryimages",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2288,7 +2325,7 @@ pub mod gallery_images {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/galleryimages/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.lab_account_name,
@@ -2376,7 +2413,7 @@ pub mod gallery_images {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/galleryimages/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.lab_account_name,
@@ -2463,7 +2500,7 @@ pub mod gallery_images {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/galleryimages/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.lab_account_name,
@@ -2548,7 +2585,7 @@ pub mod gallery_images {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/galleryimages/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.lab_account_name,
@@ -2767,7 +2804,10 @@ pub mod labs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2859,7 +2899,11 @@ pub mod labs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name, &self.lab_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name,
+                        &self.lab_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2943,7 +2987,11 @@ pub mod labs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name, &self.lab_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name,
+                        &self.lab_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3026,7 +3074,11 @@ pub mod labs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name, &self.lab_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name,
+                        &self.lab_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3107,7 +3159,11 @@ pub mod labs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name, &self.lab_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name,
+                        &self.lab_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3179,7 +3235,11 @@ pub mod labs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/addUsers",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name, &self.lab_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name,
+                        &self.lab_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3250,7 +3310,11 @@ pub mod labs {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/register",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name, &self.lab_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name,
+                        &self.lab_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3515,7 +3579,11 @@ pub mod environment_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name, &self.lab_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name,
+                        &self.lab_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3606,7 +3674,7 @@ pub mod environment_settings {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EnvironmentSetting, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3688,7 +3756,7 @@ pub mod environment_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3769,7 +3837,7 @@ pub mod environment_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EnvironmentSetting, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -3848,7 +3916,7 @@ pub mod environment_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3917,7 +3985,7 @@ pub mod environment_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/claimAny" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/claimAny" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3987,7 +4055,7 @@ pub mod environment_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/publish" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/publish" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4061,7 +4129,7 @@ pub mod environment_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/start" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/start" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4136,7 +4204,7 @@ pub mod environment_settings {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/stop" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/stop" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4417,7 +4485,7 @@ pub mod environments {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ResponseWithContinuationEnvironment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4508,7 +4576,7 @@ pub mod environments {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Environment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4591,7 +4659,7 @@ pub mod environments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4673,7 +4741,7 @@ pub mod environments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Environment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -4753,7 +4821,7 @@ pub mod environments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4823,7 +4891,7 @@ pub mod environments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}/claim" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}/claim" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4899,7 +4967,7 @@ pub mod environments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}/resetPassword" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}/resetPassword" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -4975,7 +5043,7 @@ pub mod environments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}/start" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}/start" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -5051,7 +5119,7 @@ pub mod environments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}/stop" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/environmentsettings/{}/environments/{}/stop" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . lab_account_name , & self . lab_name , & self . environment_setting_name , & self . environment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -5245,7 +5313,11 @@ pub mod users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/users",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.lab_account_name, &self.lab_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.lab_account_name,
+                        &self.lab_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5338,7 +5410,7 @@ pub mod users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/users/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.lab_account_name,
@@ -5428,7 +5500,7 @@ pub mod users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/users/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.lab_account_name,
@@ -5517,7 +5589,7 @@ pub mod users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/users/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.lab_account_name,
@@ -5604,7 +5676,7 @@ pub mod users {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.LabServices/labaccounts/{}/labs/{}/users/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.lab_account_name,

@@ -174,7 +174,7 @@ pub mod pipeline {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::JobPipelineInformationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelines", &self.client.endpoint,);
+                    let url_str = &format!("{}/pipelines", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -254,7 +254,7 @@ pub mod pipeline {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobPipelineInformation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/pipelines/{}", &self.client.endpoint, &self.pipeline_identity);
+                    let url_str = &format!("{}/pipelines/{}", self.client.endpoint(), &self.pipeline_identity);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -359,7 +359,7 @@ pub mod recurrence {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::JobRecurrenceInformationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/recurrences", &self.client.endpoint,);
+                    let url_str = &format!("{}/recurrences", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -439,7 +439,7 @@ pub mod recurrence {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobRecurrenceInformation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/recurrences/{}", &self.client.endpoint, &self.recurrence_identity);
+                    let url_str = &format!("{}/recurrences/{}", self.client.endpoint(), &self.recurrence_identity);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -566,7 +566,7 @@ pub mod job {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobStatistics, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/Jobs/{}/GetStatistics", &self.client.endpoint, &self.job_identity);
+                    let url_str = &format!("{}/Jobs/{}/GetStatistics", self.client.endpoint(), &self.job_identity);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -630,7 +630,7 @@ pub mod job {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobDataPath, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/Jobs/{}/GetDebugDataPath", &self.client.endpoint, &self.job_identity);
+                    let url_str = &format!("{}/Jobs/{}/GetDebugDataPath", self.client.endpoint(), &self.job_identity);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -694,7 +694,7 @@ pub mod job {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobInformation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/BuildJob", &self.client.endpoint,);
+                    let url_str = &format!("{}/BuildJob", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -759,7 +759,7 @@ pub mod job {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/Jobs/{}/CancelJob", &self.client.endpoint, &self.job_identity);
+                    let url_str = &format!("{}/Jobs/{}/CancelJob", self.client.endpoint(), &self.job_identity);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -819,7 +819,7 @@ pub mod job {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobInformation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/Jobs/{}", &self.client.endpoint, &self.job_identity);
+                    let url_str = &format!("{}/Jobs/{}", self.client.endpoint(), &self.job_identity);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -884,7 +884,7 @@ pub mod job {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobInformation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/Jobs/{}", &self.client.endpoint, &self.job_identity);
+                    let url_str = &format!("{}/Jobs/{}", self.client.endpoint(), &self.job_identity);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -978,7 +978,7 @@ pub mod job {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobInfoListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/Jobs", &self.client.endpoint,);
+                    let url_str = &format!("{}/Jobs", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

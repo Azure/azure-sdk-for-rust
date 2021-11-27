@@ -172,7 +172,8 @@ pub mod metadata {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ResourceHealth/metadata/{}",
-                        &self.client.endpoint, &self.name
+                        self.client.endpoint(),
+                        &self.name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -242,7 +243,7 @@ pub mod metadata {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataEntityListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ResourceHealth/metadata", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ResourceHealth/metadata", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -329,7 +330,8 @@ pub mod emerging_issues {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ResourceHealth/emergingIssues/{}",
-                        &self.client.endpoint, &self.issue_name
+                        self.client.endpoint(),
+                        &self.issue_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -398,7 +400,7 @@ pub mod emerging_issues {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EmergingIssueListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ResourceHealth/emergingIssues", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ResourceHealth/emergingIssues", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -497,7 +499,8 @@ pub mod events {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ResourceHealth/events",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -577,7 +580,8 @@ pub mod events {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ResourceHealth/events",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -675,7 +679,8 @@ pub mod impacted_resources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ResourceHealth/impactedResources",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -808,7 +813,8 @@ pub mod availability_statuses {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.ResourceHealth/availabilityStatuses",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -899,7 +905,9 @@ pub mod availability_statuses {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.ResourceHealth/availabilityStatuses",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -987,7 +995,8 @@ pub mod availability_statuses {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ResourceHealth/availabilityStatuses/current",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1077,7 +1086,8 @@ pub mod availability_statuses {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ResourceHealth/availabilityStatuses",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1164,7 +1174,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ResourceHealth/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ResourceHealth/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

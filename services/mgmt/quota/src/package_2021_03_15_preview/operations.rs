@@ -166,7 +166,9 @@ pub mod usages {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Quota/usages/{}",
-                        &self.client.endpoint, &self.scope, &self.resource_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -236,7 +238,7 @@ pub mod usages {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UsagesLimits, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/providers/Microsoft.Quota/usages", &self.client.endpoint, &self.scope);
+                    let url_str = &format!("{}/{}/providers/Microsoft.Quota/usages", self.client.endpoint(), &self.scope);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -356,7 +358,9 @@ pub mod quota {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Quota/quotas/{}",
-                        &self.client.endpoint, &self.scope, &self.resource_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -435,7 +439,9 @@ pub mod quota {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Quota/quotas/{}",
-                        &self.client.endpoint, &self.scope, &self.resource_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -516,7 +522,9 @@ pub mod quota {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Quota/quotas/{}",
-                        &self.client.endpoint, &self.scope, &self.resource_name
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -588,7 +596,7 @@ pub mod quota {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::QuotaLimits, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/providers/Microsoft.Quota/quotas", &self.client.endpoint, &self.scope);
+                    let url_str = &format!("{}/{}/providers/Microsoft.Quota/quotas", self.client.endpoint(), &self.scope);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -685,7 +693,9 @@ pub mod quota_request_status {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Quota/quotaRequests/{}",
-                        &self.client.endpoint, &self.scope, &self.id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -770,7 +780,7 @@ pub mod quota_request_status {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::QuotaRequestDetailsList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/providers/Microsoft.Quota/quotaRequests", &self.client.endpoint, &self.scope);
+                    let url_str = &format!("{}/{}/providers/Microsoft.Quota/quotaRequests", self.client.endpoint(), &self.scope);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -859,7 +869,7 @@ pub mod quota_operation {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Quota/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Quota/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -148,7 +148,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.CustomerLockbox/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.CustomerLockbox/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -234,7 +234,8 @@ pub mod get {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.CustomerLockbox/tenantOptedIn/{}",
-                        &self.client.endpoint, &self.tenant_id
+                        self.client.endpoint(),
+                        &self.tenant_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -318,7 +319,7 @@ pub mod post {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.CustomerLockbox/enableLockbox", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.CustomerLockbox/enableLockbox", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -382,7 +383,7 @@ pub mod post {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.CustomerLockbox/disableLockbox", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.CustomerLockbox/disableLockbox", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -486,7 +487,9 @@ pub mod requests {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.CustomerLockbox/requests/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.request_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.request_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -560,7 +563,9 @@ pub mod requests {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.CustomerLockbox/requests/{}/updateApproval",
-                        &self.client.endpoint, &self.subscription_id, &self.request_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.request_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -638,7 +643,8 @@ pub mod requests {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.CustomerLockbox/requests",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

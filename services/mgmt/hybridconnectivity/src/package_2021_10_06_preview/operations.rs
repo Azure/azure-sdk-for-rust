@@ -142,7 +142,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.HybridConnectivity/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.HybridConnectivity/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -276,7 +276,8 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.HybridConnectivity/endpoints",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -349,7 +350,9 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -423,7 +426,9 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -498,7 +503,9 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -577,7 +584,9 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}",
-                        &self.client.endpoint, &self.resource_uri, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -651,7 +660,9 @@ pub mod endpoints {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.HybridConnectivity/endpoints/{}/listCredentials",
-                        &self.client.endpoint, &self.resource_uri, &self.endpoint_name
+                        self.client.endpoint(),
+                        &self.resource_uri,
+                        &self.endpoint_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

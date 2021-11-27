@@ -188,7 +188,8 @@ pub mod ingestion_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -261,7 +262,9 @@ pub mod ingestion_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.ingestion_setting_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.ingestion_setting_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -335,7 +338,9 @@ pub mod ingestion_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.ingestion_setting_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.ingestion_setting_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -414,7 +419,9 @@ pub mod ingestion_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.ingestion_setting_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.ingestion_setting_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -483,7 +490,9 @@ pub mod ingestion_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}/listTokens",
-                        &self.client.endpoint, &self.subscription_id, &self.ingestion_setting_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.ingestion_setting_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -557,7 +566,9 @@ pub mod ingestion_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Security/ingestionSettings/{}/listConnectionStrings",
-                        &self.client.endpoint, &self.subscription_id, &self.ingestion_setting_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.ingestion_setting_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

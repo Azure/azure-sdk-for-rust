@@ -177,7 +177,7 @@ pub mod policy {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/policies/{}", &self.client.endpoint, &self.attestation_type);
+                    let url_str = &format!("{}/policies/{}", self.client.endpoint(), &self.attestation_type);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -247,7 +247,7 @@ pub mod policy {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/policies/{}", &self.client.endpoint, &self.attestation_type);
+                    let url_str = &format!("{}/policies/{}", self.client.endpoint(), &self.attestation_type);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -318,7 +318,7 @@ pub mod policy {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/policies/{}:reset", &self.client.endpoint, &self.attestation_type);
+                    let url_str = &format!("{}/policies/{}:reset", self.client.endpoint(), &self.attestation_type);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -413,7 +413,7 @@ pub mod policy_certificates {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyCertificatesResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/certificates", &self.client.endpoint,);
+                    let url_str = &format!("{}/certificates", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -484,7 +484,7 @@ pub mod policy_certificates {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyCertificatesModifyResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/certificates:add", &self.client.endpoint,);
+                    let url_str = &format!("{}/certificates:add", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -556,7 +556,7 @@ pub mod policy_certificates {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PolicyCertificatesModifyResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/certificates:remove", &self.client.endpoint,);
+                    let url_str = &format!("{}/certificates:remove", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -653,7 +653,7 @@ pub mod attestation {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AttestationResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/attest/OpenEnclave", &self.client.endpoint,);
+                    let url_str = &format!("{}/attest/OpenEnclave", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -723,7 +723,7 @@ pub mod attestation {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AttestationResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/attest/SgxEnclave", &self.client.endpoint,);
+                    let url_str = &format!("{}/attest/SgxEnclave", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -793,7 +793,7 @@ pub mod attestation {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TpmAttestationResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/attest/Tpm", &self.client.endpoint,);
+                    let url_str = &format!("{}/attest/Tpm", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -874,7 +874,7 @@ pub mod signing_certificates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JsonWebKeySet, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/certs", &self.client.endpoint,);
+                    let url_str = &format!("{}/certs", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -953,7 +953,7 @@ pub mod metadata_configuration {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/.well-known/openid-configuration", &self.client.endpoint,);
+                    let url_str = &format!("{}/.well-known/openid-configuration", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

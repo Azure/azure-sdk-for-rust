@@ -168,7 +168,7 @@ pub mod get_role_definitions {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RolesListResponse, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/rbac/roles", &self.client.endpoint,);
+                let url_str = &format!("{}/rbac/roles", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -237,7 +237,7 @@ pub mod get_role_definition_by_id {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SynapseRole, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/rbac/roles/{}", &self.client.endpoint, &self.role_id);
+                let url_str = &format!("{}/rbac/roles/{}", self.client.endpoint(), &self.role_id);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -320,7 +320,7 @@ pub mod get_role_assignments {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignmentDetailsList, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/rbac/roleAssignments", &self.client.endpoint,);
+                let url_str = &format!("{}/rbac/roleAssignments", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -398,7 +398,7 @@ pub mod create_role_assignment {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignmentDetails, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/rbac/roleAssignments", &self.client.endpoint,);
+                let url_str = &format!("{}/rbac/roleAssignments", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -468,7 +468,7 @@ pub mod get_role_assignment_by_id {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignmentDetails, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/rbac/roleAssignments/{}", &self.client.endpoint, &self.role_assignment_id);
+                let url_str = &format!("{}/rbac/roleAssignments/{}", self.client.endpoint(), &self.role_assignment_id);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -542,7 +542,7 @@ pub mod delete_role_assignment_by_id {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/rbac/roleAssignments/{}", &self.client.endpoint, &self.role_assignment_id);
+                let url_str = &format!("{}/rbac/roleAssignments/{}", self.client.endpoint(), &self.role_assignment_id);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -606,7 +606,7 @@ pub mod get_caller_role_assignments {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<String>, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/rbac/getMyAssignedRoles", &self.client.endpoint,);
+                let url_str = &format!("{}/rbac/getMyAssignedRoles", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);

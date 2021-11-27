@@ -142,7 +142,8 @@ pub mod compliance_results {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/complianceResults",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -215,7 +216,9 @@ pub mod compliance_results {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/complianceResults/{}",
-                        &self.client.endpoint, &self.resource_id, &self.compliance_result_name
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.compliance_result_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

@@ -172,7 +172,7 @@ pub mod application_definitions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationDefinition, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applicationDefinitions/{}?disambiguation_dummy" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . application_definition_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applicationDefinitions/{}?disambiguation_dummy" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . application_definition_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -249,7 +249,7 @@ pub mod application_definitions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applicationDefinitions/{}?disambiguation_dummy" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . application_definition_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applicationDefinitions/{}?disambiguation_dummy" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . application_definition_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -333,7 +333,7 @@ pub mod application_definitions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applicationDefinitions/{}?disambiguation_dummy" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . application_definition_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applicationDefinitions/{}?disambiguation_dummy" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . application_definition_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);

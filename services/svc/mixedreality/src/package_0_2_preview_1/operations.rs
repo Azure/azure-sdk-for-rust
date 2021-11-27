@@ -155,7 +155,7 @@ pub mod ingestion_job {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IngestionProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/accounts/{}/jobs/{}", &self.client.endpoint, &self.account_id, &self.job_id);
+                    let url_str = &format!("{}/accounts/{}/jobs/{}", self.client.endpoint(), &self.account_id, &self.job_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -238,7 +238,7 @@ pub mod ingestion_job {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IngestionProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/accounts/{}/jobs/{}", &self.client.endpoint, &self.account_id, &self.job_id);
+                    let url_str = &format!("{}/accounts/{}/jobs/{}", self.client.endpoint(), &self.account_id, &self.job_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -336,7 +336,7 @@ pub mod blob_upload_endpoint {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UploadLocation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/accounts/{}/blobUploadEndpoint", &self.client.endpoint, &self.account_id);
+                    let url_str = &format!("{}/accounts/{}/blobUploadEndpoint", self.client.endpoint(), &self.account_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

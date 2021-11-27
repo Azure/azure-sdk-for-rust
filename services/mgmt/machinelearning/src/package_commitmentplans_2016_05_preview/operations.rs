@@ -158,7 +158,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationEntityListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.MachineLearning/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.MachineLearning/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -239,7 +239,8 @@ pub mod skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.MachineLearning/skus",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -362,7 +363,7 @@ pub mod commitment_associations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CommitmentAssociation, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . commitment_plan_name , & self . commitment_association_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . commitment_plan_name , & self . commitment_association_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -435,7 +436,7 @@ pub mod commitment_associations {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::CommitmentAssociationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . commitment_plan_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . commitment_plan_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -506,7 +507,7 @@ pub mod commitment_associations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CommitmentAssociation, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations/{}/move" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . commitment_plan_name , & self . commitment_association_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/commitmentAssociations/{}/move" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . commitment_plan_name , & self . commitment_association_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -659,7 +660,10 @@ pub mod commitment_plans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.commitment_plan_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.commitment_plan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -734,7 +738,10 @@ pub mod commitment_plans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.commitment_plan_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.commitment_plan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -811,7 +818,10 @@ pub mod commitment_plans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.commitment_plan_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.commitment_plan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -881,7 +891,10 @@ pub mod commitment_plans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.commitment_plan_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.commitment_plan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -948,7 +961,8 @@ pub mod commitment_plans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.MachineLearning/commitmentPlans",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1024,7 +1038,9 @@ pub mod commitment_plans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1126,7 +1142,10 @@ pub mod usage_history {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.MachineLearning/commitmentPlans/{}/usageHistory",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.commitment_plan_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.commitment_plan_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

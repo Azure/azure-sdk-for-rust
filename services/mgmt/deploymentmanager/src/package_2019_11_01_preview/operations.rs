@@ -247,7 +247,10 @@ pub mod service_topologies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.service_topology_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.service_topology_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -322,7 +325,10 @@ pub mod service_topologies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.service_topology_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.service_topology_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -402,7 +408,10 @@ pub mod service_topologies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.service_topology_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.service_topology_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -473,7 +482,9 @@ pub mod service_topologies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -617,7 +628,7 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.service_topology_name,
@@ -697,7 +708,7 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.service_topology_name,
@@ -782,7 +793,7 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.service_topology_name,
@@ -856,7 +867,10 @@ pub mod services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.service_topology_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.service_topology_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1007,7 +1021,7 @@ pub mod service_units {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ServiceUnitResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . service_topology_name , & self . service_name , & self . service_unit_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_topology_name , & self . service_name , & self . service_unit_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1081,7 +1095,7 @@ pub mod service_units {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ServiceUnitResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . service_topology_name , & self . service_name , & self . service_unit_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_topology_name , & self . service_name , & self . service_unit_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1160,7 +1174,7 @@ pub mod service_units {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . service_topology_name , & self . service_name , & self . service_unit_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_topology_name , & self . service_name , & self . service_unit_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1228,7 +1242,7 @@ pub mod service_units {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ServiceUnitListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . service_topology_name , & self . service_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/serviceTopologies/{}/services/{}/serviceUnits" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . service_topology_name , & self . service_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1357,7 +1371,10 @@ pub mod steps {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/steps/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.step_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.step_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1436,7 +1453,10 @@ pub mod steps {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/steps/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.step_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.step_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1520,7 +1540,10 @@ pub mod steps {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/steps/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.step_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.step_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1589,7 +1612,9 @@ pub mod steps {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/steps",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1752,7 +1777,10 @@ pub mod rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1834,7 +1862,10 @@ pub mod rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1918,7 +1949,10 @@ pub mod rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1988,7 +2022,10 @@ pub mod rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}/cancel",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2068,7 +2105,10 @@ pub mod rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts/{}/restart",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.rollout_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.rollout_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2145,7 +2185,9 @@ pub mod rollouts {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/rollouts",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2275,7 +2317,10 @@ pub mod artifact_sources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/artifactSources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.artifact_source_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.artifact_source_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2354,7 +2399,10 @@ pub mod artifact_sources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/artifactSources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.artifact_source_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.artifact_source_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2438,7 +2486,10 @@ pub mod artifact_sources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/artifactSources/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.artifact_source_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.artifact_source_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2507,7 +2558,9 @@ pub mod artifact_sources {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DeploymentManager/artifactSources",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2588,7 +2641,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.DeploymentManager/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.DeploymentManager/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

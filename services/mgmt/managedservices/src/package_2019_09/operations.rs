@@ -197,7 +197,9 @@ pub mod registration_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/registrationDefinitions/{}",
-                        &self.client.endpoint, &self.scope, &self.registration_definition_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.registration_definition_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -276,7 +278,9 @@ pub mod registration_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/registrationDefinitions/{}",
-                        &self.client.endpoint, &self.scope, &self.registration_definition_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.registration_definition_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -361,7 +365,9 @@ pub mod registration_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/registrationDefinitions/{}",
-                        &self.client.endpoint, &self.scope, &self.registration_definition_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.registration_definition_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -431,7 +437,8 @@ pub mod registration_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/registrationDefinitions",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -553,7 +560,9 @@ pub mod registration_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/registrationAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.registration_assignment_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.registration_assignment_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -636,7 +645,9 @@ pub mod registration_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/registrationAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.registration_assignment_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.registration_assignment_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -722,7 +733,9 @@ pub mod registration_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/registrationAssignments/{}",
-                        &self.client.endpoint, &self.scope, &self.registration_assignment_id
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.registration_assignment_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -798,7 +811,8 @@ pub mod registration_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/registrationAssignments",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -905,7 +919,8 @@ pub mod marketplace_registration_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/marketplaceRegistrationDefinitions",
-                        &self.client.endpoint, &self.scope
+                        self.client.endpoint(),
+                        &self.scope
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -983,7 +998,9 @@ pub mod marketplace_registration_definitions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.ManagedServices/marketplaceRegistrationDefinitions/{}",
-                        &self.client.endpoint, &self.scope, &self.marketplace_identifier
+                        self.client.endpoint(),
+                        &self.scope,
+                        &self.marketplace_identifier
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1083,7 +1100,7 @@ pub mod marketplace_registration_definitions_without_scope {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ManagedServices/marketplaceRegistrationDefinitions",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1160,7 +1177,8 @@ pub mod marketplace_registration_definitions_without_scope {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.ManagedServices/marketplaceRegistrationDefinitions/{}",
-                        &self.client.endpoint, &self.marketplace_identifier
+                        self.client.endpoint(),
+                        &self.marketplace_identifier
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1241,7 +1259,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.ManagedServices/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.ManagedServices/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

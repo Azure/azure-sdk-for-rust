@@ -444,7 +444,8 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.CertificateRegistration/certificateOrders",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -512,7 +513,8 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.CertificateRegistration/validateCertificateRegistrationInformation",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -578,7 +580,9 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -649,7 +653,10 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.certificate_order_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.certificate_order_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -724,7 +731,10 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.certificate_order_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.certificate_order_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -806,7 +816,10 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.certificate_order_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.certificate_order_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -887,7 +900,10 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.certificate_order_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.certificate_order_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -952,7 +968,7 @@ pub mod app_service_certificate_orders {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::AppServiceCertificateCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1021,7 +1037,7 @@ pub mod app_service_certificate_orders {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::AppServiceCertificateResource, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1094,7 +1110,7 @@ pub mod app_service_certificate_orders {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1174,7 +1190,7 @@ pub mod app_service_certificate_orders {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -1253,7 +1269,7 @@ pub mod app_service_certificate_orders {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/certificates/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1318,7 +1334,10 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/reissue",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.certificate_order_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.certificate_order_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1384,7 +1403,10 @@ pub mod app_service_certificate_orders {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/renew",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.certificate_order_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.certificate_order_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1447,7 +1469,7 @@ pub mod app_service_certificate_orders {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/resendEmail" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/resendEmail" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1510,7 +1532,7 @@ pub mod app_service_certificate_orders {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/resendRequestEmails" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/resendRequestEmails" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1573,7 +1595,7 @@ pub mod app_service_certificate_orders {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SiteSeal, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveSiteSeal" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveSiteSeal" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1640,7 +1662,7 @@ pub mod app_service_certificate_orders {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/verifyDomainOwnership" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/verifyDomainOwnership" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . certificate_order_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1704,7 +1726,7 @@ pub mod app_service_certificate_orders {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<Vec<models::CertificateOrderAction>, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveCertificateActions" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveCertificateActions" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1771,7 +1793,7 @@ pub mod app_service_certificate_orders {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<models::CertificateEmail>, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveEmailHistory" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CertificateRegistration/certificateOrders/{}/retrieveEmailHistory" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1847,7 +1869,7 @@ pub mod certificate_registration_provider {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CsmOperationCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.CertificateRegistration/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.CertificateRegistration/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

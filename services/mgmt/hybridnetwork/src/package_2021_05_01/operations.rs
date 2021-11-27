@@ -301,7 +301,10 @@ pub mod network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_function_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_function_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -381,7 +384,10 @@ pub mod network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_function_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_function_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -463,7 +469,10 @@ pub mod network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_function_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_function_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -544,7 +553,10 @@ pub mod network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.network_function_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.network_function_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -613,7 +625,8 @@ pub mod network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctions",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -686,7 +699,9 @@ pub mod network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/networkFunctions",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -855,7 +870,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.device_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.device_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -935,7 +953,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.device_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.device_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1017,7 +1038,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.device_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.device_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1098,7 +1122,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.device_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.device_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1167,7 +1194,8 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/devices",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1240,7 +1268,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1314,7 +1344,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.HybridNetwork/devices/{}/listRegistrationKey",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.device_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.device_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1396,7 +1429,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.HybridNetwork/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.HybridNetwork/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1505,7 +1538,9 @@ pub mod vendors {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1588,7 +1623,9 @@ pub mod vendors {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1678,7 +1715,9 @@ pub mod vendors {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1747,7 +1786,8 @@ pub mod vendors {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1873,7 +1913,10 @@ pub mod vendor_skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name, &self.sku_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name,
+                        &self.sku_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1953,7 +1996,10 @@ pub mod vendor_skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name, &self.sku_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name,
+                        &self.sku_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2040,7 +2086,10 @@ pub mod vendor_skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name, &self.sku_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name,
+                        &self.sku_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2110,7 +2159,9 @@ pub mod vendor_skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2253,7 +2304,10 @@ pub mod vendor_sku_preview {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name, &self.sku_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name,
+                        &self.sku_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2328,7 +2382,11 @@ pub mod vendor_sku_preview {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name, &self.sku_name, &self.preview_subscription
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name,
+                        &self.sku_name,
+                        &self.preview_subscription
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2409,7 +2467,11 @@ pub mod vendor_sku_preview {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name, &self.sku_name, &self.preview_subscription
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name,
+                        &self.sku_name,
+                        &self.preview_subscription
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2497,7 +2559,11 @@ pub mod vendor_sku_preview {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/vendors/{}/vendorSkus/{}/previewSubscriptions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name, &self.sku_name, &self.preview_subscription
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name,
+                        &self.sku_name,
+                        &self.preview_subscription
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2583,7 +2649,8 @@ pub mod network_function_vendors {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2687,7 +2754,9 @@ pub mod network_function_vendor_skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors/{}/vendorSkus",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2761,7 +2830,10 @@ pub mod network_function_vendor_skus {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/networkFunctionVendors/{}/vendorSkus/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.vendor_name, &self.vendor_sku_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.vendor_name,
+                        &self.vendor_sku_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2891,7 +2963,11 @@ pub mod vendor_network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.location_name, &self.vendor_name, &self.service_key
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.location_name,
+                        &self.vendor_name,
+                        &self.service_key
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2972,7 +3048,11 @@ pub mod vendor_network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.location_name, &self.vendor_name, &self.service_key
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.location_name,
+                        &self.vendor_name,
+                        &self.service_key
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3060,7 +3140,10 @@ pub mod vendor_network_functions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions",
-                        &self.client.endpoint, &self.subscription_id, &self.location_name, &self.vendor_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.location_name,
+                        &self.vendor_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3234,7 +3317,7 @@ pub mod role_instances {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/start" , & self . client . endpoint , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/start" , self . client . endpoint () , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3309,7 +3392,7 @@ pub mod role_instances {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/stop" , & self . client . endpoint , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/stop" , self . client . endpoint () , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3384,7 +3467,7 @@ pub mod role_instances {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/restart" , & self . client . endpoint , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}/restart" , self . client . endpoint () , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3454,7 +3537,7 @@ pub mod role_instances {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleInstance, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}" , & self . client . endpoint , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances/{}" , self . client . endpoint () , & self . subscription_id , & self . location_name , & self . vendor_name , & self . service_key , & self . role_instance_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3531,7 +3614,11 @@ pub mod role_instances {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.HybridNetwork/locations/{}/vendors/{}/networkFunctions/{}/roleInstances",
-                        &self.client.endpoint, &self.subscription_id, &self.location_name, &self.vendor_name, &self.service_key
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.location_name,
+                        &self.vendor_name,
+                        &self.service_key
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

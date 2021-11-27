@@ -174,7 +174,9 @@ pub mod o_auth2_permission_grant {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?OAuth2PermissionGrant_ListNext",
-                        &self.client.endpoint, &self.tenant_id, &self.next_link
+                        self.client.endpoint(),
+                        &self.tenant_id,
+                        &self.next_link
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -267,7 +269,9 @@ pub mod signed_in_user {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?SignedInUser_ListOwnedObjectsNext",
-                        &self.client.endpoint, &self.tenant_id, &self.next_link
+                        self.client.endpoint(),
+                        &self.tenant_id,
+                        &self.next_link
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -365,7 +369,7 @@ pub mod groups {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GroupListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/{}?Groups_ListNext", &self.client.endpoint, &self.tenant_id, &self.next_link);
+                    let url_str = &format!("{}/{}/{}?Groups_ListNext", self.client.endpoint(), &self.tenant_id, &self.next_link);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -437,7 +441,9 @@ pub mod groups {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?Groups_GetGroupMembersNext",
-                        &self.client.endpoint, &self.tenant_id, &self.next_link
+                        self.client.endpoint(),
+                        &self.tenant_id,
+                        &self.next_link
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -526,7 +532,9 @@ pub mod applications {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?Applications_ListNext",
-                        &self.client.endpoint, &self.tenant_id, &self.next_link
+                        self.client.endpoint(),
+                        &self.tenant_id,
+                        &self.next_link
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -615,7 +623,9 @@ pub mod deleted_applications {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?DeletedApplications_ListNext",
-                        &self.client.endpoint, &self.tenant_id, &self.next_link
+                        self.client.endpoint(),
+                        &self.tenant_id,
+                        &self.next_link
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -706,7 +716,9 @@ pub mod service_principals {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?ServicePrincipals_ListNext",
-                        &self.client.endpoint, &self.tenant_id, &self.next_link
+                        self.client.endpoint(),
+                        &self.tenant_id,
+                        &self.next_link
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -793,7 +805,7 @@ pub mod users {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UserListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}/{}?Users_ListNext", &self.client.endpoint, &self.tenant_id, &self.next_link);
+                    let url_str = &format!("{}/{}/{}?Users_ListNext", self.client.endpoint(), &self.tenant_id, &self.next_link);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -882,7 +894,9 @@ pub mod objects {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?Objects_GetObjectsByObjectIdsNext",
-                        &self.client.endpoint, &self.tenant_id, &self.next_link
+                        self.client.endpoint(),
+                        &self.tenant_id,
+                        &self.next_link
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

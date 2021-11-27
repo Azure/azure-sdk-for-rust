@@ -240,7 +240,7 @@ pub mod operations {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::AvailableOperationsListResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.VMwareCloudSimple/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.VMwareCloudSimple/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -320,7 +320,10 @@ pub mod operations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/operationResults/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.operation_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.operation_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -502,7 +505,8 @@ pub mod dedicated_cloud_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -601,7 +605,9 @@ pub mod dedicated_cloud_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -684,7 +690,10 @@ pub mod dedicated_cloud_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_node_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.dedicated_cloud_node_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -760,7 +769,10 @@ pub mod dedicated_cloud_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_node_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.dedicated_cloud_node_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -837,7 +849,10 @@ pub mod dedicated_cloud_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_node_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.dedicated_cloud_node_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -912,7 +927,10 @@ pub mod dedicated_cloud_nodes {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudNodes/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_node_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.dedicated_cloud_node_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1084,7 +1102,8 @@ pub mod dedicated_cloud_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1183,7 +1202,9 @@ pub mod dedicated_cloud_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1266,7 +1287,10 @@ pub mod dedicated_cloud_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_service_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.dedicated_cloud_service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1341,7 +1365,10 @@ pub mod dedicated_cloud_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_service_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.dedicated_cloud_service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1417,7 +1444,10 @@ pub mod dedicated_cloud_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_service_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.dedicated_cloud_service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1492,7 +1522,10 @@ pub mod dedicated_cloud_services {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/dedicatedCloudServices/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.dedicated_cloud_service_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.dedicated_cloud_service_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1584,7 +1617,9 @@ pub mod skus_availability {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/availabilities",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1684,7 +1719,9 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1758,7 +1795,10 @@ pub mod private_clouds {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.pc_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.pc_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1872,7 +1912,10 @@ pub mod customization_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/customizationPolicies",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.pc_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.pc_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1950,7 +1993,11 @@ pub mod customization_policies {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/customizationPolicies/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.pc_name, &self.customization_policy_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.pc_name,
+                        &self.customization_policy_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2056,7 +2103,10 @@ pub mod resource_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/resourcePools",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.pc_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.pc_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2131,7 +2181,11 @@ pub mod resource_pools {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/resourcePools/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.pc_name, &self.resource_pool_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.pc_name,
+                        &self.resource_pool_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2247,7 +2301,10 @@ pub mod virtual_machine_templates {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.pc_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.pc_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2322,7 +2379,7 @@ pub mod virtual_machine_templates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::VirtualMachineTemplate, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates/{}" , & self . client . endpoint , & self . subscription_id , & self . region_id , & self . pc_name , & self . virtual_machine_template_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualMachineTemplates/{}" , self . client . endpoint () , & self . subscription_id , & self . region_id , & self . pc_name , & self . virtual_machine_template_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2437,7 +2494,10 @@ pub mod virtual_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualNetworks",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.pc_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.pc_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2514,7 +2574,11 @@ pub mod virtual_networks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/privateClouds/{}/virtualNetworks/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id, &self.pc_name, &self.virtual_network_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id,
+                        &self.pc_name,
+                        &self.virtual_network_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2609,7 +2673,9 @@ pub mod usages {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/locations/{}/usages",
-                        &self.client.endpoint, &self.subscription_id, &self.region_id
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.region_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2825,7 +2891,8 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2924,7 +2991,9 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3007,7 +3076,10 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3088,7 +3160,10 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3171,7 +3246,10 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3252,7 +3330,10 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3329,7 +3410,10 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}/start",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3417,7 +3501,10 @@ pub mod virtual_machines {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.VMwareCloudSimple/virtualMachines/{}/stop",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.virtual_machine_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

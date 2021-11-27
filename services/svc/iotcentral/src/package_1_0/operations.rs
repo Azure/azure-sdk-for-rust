@@ -259,7 +259,7 @@ pub mod api_tokens {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApiTokenCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apiTokens", &self.client.endpoint,);
+                    let url_str = &format!("{}/apiTokens", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -323,7 +323,7 @@ pub mod api_tokens {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApiToken, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apiTokens/{}", &self.client.endpoint, &self.token_id);
+                    let url_str = &format!("{}/apiTokens/{}", self.client.endpoint(), &self.token_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -388,7 +388,7 @@ pub mod api_tokens {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApiToken, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apiTokens/{}", &self.client.endpoint, &self.token_id);
+                    let url_str = &format!("{}/apiTokens/{}", self.client.endpoint(), &self.token_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -453,7 +453,7 @@ pub mod api_tokens {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apiTokens/{}", &self.client.endpoint, &self.token_id);
+                    let url_str = &format!("{}/apiTokens/{}", self.client.endpoint(), &self.token_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -549,7 +549,7 @@ pub mod device_templates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceTemplateCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/deviceTemplates", &self.client.endpoint,);
+                    let url_str = &format!("{}/deviceTemplates", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -613,7 +613,7 @@ pub mod device_templates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceTemplate, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/deviceTemplates/{}", &self.client.endpoint, &self.device_template_id);
+                    let url_str = &format!("{}/deviceTemplates/{}", self.client.endpoint(), &self.device_template_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -678,7 +678,7 @@ pub mod device_templates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceTemplate, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/deviceTemplates/{}", &self.client.endpoint, &self.device_template_id);
+                    let url_str = &format!("{}/deviceTemplates/{}", self.client.endpoint(), &self.device_template_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -744,7 +744,7 @@ pub mod device_templates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceTemplate, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/deviceTemplates/{}", &self.client.endpoint, &self.device_template_id);
+                    let url_str = &format!("{}/deviceTemplates/{}", self.client.endpoint(), &self.device_template_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -809,7 +809,7 @@ pub mod device_templates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/deviceTemplates/{}", &self.client.endpoint, &self.device_template_id);
+                    let url_str = &format!("{}/deviceTemplates/{}", self.client.endpoint(), &self.device_template_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1261,7 +1261,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices", &self.client.endpoint,);
+                    let url_str = &format!("{}/devices", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1325,7 +1325,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Device, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1390,7 +1390,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Device, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1456,7 +1456,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Device, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -1521,7 +1521,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1580,7 +1580,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Attestation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/attestation", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/attestation", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1645,7 +1645,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Attestation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/attestation", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/attestation", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1711,7 +1711,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Attestation, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/attestation", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/attestation", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -1776,7 +1776,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/attestation", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/attestation", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1838,7 +1838,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/commands/{}",
-                        &self.client.endpoint, &self.device_id, &self.command_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.command_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1907,7 +1909,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/commands/{}",
-                        &self.client.endpoint, &self.device_id, &self.command_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.command_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1973,7 +1977,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Collection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/components", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/components", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2041,7 +2045,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/components/{}/commands/{}",
-                        &self.client.endpoint, &self.device_id, &self.component_name, &self.command_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.component_name,
+                        &self.command_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2111,7 +2118,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/components/{}/commands/{}",
-                        &self.client.endpoint, &self.device_id, &self.component_name, &self.command_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.component_name,
+                        &self.command_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2180,7 +2190,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/components/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.component_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.component_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2249,7 +2261,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/components/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.component_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.component_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2319,7 +2333,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/components/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.component_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.component_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2389,7 +2405,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/components/{}/telemetry/{}",
-                        &self.client.endpoint, &self.device_id, &self.component_name, &self.telemetry_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.component_name,
+                        &self.telemetry_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2454,7 +2473,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceCredentials, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/credentials", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/credentials", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2518,7 +2537,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Collection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/modules", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/modules", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2586,7 +2605,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/commands/{}",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.command_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.command_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2656,7 +2678,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/commands/{}",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.command_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.command_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2725,7 +2750,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/components",
-                        &self.client.endpoint, &self.device_id, &self.module_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2795,7 +2822,11 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/components/{}/commands/{}",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.component_name, &self.command_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.component_name,
+                        &self.command_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2866,7 +2897,11 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/components/{}/commands/{}",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.component_name, &self.command_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.component_name,
+                        &self.command_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2936,7 +2971,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/components/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.component_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.component_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3006,7 +3044,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/components/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.component_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.component_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3077,7 +3118,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/components/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.component_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.component_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3148,7 +3192,11 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/components/{}/telemetry/{}",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.component_name, &self.telemetry_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.component_name,
+                        &self.telemetry_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3216,7 +3264,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.module_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3285,7 +3335,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.module_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3355,7 +3407,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/properties",
-                        &self.client.endpoint, &self.device_id, &self.module_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3425,7 +3479,10 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/modules/{}/telemetry/{}",
-                        &self.client.endpoint, &self.device_id, &self.module_name, &self.telemetry_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.module_name,
+                        &self.telemetry_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3490,7 +3547,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/properties", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/properties", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3555,7 +3612,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/properties", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/properties", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3621,7 +3678,7 @@ pub mod devices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/devices/{}/properties", &self.client.endpoint, &self.device_id);
+                    let url_str = &format!("{}/devices/{}/properties", self.client.endpoint(), &self.device_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -3689,7 +3746,9 @@ pub mod devices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/devices/{}/telemetry/{}",
-                        &self.client.endpoint, &self.device_id, &self.telemetry_name
+                        self.client.endpoint(),
+                        &self.device_id,
+                        &self.telemetry_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3771,7 +3830,7 @@ pub mod roles {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/roles", &self.client.endpoint,);
+                    let url_str = &format!("{}/roles", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3835,7 +3894,7 @@ pub mod roles {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Role, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/roles/{}", &self.client.endpoint, &self.role_id);
+                    let url_str = &format!("{}/roles/{}", self.client.endpoint(), &self.role_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3936,7 +3995,7 @@ pub mod users {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UserCollection, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/users", &self.client.endpoint,);
+                    let url_str = &format!("{}/users", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4000,7 +4059,7 @@ pub mod users {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::User, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/users/{}", &self.client.endpoint, &self.user_id);
+                    let url_str = &format!("{}/users/{}", self.client.endpoint(), &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4065,7 +4124,7 @@ pub mod users {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::User, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/users/{}", &self.client.endpoint, &self.user_id);
+                    let url_str = &format!("{}/users/{}", self.client.endpoint(), &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4131,7 +4190,7 @@ pub mod users {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::User, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/users/{}", &self.client.endpoint, &self.user_id);
+                    let url_str = &format!("{}/users/{}", self.client.endpoint(), &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -4196,7 +4255,7 @@ pub mod users {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/users/{}", &self.client.endpoint, &self.user_id);
+                    let url_str = &format!("{}/users/{}", self.client.endpoint(), &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);

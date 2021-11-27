@@ -421,7 +421,7 @@ pub mod cases_aggregations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Aggregations, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/aggregations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . aggregations_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/aggregations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . aggregations_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -498,7 +498,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.SecurityInsights/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.SecurityInsights/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -647,7 +647,7 @@ pub mod alert_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -725,7 +725,7 @@ pub mod alert_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AlertRule, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -804,7 +804,7 @@ pub mod alert_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -889,7 +889,7 @@ pub mod alert_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1043,7 +1043,7 @@ pub mod actions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ActionsList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1117,7 +1117,7 @@ pub mod actions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ActionResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id , & self . action_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id , & self . action_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1197,7 +1197,7 @@ pub mod actions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id , & self . action_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id , & self . action_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1283,7 +1283,7 @@ pub mod actions {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id , & self . action_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRules/{}/actions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . rule_id , & self . action_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1392,7 +1392,7 @@ pub mod alert_rule_templates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AlertRuleTemplatesList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRuleTemplates" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRuleTemplates" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1465,7 +1465,7 @@ pub mod alert_rule_templates {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AlertRuleTemplate, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRuleTemplates/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . alert_rule_template_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/alertRuleTemplates/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . alert_rule_template_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1614,7 +1614,7 @@ pub mod data_connectors {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataConnectorList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1687,7 +1687,7 @@ pub mod data_connectors {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataConnector, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . data_connector_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . data_connector_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1766,7 +1766,7 @@ pub mod data_connectors {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . data_connector_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . data_connector_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1851,7 +1851,7 @@ pub mod data_connectors {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . data_connector_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectors/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . data_connector_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1998,7 +1998,7 @@ pub mod product_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/settings",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -2078,7 +2078,7 @@ pub mod product_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/settings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -2160,7 +2160,7 @@ pub mod product_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/settings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -2247,7 +2247,7 @@ pub mod product_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/settings/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -2362,7 +2362,7 @@ pub mod entity_queries {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EntityQueryList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entityQueries" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entityQueries" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2435,7 +2435,7 @@ pub mod entity_queries {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EntityQuery, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entityQueries/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_query_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entityQueries/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_query_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2661,7 +2661,7 @@ pub mod incidents {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -2751,7 +2751,7 @@ pub mod incidents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Incident, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2830,7 +2830,7 @@ pub mod incidents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2915,7 +2915,7 @@ pub mod incidents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -2984,7 +2984,7 @@ pub mod incidents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IncidentAlertList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/alerts" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/alerts" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3058,7 +3058,7 @@ pub mod incidents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IncidentBookmarkList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/bookmarks" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/bookmarks" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3132,7 +3132,7 @@ pub mod incidents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IncidentEntitiesResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/entities" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/entities" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -3315,7 +3315,7 @@ pub mod incident_comments {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IncidentCommentList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3401,7 +3401,7 @@ pub mod incident_comments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IncidentComment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . incident_comment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . incident_comment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3481,7 +3481,7 @@ pub mod incident_comments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . incident_comment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . incident_comment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3567,7 +3567,7 @@ pub mod incident_comments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . incident_comment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/comments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . incident_comment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -3745,7 +3745,7 @@ pub mod incident_relations {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3831,7 +3831,7 @@ pub mod incident_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Relation, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3911,7 +3911,7 @@ pub mod incident_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -3997,7 +3997,7 @@ pub mod incident_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/incidents/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . incident_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4144,7 +4144,7 @@ pub mod watchlists {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -4222,7 +4222,7 @@ pub mod watchlists {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Watchlist, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4301,7 +4301,7 @@ pub mod watchlists {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4386,7 +4386,7 @@ pub mod watchlists {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4540,7 +4540,7 @@ pub mod watchlist_items {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WatchlistItemList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4614,7 +4614,7 @@ pub mod watchlist_items {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WatchlistItem, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias , & self . watchlist_item_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias , & self . watchlist_item_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4694,7 +4694,7 @@ pub mod watchlist_items {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias , & self . watchlist_item_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias , & self . watchlist_item_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -4780,7 +4780,7 @@ pub mod watchlist_items {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias , & self . watchlist_item_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/watchlists/{}/watchlistItems/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . watchlist_alias , & self . watchlist_item_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -4925,7 +4925,7 @@ pub mod automation_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AutomationRulesList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/automationRules" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/automationRules" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -4998,7 +4998,7 @@ pub mod automation_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AutomationRule, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/automationRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . automation_rule_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/automationRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . automation_rule_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5077,7 +5077,7 @@ pub mod automation_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/automationRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . automation_rule_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/automationRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . automation_rule_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -5162,7 +5162,7 @@ pub mod automation_rules {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/automationRules/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . automation_rule_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/automationRules/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . automation_rule_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -5309,7 +5309,7 @@ pub mod bookmarks {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -5387,7 +5387,7 @@ pub mod bookmarks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Bookmark, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5466,7 +5466,7 @@ pub mod bookmarks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -5551,7 +5551,7 @@ pub mod bookmarks {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -5729,7 +5729,7 @@ pub mod bookmark_relations {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5815,7 +5815,7 @@ pub mod bookmark_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Relation, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -5895,7 +5895,7 @@ pub mod bookmark_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -5981,7 +5981,7 @@ pub mod bookmark_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -6079,7 +6079,7 @@ pub mod bookmark {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BookmarkExpandResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/expand" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/bookmarks/{}/expand" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . bookmark_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -6274,7 +6274,7 @@ pub mod cases {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -6366,7 +6366,7 @@ pub mod cases {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -6453,7 +6453,7 @@ pub mod cases {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -6546,7 +6546,7 @@ pub mod cases {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -6622,7 +6622,7 @@ pub mod cases {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CaseComment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . case_comment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . case_comment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -6745,7 +6745,7 @@ pub mod comments {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CaseCommentList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -6862,7 +6862,7 @@ pub mod case_comments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CaseComment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . case_comment_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/comments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . case_comment_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -7045,7 +7045,7 @@ pub mod case_relations {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CaseRelationList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -7131,7 +7131,7 @@ pub mod case_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CaseRelation, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -7211,7 +7211,7 @@ pub mod case_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -7297,7 +7297,7 @@ pub mod case_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/cases/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . case_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -7394,7 +7394,7 @@ pub mod data_connectors_check_requirements {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::DataConnectorRequirementsState, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectorsCheckRequirements" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectorsCheckRequirements" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -7490,7 +7490,9 @@ pub mod ip_geodata {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityInsights/enrichment/ip/geodata/",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7588,7 +7590,9 @@ pub mod domain_whois {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.SecurityInsights/enrichment/domain/whois/",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -7763,7 +7767,7 @@ pub mod entities {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -7843,7 +7847,7 @@ pub mod entities {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.operational_insights_resource_provider,
@@ -7923,7 +7927,7 @@ pub mod entities {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EntityExpandResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/expand" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/expand" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -7998,7 +8002,7 @@ pub mod entities {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GetQueriesResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/queries" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/queries" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -8074,7 +8078,7 @@ pub mod entities {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EntityGetInsightsResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/getInsights" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/getInsights" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -8177,7 +8181,7 @@ pub mod entities_get_timeline {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EntityTimelineResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/getTimeline" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/getTimeline" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -8301,7 +8305,7 @@ pub mod entities_relations {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/relations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/relations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -8415,7 +8419,7 @@ pub mod entity_relations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Relation, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/relations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id , & self . relation_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/entities/{}/relations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . entity_id , & self . relation_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -8545,7 +8549,7 @@ pub mod office_consents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OfficeConsentList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -8618,7 +8622,7 @@ pub mod office_consents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OfficeConsent, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . consent_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . consent_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -8696,7 +8700,7 @@ pub mod office_consents {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . consent_id) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/officeConsents/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . consent_id) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -8904,7 +8908,7 @@ pub mod threat_intelligence_indicator {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/createIndicator" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/createIndicator" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -8986,7 +8990,7 @@ pub mod threat_intelligence_indicator {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ThreatIntelligenceInformation, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -9065,7 +9069,7 @@ pub mod threat_intelligence_indicator {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -9150,7 +9154,7 @@ pub mod threat_intelligence_indicator {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -9221,7 +9225,7 @@ pub mod threat_intelligence_indicator {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ThreatIntelligenceInformationList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/queryIndicators" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/queryIndicators" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -9296,7 +9300,7 @@ pub mod threat_intelligence_indicator {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/appendTags" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/appendTags" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -9368,7 +9372,7 @@ pub mod threat_intelligence_indicator {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ThreatIntelligenceInformation, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/replaceTags" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators/{}/replaceTags" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name , & self . name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -9491,7 +9495,7 @@ pub mod threat_intelligence_indicators {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ThreatIntelligenceInformationList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -9601,7 +9605,7 @@ pub mod threat_intelligence_indicator_metrics {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ThreatIntelligenceMetricsList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/metrics" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}/providers/Microsoft.SecurityInsights/threatIntelligence/main/metrics" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . operational_insights_resource_provider , & self . workspace_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -554,7 +554,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/secrets/{}",
-                        &self.client.endpoint, &self.database_name, &self.secret_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.secret_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -623,7 +625,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/secrets/{}",
-                        &self.client.endpoint, &self.database_name, &self.secret_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.secret_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -693,7 +697,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/secrets/{}",
-                        &self.client.endpoint, &self.database_name, &self.secret_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.secret_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -762,7 +768,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/secrets/{}",
-                        &self.client.endpoint, &self.database_name, &self.secret_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.secret_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -822,7 +830,7 @@ pub mod catalog {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/catalog/usql/databases/{}/secrets", &self.client.endpoint, &self.database_name);
+                    let url_str = &format!("{}/catalog/usql/databases/{}/secrets", self.client.endpoint(), &self.database_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -884,7 +892,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/externaldatasources/{}",
-                        &self.client.endpoint, &self.database_name, &self.external_data_source_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.external_data_source_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -988,7 +998,8 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/externaldatasources",
-                        &self.client.endpoint, &self.database_name
+                        self.client.endpoint(),
+                        &self.database_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1077,7 +1088,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/credentials/{}",
-                        &self.client.endpoint, &self.database_name, &self.credential_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.credential_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1179,7 +1192,8 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/credentials",
-                        &self.client.endpoint, &self.database_name
+                        self.client.endpoint(),
+                        &self.database_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1269,7 +1283,10 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/procedures/{}",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.procedure_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.procedure_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1372,7 +1389,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/procedures",
-                        &self.client.endpoint, &self.database_name, &self.schema_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1462,7 +1481,10 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tables/{}",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.table_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1565,7 +1587,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tables",
-                        &self.client.endpoint, &self.database_name, &self.schema_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1655,7 +1679,10 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tabletypes/{}",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.table_type_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_type_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1758,7 +1785,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tabletypes",
-                        &self.client.endpoint, &self.database_name, &self.schema_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1848,7 +1877,10 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/views/{}",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.view_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.view_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1951,7 +1983,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/views",
-                        &self.client.endpoint, &self.database_name, &self.schema_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2042,7 +2076,11 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics/{}",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.table_name, &self.statistics_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name,
+                        &self.statistics_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2146,7 +2184,10 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.table_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2237,7 +2278,11 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.table_name, &self.partition_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name,
+                        &self.partition_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2341,7 +2386,10 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.table_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2465,7 +2513,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/types",
-                        &self.client.endpoint, &self.database_name, &self.schema_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2555,7 +2605,10 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions/{}",
-                        &self.client.endpoint, &self.database_name, &self.schema_name, &self.table_valued_function_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name,
+                        &self.table_valued_function_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2660,7 +2713,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions",
-                        &self.client.endpoint, &self.database_name, &self.schema_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2749,7 +2804,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/assemblies/{}",
-                        &self.client.endpoint, &self.database_name, &self.assembly_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.assembly_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2851,7 +2908,8 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/assemblies",
-                        &self.client.endpoint, &self.database_name
+                        self.client.endpoint(),
+                        &self.database_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2940,7 +2998,9 @@ pub mod catalog {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/catalog/usql/databases/{}/schemas/{}",
-                        &self.client.endpoint, &self.database_name, &self.schema_name
+                        self.client.endpoint(),
+                        &self.database_name,
+                        &self.schema_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3040,7 +3100,7 @@ pub mod catalog {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlSchemaList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/catalog/usql/databases/{}/schemas", &self.client.endpoint, &self.database_name);
+                    let url_str = &format!("{}/catalog/usql/databases/{}/schemas", self.client.endpoint(), &self.database_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3125,7 +3185,7 @@ pub mod catalog {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlDatabase, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/catalog/usql/databases/{}", &self.client.endpoint, &self.database_name);
+                    let url_str = &format!("{}/catalog/usql/databases/{}", self.client.endpoint(), &self.database_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -3223,7 +3283,7 @@ pub mod catalog {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::USqlDatabaseList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/catalog/usql/databases", &self.client.endpoint,);
+                    let url_str = &format!("{}/catalog/usql/databases", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

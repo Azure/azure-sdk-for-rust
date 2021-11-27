@@ -271,7 +271,7 @@ pub mod service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageServiceProperties, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/?restype=service&comp=properties", &self.client.endpoint,);
+                    let url_str = &format!("{}/?restype=service&comp=properties", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -355,7 +355,7 @@ pub mod service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/?restype=service&comp=properties", &self.client.endpoint,);
+                    let url_str = &format!("{}/?restype=service&comp=properties", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -453,7 +453,7 @@ pub mod service {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ListSharesResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/?comp=list", &self.client.endpoint,);
+                    let url_str = &format!("{}/?comp=list", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -887,7 +887,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -994,7 +994,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1100,7 +1100,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1207,7 +1207,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&acquire", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=lease&acquire", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1311,7 +1311,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&release", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=lease&release", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1415,7 +1415,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&change", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=lease&change", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1517,7 +1517,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&renew", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=lease&renew", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1625,7 +1625,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=lease&break", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=lease&break", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1722,7 +1722,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=snapshot", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=snapshot", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1805,7 +1805,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SharePermission, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=filepermission", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=filepermission", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1891,7 +1891,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=filepermission", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=filepermission", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1991,7 +1991,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=properties", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=properties", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2092,7 +2092,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=metadata", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=metadata", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2182,7 +2182,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SignedIdentifiers, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=acl", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=acl", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2279,7 +2279,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=acl", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=acl", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2371,7 +2371,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ShareStats, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=stats", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=stats", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2473,7 +2473,7 @@ pub mod share {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/{}?restype=share&comp=undelete", &self.client.endpoint, &self.share_name);
+                    let url_str = &format!("{}/{}?restype=share&comp=undelete", self.client.endpoint(), &self.share_name);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -2745,7 +2745,9 @@ pub mod directory {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?restype=directory",
-                        &self.client.endpoint, &self.share_name, &self.directory
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2846,7 +2848,9 @@ pub mod directory {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?restype=directory",
-                        &self.client.endpoint, &self.share_name, &self.directory
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2938,7 +2942,9 @@ pub mod directory {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?restype=directory",
-                        &self.client.endpoint, &self.share_name, &self.directory
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3032,7 +3038,9 @@ pub mod directory {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?restype=directory&comp=properties",
-                        &self.client.endpoint, &self.share_name, &self.directory
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3129,7 +3137,9 @@ pub mod directory {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?restype=directory&comp=metadata",
-                        &self.client.endpoint, &self.share_name, &self.directory
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3248,7 +3258,9 @@ pub mod directory {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?restype=directory&comp=list",
-                        &self.client.endpoint, &self.share_name, &self.directory
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3370,7 +3382,9 @@ pub mod directory {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?comp=listhandles",
-                        &self.client.endpoint, &self.share_name, &self.directory
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -3483,7 +3497,9 @@ pub mod directory {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}?comp=forceclosehandles",
-                        &self.client.endpoint, &self.share_name, &self.directory
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4013,7 +4029,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4166,7 +4185,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4284,7 +4306,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4375,7 +4400,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4513,7 +4541,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=properties",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4637,7 +4668,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=metadata",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4740,7 +4774,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=lease&acquire",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4838,7 +4875,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=lease&release",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -4936,7 +4976,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=lease&change",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5036,7 +5079,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=lease&break",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5142,7 +5188,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=range",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5271,7 +5320,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=range&fromURL",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5394,7 +5446,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=rangelist",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5542,7 +5597,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=copy",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5659,7 +5717,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=copy&copyid",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5761,7 +5822,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=listhandles",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -5867,7 +5931,10 @@ pub mod file {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/{}/{}?comp=forceclosehandles",
-                        &self.client.endpoint, &self.share_name, &self.directory, &self.file_name
+                        self.client.endpoint(),
+                        &self.share_name,
+                        &self.directory,
+                        &self.file_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

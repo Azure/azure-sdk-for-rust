@@ -218,7 +218,7 @@ pub mod confidential_ledger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Constitution, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/governance/constitution", &self.client.endpoint,);
+                    let url_str = &format!("{}/app/governance/constitution", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -286,7 +286,7 @@ pub mod confidential_ledger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Consortium, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/governance/members", &self.client.endpoint,);
+                    let url_str = &format!("{}/app/governance/members", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -356,7 +356,7 @@ pub mod confidential_ledger {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ConfidentialLedgerEnclaves, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/enclaveQuotes", &self.client.endpoint,);
+                    let url_str = &format!("{}/app/enclaveQuotes", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -439,7 +439,7 @@ pub mod confidential_ledger {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PagedLedgerEntries, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/transactions", &self.client.endpoint,);
+                    let url_str = &format!("{}/app/transactions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -526,7 +526,7 @@ pub mod confidential_ledger {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LedgerWriteResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/transactions", &self.client.endpoint,);
+                    let url_str = &format!("{}/app/transactions", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -608,7 +608,7 @@ pub mod confidential_ledger {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LedgerQueryResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/transactions/{}", &self.client.endpoint, &self.transaction_id);
+                    let url_str = &format!("{}/app/transactions/{}", self.client.endpoint(), &self.transaction_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -680,7 +680,7 @@ pub mod confidential_ledger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TransactionReceipt, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/transactions/{}/receipt", &self.client.endpoint, &self.transaction_id);
+                    let url_str = &format!("{}/app/transactions/{}/receipt", self.client.endpoint(), &self.transaction_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -749,7 +749,7 @@ pub mod confidential_ledger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TransactionStatus, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/transactions/{}/status", &self.client.endpoint, &self.transaction_id);
+                    let url_str = &format!("{}/app/transactions/{}/status", self.client.endpoint(), &self.transaction_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -822,7 +822,7 @@ pub mod confidential_ledger {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LedgerEntry, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/transactions/current", &self.client.endpoint,);
+                    let url_str = &format!("{}/app/transactions/current", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -894,7 +894,7 @@ pub mod confidential_ledger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LedgerUser, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/users/{}", &self.client.endpoint, &self.user_id);
+                    let url_str = &format!("{}/app/users/{}", self.client.endpoint(), &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -964,7 +964,7 @@ pub mod confidential_ledger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LedgerUser, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/users/{}", &self.client.endpoint, &self.user_id);
+                    let url_str = &format!("{}/app/users/{}", self.client.endpoint(), &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -1034,7 +1034,7 @@ pub mod confidential_ledger {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/app/users/{}", &self.client.endpoint, &self.user_id);
+                    let url_str = &format!("{}/app/users/{}", self.client.endpoint(), &self.user_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);

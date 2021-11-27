@@ -148,7 +148,8 @@ pub mod metrics {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/metrics",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -262,7 +263,8 @@ pub mod service_diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/diagnosticSettings/service",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -334,7 +336,8 @@ pub mod service_diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/diagnosticSettings/service",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -408,7 +411,8 @@ pub mod service_diagnostic_settings {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/microsoft.insights/diagnosticSettings/service",
-                        &self.client.endpoint, &self.resource_uri
+                        self.client.endpoint(),
+                        &self.resource_uri
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

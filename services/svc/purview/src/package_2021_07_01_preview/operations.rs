@@ -136,7 +136,7 @@ pub mod metadata_roles {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataRoleList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/metadataRoles", &self.client.endpoint,);
+                    let url_str = &format!("{}/metadataRoles", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -237,7 +237,7 @@ pub mod metadata_policy {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataPolicyList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/metadataPolicies", &self.client.endpoint,);
+                    let url_str = &format!("{}/metadataPolicies", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -309,7 +309,7 @@ pub mod metadata_policy {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataPolicy, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/metadataPolicies/{}", &self.client.endpoint, &self.policy_id);
+                    let url_str = &format!("{}/metadataPolicies/{}", self.client.endpoint(), &self.policy_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -383,7 +383,7 @@ pub mod metadata_policy {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataPolicy, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/metadataPolicies/{}", &self.client.endpoint, &self.policy_id);
+                    let url_str = &format!("{}/metadataPolicies/{}", self.client.endpoint(), &self.policy_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);

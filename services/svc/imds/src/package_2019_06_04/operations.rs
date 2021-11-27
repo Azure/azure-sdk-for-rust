@@ -143,7 +143,7 @@ pub mod instances {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Instance, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/instance", &self.client.endpoint,);
+                    let url_str = &format!("{}/instance", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -234,7 +234,7 @@ pub mod attested {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AttestedData, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/attested/document", &self.client.endpoint,);
+                    let url_str = &format!("{}/attested/document", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -360,7 +360,7 @@ pub mod identity {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IdentityTokenResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/identity/oauth2/token", &self.client.endpoint,);
+                    let url_str = &format!("{}/identity/oauth2/token", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -447,7 +447,7 @@ pub mod identity {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IdentityInfoResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/identity/info", &self.client.endpoint,);
+                    let url_str = &format!("{}/identity/info", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

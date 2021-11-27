@@ -166,7 +166,9 @@ pub mod sql_vulnerability_assessment_scans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}",
-                        &self.client.endpoint, &self.resource_id, &self.scan_id
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.scan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -241,7 +243,8 @@ pub mod sql_vulnerability_assessment_scans {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans",
-                        &self.client.endpoint, &self.resource_id
+                        self.client.endpoint(),
+                        &self.resource_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -350,7 +353,10 @@ pub mod sql_vulnerability_assessment_scan_results {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}/scanResults/{}",
-                        &self.client.endpoint, &self.resource_id, &self.scan_id, &self.scan_result_id
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.scan_id,
+                        &self.scan_result_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -426,7 +432,9 @@ pub mod sql_vulnerability_assessment_scan_results {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/scans/{}/scanResults",
-                        &self.client.endpoint, &self.resource_id, &self.scan_id
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.scan_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -561,7 +569,9 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
-                        &self.client.endpoint, &self.resource_id, &self.rule_id
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.rule_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -642,7 +652,9 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
-                        &self.client.endpoint, &self.resource_id, &self.rule_id
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.rule_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -728,7 +740,9 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules/{}",
-                        &self.client.endpoint, &self.resource_id, &self.rule_id
+                        self.client.endpoint(),
+                        &self.resource_id,
+                        &self.rule_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -799,7 +813,8 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules",
-                        &self.client.endpoint, &self.resource_id
+                        self.client.endpoint(),
+                        &self.resource_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -879,7 +894,8 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/{}/providers/Microsoft.Security/sqlVulnerabilityAssessments/default/baselineRules",
-                        &self.client.endpoint, &self.resource_id
+                        self.client.endpoint(),
+                        &self.resource_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

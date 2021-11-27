@@ -11,7 +11,7 @@ $
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
-use azure_svc_applicationinsights::{models::QueryBody};
+use azure_svc_applicationinsights::models::QueryBody;
 use std::sync::Arc;
 
 const ENDPOINT: &str = "https://api.applicationinsights.io";
@@ -24,7 +24,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let endpoint = format!("{}/v1", ENDPOINT);
     let credential = Arc::new(AzureCliCredential {});
-    let client = azure_svc_applicationinsights::ClientBuilder::new(credential).endpoint(endpoint).build();
+    let client = azure_svc_applicationinsights::ClientBuilder::new(credential)
+        .endpoint(endpoint)
+        .build();
 
     let body = QueryBody {
         query,

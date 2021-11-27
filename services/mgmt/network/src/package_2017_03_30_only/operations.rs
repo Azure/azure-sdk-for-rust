@@ -244,7 +244,7 @@ pub mod network_interfaces {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterfaceListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -314,7 +314,10 @@ pub mod network_interfaces {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/networkInterfaces",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_scale_set_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.virtual_machine_scale_set_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -388,7 +391,7 @@ pub mod network_interfaces {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterface, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -467,7 +470,7 @@ pub mod network_interfaces {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterfaceIpConfigurationListResult, Error>>
             {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -546,7 +549,7 @@ pub mod network_interfaces {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterfaceIpConfiguration, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -680,7 +683,10 @@ pub mod public_ip_addresses {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/publicipaddresses",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_scale_set_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.virtual_machine_scale_set_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -750,7 +756,7 @@ pub mod public_ip_addresses {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PublicIpAddressListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -825,7 +831,7 @@ pub mod public_ip_addresses {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PublicIpAddress, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name , & self . public_ip_address_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name , & self . public_ip_address_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -215,7 +215,7 @@ pub mod metrics {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetricsResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/metrics/{}", &self.client.endpoint, &self.app_id, &self.metric_id);
+                    let url_str = &format!("{}/apps/{}/metrics/{}", self.client.endpoint(), &self.app_id, &self.metric_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -299,7 +299,7 @@ pub mod metrics {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetricsResults, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/metrics", &self.client.endpoint, &self.app_id);
+                    let url_str = &format!("{}/apps/{}/metrics", self.client.endpoint(), &self.app_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -368,7 +368,7 @@ pub mod metrics {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/metrics/metadata", &self.client.endpoint, &self.app_id);
+                    let url_str = &format!("{}/apps/{}/metrics/metadata", self.client.endpoint(), &self.app_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -528,7 +528,7 @@ pub mod events {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EventsResults, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/events/{}", &self.client.endpoint, &self.app_id, &self.event_type);
+                    let url_str = &format!("{}/apps/{}/events/{}", self.client.endpoint(), &self.app_id, &self.event_type);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -635,7 +635,10 @@ pub mod events {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/apps/{}/events/{}/{}",
-                        &self.client.endpoint, &self.app_id, &self.event_type, &self.event_id
+                        self.client.endpoint(),
+                        &self.app_id,
+                        &self.event_type,
+                        &self.event_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -707,7 +710,7 @@ pub mod events {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/events/$metadata", &self.client.endpoint, &self.app_id);
+                    let url_str = &format!("{}/apps/{}/events/$metadata", self.client.endpoint(), &self.app_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -805,7 +808,7 @@ pub mod query {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::QueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/query", &self.client.endpoint, &self.app_id);
+                    let url_str = &format!("{}/apps/{}/query", self.client.endpoint(), &self.app_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -879,7 +882,7 @@ pub mod query {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::QueryResults, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/query", &self.client.endpoint, &self.app_id);
+                    let url_str = &format!("{}/apps/{}/query", self.client.endpoint(), &self.app_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -969,7 +972,7 @@ pub mod metadata {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataResults, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/metadata", &self.client.endpoint, &self.app_id);
+                    let url_str = &format!("{}/apps/{}/metadata", self.client.endpoint(), &self.app_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1037,7 +1040,7 @@ pub mod metadata {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataResults, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/apps/{}/metadata", &self.client.endpoint, &self.app_id);
+                    let url_str = &format!("{}/apps/{}/metadata", self.client.endpoint(), &self.app_id);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);

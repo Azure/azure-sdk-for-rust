@@ -247,7 +247,7 @@ pub mod extensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.farm_beats_resource_name,
@@ -326,7 +326,7 @@ pub mod extensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.farm_beats_resource_name,
@@ -405,7 +405,7 @@ pub mod extensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.farm_beats_resource_name,
@@ -489,7 +489,7 @@ pub mod extensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.farm_beats_resource_name,
@@ -583,7 +583,10 @@ pub mod extensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.farm_beats_resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -720,7 +723,7 @@ pub mod farm_beats_extensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.AgFoodPlatform/farmBeatsExtensionDefinitions",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -811,7 +814,8 @@ pub mod farm_beats_extensions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.AgFoodPlatform/farmBeatsExtensionDefinitions/{}",
-                        &self.client.endpoint, &self.farm_beats_extension_id
+                        self.client.endpoint(),
+                        &self.farm_beats_extension_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -971,7 +975,10 @@ pub mod farm_beats_models {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.farm_beats_resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1051,7 +1058,10 @@ pub mod farm_beats_models {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.farm_beats_resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1133,7 +1143,10 @@ pub mod farm_beats_models {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.farm_beats_resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1213,7 +1226,10 @@ pub mod farm_beats_models {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.farm_beats_resource_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.farm_beats_resource_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1291,7 +1307,8 @@ pub mod farm_beats_models {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.AgFoodPlatform/farmBeats",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1380,7 +1397,9 @@ pub mod farm_beats_models {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1481,7 +1500,8 @@ pub mod locations {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.AgFoodPlatform/checkNameAvailability",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1563,7 +1583,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.AgFoodPlatform/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.AgFoodPlatform/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

@@ -357,7 +357,7 @@ pub mod file_system {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=CONCAT", &self.client.endpoint, &self.destination_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=CONCAT", self.client.endpoint(), &self.destination_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -433,7 +433,8 @@ pub mod file_system {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/webhdfs/v1/{}?op=MSCONCAT",
-                        &self.client.endpoint, &self.ms_concat_destination_path
+                        self.client.endpoint(),
+                        &self.ms_concat_destination_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -521,7 +522,7 @@ pub mod file_system {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileStatusesResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=MSLISTSTATUS", &self.client.endpoint, &self.list_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=MSLISTSTATUS", self.client.endpoint(), &self.list_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -604,7 +605,8 @@ pub mod file_system {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/webhdfs/va/{}?op=GETCONTENTSUMMARY",
-                        &self.client.endpoint, &self.get_content_summary_file_path
+                        self.client.endpoint(),
+                        &self.get_content_summary_file_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -677,7 +679,7 @@ pub mod file_system {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileStatusResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=MSGETFILESTATUS", &self.client.endpoint, &self.get_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=MSGETFILESTATUS", self.client.endpoint(), &self.get_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -753,7 +755,8 @@ pub mod file_system {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/webhdfs/v1/{}?op=APPEND;append=true;flush=true",
-                        &self.client.endpoint, &self.flush_file_path
+                        self.client.endpoint(),
+                        &self.flush_file_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -837,7 +840,7 @@ pub mod file_system {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<bytes::Bytes, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=APPEND", &self.client.endpoint, &self.direct_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=APPEND", self.client.endpoint(), &self.direct_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -923,7 +926,7 @@ pub mod file_system {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=APPEND", &self.client.endpoint, &self.direct_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=APPEND", self.client.endpoint(), &self.direct_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1007,7 +1010,7 @@ pub mod file_system {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=APPEND", &self.client.endpoint, &self.direct_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=APPEND", self.client.endpoint(), &self.direct_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1085,7 +1088,7 @@ pub mod file_system {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=SETACL", &self.client.endpoint, &self.set_acl_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=SETACL", self.client.endpoint(), &self.set_acl_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1157,7 +1160,8 @@ pub mod file_system {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/webhdfs/v1/{}?op=MODIFYACLENTRIES",
-                        &self.client.endpoint, &self.modify_acl_file_path
+                        self.client.endpoint(),
+                        &self.modify_acl_file_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1230,7 +1234,8 @@ pub mod file_system {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/webhdfs/v1/{}?op=REMOVEACLENTRIES",
-                        &self.client.endpoint, &self.remove_acl_file_path
+                        self.client.endpoint(),
+                        &self.remove_acl_file_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1302,7 +1307,8 @@ pub mod file_system {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/webhdfs/v1/{}?op=REMOVEDEFAULTACL",
-                        &self.client.endpoint, &self.default_acl_file_path
+                        self.client.endpoint(),
+                        &self.default_acl_file_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1370,7 +1376,7 @@ pub mod file_system {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AclStatusResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACL", &self.client.endpoint, &self.acl_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACL", self.client.endpoint(), &self.acl_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1442,7 +1448,7 @@ pub mod file_system {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACL", &self.client.endpoint, &self.acl_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACL", self.client.endpoint(), &self.acl_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1514,7 +1520,7 @@ pub mod file_system {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileOperationResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=DELETE", &self.client.endpoint, &self.file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=DELETE", self.client.endpoint(), &self.file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1590,7 +1596,7 @@ pub mod file_system {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileOperationResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=RENAME", &self.client.endpoint, &self.rename_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=RENAME", self.client.endpoint(), &self.rename_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1674,7 +1680,7 @@ pub mod file_system {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/webhdfs/v1/{}?op=SETOWNER", &self.client.endpoint, &self.set_owner_file_path);
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=SETOWNER", self.client.endpoint(), &self.set_owner_file_path);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1754,7 +1760,8 @@ pub mod file_system {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/webhdfs/v1/{}?op=SETPERMISSION",
-                        &self.client.endpoint, &self.set_permission_file_path
+                        self.client.endpoint(),
+                        &self.set_permission_file_path
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();

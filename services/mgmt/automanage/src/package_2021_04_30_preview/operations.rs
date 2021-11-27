@@ -198,7 +198,8 @@ pub mod best_practices {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Automanage/bestPractices/{}",
-                        &self.client.endpoint, &self.best_practice_name
+                        self.client.endpoint(),
+                        &self.best_practice_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -267,7 +268,7 @@ pub mod best_practices {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BestPracticeList, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Automanage/bestPractices", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Automanage/bestPractices", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -361,7 +362,9 @@ pub mod best_practices_versions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Automanage/bestPractices/{}/versions/{}",
-                        &self.client.endpoint, &self.best_practice_name, &self.version_name
+                        self.client.endpoint(),
+                        &self.best_practice_name,
+                        &self.version_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -433,7 +436,8 @@ pub mod best_practices_versions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/providers/Microsoft.Automanage/bestPractices/{}/versions",
-                        &self.client.endpoint, &self.best_practice_name
+                        self.client.endpoint(),
+                        &self.best_practice_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -589,7 +593,10 @@ pub mod configuration_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.configuration_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -669,7 +676,10 @@ pub mod configuration_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.configuration_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -751,7 +761,10 @@ pub mod configuration_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.configuration_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -831,7 +844,10 @@ pub mod configuration_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.configuration_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -900,7 +916,9 @@ pub mod configuration_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -972,7 +990,8 @@ pub mod configuration_profiles {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Automanage/configurationProfiles",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1133,7 +1152,7 @@ pub mod configuration_profiles_versions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.configuration_profile_name,
@@ -1218,7 +1237,7 @@ pub mod configuration_profiles_versions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.configuration_profile_name,
@@ -1305,7 +1324,7 @@ pub mod configuration_profiles_versions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.configuration_profile_name,
@@ -1390,7 +1409,7 @@ pub mod configuration_profiles_versions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions/{}",
-                        &self.client.endpoint,
+                        self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.configuration_profile_name,
@@ -1464,7 +1483,10 @@ pub mod configuration_profiles_versions {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfiles/{}/versions",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.configuration_profile_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.configuration_profile_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1608,7 +1630,7 @@ pub mod configuration_profile_assignments {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ConfigurationProfileAssignment, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1686,7 +1708,7 @@ pub mod configuration_profile_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PUT);
@@ -1770,7 +1792,7 @@ pub mod configuration_profile_assignments {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::DELETE);
@@ -1840,7 +1862,9 @@ pub mod configuration_profile_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Automanage/configurationProfileAssignments",
-                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                        self.client.endpoint(),
+                        &self.subscription_id,
+                        &self.resource_group_name
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1914,7 +1938,8 @@ pub mod configuration_profile_assignments {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/providers/Microsoft.Automanage/configurationProfileAssignments",
-                        &self.client.endpoint, &self.subscription_id
+                        self.client.endpoint(),
+                        &self.subscription_id
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1995,7 +2020,7 @@ pub mod operations {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/providers/Microsoft.Automanage/operations", &self.client.endpoint,);
+                    let url_str = &format!("{}/providers/Microsoft.Automanage/operations", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2109,7 +2134,7 @@ pub mod reports {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Report, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name , & self . report_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name , & self . report_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -2181,7 +2206,7 @@ pub mod reports {
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ReportList, Error>> {
                 Box::pin(async move {
-                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name) ;
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachines/{}/providers/Microsoft.Automanage/configurationProfileAssignments/{}/reports" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . vm_name , & self . configuration_profile_assignment_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);

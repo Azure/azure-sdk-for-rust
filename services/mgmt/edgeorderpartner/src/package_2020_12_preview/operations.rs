@@ -169,7 +169,7 @@ pub mod list_operations_partner {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/providers/Microsoft.EdgeOrderPartner/operations", &self.client.endpoint,);
+                let url_str = &format!("{}/providers/Microsoft.EdgeOrderPartner/operations", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -248,7 +248,7 @@ pub mod manage_inventory_metadata {
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
             Box::pin(async move {
-                let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.EdgeOrderPartner/locations/{}/productFamilies/{}/inventories/{}/manageInventoryMetadata" , & self . client . endpoint , & self . subscription_id , & self . location , & self . family_identifier , & self . serial_number) ;
+                let url_str = & format ! ("{}/subscriptions/{}/providers/Microsoft.EdgeOrderPartner/locations/{}/productFamilies/{}/inventories/{}/manageInventoryMetadata" , self . client . endpoint () , & self . subscription_id , & self . location , & self . family_identifier , & self . serial_number) ;
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::POST);
@@ -326,7 +326,11 @@ pub mod manage_link {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.EdgeOrderPartner/locations/{}/productFamilies/{}/inventories/{}/manageLink",
-                    &self.client.endpoint, &self.subscription_id, &self.location, &self.family_identifier, &self.serial_number
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.location,
+                    &self.family_identifier,
+                    &self.serial_number
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -396,7 +400,8 @@ pub mod search_inventories {
             Box::pin(async move {
                 let url_str = &format!(
                     "{}/subscriptions/{}/providers/Microsoft.EdgeOrderPartner/searchInventories",
-                    &self.client.endpoint, &self.subscription_id
+                    self.client.endpoint(),
+                    &self.subscription_id
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();

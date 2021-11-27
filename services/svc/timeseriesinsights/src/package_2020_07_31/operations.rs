@@ -202,7 +202,7 @@ pub mod query {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AvailabilityResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/availability", &self.client.endpoint,);
+                    let url_str = &format!("{}/availability", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -295,7 +295,7 @@ pub mod query {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EventSchema, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/eventSchema", &self.client.endpoint,);
+                    let url_str = &format!("{}/eventSchema", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -394,7 +394,7 @@ pub mod query {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::QueryResultPage, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/query", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/query", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -509,7 +509,7 @@ pub mod model_settings {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ModelSettingsResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/modelSettings", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/modelSettings", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -594,7 +594,7 @@ pub mod model_settings {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ModelSettingsResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/modelSettings", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/modelSettings", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::PATCH);
@@ -726,7 +726,7 @@ pub mod time_series_instances {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GetInstancesPage, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/instances", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/instances", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -814,7 +814,7 @@ pub mod time_series_instances {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::InstancesBatchResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/instances/$batch", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/instances/$batch", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -900,7 +900,7 @@ pub mod time_series_instances {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::InstancesSuggestResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/instances/suggest", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/instances/suggest", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -993,7 +993,7 @@ pub mod time_series_instances {
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::SearchInstancesResponsePage, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/instances/search", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/instances/search", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1111,7 +1111,7 @@ pub mod time_series_types {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GetTypesPage, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/types", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/types", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1199,7 +1199,7 @@ pub mod time_series_types {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TypesBatchResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/types/$batch", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/types/$batch", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);
@@ -1314,7 +1314,7 @@ pub mod time_series_hierarchies {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GetHierarchiesPage, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/hierarchies", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/hierarchies", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::GET);
@@ -1402,7 +1402,7 @@ pub mod time_series_hierarchies {
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::HierarchiesBatchResponse, Error>> {
                 Box::pin(async move {
-                    let url_str = &format!("{}/timeseries/hierarchies/$batch", &self.client.endpoint,);
+                    let url_str = &format!("{}/timeseries/hierarchies/$batch", self.client.endpoint(),);
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
                     req_builder = req_builder.method(http::Method::POST);

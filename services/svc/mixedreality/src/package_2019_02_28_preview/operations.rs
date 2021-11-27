@@ -131,7 +131,7 @@ pub mod get_token {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StsTokenResponseMessage, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/Accounts/{}/token", &self.client.endpoint, &self.account_id);
+                let url_str = &format!("{}/Accounts/{}/token", self.client.endpoint(), &self.account_id);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);

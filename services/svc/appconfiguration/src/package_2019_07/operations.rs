@@ -307,7 +307,7 @@ pub mod get_keys {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys", &self.client.endpoint,);
+                let url_str = &format!("{}/keys", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -404,7 +404,7 @@ pub mod check_keys {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/keys", &self.client.endpoint,);
+                let url_str = &format!("{}/keys", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::HEAD);
@@ -501,7 +501,7 @@ pub mod get_key_values {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValueListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/kv", &self.client.endpoint,);
+                let url_str = &format!("{}/kv", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -611,7 +611,7 @@ pub mod check_key_values {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/kv", &self.client.endpoint,);
+                let url_str = &format!("{}/kv", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::HEAD);
@@ -712,7 +712,7 @@ pub mod get_key_value {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValue, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/kv/{}", &self.client.endpoint, &self.key);
+                let url_str = &format!("{}/kv/{}", self.client.endpoint(), &self.key);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -821,7 +821,7 @@ pub mod put_key_value {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValue, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/kv/{}", &self.client.endpoint, &self.key);
+                let url_str = &format!("{}/kv/{}", self.client.endpoint(), &self.key);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PUT);
@@ -927,7 +927,7 @@ pub mod delete_key_value {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/kv/{}", &self.client.endpoint, &self.key);
+                let url_str = &format!("{}/kv/{}", self.client.endpoint(), &self.key);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -1033,7 +1033,7 @@ pub mod check_key_value {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/kv/{}", &self.client.endpoint, &self.key);
+                let url_str = &format!("{}/kv/{}", self.client.endpoint(), &self.key);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::HEAD);
@@ -1128,7 +1128,7 @@ pub mod get_labels {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LabelListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/labels", &self.client.endpoint,);
+                let url_str = &format!("{}/labels", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1230,7 +1230,7 @@ pub mod check_labels {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/labels", &self.client.endpoint,);
+                let url_str = &format!("{}/labels", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::HEAD);
@@ -1318,7 +1318,7 @@ pub mod put_lock {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValue, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/locks/{}", &self.client.endpoint, &self.key);
+                let url_str = &format!("{}/locks/{}", self.client.endpoint(), &self.key);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::PUT);
@@ -1419,7 +1419,7 @@ pub mod delete_lock {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValue, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/locks/{}", &self.client.endpoint, &self.key);
+                let url_str = &format!("{}/locks/{}", self.client.endpoint(), &self.key);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::DELETE);
@@ -1529,7 +1529,7 @@ pub mod get_revisions {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValueListResult, Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/revisions", &self.client.endpoint,);
+                let url_str = &format!("{}/revisions", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::GET);
@@ -1639,7 +1639,7 @@ pub mod check_revisions {
         }
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
             Box::pin(async move {
-                let url_str = &format!("{}/revisions", &self.client.endpoint,);
+                let url_str = &format!("{}/revisions", self.client.endpoint(),);
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
                 req_builder = req_builder.method(http::Method::HEAD);
