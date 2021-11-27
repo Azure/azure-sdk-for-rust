@@ -1179,7 +1179,7 @@ pub mod usages {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1267,7 +1267,7 @@ pub mod virtual_machine_sizes {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1445,7 +1445,7 @@ pub mod quotas {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2581,7 +2581,7 @@ pub mod private_link_resources {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }

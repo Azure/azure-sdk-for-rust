@@ -711,7 +711,7 @@ pub mod annotations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -853,7 +853,7 @@ pub mod api_keys {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -929,7 +929,7 @@ pub mod api_keys {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1005,7 +1005,7 @@ pub mod api_keys {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1081,7 +1081,7 @@ pub mod api_keys {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1242,7 +1242,7 @@ pub mod export_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1321,7 +1321,7 @@ pub mod export_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1398,7 +1398,7 @@ pub mod export_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1477,7 +1477,7 @@ pub mod export_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1554,7 +1554,7 @@ pub mod export_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1666,7 +1666,7 @@ pub mod component_current_billing_features {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1743,7 +1743,7 @@ pub mod component_current_billing_features {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1840,7 +1840,7 @@ pub mod component_quota_status {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -1937,7 +1937,7 @@ pub mod component_feature_capabilities {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2034,7 +2034,7 @@ pub mod component_available_features {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2165,7 +2165,7 @@ pub mod proactive_detection_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2244,7 +2244,7 @@ pub mod proactive_detection_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2325,7 +2325,7 @@ pub mod proactive_detection_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2575,7 +2575,7 @@ pub mod work_item_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2647,7 +2647,7 @@ pub mod work_item_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2721,7 +2721,7 @@ pub mod work_item_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2797,7 +2797,7 @@ pub mod work_item_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -2866,7 +2866,7 @@ pub mod work_item_configurations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3060,7 +3060,7 @@ pub mod favorites {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3136,7 +3136,7 @@ pub mod favorites {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3214,7 +3214,7 @@ pub mod favorites {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3292,7 +3292,7 @@ pub mod favorites {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3361,7 +3361,7 @@ pub mod favorites {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3458,7 +3458,7 @@ pub mod web_test_locations {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3623,7 +3623,7 @@ pub mod web_tests {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3695,7 +3695,7 @@ pub mod web_tests {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3769,7 +3769,7 @@ pub mod web_tests {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3843,7 +3843,7 @@ pub mod web_tests {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3916,7 +3916,7 @@ pub mod web_tests {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -3984,7 +3984,7 @@ pub mod web_tests {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -4056,7 +4056,7 @@ pub mod web_tests {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -4236,7 +4236,7 @@ pub mod analytics_items {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -4329,7 +4329,7 @@ pub mod analytics_items {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -4416,7 +4416,7 @@ pub mod analytics_items {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
@@ -4501,7 +4501,7 @@ pub mod analytics_items {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             Err(Error::UnexpectedResponse {
                                 status_code,
-                                body: rsp_body.clone(),
+                                body: rsp_body,
                             })
                         }
                     }
